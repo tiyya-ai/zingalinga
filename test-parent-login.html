@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Parent Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .credentials {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .success {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Parent Login Test & Fix</h1>
+        
+        <div class="info">
+            <h3>📋 Demo Account Credentials</h3>
+            <p><strong>Parent Demo Account:</strong></p>
+            <ul>
+                <li><strong>Email:</strong> parent@demo.com</li>
+                <li><strong>Password:</strong> Parent123!</li>
+            </ul>
+            <p><strong>Admin Demo Account:</strong></p>
+            <ul>
+                <li><strong>Email:</strong> admin@zingalinga.com</li>
+                <li><strong>Password:</strong> Admin123!</li>
+            </ul>
+        </div>
+
+        <div class="credentials">
+            <h3>⚠️ Important Notes</h3>
+            <ul>
+                <li>Use the "Parent Demo" button in the login modal for quick access</li>
+                <li>Or manually enter the credentials above</li>
+                <li>If login fails, try clearing localStorage first</li>
+                <li>Both admin and parent users should be visible in the admin dashboard</li>
+            </ul>
+        </div>
+
+        <h3>🛠️ Troubleshooting Actions</h3>
+        
+        <button onclick="clearStorage()">Clear localStorage</button>
+        <button onclick="openApp()">Open App</button>
+        <button onclick="testLogin()">Test Parent Login</button>
+        
+        <div id="result"></div>
+        
+        <div class="success">
+            <h3>✅ How to Test</h3>
+            <ol>
+                <li>Click "Clear localStorage" to reset data</li>
+                <li>Click "Open App" to go to the application</li>
+                <li>Click the login button in the app</li>
+                <li>Use the "Parent Demo" button for quick login</li>
+                <li>You should be redirected to the user dashboard</li>
+                <li>Admin can see both users in the admin panel</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function clearStorage() {
+            localStorage.clear();
+            sessionStorage.clear();
+            document.getElementById('result').innerHTML = '<div class="success">✅ Storage cleared! Now try logging in.</div>';
+        }
+        
+        function openApp() {
+            window.open('http://localhost:3000', '_blank');
+        }
+        
+        function testLogin() {
+            // This would test the login programmatically if we had access to the auth module
+            document.getElementById('result').innerHTML = `
+                <div class="info">
+                    <h4>🧪 Manual Test Steps:</h4>
+                    <ol>
+                        <li>Go to <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+                        <li>Click "Login" button</li>
+                        <li>Click "Parent Demo" button</li>
+                        <li>Should automatically log you in as Demo Parent</li>
+                        <li>You should see the user dashboard with cart functionality</li>
+                    </ol>
+                </div>
+            `;
+        }
+        
+        // Auto-clear storage on page load
+        window.onload = function() {
+            document.getElementById('result').innerHTML = '<div class="info">🔄 Page loaded. Ready to test parent login.</div>';
+        }
+    </script>
+</body>
+</html>

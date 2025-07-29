@@ -1,0 +1,64 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // User data - allow read/write for development and testing
+    match /userData/{document=**} {
+      allow read, write: if true; // Open for development - restrict in production
+    }
+    
+    // Admin data - only admins can access
+    match /adminData/{document} {
+      allow read, write: if request.auth != null && 
+        request.auth.token.email in ['admin@zingalinga.com', 'proth@example.com'];
+    }
+    
+    // Modules - public read, admin write
+    match /modules/{moduleId} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+        request.auth.token.email in ['admin@zingalinga.com', 'proth@example.com'];
+    }
+    
+    // Content files - public read, admin write
+    match /contentFiles/{fileId} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+        request.auth.token.email in ['admin@zingalinga.com', 'proth@example.com'];
+    }
+    
+    // Purchases - users can read their own, admins can read all
+    match /purchases/{purchaseId} {
+      allow read: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || 
+         request.auth.token.email in ['admin@zingalinga.com', 'proth@example.com']);
+      allow write: if request.auth != null;
+    }
+    
+    // Analytics - admin only
+    match /analytics/{document} {
+      allow read, write: if request.auth != null && 
+        request.auth.token.email in ['admin@zingalinga.com', 'proth@example.com'];
+    }
+    
+    // Test documents for diagnostics
+    match /test/{document} {
+      allow read, write: if true;
+    }
+    
+    // Diagnostic documents
+    match /diagnostic/{document} {
+      allow read, write: if true;
+    }
+    
+    // Sync test documents
+    match /sync-test/{document} {
+      allow read, write: if true;
+    }
+    
+    // Monitoring documents
+    match /monitoring/{document} {
+      allow read, write: if true;
+    }
+  }
+}
