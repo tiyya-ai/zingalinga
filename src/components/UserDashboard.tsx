@@ -21,7 +21,7 @@ import {
   Heart
 } from 'lucide-react';
 import { Kiki, Tano } from './Characters';
-import { cloudDataStore } from '../utils/cloudDataStore';
+import { neonDataStore } from '../utils/neonDataStore';
 
 interface User {
   id: string;
@@ -79,7 +79,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user, onLogout, on
     const loadModules = async () => {
       try {
         setIsLoading(true);
-        const data = await cloudDataStore.loadData();
+        const data = await neonDataStore.loadData();
         const cloudModules = data.modules.map(module => ({
           ...module,
           fullContent: getDefaultContent(module.id)

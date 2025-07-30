@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, CreditCard, Lock, CheckCircle, ArrowLeft, Shield, Star, Sparkles, Gift } from 'lucide-react';
 import { Cart as CartType, PaymentInfo, Purchase, User } from '../types';
-import { cloudDataStore } from '../utils/cloudDataStore';
+import { neonDataStore } from '../utils/neonDataStore';
 
 interface CheckoutProps {
   isOpen: boolean;
@@ -71,7 +71,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
       };
 
       // Get current data
-      const currentData = await cloudDataStore.loadData();
+      const currentData = await neonDataStore.loadData();
       
       // Add purchase to purchases array
       currentData.purchases.push(newPurchase);
@@ -89,7 +89,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
       }
 
       // Save updated data
-      await cloudDataStore.saveData(currentData);
+      await neonDataStore.saveData(currentData);
       
       console.log('Purchase saved to admin dashboard:', newPurchase);
     } catch (error) {

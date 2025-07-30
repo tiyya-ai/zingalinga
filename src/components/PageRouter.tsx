@@ -20,7 +20,7 @@ import { RefundPolicyPage } from '../page-components/RefundPolicyPage';
 import { UserProfilePage } from '../page-components/UserProfilePage';
 
 import { authManager, AuthSession } from '../utils/auth';
-import { cloudDataStore } from '../utils/cloudDataStore';
+import { neonDataStore } from '../utils/neonDataStore';
 
 // Import the main landing page content
 import { LandingPage } from './LandingPage';
@@ -52,14 +52,14 @@ export const PageRouter: React.FC<PageRouterProps> = ({
     const loadInitialData = async () => {
       console.log('🔄 PageRouter: Loading initial data with cloud sync');
       try {
-        const data = await cloudDataStore.loadData();
+        const data = await neonDataStore.loadData();
         setModules(data.modules || []);
         setPurchases(data.purchases || []);
         setContentFiles(data.contentFiles || []);
         console.log('📦 PageRouter: Loaded', data.modules?.length || 0, 'modules and', data.purchases?.length || 0, 'purchases');
       } catch (error) {
         console.warn('⚠️ Cloud load failed, using fallback:', error);
-        const data = await cloudDataStore.loadData();
+        const data = await neonDataStore.loadData();
         setModules(data.modules || []);
         setPurchases(data.purchases || []);
         setContentFiles(data.contentFiles || []);
@@ -78,7 +78,7 @@ export const PageRouter: React.FC<PageRouterProps> = ({
     let lastDataHash = '';
     
     const refreshData = async () => {
-      const data = await cloudDataStore.loadData();
+      const data = await neonDataStore.loadData();
       
       // Create a simple hash of critical data to detect any changes
       const dataHash = JSON.stringify({
@@ -136,7 +136,7 @@ export const PageRouter: React.FC<PageRouterProps> = ({
     
     const handleFocus = async () => {
       console.log('👁️ Tab focused, refreshing data for modules and purchases');
-      const data = await cloudDataStore.loadData();
+      const data = await neonDataStore.loadData();
       setModules(data.modules || []);
       setPurchases(data.purchases || []);
       setContentFiles(data.contentFiles || []);
@@ -165,8 +165,8 @@ export const PageRouter: React.FC<PageRouterProps> = ({
           onModuleUpdate={async (updatedModules) => {
             console.log('📝 User dashboard updating modules:', updatedModules.length);
             setModules(updatedModules);
-            const data = await cloudDataStore.loadData();
-      await cloudDataStore.saveData({ ...data, modules: updatedModules });
+            const data = await neonDataStore.loadData();
+    await neonDataStore.saveData({ ...data, modules: updatedModules });
           }}
           onLogout={onLogout}
           onPurchase={onPurchase}

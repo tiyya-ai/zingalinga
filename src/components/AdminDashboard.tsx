@@ -32,7 +32,7 @@ import {
   X,
   BookOpen
 } from 'lucide-react';
-import { cloudDataStore } from '../utils/cloudDataStore';
+import { neonDataStore } from '../utils/neonDataStore';
 import { User, Module, Purchase } from '../types';
 
 // Using global interfaces from types/index.ts
@@ -146,8 +146,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
     setIsLoading(true);
     
     try {
-      // Load data from cloudDataStore
-      const data = await cloudDataStore.loadData();
+      // Load data from neonDataStore
+    const data = await neonDataStore.loadData();
       
       // Update all state with real data
       setModules(data.modules || []);
@@ -278,7 +278,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
 
   const handleSaveModule = async (updatedModule: Module) => {
     try {
-      const data = await cloudDataStore.loadData();
+      const data = await neonDataStore.loadData();
        let updatedModules;
        
        if (data.modules.find(m => m.id === updatedModule.id)) {
@@ -289,8 +289,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
          updatedModules = [...data.modules, updatedModule];
        }
        
-       // Save to cloudDataStore
-       await cloudDataStore.forceSave({
+       // Save to neonDataStore
+       await neonDataStore.saveData({
          ...data,
          modules: updatedModules
        });
@@ -308,11 +308,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
   const handleDeleteModule = async (moduleId: string) => {
     if (confirm('Are you sure you want to delete this module?')) {
       try {
-        const data = await cloudDataStore.loadData();
+        const data = await neonDataStore.loadData();
         const updatedModules = data.modules.filter(m => m.id !== moduleId);
         
-        // Save to cloudDataStore
-         await cloudDataStore.forceSave({
+        // Save to neonDataStore
+         await neonDataStore.saveData({
            ...data,
            modules: updatedModules
          });
@@ -339,12 +339,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
 
   const handleSaveUser = async (updatedUser: User) => {
     try {
-      const data = await cloudDataStore.loadData();
+      const data = await neonDataStore.loadData();
       const updatedUsers = data.users.map(u => 
         u.id === updatedUser.id ? updatedUser : u
       );
       
-      await cloudDataStore.forceSave({
+      await neonDataStore.saveData({
         ...data,
         users: updatedUsers
       });
@@ -360,10 +360,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
   const handleDeleteUser = async (userId: string) => {
     if (confirm('Are you sure you want to delete this user?')) {
       try {
-        const data = await cloudDataStore.loadData();
+        const data = await neonDataStore.loadData();
         const updatedUsers = data.users.filter(u => u.id !== userId);
         
-        await cloudDataStore.forceSave({
+        await neonDataStore.saveData({
           ...data,
           users: updatedUsers
         });
@@ -391,10 +391,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
 
   const handleSaveNewUser = async (newUser: User) => {
     try {
-      const data = await cloudDataStore.loadData();
+      const data = await neonDataStore.loadData();
       const updatedUsers = [...data.users, newUser];
       
-      await cloudDataStore.forceSave({
+      await neonDataStore.saveData({
         ...data,
         users: updatedUsers
       });
@@ -415,12 +415,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      const data = await cloudDataStore.loadData();
+      const data = await neonDataStore.loadData();
       const updatedOrders = data.purchases.map(p => 
         p.id === orderId ? { ...p, status: newStatus as 'pending' | 'completed' | 'failed' | 'refunded' } : p
       );
       
-      await cloudDataStore.forceSave({
+      await neonDataStore.saveData({
         ...data,
         purchases: updatedOrders
       });
