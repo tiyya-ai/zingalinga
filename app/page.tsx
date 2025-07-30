@@ -18,6 +18,8 @@ export default function Home() {
   const [modules, setModules] = useState<Module[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [contentFiles, setContentFiles] = useState<ContentFile[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [analytics, setAnalytics] = useState<any>({});
 
   // Debug log for modal state
   console.log('Modal state:', { isLoginModalOpen, user, currentPage });
