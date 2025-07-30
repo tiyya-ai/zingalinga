@@ -15,7 +15,21 @@ const nextConfig = {
   // Removed static export for Vercel deployment with API routes
   images: {
     unoptimized: true
-  }
+  },
+  webpack: (config, { isServer }) => {
+    // Exclude Node.js modules from client-side bundle
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        dns: false,
+        tls: false,
+        pg: false,
+      };
+    }
+    return config;
+  },
 }
 
 module.exports = nextConfig
