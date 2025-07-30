@@ -8,7 +8,7 @@ import { LoginModal } from '../components/LoginModal';
 import { ModernUserDashboard } from '../components/ModernUserDashboard';
 import { AdminDashboard } from '../components/AdminDashboard';
 import { User, Module, Purchase, ContentFile } from '../types';
-import { cloudDataStore } from '../utils/cloudDataStore';
+import { neonDataStore } from '../utils/neonDataStore';
 
 export default function Home() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -26,7 +26,7 @@ export default function Home() {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const data = await cloudDataStore.loadData();
+        const data = await neonDataStore.loadData();
         setModules(data.modules || []);
         setPurchases(data.purchases || []);
         setContentFiles(data.contentFiles || []);
@@ -91,14 +91,14 @@ export default function Home() {
       };
 
       // Update data store
-      const currentData = await cloudDataStore.loadData();
+      const currentData = await neonDataStore.loadData();
       const updatedData = {
         ...currentData,
         users: currentData.users.map(u => u.id === user.id ? updatedUser : u),
         purchases: [...currentData.purchases, purchase]
       };
       
-      await cloudDataStore.saveData(updatedData);
+      await neonDataStore.saveData(updatedData);
       
       // Update local state
       setUser(updatedUser);
@@ -122,8 +122,8 @@ export default function Home() {
             contentFiles={contentFiles}
             onModuleUpdate={async (updatedModules) => {
               setModules(updatedModules);
-              const data = await cloudDataStore.loadData();
-              await cloudDataStore.saveData({ ...data, modules: updatedModules });
+              const data = await neonDataStore.loadData();
+              await neonDataStore.saveData({ ...data, modules: updatedModules });
             }}
             onLogout={handleLogout}
             onPurchase={handlePurchase}

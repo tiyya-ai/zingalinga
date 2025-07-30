@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Module, User, Purchase, ContentFile, Cart as CartType, CartItem } from '../types';
-import { cloudDataStore } from '../utils/cloudDataStore';
+import { neonDataStore } from '../utils/neonDataStore';
 import { Cart } from './Cart';
 import { Checkout } from './Checkout';
 import { 
@@ -85,7 +85,7 @@ export const ModernUserDashboard: React.FC<ModernUserDashboardProps> = ({
       setSyncStatus('syncing');
       
       // Set current user for enterprise data store
-      cloudDataStore.setCurrentUser(user);
+      neonDataStore.setCurrentUser(user);
       console.log('🎓 Modern User Dashboard initialized for:', user.email);
       
       // Load all data
@@ -102,7 +102,7 @@ export const ModernUserDashboard: React.FC<ModernUserDashboardProps> = ({
 
   const loadUserData = async () => {
     try {
-      const data = await cloudDataStore.loadData();
+      const data = await neonDataStore.loadData();
       
       // Update state
       setModules(data.modules || []);

@@ -1,26 +1,22 @@
 import { NextResponse } from 'next/server';
-import { db } from '../../../config/firebase';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { neonDataStore } from '../../../utils/neonDataStore';
 
 export async function GET() {
   try {
-    const usersQuery = query(
-      collection(db, 'userData'),
-      orderBy('createdAt', 'desc')
-    );
+    const data = await neonDataStore.loadData();
+    const users = data.users || [];
     
-    const querySnapshot = await getDocs(usersQuery);
-    const users = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || doc.data().createdAt,
-      lastLogin: doc.data().lastLogin?.toDate?.()?.toISOString() || doc.data().lastLogin
-    }));
+    // Sort users by createdAt in descending order
+    const sortedUsers = users.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA;
+    });
 
     return NextResponse.json({
       success: true,
-      users,
-      count: users.length
+      users: sortedUsers,
+      count: sortedUsers.length
     });
   } catch (error) {
     console.error('Error fetching users:', error);

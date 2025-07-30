@@ -1,4 +1,5 @@
 import { User } from '../types';
+import { neonDataStore } from './neonDataStore';
 
 export interface AuthSession {
   user: User;
@@ -251,7 +252,7 @@ class AuthManager {
 
   // Create demo accounts with secure passwords
   async createDemoAccounts(): Promise<void> {
-    const data = await cloudDataStore.loadData();
+    const data = await neonDataStore.loadData();
     
     // Check if demo accounts already exist
     const adminExists = data.users.some(u => u.email === 'admin@zingalinga.com');
@@ -274,7 +275,7 @@ class AuthManager {
 
     // Only create admin user if it doesn't exist - no demo users
     if (!adminExists) {
-      await cloudDataStore.saveData({ ...data, users: newUsers });
+      await neonDataStore.saveData({ ...data, users: newUsers });
     }
   }
 }
