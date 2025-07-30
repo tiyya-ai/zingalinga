@@ -1,6 +1,6 @@
-// Neon PostgreSQL Database Configuration
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+// VPS PostgreSQL Database Configuration
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { pgTable, text, integer, timestamp, jsonb, boolean, serial } from 'drizzle-orm/pg-core';
 import { eq } from 'drizzle-orm';
 
@@ -8,15 +8,19 @@ import { eq } from 'drizzle-orm';
 const databaseUrl = process.env.DATABASE_URL;
 let db: any = null;
 let isDbAvailable = false;
+let pool: Pool | null = null;
 
 if (databaseUrl && !databaseUrl.includes('placeholder')) {
   try {
-    const sql = neon(databaseUrl);
-    db = drizzle(sql);
+    pool = new Pool({
+      connectionString: databaseUrl,
+      ssl: false // VPS database doesn't need SSL
+    });
+    db = drizzle(pool);
     isDbAvailable = true;
-    console.log('✅ Neon database connected');
+    console.log('✅ VPS PostgreSQL database connected');
   } catch (error) {
-    console.warn('⚠️ Neon database connection failed:', error);
+    console.warn('⚠️ VPS database connection failed:', error);
     isDbAvailable = false;
   }
 } else {
