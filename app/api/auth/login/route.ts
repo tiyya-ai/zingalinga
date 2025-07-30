@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, isDbAvailable, users } from '../../../../lib/neon';
-import { eq } from 'drizzle-orm';
+import { neonDataStore } from '../../../../src/utils/neonDataStore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,43 +12,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let userData = null;
-
-    // Check if database is available
-    if (isDbAvailable && db) {
-      // Find user by email in database
-      const user = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, email))
-        .limit(1);
-
-      if (user.length > 0) {
-        userData = user[0];
-      }
-    } else {
-      // Fallback to demo users when database is not available
-      const demoUsers = [
-        {
-          id: 'admin-001',
-          email: 'admin@zingalinga.com',
-          name: 'System Administrator',
-          role: 'admin',
-          purchasedModules: [],
-          totalSpent: 0
-        },
-        {
-          id: 'parent-001',
-          email: 'parent@demo.com',
-          name: 'Demo Parent',
-          role: 'user',
-          purchasedModules: [],
-          totalSpent: 0
-        }
-      ];
-      
-      userData = demoUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-    }
+    // Load data from VPS database using neonDataStore
+    const data = await neonDataStore.loadData();
+    const users = data.users || [];
+    
+    // Find user by email
+    const userData = users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
     if (!userData) {
       return NextResponse.json(
