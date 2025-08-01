@@ -28,3 +28,4 @@ const RefundPolicyPage: React.FC<RefundPolicyPageProps> = ({ onBack, onNavigate 
 };
 
 export default RefundPolicyPage;
+export { RefundPolicyPage };

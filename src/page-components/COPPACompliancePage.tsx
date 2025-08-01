@@ -29,3 +29,4 @@ const COPPACompliancePage: React.FC<COPPACompliancePageProps> = ({ onBack, onNav
 
 
 export default COPPACompliancePage;
+export { COPPACompliancePage };

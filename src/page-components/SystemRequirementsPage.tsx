@@ -28,3 +28,4 @@ const SystemRequirementsPage: React.FC<SystemRequirementsPageProps> = ({ onBack,
 };
 
 export default SystemRequirementsPage;
+export { SystemRequirementsPage };

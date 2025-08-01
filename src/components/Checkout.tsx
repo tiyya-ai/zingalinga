@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, CreditCard, Lock, CheckCircle, ArrowLeft, Shield, Star, Sparkles, Gift } from 'lucide-react';
 import { Cart as CartType, PaymentInfo, Purchase, User } from '../types';
-import { neonDataStore } from '../utils/neonDataStore';
+import { vpsDataStore } from '../utils/vpsDataStore';
 
 interface CheckoutProps {
   isOpen: boolean;
@@ -71,7 +71,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
       };
 
       // Get current data
-      const currentData = await neonDataStore.loadData();
+      const currentData = await vpsDataStore.loadData();
       
       // Add purchase to purchases array
       currentData.purchases.push(newPurchase);
@@ -89,7 +89,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
       }
 
       // Save updated data
-      await neonDataStore.saveData(currentData);
+      await vpsDataStore.saveData(currentData);
       
       console.log('Purchase saved to admin dashboard:', newPurchase);
     } catch (error) {
@@ -212,7 +212,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
         <div className="bg-gray-50 rounded-2xl p-6 mb-8">
           <h3 className="font-bold text-gray-800 mb-4">Order Summary</h3>
           <div className="space-y-3">
-            {cart.items.map((item) => (
+            {(cart.items || []).map((item) => (
               <div key={item.id} className="flex justify-between items-center">
                 <div>
                   <p className="font-medium text-gray-800">{item.title}</p>

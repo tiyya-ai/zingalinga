@@ -1,1044 +1,1510 @@
-/**
- * Modern User Dashboard
- * Built with Firebase-first architecture and modern UX patterns
- * Inspired by Netflix, Spotify, and modern learning platforms
- */
+'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Module, User, Purchase, ContentFile, Cart as CartType, CartItem } from '../types';
-import { neonDataStore } from '../utils/neonDataStore';
-import { Cart } from './Cart';
-import { Checkout } from './Checkout';
-import { 
-  BookOpen, 
-  LogOut, 
-  ShoppingCart, 
-  Search, 
-  TrendingUp, 
-  User as UserIcon, 
-  Play, 
-  Star,
-  RefreshCw,
+import UserProfilePage from '../page-components/UserProfilePage';
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  Button,
+  Avatar,
+  Progress,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Input,
+  Select,
+  SelectItem,
+  Chip,
+  Divider,
+  Badge,
+  Tooltip,
+  Image,
+  Tabs,
+  Tab
+} from '@nextui-org/react';
+import {
+  Play,
+  Heart,
+  Clock,
   Settings,
-  Download
+  HelpCircle,
+  LogOut,
+  Gift,
+  Star,
+  Palette,
+  Shield,
+  Timer,
+  BookOpen,
+  Gamepad2,
+  Target,
+  Award,
+  TrendingUp,
+  Calendar,
+  Eye,
+  Lock,
+  Unlock,
+  Volume2,
+  VolumeX,
+  RotateCcw,
+  Zap,
+  Trophy,
+  Flame,
+  Users,
+  ShoppingCart,
+  Search,
+  Filter,
+  Grid,
+  List,
+  Plus,
+  Minus,
+  X,
+  User as UserIcon
 } from 'lucide-react';
+import { User, Module, Purchase, ContentFile } from '../types';
+import { vpsDataStore } from '../utils/vpsDataStore';
+import { checkVideoAccess, getUserPurchasedModules, getUserAvailableModules } from '../utils/videoAccess';
+import { EnhancedVideoPlayer } from './EnhancedVideoPlayer';
 
-interface ModernUserDashboardProps {
+interface UserDashboardProps {
   user: User;
-  modules: Module[];
-  purchases: Purchase[];
-  contentFiles: ContentFile[];
-  onModuleUpdate: (modules: Module[]) => void;
+  modules?: Module[];
+  purchases?: Purchase[];
+  contentFiles?: ContentFile[];
+  onModuleUpdate?: (modules: Module[]) => void;
   onLogout: () => void;
-  onPurchase: (moduleIds: string[]) => void;
+  onPurchase?: (moduleId: string) => void;
 }
 
-interface UserProgress {
-  completedModules: string[];
-  currentModule?: string;
-  totalWatchTime: number;
-  achievements: string[];
+interface WatchHistory {
+  id: string;
+  title: string;
+  thumbnail: string;
+  progress: number;
+  duration: string;
+  lastWatched: string;
 }
 
-export const ModernUserDashboard: React.FC<ModernUserDashboardProps> = ({ 
+interface DailyLimit {
+  totalMinutes: number;
+  usedMinutes: number;
+  resetTime: string;
+}
+
+interface Theme {
+  id: string;
+  name: string;
+  primary: string;
+  secondary: string;
+  background: string;
+  preview: string;
+}
+
+interface CartItem {
+  id: string;
+  title: string;
+  price: number;
+  thumbnail: string;
+  quantity: number;
+}
+
+interface PaymentCard {
+  id: string;
+  last4: string;
+  brand: string;
+  expiryMonth: number;
+  expiryYear: number;
+}
+
+interface VideoProduct {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  thumbnail: string;
+  duration: string;
+  rating: number;
+  category: string;
+  ageGroup: string;
+  isPremium: boolean;
+}
+
+const themes: Theme[] = [
+  {
+    id: 'cosmic',
+    name: 'Cosmic',
+    primary: 'from-purple-600 to-blue-600',
+    secondary: 'from-pink-500 to-purple-500',
+    background: 'from-purple-900 via-blue-900 to-indigo-900',
+    preview: 'bg-gradient-to-r from-purple-600 to-blue-600'
+  },
+  {
+    id: 'ocean',
+    name: 'Ocean',
+    primary: 'from-blue-500 to-teal-500',
+    secondary: 'from-cyan-400 to-blue-500',
+    background: 'from-blue-900 via-teal-900 to-cyan-900',
+    preview: 'bg-gradient-to-r from-blue-500 to-teal-500'
+  },
+  {
+    id: 'forest',
+    name: 'Forest',
+    primary: 'from-green-500 to-emerald-500',
+    secondary: 'from-lime-400 to-green-500',
+    background: 'from-green-900 via-emerald-900 to-teal-900',
+    preview: 'bg-gradient-to-r from-green-500 to-emerald-500'
+  },
+  {
+    id: 'sunset',
+    name: 'Sunset',
+    primary: 'from-orange-500 to-red-500',
+    secondary: 'from-yellow-400 to-orange-500',
+    background: 'from-orange-900 via-red-900 to-pink-900',
+    preview: 'bg-gradient-to-r from-orange-500 to-red-500'
+  }
+];
+
+const avatars = [
+  '🦸‍♂️', '🦸‍♀️', '🧙‍♂️', '🧙‍♀️', '🦄', '🐉', '🦋', '🌟', '🎭', '🎨'
+];
+
+const demoVideoProducts: VideoProduct[] = [
+  {
+    id: '1',
+    title: 'Arabic Alphabet Adventure',
+    description: 'Learn Arabic letters through fun animations',
+    price: 0, // Free demo
+    thumbnail: '/api/placeholder/300/200',
+    duration: '25 min',
+    rating: 4.8,
+    category: 'Language',
+    ageGroup: '3-6',
+    isPremium: false
+  },
+  {
+    id: '2',
+    title: 'Math Magic Kingdom',
+    description: 'Discover numbers and basic math concepts',
+    price: 12.99,
+    thumbnail: '/api/placeholder/300/200',
+    duration: '30 min',
+    rating: 4.9,
+    category: 'Math',
+    ageGroup: '4-7',
+    isPremium: true
+  },
+  {
+    id: '3',
+    title: 'Science Explorers',
+    description: 'Fun experiments and discoveries',
+    price: 14.99,
+    thumbnail: '/api/placeholder/300/200',
+    duration: '35 min',
+    rating: 4.7,
+    category: 'Science',
+    ageGroup: '5-8',
+    isPremium: true
+  }
+];
+
+// Demo modules with video URLs for testing
+const demoModules: Module[] = [
+  {
+    id: '1',
+    title: 'Arabic Alphabet Adventure',
+    description: 'Learn Arabic letters through fun animations',
+    price: 0,
+    thumbnail: '/api/placeholder/300/200',
+    estimatedDuration: '25 min',
+    rating: 4.8,
+    category: 'Language',
+    ageRange: '3-6',
+    isPremium: false,
+    isDemo: true,
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    demoVideo: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+  },
+  {
+    id: '2',
+    title: 'Math Magic Kingdom',
+    description: 'Discover numbers and basic math concepts',
+    price: 12.99,
+    thumbnail: '/api/placeholder/300/200',
+    estimatedDuration: '30 min',
+    rating: 4.9,
+    category: 'Math',
+    ageRange: '4-7',
+    isPremium: true,
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    demoVideo: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+  },
+  {
+    id: '3',
+    title: 'Science Explorers',
+    description: 'Fun experiments and discoveries',
+    price: 14.99,
+    thumbnail: '/api/placeholder/300/200',
+    estimatedDuration: '35 min',
+    rating: 4.7,
+    category: 'Science',
+    ageRange: '5-8',
+    isPremium: true,
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    demoVideo: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+  }
+];
+
+const demoPaymentCards: PaymentCard[] = [
+  {
+    id: '1',
+    last4: '4242',
+    brand: 'Visa',
+    expiryMonth: 12,
+    expiryYear: 2025
+  }
+];
+
+export default function ModernUserDashboard({ 
   user, 
-  modules: initialModules,
-  purchases: initialPurchases,
-  contentFiles,
-  onModuleUpdate,
+  modules = [], 
+  purchases = [], 
+  contentFiles = [], 
+  onModuleUpdate, 
   onLogout, 
   onPurchase 
-}) => {
-  // State Management
-  const [activeTab, setActiveTab] = useState<'library' | 'browse' | 'progress' | 'profile' | 'cart'>('library');
-  const [isLoading, setIsLoading] = useState(true);
-  const [modules, setModules] = useState<Module[]>(initialModules);
-  const [purchases, setPurchases] = useState<Purchase[]>(initialPurchases);
-  const [userProgress, setUserProgress] = useState<UserProgress>({
-    completedModules: [],
-    totalWatchTime: 0,
-    achievements: []
+}: UserDashboardProps) {
+  // State for dashboard modules
+  const [activeModules, setActiveModules] = useState<string[]>(['dashboard']);
+  const [watchHistory, setWatchHistory] = useState<WatchHistory[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [selectedTheme, setSelectedTheme] = useState<Theme>(themes[0]);
+  const [selectedAvatar, setSelectedAvatar] = useState<string>(avatars[0]);
+  const [dailyLimits, setDailyLimits] = useState<DailyLimit>({
+    totalMinutes: 120,
+    usedMinutes: 45,
+    resetTime: '20:00'
   });
+  const [parentalControls, setParentalControls] = useState({
+    enabled: true,
+    pin: '1234',
+    restrictedCategories: ['mature']
+  });
+
+  // E-commerce state
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [videoProducts, setVideoProducts] = useState<VideoProduct[]>([]);
+  const [paymentCards, setPaymentCards] = useState<PaymentCard[]>(demoPaymentCards);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [sortBy, setSortBy] = useState('popular');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [currentPage, setCurrentPage] = useState<'dashboard' | 'store' | 'cart' | 'checkout' | 'profile'>('dashboard');
+
+  // Modal states
+  const [showSurpriseModal, setShowSurpriseModal] = useState(false);
+  const [showThemeModal, setShowThemeModal] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [showOrderComplete, setShowOrderComplete] = useState(false);
+  const [showParentDashboard, setShowParentDashboard] = useState(false);
+  const [enteredPin, setEnteredPin] = useState('');
+
+  // Video player state
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
-  const [showCheckout, setShowCheckout] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<'connected' | 'syncing' | 'offline'>('connected');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [cart, setCart] = useState<CartType>({ items: [], total: 0 });
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
-  // Initialize dashboard
+  // Real data state
+  const [realModules, setRealModules] = useState<Module[]>([]);
+  const [realPurchases, setRealPurchases] = useState<Purchase[]>([]);
+
+  // User progress state
+  const [userLevel, setUserLevel] = useState(5);
+  const [currentXP, setCurrentXP] = useState(750);
+  const [nextLevelXP, setNextLevelXP] = useState(1000);
+  const [dailyStreak, setDailyStreak] = useState(12);
+  const [achievements, setAchievements] = useState([
+    { id: '1', name: 'First Steps', description: 'Complete your first lesson', unlocked: true, progress: 100 },
+    { id: '2', name: 'Week Warrior', description: 'Learn for 7 days straight', unlocked: true, progress: 100 },
+    { id: '3', name: 'Math Master', description: 'Complete 10 math lessons', unlocked: false, progress: 60 },
+    { id: '4', name: 'Language Lover', description: 'Learn 50 new words', unlocked: false, progress: 80 }
+  ]);
+
+  // Load user data on component mount
   useEffect(() => {
-    initializeDashboard();
-  }, []);
-
-  // Update when props change
-  useEffect(() => {
-    setModules(initialModules);
-    setPurchases(initialPurchases);
-    calculateUserProgress(initialPurchases);
-  }, [initialModules, initialPurchases]);
-
-  const initializeDashboard = async () => {
-    try {
-      setIsLoading(true);
-      setSyncStatus('syncing');
-      
-      // Set current user for enterprise data store
-      neonDataStore.setCurrentUser(user);
-      console.log('🎓 Modern User Dashboard initialized for:', user.email);
-      
-      // Load all data
-      await loadUserData();
-      
-      setSyncStatus('connected');
-    } catch (error) {
-      console.error('❌ Dashboard initialization failed:', error);
-      setSyncStatus('offline');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    loadUserData();
+    loadVideoProducts();
+    loadRealData();
+    generateDailyPicks();
+    generateLearningPath();
+  }, [modules, purchases]);
 
   const loadUserData = async () => {
     try {
-      const data = await neonDataStore.loadData();
-      
-      // Update state
-      setModules(data.modules || []);
-      const userPurchases = (data.purchases || []).filter(p => p.userId === user.id);
-      setPurchases(userPurchases);
-      
-      // Calculate user progress
-      calculateUserProgress(userPurchases);
-      
-      console.log('📚 User data loaded successfully');
+      const userData = await vpsDataStore.getUserData(user.id);
+      if (userData) {
+        setWatchHistory(userData.watchHistory || []);
+        setFavorites(userData.favorites || []);
+        setSelectedTheme(userData.theme || themes[0]);
+        setSelectedAvatar(userData.avatar || avatars[0]);
+      }
     } catch (error) {
-      console.error('❌ Failed to load user data:', error);
+      console.error('Error loading user data:', error);
     }
   };
 
-  const calculateUserProgress = (userPurchases: Purchase[]) => {
-    const completedModules = user.purchasedModules || [];
-    
-    setUserProgress({
-      completedModules,
-      totalWatchTime: userPurchases.length * 60, // Estimate 60 min per module
-      achievements: calculateAchievements(userPurchases.length)
-    });
-  };
-
-  const calculateAchievements = (purchaseCount: number): string[] => {
-    const achievements = [];
-    if (purchaseCount >= 1) achievements.push('First Purchase');
-    if (purchaseCount >= 5) achievements.push('Learning Enthusiast');
-    if (purchaseCount >= 10) achievements.push('Knowledge Seeker');
-    if (purchaseCount >= 20) achievements.push('Master Learner');
-    return achievements;
-  };
-
-  const handlePurchase = async (module: Module) => {
+  const loadVideoProducts = async () => {
     try {
-      setSyncStatus('syncing');
-      
-      // Use the onPurchase prop to handle the purchase
-      onPurchase([module.id]);
-      
-      setSyncStatus('connected');
-      setSelectedModule(null);
-      setShowCheckout(false);
-      
-      // Refresh data after purchase
-      setTimeout(() => {
-        loadUserData();
-      }, 1000);
-      
+      const products = await vpsDataStore.getProducts();
+      // Convert modules to video products format
+      const convertedProducts = products.map(module => ({
+        id: module.id || Date.now().toString(),
+        title: module.title || 'Untitled Video',
+        description: module.description || 'No description available',
+        price: module.price || 0,
+        thumbnail: module.thumbnail || module.imageUrl || '/placeholder-video.jpg',
+        category: module.category || 'educational',
+        duration: module.estimatedDuration || '5 min',
+        rating: module.rating || 4.5,
+        ageRange: module.ageRange || '3-8 years',
+        videoUrl: module.videoUrl || module.videoSource || '',
+        featured: module.featured || false
+      }));
+      setVideoProducts(convertedProducts.length > 0 ? convertedProducts : demoVideoProducts);
     } catch (error) {
-      console.error('❌ Purchase failed:', error);
-      setSyncStatus('offline');
-      alert('Purchase failed. Please try again.');
+      console.error('Error loading video products:', error);
+      // Fallback to demo data if real data fails to load
+      setVideoProducts(demoVideoProducts);
+     }
+   };
+
+  const generateDailyPicks = () => {
+    // Generate personalized daily picks based on user preferences
+  };
+
+  const generateLearningPath = () => {
+    // Generate adaptive learning path
+  };
+
+  const loadRealData = async () => {
+    try {
+      const data = await vpsDataStore.loadData();
+      const loadedModules = data.modules || modules || [];
+      // If no modules are loaded, use demo modules
+      setRealModules(loadedModules.length > 0 ? loadedModules : demoModules);
+      setRealPurchases(data.purchases || purchases || []);
+    } catch (error) {
+      console.error('Error loading real data:', error);
+      // Fallback to demo modules if loading fails
+      setRealModules(modules.length > 0 ? modules : demoModules);
+      setRealPurchases(purchases || []);
     }
   };
 
-  // Cart functionality
-  const addToCart = (module: Module) => {
-    const cartItem: CartItem = {
-      id: module.id,
-      title: module.title,
-      price: module.price,
-      type: 'module'
-    };
-    
-    const existingItem = cart.items.find(item => item.id === module.id);
+  // Video player functions
+  const handleVideoPlay = (moduleId: string) => {
+    const module = realModules.find(m => m.id === moduleId);
+    if (module) {
+      setSelectedModule(module);
+      setShowVideoPlayer(true);
+    }
+  };
+
+  const handleVideoPurchase = (moduleId: string) => {
+    if (onPurchase) {
+      onPurchase(moduleId);
+    }
+  };
+
+  const handleVideoPlayerClose = () => {
+    setShowVideoPlayer(false);
+    setSelectedModule(null);
+  };
+
+  // Get user's purchased and available modules using access control
+  const purchasedModules = getUserPurchasedModules(user, realModules, realPurchases);
+  const availableModules = getUserAvailableModules(user, realModules, realPurchases);
+
+  const handleThemeChange = (theme: Theme) => {
+    setSelectedTheme(theme);
+    // Save to user preferences
+    vpsDataStore.updateUserPreferences(user.id, { theme });
+  };
+
+  const handleAvatarChange = (avatar: string) => {
+    setSelectedAvatar(avatar);
+    vpsDataStore.updateUserPreferences(user.id, { avatar });
+  };
+
+  const toggleFavorite = (videoId: string) => {
+    const newFavorites = favorites.includes(videoId)
+      ? favorites.filter(id => id !== videoId)
+      : [...favorites, videoId];
+    setFavorites(newFavorites);
+    vpsDataStore.updateUserPreferences(user.id, { favorites: newFavorites });
+  };
+
+  const addToCart = (product: VideoProduct) => {
+    const existingItem = cart.find(item => item.id === product.id);
     if (existingItem) {
-      alert('This module is already in your cart!');
-      return;
+      setCart(cart.map(item => 
+        item.id === product.id 
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      ));
+    } else {
+      setCart([...cart, {
+        id: product.id,
+        title: product.title,
+        price: product.price,
+        thumbnail: product.thumbnail,
+        quantity: 1
+      }]);
     }
-    
-    const newCart = {
-      items: [...cart.items, cartItem],
-      total: cart.total + module.price
-    };
-    
-    setCart(newCart);
-    alert('Module added to cart!');
   };
 
-  const removeFromCart = (itemId: string) => {
-    const itemToRemove = cart.items.find(item => item.id === itemId);
-    if (!itemToRemove) return;
-    
-    const newCart = {
-      items: cart.items.filter(item => item.id !== itemId),
-      total: cart.total - itemToRemove.price
-    };
-    
-    setCart(newCart);
+  const removeFromCart = (productId: string) => {
+    setCart(cart.filter(item => item.id !== productId));
   };
 
-  const handleCheckout = () => {
-    setIsCartOpen(false);
-    setIsCheckoutOpen(true);
+  const updateCartQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(productId);
+    } else {
+      setCart(cart.map(item => 
+        item.id === productId 
+          ? { ...item, quantity }
+          : item
+      ));
+    }
   };
 
-  const handlePaymentComplete = () => {
-    // Clear cart after successful payment
-    setCart({ items: [], total: 0 });
-    setIsCheckoutOpen(false);
-    
-    // Refresh user data
-    setTimeout(() => {
-      loadUserData();
-    }, 1000);
+  const processOrder = () => {
+    // Process the order
+    setCart([]);
+    setShowOrderComplete(true);
+    setCurrentPage('dashboard');
   };
 
-  const handleBackToCart = () => {
-    setIsCheckoutOpen(false);
-    setIsCartOpen(true);
+  const filteredProducts = videoProducts.filter(product => {
+    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         product.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || product.category.toLowerCase() === selectedCategory.toLowerCase();
+    return matchesSearch && matchesCategory;
+  });
+
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortBy) {
+      case 'price-low':
+        return a.price - b.price;
+      case 'price-high':
+        return b.price - a.price;
+      case 'rating':
+        return b.rating - a.rating;
+      case 'newest':
+        return b.id.localeCompare(a.id);
+      default:
+        return b.rating - a.rating;
+    }
+  });
+
+  const renderCurrentPage = () => {
+    switch (currentPage) {
+      case 'store':
+        return renderStorePage();
+      case 'cart':
+        return renderCartPage();
+      case 'checkout':
+        return renderCheckoutPage();
+      case 'profile':
+        return (
+          <UserProfilePage
+            user={user}
+            onBack={() => setCurrentPage('dashboard')}
+            onNavigate={(page) => setCurrentPage(page as any)}
+            onUserUpdate={(updatedUser) => {
+              // Handle user update if needed
+              console.log('User updated:', updatedUser);
+            }}
+          />
+        );
+      default:
+        return renderDashboardPage();
+    }
   };
 
-  const filteredModules = modules.filter(module => 
-    module.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    module.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const ownedModules = modules.filter(module => 
-    user.purchasedModules.includes(module.id)
-  );
-
-  const availableModules = modules.filter(module => 
-    !user.purchasedModules.includes(module.id) && module.isVisible !== false
-  );
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-700 font-mali">Loading Your Dashboard...</h2>
-          <p className="text-gray-500 mt-2 font-mali">Preparing your learning experience</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Enhanced Header - Matching Admin Style */}
-      <header className="bg-white/95 backdrop-blur-md shadow-2xl border-b-4 border-gradient-to-r from-indigo-500 to-purple-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-6">
-              <div className="relative">
-                <img 
-                  src="/zinga linga logo.png" 
-                  alt="Zinga Linga" 
-                  className="h-14 w-auto drop-shadow-lg"
-                />
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs">📚</span>
-                </div>
-              </div>
-              <div>
-                <h1 className="text-3xl font-mali font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  Learning Dashboard
-                </h1>
-                <p className="font-mali text-gray-600 text-lg">Welcome back, {user.name} - Student Portal</p>
-              </div>
+  const renderStorePage = () => (
+    <div className="space-y-6">
+      {/* Search and Filters */}
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
+        <CardBody className="p-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Search videos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                startContent={<Search className="w-4 h-4" />}
+                className="bg-white/5"
+              />
             </div>
-            
-            <div className="flex items-center gap-4">
-              {/* Sync Status */}
-              <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg ${
-                syncStatus === 'connected' ? 'bg-gradient-to-r from-green-100 to-emerald-100 border-green-300 text-green-700' :
-                syncStatus === 'syncing' ? 'bg-gradient-to-r from-yellow-100 to-amber-100 border-yellow-300 text-yellow-700' :
-                'bg-gradient-to-r from-red-100 to-pink-100 border-red-300 text-red-700'
-              }`}>
-                <div className={`w-3 h-3 rounded-full ${
-                  syncStatus === 'connected' ? 'bg-green-500' :
-                  syncStatus === 'syncing' ? 'bg-yellow-500 animate-pulse' :
-                  'bg-red-500'
-                }`} />
-                <span className="font-mali font-bold capitalize">{syncStatus}</span>
-              </div>
-              
-              {/* Progress Ring */}
-              <div className="flex items-center gap-3 bg-gradient-to-r from-purple-100 to-indigo-100 px-4 py-3 rounded-xl border border-purple-300 shadow-lg">
-                <div className="relative w-12 h-12">
-                  <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
-                    <path
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="#e5e7eb"
-                      strokeWidth="3"
-                    />
-                    <path
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="#8b5cf6"
-                      strokeWidth="3"
-                      strokeDasharray={`${(userProgress.completedModules.length / Math.max(modules.length, 1)) * 100}, 100`}
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-xs font-semibold text-purple-600 font-mali">
-                      {Math.round((userProgress.completedModules.length / Math.max(modules.length, 1)) * 100)}%
-                    </span>
-                  </div>
-                </div>
-                <div className="text-sm">
-                  <p className="font-medium text-gray-900 font-mali">{userProgress.completedModules.length} / {modules.length}</p>
-                  <p className="text-gray-500 font-mali">Completed</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3 bg-gradient-to-r from-blue-100 to-indigo-100 px-4 py-3 rounded-xl border border-blue-300 shadow-lg">
-                <span className="text-blue-600 text-lg">👤</span>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900 font-mali">{user.name}</p>
-                  <p className="text-xs text-gray-500 font-mali">{user.email}</p>
-                </div>
-              </div>
-              
-              <button
-                onClick={onLogout}
-                className="flex items-center gap-2 bg-gradient-to-r from-red-100 to-pink-100 hover:from-red-200 hover:to-pink-200 text-red-700 px-6 py-3 rounded-xl font-mali font-medium transition-all duration-300 transform hover:scale-105 shadow-lg"
+            <Select
+              placeholder="Category"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="md:w-48"
+            >
+              <SelectItem key="all" value="all">All Categories</SelectItem>
+              <SelectItem key="language" value="language">Language</SelectItem>
+              <SelectItem key="math" value="math">Math</SelectItem>
+              <SelectItem key="science" value="science">Science</SelectItem>
+            </Select>
+            <Select
+              placeholder="Sort by"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="md:w-48"
+            >
+              <SelectItem key="popular" value="popular">Most Popular</SelectItem>
+              <SelectItem key="rating" value="rating">Highest Rated</SelectItem>
+              <SelectItem key="price-low" value="price-low">Price: Low to High</SelectItem>
+              <SelectItem key="price-high" value="price-high">Price: High to Low</SelectItem>
+              <SelectItem key="newest" value="newest">Newest</SelectItem>
+            </Select>
+            <div className="flex gap-2">
+              <Button
+                isIconOnly
+                variant={viewMode === 'grid' ? 'solid' : 'ghost'}
+                onClick={() => setViewMode('grid')}
               >
-                <span>🚪</span>
-                Logout
-              </button>
+                <Grid className="w-4 h-4" />
+              </Button>
+              <Button
+                isIconOnly
+                variant={viewMode === 'list' ? 'solid' : 'ghost'}
+                onClick={() => setViewMode('list')}
+              >
+                <List className="w-4 h-4" />
+              </Button>
             </div>
           </div>
-        </div>
-      </header>
+        </CardBody>
+      </Card>
 
-      {/* Enhanced Navigation Tabs - Matching Admin Style */}
-      <nav className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-4 py-3 sm:py-4">
-            {[
-              { id: 'library', label: 'My Library', icon: '📚', color: 'from-green-500 to-emerald-600' },
-              { id: 'browse', label: 'Browse', icon: '🔍', color: 'from-blue-500 to-indigo-600' },
-              { id: 'progress', label: 'Progress', icon: '📈', color: 'from-purple-500 to-violet-600' },
-              { id: 'cart', label: 'Cart', icon: '🛒', color: 'from-orange-500 to-red-600' },
-              { id: 'profile', label: 'Profile', icon: '👤', color: 'from-gray-500 to-slate-600' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-lg font-mali font-medium text-sm sm:text-base transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? `bg-gradient-to-r ${tab.color} text-white shadow-md`
-                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <span className="text-lg">{tab.icon}</span>
-                <span className="hidden xs:inline sm:inline">{tab.label}</span>
-                {tab.id === 'cart' && cart.items.length > 0 && (
-                  <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                    {cart.items.length}
-                  </span>
-                )}
-              </button>
+      {/* Featured Products */}
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
+        <CardHeader>
+          <h3 className="text-xl font-bold text-white">Featured Videos</h3>
+        </CardHeader>
+        <CardBody>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {sortedProducts.slice(0, 3).map((product) => (
+              <Card key={product.id} className="bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <CardBody className="p-4">
+                  <div className="aspect-video bg-gray-300 rounded-lg mb-3 relative overflow-hidden cursor-pointer">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        isIconOnly
+                        className={`w-12 h-12 rounded-full bg-gradient-to-r ${selectedTheme.primary} text-white`}
+                        onClick={() => handleVideoPlay(product.id)}
+                      >
+                        <Play className="w-6 h-6" />
+                      </Button>
+                    </div>
+                    <div className="absolute bottom-2 left-2 text-white text-sm">
+                      {product.duration}
+                    </div>
+                    {product.isPremium && (
+                      <div className="absolute top-2 right-2">
+                        <Chip size="sm" className="bg-yellow-500 text-black">
+                          Premium
+                        </Chip>
+                      </div>
+                    )}
+                  </div>
+                  <h4 className="font-semibold text-white mb-2">{product.title}</h4>
+                  <p className="text-gray-300 text-sm mb-3">{product.description}</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-1">
+                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                      <span className="text-white text-sm">{product.rating}</span>
+                    </div>
+                    <span className="text-green-400 font-bold">${product.price}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className={`bg-gradient-to-r ${selectedTheme.primary} text-white flex-1`}
+                      onClick={() => addToCart(product)}
+                    >
+                      Add to Cart
+                    </Button>
+                    <Button
+                      size="sm"
+                      isIconOnly
+                      variant="ghost"
+                      onClick={() => toggleFavorite(product.id)}
+                    >
+                      <Heart className={`w-4 h-4 ${favorites.includes(product.id) ? 'text-red-500 fill-current' : 'text-gray-400'}`} />
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
             ))}
           </div>
-        </div>
-      </nav>
+        </CardBody>
+      </Card>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'library' && (
-          <LibraryTab 
-            modules={ownedModules}
-            userProgress={userProgress}
-            setActiveTab={setActiveTab}
-          />
-        )}
-        
-        {activeTab === 'browse' && (
-          <BrowseTab 
-            modules={availableModules}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            onSelectModule={setSelectedModule}
-          />
-        )}
-        
-        {activeTab === 'progress' && (
-          <ProgressTab 
-            userProgress={userProgress}
-            purchases={purchases}
-          />
-        )}
-        
-        {activeTab === 'cart' && (
-          <CartTab 
-            cart={cart}
-            onRemoveItem={removeFromCart}
-            onCheckout={handleCheckout}
-            onContinueShopping={() => setActiveTab('browse')}
-          />
-        )}
-        
-        {activeTab === 'profile' && (
-          <ProfileTab 
-            user={user}
-            userProgress={userProgress}
-            onRefreshData={loadUserData}
-          />
-        )}
-      </main>
-
-      {/* Module Details Modal */}
-      {selectedModule && (
-        <ModuleDetailsModal
-          module={selectedModule}
-          onPurchase={() => handlePurchase(selectedModule)}
-          onAddToCart={() => addToCart(selectedModule)}
-          onClose={() => setSelectedModule(null)}
-        />
-      )}
-
-      {/* Cart Modal */}
-      <Cart
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        cart={cart}
-        onRemoveItem={removeFromCart}
-        onCheckout={handleCheckout}
-      />
-
-      {/* Checkout Modal */}
-      <Checkout
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        cart={cart}
-        onPaymentComplete={handlePaymentComplete}
-        onBackToCart={handleBackToCart}
-        user={user}
-      />
+      {/* All Products */}
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
+        <CardHeader>
+          <h3 className="text-xl font-bold text-white">All Videos ({sortedProducts.length})</h3>
+        </CardHeader>
+        <CardBody>
+          <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'}>
+            {sortedProducts.map((product) => (
+              <Card key={product.id} className={`bg-white/5 hover:bg-white/10 transition-all duration-300 group ${viewMode === 'list' ? 'flex-row' : ''}`}>
+                <CardBody className={`p-4 ${viewMode === 'list' ? 'flex flex-row items-center gap-4' : ''}`}>
+                  <div className={`bg-gray-300 rounded-lg relative overflow-hidden cursor-pointer ${viewMode === 'list' ? 'w-32 h-20' : 'aspect-video mb-3'}`}>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        isIconOnly
+                        className={`w-10 h-10 rounded-full bg-gradient-to-r ${selectedTheme.primary} text-white`}
+                        onClick={() => handleVideoPlay(product.id)}
+                      >
+                        <Play className="w-5 h-5" />
+                      </Button>
+                    </div>
+                    <div className="absolute bottom-1 left-1 text-white text-xs">
+                      {product.duration}
+                    </div>
+                    {product.isPremium && (
+                      <div className="absolute top-1 right-1">
+                        <Chip size="sm" className="bg-yellow-500 text-black text-xs">
+                          Premium
+                        </Chip>
+                      </div>
+                    )}
+                  </div>
+                  <div className={viewMode === 'list' ? 'flex-1' : ''}>
+                    <h4 className="font-semibold text-white mb-2">{product.title}</h4>
+                    <p className="text-gray-300 text-sm mb-3">{product.description}</p>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                        <span className="text-white text-sm">{product.rating}</span>
+                      </div>
+                      <span className="text-green-400 font-bold">${product.price}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className={`bg-gradient-to-r ${selectedTheme.primary} text-white flex-1`}
+                        onClick={() => addToCart(product)}
+                      >
+                        Add to Cart
+                      </Button>
+                      <Button
+                        size="sm"
+                        isIconOnly
+                        variant="ghost"
+                        onClick={() => toggleFavorite(product.id)}
+                      >
+                        <Heart className={`w-4 h-4 ${favorites.includes(product.id) ? 'text-red-500 fill-current' : 'text-gray-400'}`} />
+                      </Button>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
     </div>
   );
-};
 
-// Library Tab Component - Enhanced Admin Style
-const LibraryTab: React.FC<{
-  modules: Module[];
-  userProgress: UserProgress;
-  setActiveTab: (tab: 'library' | 'browse' | 'progress' | 'profile') => void;
-}> = ({ modules, userProgress, setActiveTab }) => {
+  const renderCartPage = () => (
+    <div className="space-y-6">
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
+        <CardHeader>
+          <h3 className="text-xl font-bold text-white">Shopping Cart ({cart.length} items)</h3>
+        </CardHeader>
+        <CardBody>
+          {cart.length === 0 ? (
+            <div className="text-center py-8">
+              <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-400 mb-4">Your cart is empty</p>
+              <Button
+                className={`bg-gradient-to-r ${selectedTheme.primary} text-white`}
+                onClick={() => setCurrentPage('store')}
+              >
+                Browse Videos
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {cart.map((item) => (
+                <Card key={item.id} className="bg-white/5">
+                  <CardBody className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-20 h-14 bg-gray-300 rounded-lg" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-white">{item.title}</h4>
+                        <p className="text-green-400 font-bold">${item.price}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          isIconOnly
+                          variant="ghost"
+                          onClick={() => updateCartQuantity(item.id, item.quantity - 1)}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </Button>
+                        <span className="text-white w-8 text-center">{item.quantity}</span>
+                        <Button
+                          size="sm"
+                          isIconOnly
+                          variant="ghost"
+                          onClick={() => updateCartQuantity(item.id, item.quantity + 1)}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          isIconOnly
+                          variant="ghost"
+                          color="danger"
+                          onClick={() => removeFromCart(item.id)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              ))}
+              <Divider className="bg-white/20" />
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-white text-lg font-bold">
+                    Total: ${cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setCart([])}
+                  >
+                    Clear Cart
+                  </Button>
+                  <Button
+                    className={`bg-gradient-to-r ${selectedTheme.primary} text-white`}
+                    onClick={() => setCurrentPage('checkout')}
+                  >
+                    Proceed to Checkout
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardBody>
+      </Card>
+    </div>
+  );
+
+  const renderCheckoutPage = () => (
+    <div className="space-y-6">
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
+        <CardHeader>
+          <h3 className="text-xl font-bold text-white">Checkout</h3>
+        </CardHeader>
+        <CardBody className="space-y-6">
+          {/* Order Summary */}
+          <div>
+            <h4 className="text-lg font-semibold text-white mb-4">Order Summary</h4>
+            <div className="space-y-2">
+              {cart.map((item) => (
+                <div key={item.id} className="flex justify-between text-white">
+                  <span>{item.title} x {item.quantity}</span>
+                  <span>${(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+              <Divider className="bg-white/20" />
+              <div className="flex justify-between text-white font-bold text-lg">
+                <span>Total</span>
+                <span>${cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Method */}
+          <div>
+            <h4 className="text-lg font-semibold text-white mb-4">Payment Method</h4>
+            <div className="space-y-2">
+              {paymentCards.map((card) => (
+                <Card key={card.id} className="bg-white/5 cursor-pointer hover:bg-white/10">
+                  <CardBody className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-6 bg-blue-600 rounded flex items-center justify-center text-white text-xs font-bold">
+                        {card.brand.toUpperCase()}
+                      </div>
+                      <span className="text-white">•••• •••• •••• {card.last4}</span>
+                      <span className="text-gray-400 ml-auto">{card.expiryMonth}/{card.expiryYear}</span>
+                    </div>
+                  </CardBody>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-4">
+            <Button
+              variant="ghost"
+              onClick={() => setCurrentPage('cart')}
+            >
+              Back to Cart
+            </Button>
+            <Button
+              className={`bg-gradient-to-r ${selectedTheme.primary} text-white flex-1`}
+              onClick={processOrder}
+            >
+              Complete Order
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
+    </div>
+  );
+
+  const renderDashboardPage = () => (
+    <div className="space-y-6">
+      {/* Daily Progress */}
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
+        <CardBody className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-white">Today's Progress</h3>
+            <Chip className={`bg-gradient-to-r ${selectedTheme.secondary} text-white`}>
+              {dailyStreak} day streak! 🔥
+            </Chip>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-white mb-2">{dailyLimits.usedMinutes}</div>
+              <div className="text-gray-300">Minutes Learned</div>
+              <Progress 
+                value={(dailyLimits.usedMinutes / dailyLimits.totalMinutes) * 100} 
+                className="mt-2"
+                classNames={{
+                  indicator: `bg-gradient-to-r ${selectedTheme.primary}`
+                }}
+              />
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-white mb-2">{currentXP}</div>
+              <div className="text-gray-300">XP Points</div>
+              <Progress 
+                value={(currentXP / nextLevelXP) * 100} 
+                className="mt-2"
+                classNames={{
+                  indicator: `bg-gradient-to-r ${selectedTheme.secondary}`
+                }}
+              />
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-white mb-2">{userLevel}</div>
+              <div className="text-gray-300">Current Level</div>
+              <div className="mt-2 text-yellow-400 text-sm">
+                {nextLevelXP - currentXP} XP to next level
+              </div>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Quick Actions */}
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
+        <CardBody className="p-6">
+          <h3 className="text-xl font-bold text-white mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button
+              className={`bg-gradient-to-r ${selectedTheme.primary} text-white h-20 flex-col gap-2`}
+              onClick={() => setShowSurpriseModal(true)}
+            >
+              <Gift className="w-6 h-6" />
+              <span>Surprise Me!</span>
+            </Button>
+            <Button
+              className={`bg-gradient-to-r ${selectedTheme.secondary} text-white h-20 flex-col gap-2`}
+              onClick={() => setCurrentPage('store')}
+            >
+              <ShoppingCart className="w-6 h-6" />
+              <span>Video Store</span>
+            </Button>
+            <Button
+              className="bg-gradient-to-r from-pink-500 to-red-500 text-white h-20 flex-col gap-2"
+            >
+              <Heart className="w-6 h-6" />
+              <span>Favorites</span>
+            </Button>
+            <Button
+              className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white h-20 flex-col gap-2"
+            >
+              <BookOpen className="w-6 h-6" />
+              <span>My Library</span>
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Continue Watching */}
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
+        <CardHeader>
+          <h3 className="text-xl font-bold text-white">Continue Watching</h3>
+        </CardHeader>
+        <CardBody>
+          {watchHistory.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {watchHistory.filter(video => video.progress < 90).map((video) => (
+                <Card key={video.id} className="bg-white/5 hover:bg-white/10 transition-all duration-300 cursor-pointer group">
+                  <CardBody className="p-4">
+                    <div className="aspect-video bg-gray-300 rounded-lg mb-3 relative overflow-hidden">
+                      <Image
+                        src={video.thumbnail}
+                        alt={video.title}
+                        className="w-full h-full object-cover"
+                        fallbackSrc="/placeholder-video.jpg"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          isIconOnly
+                          className={`w-12 h-12 rounded-full bg-gradient-to-r ${selectedTheme.primary} text-white`}
+                          onClick={() => handleVideoPlay(video.id)}
+                        >
+                          <Play className="w-6 h-6" />
+                        </Button>
+                      </div>
+                      <div className="absolute bottom-2 left-2 text-white text-sm">
+                        {video.duration}
+                      </div>
+                    </div>
+                    <h4 className="font-semibold text-white mb-2">{video.title}</h4>
+                    <Progress 
+                      value={video.progress} 
+                      className="mb-2"
+                      classNames={{
+                        indicator: `bg-gradient-to-r ${selectedTheme.primary}`
+                      }}
+                    />
+                    <p className="text-gray-300 text-sm">{video.progress}% complete</p>
+                    <p className="text-gray-400 text-xs">Last watched: {new Date(video.lastWatched).toLocaleDateString()}</p>
+                  </CardBody>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
+                <Play className="w-8 h-8 text-white/60" />
+              </div>
+              <h4 className="text-white font-semibold mb-2">No videos in progress</h4>
+              <p className="text-gray-300 text-sm">Start watching videos to see your progress here!</p>
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      {/* Recent Achievements */}
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
+        <CardHeader>
+          <h3 className="text-xl font-bold text-white">Recent Achievements</h3>
+        </CardHeader>
+        <CardBody>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {achievements.map((achievement) => (
+              <Card key={achievement.id} className={`${achievement.unlocked ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-500/30' : 'bg-white/5'} transition-all duration-300`}>
+                <CardBody className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${achievement.unlocked ? 'bg-gradient-to-r from-yellow-400 to-orange-400' : 'bg-gray-600'}`}>
+                      {achievement.unlocked ? (
+                        <Trophy className="w-6 h-6 text-white" />
+                      ) : (
+                        <Lock className="w-6 h-6 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className={`font-semibold ${achievement.unlocked ? 'text-yellow-400' : 'text-white'}`}>
+                        {achievement.name}
+                      </h4>
+                      <p className="text-gray-300 text-sm mb-2">{achievement.description}</p>
+                      <Progress 
+                        value={achievement.progress} 
+                        className="h-2"
+                        classNames={{
+                          indicator: achievement.unlocked ? 'bg-gradient-to-r from-yellow-400 to-orange-400' : `bg-gradient-to-r ${selectedTheme.primary}`
+                        }}
+                      />
+                    </div>
+                    {achievement.unlocked && (
+                      <div className="animate-pulse">
+                        <Zap className="w-5 h-5 text-yellow-400" />
+                      </div>
+                    )}
+                  </div>
+                </CardBody>
+              </Card>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
+    </div>
+  );
+
   return (
-    <div className="space-y-8">
-      {/* Continue Learning Section - Enhanced */}
-      {userProgress.currentModule && (
-        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 rounded-2xl p-8 text-white shadow-2xl border border-indigo-200">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 bg-white/20 rounded-full">
-              <BookOpen className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-mali font-bold mb-1">Continue Learning</h2>
-              <p className="text-indigo-100 font-mali text-lg">Pick up where you left off</p>
-            </div>
-          </div>
-          <button className="bg-white text-indigo-600 px-8 py-3 rounded-xl font-mali font-bold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg">
-            Continue Journey
-          </button>
-        </div>
-      )}
-      
-      {/* My Modules - Enhanced Grid */}
-      <div>
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-mali font-bold text-gray-800">My Learning Library</h2>
-          <div className="flex items-center gap-3 bg-gradient-to-r from-green-100 to-emerald-100 px-4 py-2 rounded-xl border border-green-300">
-            <BookOpen className="w-5 h-5 text-green-600" />
-            <span className="font-mali font-bold text-green-700">{modules.length} Modules</span>
-          </div>
-        </div>
-        
-        {modules.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {modules.map((module) => (
-              <div key={module.id} className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105 group">
-                {/* Video Thumbnail with Play Button - Library Version */}
-                <div className="relative">
-                  {module.demoVideo ? (
-                    <img 
-                      src={module.demoVideo} 
-                      alt={module.title}
-                      className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-110"
-                    />
-                  ) : (
-                    <div className="w-full h-48 bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
-                      <Play className="w-16 h-16 text-white opacity-80" />
+    <div className={`min-h-screen bg-gradient-to-br ${selectedTheme.background} relative overflow-hidden`}>
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/3 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }} />
+      </div>
+
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="bg-white/10 backdrop-blur-md border-b border-white/20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center gap-4">
+                <Avatar
+                  size="md"
+                  className={`bg-gradient-to-r ${selectedTheme.primary} text-white text-xl`}
+                >
+                  {selectedAvatar}
+                </Avatar>
+                <div>
+                  <h1 className="text-white font-bold">Welcome back, {user.name}!</h1>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-300">Level {userLevel}</span>
+                    <div className="w-20 h-2 bg-white/20 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full bg-gradient-to-r ${selectedTheme.primary} transition-all duration-500`}
+                        style={{ width: `${(currentXP / nextLevelXP) * 100}%` }}
+                      />
                     </div>
-                  )}
-                  
-                  {/* Play Button Overlay for Owned Videos */}
-                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="bg-green-500/90 backdrop-blur-sm rounded-full p-4 shadow-2xl transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                      <Play className="w-8 h-8 text-white ml-1" />
-                    </div>
-                  </div>
-                  
-                  {/* Owned Badge */}
-                  <div className="absolute top-3 right-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-full text-sm font-mali font-bold shadow-lg">
-                    ✓ Owned
-                  </div>
-                  
-                  {/* Progress Bar */}
-                  <div className="absolute bottom-0 left-0 right-0 h-2 bg-black/20">
-                    <div 
-                      className="h-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500"
-                      style={{ width: `${Math.floor(Math.random() * 80 + 10)}%` }}
-                    />
-                  </div>
-                  
-                  {/* Video Duration */}
-                  <div className="absolute bottom-3 left-3 bg-black/80 text-white px-2 py-1 rounded-lg text-sm font-mali font-bold">
-                    🎬 {Math.floor(Math.random() * 20 + 5)} min
+                    <span className="text-gray-300">{currentXP}/{nextLevelXP} XP</span>
                   </div>
                 </div>
-                
-                <div className="p-6">
-                  <h3 className="font-mali font-bold text-gray-900 mb-3 text-lg line-clamp-2">{module.title}</h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-3 font-mali leading-relaxed">{module.description}</p>
-                  
-                  {/* Learning Progress */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-mali text-gray-600">Progress</span>
-                      <span className="text-sm font-mali font-bold text-green-600">{Math.floor(Math.random() * 80 + 10)}%</span>
+              </div>
+
+              {/* Navigation */}
+              <div className="flex items-center gap-4">
+                <div className="hidden md:flex items-center gap-2">
+                  <Button
+                    variant={currentPage === 'dashboard' ? 'solid' : 'ghost'}
+                    className={currentPage === 'dashboard' ? `bg-gradient-to-r ${selectedTheme.primary} text-white` : 'text-white'}
+                    onClick={() => setCurrentPage('dashboard')}
+                  >
+                    Dashboard
+                  </Button>
+                  <Button
+                    variant={currentPage === 'store' ? 'solid' : 'ghost'}
+                    className={currentPage === 'store' ? `bg-gradient-to-r ${selectedTheme.primary} text-white` : 'text-white'}
+                    onClick={() => setCurrentPage('store')}
+                  >
+                    Store
+                  </Button>
+                  <Button
+                    variant={currentPage === 'cart' ? 'solid' : 'ghost'}
+                    className={currentPage === 'cart' ? `bg-gradient-to-r ${selectedTheme.primary} text-white` : 'text-white'}
+                    onClick={() => setCurrentPage('cart')}
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    Cart
+                    {cart.length > 0 && (
+                      <Badge content={cart.length} color="danger" size="sm" />
+                    )}
+                  </Button>
+                </div>
+
+                {/* Timer Display */}
+                <div className="flex items-center gap-2 text-white">
+                  <Timer className="w-4 h-4" />
+                  <span className="text-sm">
+                    {Math.floor((dailyLimits.totalMinutes - dailyLimits.usedMinutes) / 60)}h {(dailyLimits.totalMinutes - dailyLimits.usedMinutes) % 60}m left
+                  </span>
+                </div>
+
+                {/* Profile, Settings and Parent Mode */}
+                <Button
+                  isIconOnly
+                  variant="ghost"
+                  className="text-white"
+                  onClick={() => setCurrentPage('profile')}
+                >
+                  <UserIcon className="w-5 h-5" />
+                </Button>
+                <Button
+                  isIconOnly
+                  variant="ghost"
+                  className="text-white"
+                  onClick={() => setShowThemeModal(true)}
+                >
+                  <Settings className="w-5 h-5" />
+                </Button>
+                <Button
+                  isIconOnly
+                  variant="ghost"
+                  className="text-white"
+                  onClick={() => setShowPinModal(true)}
+                >
+                  <Shield className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Order Complete Notification */}
+        {showOrderComplete && (
+          <div className="bg-green-500 text-white p-4 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <Trophy className="w-5 h-5" />
+              <span>Order completed successfully! Your videos are now available in your library.</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                isIconOnly
+                onClick={() => setShowOrderComplete(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {renderCurrentPage()}
+        </div>
+
+        {/* Parent Dashboard Panel */}
+        {showParentDashboard && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <Card className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-white/10 backdrop-blur-md border-white/20">
+              <CardHeader className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-white">Parent Dashboard</h2>
+                <Button
+                  isIconOnly
+                  variant="ghost"
+                  onClick={() => setShowParentDashboard(false)}
+                >
+                  <X className="w-5 h-5 text-white" />
+                </Button>
+              </CardHeader>
+              <CardBody className="space-y-6">
+                {/* Usage Statistics */}
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-4">Usage Statistics</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="bg-white/5">
+                      <CardBody className="text-center p-4">
+                        <div className="text-2xl font-bold text-white mb-2">{dailyLimits.usedMinutes}</div>
+                        <div className="text-gray-300">Minutes Today</div>
+                      </CardBody>
+                    </Card>
+                    <Card className="bg-white/5">
+                      <CardBody className="text-center p-4">
+                        <div className="text-2xl font-bold text-white mb-2">{dailyStreak}</div>
+                        <div className="text-gray-300">Day Streak</div>
+                      </CardBody>
+                    </Card>
+                    <Card className="bg-white/5">
+                      <CardBody className="text-center p-4">
+                        <div className="text-2xl font-bold text-white mb-2">{achievements.filter(a => a.unlocked).length}</div>
+                        <div className="text-gray-300">Achievements</div>
+                      </CardBody>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Quick Controls */}
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-4">Quick Controls</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Button className="bg-green-500 text-white">
+                      <Unlock className="w-4 h-4 mr-2" />
+                      Extend Time
+                    </Button>
+                    <Button className="bg-red-500 text-white">
+                      <Lock className="w-4 h-4 mr-2" />
+                      Pause Session
+                    </Button>
+                    <Button className="bg-blue-500 text-white">
+                      <Volume2 className="w-4 h-4 mr-2" />
+                      Audio On
+                    </Button>
+                    <Button className="bg-orange-500 text-white">
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Reset Progress
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Time Management */}
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-4">Time Management</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-white mb-2 block">Daily Time Limit (minutes)</label>
+                      <Input
+                        type="number"
+                        value={dailyLimits.totalMinutes.toString()}
+                        onChange={(e) => setDailyLimits(prev => ({ ...prev, totalMinutes: parseInt(e.target.value) || 0 }))}
+                        className="bg-white/5"
+                      />
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-green-400 to-emerald-500 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.floor(Math.random() * 80 + 10)}%` }}
+                    <div>
+                      <label className="text-white mb-2 block">Reset Time</label>
+                      <Input
+                        type="time"
+                        value={dailyLimits.resetTime}
+                        onChange={(e) => setDailyLimits(prev => ({ ...prev, resetTime: e.target.value }))}
+                        className="bg-white/5"
                       />
                     </div>
                   </div>
-                  
-                  <button className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 font-mali font-bold shadow-lg transform hover:scale-105 flex items-center justify-center gap-2">
-                    <Play className="w-5 h-5" />
-                    Continue Learning
-                  </button>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        )}
+
+        {/* Surprise Me Modal */}
+        <Modal isOpen={showSurpriseModal} onClose={() => setShowSurpriseModal(false)} size="lg">
+          <ModalContent className="bg-white/10 backdrop-blur-md border-white/20">
+            <ModalHeader className="text-white">
+              <div className="flex items-center gap-2">
+                <Gift className="w-6 h-6 animate-bounce" />
+                <span>Daily Surprise!</span>
+              </div>
+            </ModalHeader>
+            <ModalBody>
+              <div className="text-center py-8">
+                <div className={`w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r ${selectedTheme.primary} flex items-center justify-center animate-pulse`}>
+                  <Star className="w-10 h-10 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Congratulations!</h3>
+                <p className="text-gray-300 mb-4">You've earned 50 bonus XP points for your dedication!</p>
+                <div className="flex items-center justify-center gap-2 text-yellow-400">
+                  <Zap className="w-5 h-5" />
+                  <span className="font-bold">+50 XP</span>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-16 text-center">
-            <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <BookOpen className="w-12 h-12 text-indigo-600" />
-            </div>
-            <h3 className="text-2xl font-mali font-bold text-gray-800 mb-3">Your Library Awaits</h3>
-            <p className="text-gray-600 mb-8 font-mali text-lg max-w-md mx-auto">Start building your learning journey by exploring our amazing collection of educational modules</p>
-            <button 
-              onClick={() => setActiveTab('browse')}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 font-mali font-bold shadow-lg transform hover:scale-105"
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                className={`bg-gradient-to-r ${selectedTheme.primary} text-white w-full`}
+                onClick={() => {
+                  setCurrentXP(prev => prev + 50);
+                  setShowSurpriseModal(false);
+                }}
+              >
+                Claim Reward
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Theme Selection Modal */}
+        <Modal isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} size="2xl">
+          <ModalContent className="bg-white/10 backdrop-blur-md border-white/20">
+            <ModalHeader className="text-white">
+              <div className="flex items-center gap-2">
+                <Palette className="w-6 h-6" />
+                <span>Customize Your Experience</span>
+              </div>
+            </ModalHeader>
+            <ModalBody>
+              <Tabs aria-label="Customization options" className="w-full">
+                <Tab key="themes" title="Themes">
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    {themes.map((theme) => (
+                      <Card 
+                        key={theme.id} 
+                        className={`cursor-pointer transition-all duration-300 ${selectedTheme.id === theme.id ? 'ring-2 ring-white' : ''} bg-white/5 hover:bg-white/10`}
+                        onClick={() => handleThemeChange(theme)}
+                      >
+                        <CardBody className="p-4">
+                          <div className={`w-full h-20 rounded-lg ${theme.preview} mb-3`} />
+                          <h4 className="text-white font-semibold">{theme.name}</h4>
+                        </CardBody>
+                      </Card>
+                    ))}
+                  </div>
+                </Tab>
+                <Tab key="avatars" title="Avatars">
+                  <div className="grid grid-cols-5 gap-4 mt-4">
+                    {avatars.map((avatar, index) => (
+                      <Button
+                        key={index}
+                        className={`h-16 text-2xl ${selectedAvatar === avatar ? `bg-gradient-to-r ${selectedTheme.primary}` : 'bg-white/5 hover:bg-white/10'}`}
+                        onClick={() => handleAvatarChange(avatar)}
+                      >
+                        {avatar}
+                      </Button>
+                    ))}
+                  </div>
+                </Tab>
+              </Tabs>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                variant="ghost"
+                onClick={() => setShowThemeModal(false)}
+              >
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* PIN Modal */}
+        <Modal isOpen={showPinModal} onClose={() => setShowPinModal(false)}>
+          <ModalContent className="bg-white/10 backdrop-blur-md border-white/20">
+            <ModalHeader className="text-white">
+              <div className="flex items-center gap-2">
+                <Shield className="w-6 h-6" />
+                <span>Enter Parent PIN</span>
+              </div>
+            </ModalHeader>
+            <ModalBody>
+              <Input
+                type="password"
+                placeholder="Enter 4-digit PIN"
+                value={enteredPin}
+                onChange={(e) => setEnteredPin(e.target.value)}
+                maxLength={4}
+                className="bg-white/5"
+              />
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowPinModal(false);
+                  setEnteredPin('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                className={`bg-gradient-to-r ${selectedTheme.primary} text-white`}
+                onClick={() => {
+                  if (enteredPin === parentalControls.pin) {
+                    setShowParentDashboard(true);
+                    setShowPinModal(false);
+                    setEnteredPin('');
+                  }
+                }}
+                isDisabled={enteredPin.length !== 4}
+              >
+                Access
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Fixed Bottom Navigation (Mobile) */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/10 backdrop-blur-md border-t border-white/20">
+          <div className="flex items-center justify-around py-2">
+            <Button
+              isIconOnly
+              variant="ghost"
+              className={currentPage === 'dashboard' ? 'text-white' : 'text-gray-400'}
+              onClick={() => setCurrentPage('dashboard')}
             >
-              Explore Modules
-            </button>
+              <BookOpen className="w-5 h-5" />
+            </Button>
+            <Button
+              isIconOnly
+              variant="ghost"
+              className={currentPage === 'store' ? 'text-white' : 'text-gray-400'}
+              onClick={() => setCurrentPage('store')}
+            >
+              <ShoppingCart className="w-5 h-5" />
+            </Button>
+            <Button
+              isIconOnly
+              variant="ghost"
+              className={currentPage === 'cart' ? 'text-white' : 'text-gray-400'}
+              onClick={() => setCurrentPage('cart')}
+            >
+              <div className="relative">
+                <ShoppingCart className="w-5 h-5" />
+                {cart.length > 0 && (
+                  <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white">
+                    {cart.length}
+                  </div>
+                )}
+              </div>
+            </Button>
+            <Button
+              isIconOnly
+              variant="ghost"
+              className={currentPage === 'profile' ? 'text-white' : 'text-gray-400'}
+              onClick={() => setCurrentPage('profile')}
+            >
+              <UserIcon className="w-5 h-5" />
+            </Button>
+            <Button
+              isIconOnly
+              variant="ghost"
+              className="text-gray-400"
+              onClick={() => setShowThemeModal(true)}
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
           </div>
-        )}
-      </div>
-    </div>
-  );
-};
+        </div>
 
-// Browse Tab Component - Enhanced with Video Previews
-const BrowseTab: React.FC<{
-  modules: Module[];
-  searchTerm: string;
-  onSearchChange: (term: string) => void;
-  onSelectModule: (module: Module) => void;
-}> = ({ modules, searchTerm, onSearchChange, onSelectModule }) => {
-  const [hoveredModule, setHoveredModule] = useState<string | null>(null);
-  
-  return (
-    <div className="space-y-8">
-      {/* Enhanced Search */}
-      <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="🔍 Search for learning videos, topics, or skills..."
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-16 pr-6 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 text-lg font-mali shadow-inner"
+        {/* Floating Action Buttons */}
+        <div className="fixed bottom-20 md:bottom-8 right-4 flex flex-col gap-3">
+          <Tooltip content="Help & Support" placement="left">
+            <Button
+              isIconOnly
+              className={`bg-gradient-to-r ${selectedTheme.secondary} text-white shadow-lg hover:shadow-xl transition-all duration-300`}
+              size="lg"
+            >
+              <HelpCircle className="w-6 h-6" />
+            </Button>
+          </Tooltip>
+          <Tooltip content="Logout" placement="left">
+            <Button
+              isIconOnly
+              className="bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              size="lg"
+              onClick={onLogout}
+            >
+              <LogOut className="w-6 h-6" />
+            </Button>
+          </Tooltip>
+        </div>
+
+        {/* Enhanced Video Player */}
+        {showVideoPlayer && selectedModule && (
+          <EnhancedVideoPlayer
+            isOpen={showVideoPlayer}
+            onClose={handleVideoPlayerClose}
+            module={selectedModule}
+            user={user}
+            purchases={realPurchases}
+            onPurchase={handleVideoPurchase}
           />
-          <div className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400">
-            <Search className="w-6 h-6" />
-          </div>
-        </div>
-      </div>
-      
-      {/* Available Learning Videos */}
-      <div>
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-mali font-bold text-gray-800">Learning Videos for Children</h2>
-          <div className="flex items-center gap-3 bg-gradient-to-r from-purple-100 to-indigo-100 px-4 py-2 rounded-xl border border-purple-300">
-            <Play className="w-5 h-5 text-purple-600" />
-            <span className="font-mali font-bold text-purple-700">{modules.length} Videos</span>
-          </div>
-        </div>
-        
-        {modules.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {modules.map((module) => (
-              <div 
-                key={module.id} 
-                className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer"
-                onClick={() => onSelectModule(module)}
-                onMouseEnter={() => setHoveredModule(module.id)}
-                onMouseLeave={() => setHoveredModule(null)}
-              >
-                {/* Video Thumbnail with Play Button */}
-                <div className="relative group">
-                  {module.demoVideo ? (
-                    <img 
-                      src={module.demoVideo} 
-                      alt={module.title}
-                      className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-110"
-                    />
-                  ) : (
-                    <div className="w-full h-48 bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
-                      <Play className="w-16 h-16 text-white opacity-80" />
-                    </div>
-                  )}
-                  
-                  {/* Play Button Overlay */}
-                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="bg-white/90 backdrop-blur-sm rounded-full p-4 shadow-2xl transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                      <Play className="w-8 h-8 text-indigo-600 ml-1" />
-                    </div>
-                  </div>
-                  
-                  {/* Video Duration Badge */}
-                  <div className="absolute bottom-3 right-3 bg-black/80 text-white px-2 py-1 rounded-lg text-sm font-mali font-bold">
-                    🎬 {Math.floor(Math.random() * 20 + 5)} min
-                  </div>
-                  
-                  {/* Age Range Badge */}
-                  <div className="absolute top-3 left-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-full text-sm font-mali font-bold shadow-lg">
-                    👶 {module.ageRange || '3-8 years'}
-                  </div>
-                </div>
-                
-                <div className="p-6">
-                  <h3 className="font-mali font-bold text-gray-900 mb-3 text-lg line-clamp-2">{module.title}</h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-3 font-mali leading-relaxed">{module.description}</p>
-                  
-                  {/* Features */}
-                  {module.features && module.features.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {module.features.slice(0, 2).map((feature, index) => (
-                        <span key={index} className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-mali font-bold">
-                          ✨ {feature}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="text-2xl font-mali font-bold text-indigo-600">${module.price}</span>
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        <span className="text-sm text-gray-600 font-mali">{module.rating || 4.8}</span>
-                      </div>
-                    </div>
-                    <button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 font-mali font-bold shadow-lg transform hover:scale-105">
-                      Preview
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-16 text-center">
-            <div className="w-24 h-24 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Search className="w-12 h-12 text-indigo-600" />
-            </div>
-            <h3 className="text-2xl font-mali font-bold text-gray-800 mb-3">No Learning Videos Found</h3>
-            <p className="text-gray-600 font-mali text-lg">Try adjusting your search terms to find amazing educational content</p>
-          </div>
         )}
       </div>
     </div>
   );
-};
-
-// Progress Tab Component
-const ProgressTab: React.FC<{
-  userProgress: UserProgress;
-  purchases: Purchase[];
-}> = ({ userProgress, purchases }) => {
-  return (
-    <div className="space-y-6">
-      {/* Progress Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 font-mali">Modules Completed</p>
-              <p className="text-3xl font-bold text-purple-600 font-mali">{userProgress.completedModules.length}</p>
-            </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">📚</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 font-mali">Watch Time</p>
-              <p className="text-3xl font-bold text-blue-600 font-mali">{userProgress.totalWatchTime}m</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">⏱️</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 font-mali">Achievements</p>
-              <p className="text-3xl font-bold text-green-600 font-mali">{userProgress.achievements.length}</p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">🏆</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Achievements */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 font-mali">Achievements</h3>
-        </div>
-        <div className="p-6">
-          {userProgress.achievements.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {userProgress.achievements.map((achievement, index) => (
-                <div key={index} className="flex items-center space-x-3 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <span className="text-2xl">🏆</span>
-                  <span className="font-medium text-gray-900 font-mali">{achievement}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-8 font-mali">No achievements yet. Keep learning to unlock them!</p>
-          )}
-        </div>
-      </div>
-      
-      {/* Recent Purchases */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 font-mali">Recent Purchases</h3>
-        </div>
-        <div className="p-6">
-          {purchases.length > 0 ? (
-            <div className="space-y-4">
-              {purchases.slice(0, 5).map((purchase, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-gray-900 font-mali">{purchase.moduleIds?.join(', ') || 'Module'}</p>
-                    <p className="text-sm text-gray-600 font-mali">{new Date(purchase.createdAt).toLocaleDateString()}</p>
-                  </div>
-                  <span className="font-semibold text-green-600 font-mali">${purchase.amount}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-8 font-mali">No purchases yet</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Profile Tab Component
-const ProfileTab: React.FC<{
-  user: User;
-  userProgress: UserProgress;
-  onRefreshData: () => void;
-}> = ({ user, userProgress, onRefreshData }) => {
-  return (
-    <div className="space-y-6">
-      {/* Profile Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center space-x-6">
-          <div className="w-24 h-24 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold text-3xl font-mali">
-              {user.name.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 font-mali">{user.name}</h2>
-            <p className="text-gray-600 font-mali">{user.email}</p>
-            <p className="text-sm text-gray-500 mt-1 font-mali">
-              Member since {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
-            </p>
-          </div>
-        </div>
-      </div>
-      
-      {/* Learning Stats */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 font-mali">Learning Statistics</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm text-gray-600 font-mali">Modules Completed</p>
-            <p className="text-2xl font-bold text-purple-600 font-mali">{userProgress.completedModules.length}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 font-mali">Total Watch Time</p>
-            <p className="text-2xl font-bold text-blue-600 font-mali">{userProgress.totalWatchTime} minutes</p>
-          </div>
-        </div>
-      </div>
-      
-      {/* Account Actions */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 font-mali">Account Actions</h3>
-        <div className="space-y-3">
-          <button
-            onClick={onRefreshData}
-            className="w-full text-left px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200 font-mali"
-          >
-            🔄 Refresh Data
-          </button>
-          <button className="w-full text-left px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200 font-mali">
-            📥 Export Learning Data
-          </button>
-          <button className="w-full text-left px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200 font-mali">
-            🔒 Privacy Settings
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Module Details Modal Component
-const ModuleDetailsModal: React.FC<{
-  module: Module;
-  onPurchase: () => void;
-  onAddToCart: () => void;
-  onClose: () => void;
-}> = ({ module, onPurchase, onAddToCart, onClose }) => {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="relative">
-          {module.demoVideo && (
-            <img 
-              src={module.demoVideo} 
-              alt={module.title}
-              className="w-full h-64 object-cover rounded-t-xl"
-            />
-          )}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 w-10 h-10 bg-black bg-opacity-50 text-white rounded-full flex items-center justify-center hover:bg-opacity-70 transition-colors duration-200"
-          >
-            ✕
-          </button>
-        </div>
-        
-        {/* Content */}
-        <div className="p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 font-mali">{module.title}</h2>
-          <p className="text-gray-600 mb-6 font-mali">{module.description}</p>
-          
-          {/* Features */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3 font-mali">What you'll learn:</h3>
-            <ul className="space-y-2">
-              {module.features?.map((feature, index) => (
-                <li key={index} className="flex items-center space-x-2">
-                  <span className="text-green-500">✓</span>
-                  <span className="text-gray-700 font-mali">{feature}</span>
-                </li>
-              )) || (
-                <>
-                  <li className="flex items-center space-x-2">
-                    <span className="text-green-500">✓</span>
-                    <span className="text-gray-700 font-mali">Comprehensive video content</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <span className="text-green-500">✓</span>
-                    <span className="text-gray-700 font-mali">Lifetime access</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <span className="text-green-500">✓</span>
-                    <span className="text-gray-700 font-mali">Mobile and desktop compatible</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <span className="text-green-500">✓</span>
-                    <span className="text-gray-700 font-mali">Certificate of completion</span>
-                  </li>
-                </>
-              )}
-            </ul>
-          </div>
-          
-          {/* Purchase Section */}
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-gray-600 font-mali">Price</p>
-                <p className="text-3xl font-bold text-purple-600 font-mali">${module.price}</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={onAddToCart}
-                className="flex-1 bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors duration-200 font-medium font-mali"
-              >
-                🛒 Add to Cart
-              </button>
-              <button
-                onClick={onPurchase}
-                className="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors duration-200 font-medium font-mali"
-              >
-                💳 Buy Now
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Cart Tab Component
-const CartTab: React.FC<{
-  cart: CartType;
-  onRemoveItem: (itemId: string) => void;
-  onCheckout: () => void;
-  onContinueShopping: () => void;
-}> = ({ cart, onRemoveItem, onCheckout, onContinueShopping }) => {
-  if (cart.items.length === 0) {
-    return (
-      <div className="text-center py-16">
-        <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <span className="text-6xl">🛒</span>
-        </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-4 font-mali">Your cart is empty</h2>
-        <p className="text-gray-600 mb-8 font-mali">Add some learning modules to get started!</p>
-        <button
-          onClick={onContinueShopping}
-          className="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition-colors duration-200 font-medium font-mali"
-        >
-          Browse Modules
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 font-mali">Shopping Cart</h1>
-        <div className="text-right">
-          <p className="text-sm text-gray-600 font-mali">{cart.items.length} item(s)</p>
-          <p className="text-2xl font-bold text-purple-600 font-mali">${cart.total.toFixed(2)}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Cart Items */}
-        <div className="lg:col-span-2 space-y-4">
-          {cart.items.map((item) => (
-            <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 font-mali">{item.title}</h3>
-                  <p className="text-sm text-gray-600 font-mali">
-                    {item.type === 'bundle' ? 'Bundle Package' : 'Learning Module'}
-                  </p>
-                  <p className="text-xl font-bold text-purple-600 font-mali mt-2">${item.price.toFixed(2)}</p>
-                </div>
-                <button
-                  onClick={() => onRemoveItem(item.id)}
-                  className="text-red-500 hover:text-red-700 transition-colors p-2 font-mali"
-                >
-                  🗑️ Remove
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Cart Summary */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 font-mali">Order Summary</h3>
-            
-            <div className="space-y-3 mb-6">
-              <div className="flex justify-between text-gray-600 font-mali">
-                <span>Subtotal:</span>
-                <span>${cart.total.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-gray-600 font-mali">
-                <span>Tax:</span>
-                <span>$0.00</span>
-              </div>
-              <div className="border-t pt-3 flex justify-between text-lg font-bold text-gray-900 font-mali">
-                <span>Total:</span>
-                <span>${cart.total.toFixed(2)}</span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <button
-                onClick={onCheckout}
-                className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors duration-200 font-medium font-mali"
-              >
-                💳 Proceed to Checkout
-              </button>
-              <button
-                onClick={onContinueShopping}
-                className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium font-mali"
-              >
-                Continue Shopping
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default ModernUserDashboard;
+}

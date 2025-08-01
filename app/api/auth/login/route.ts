@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { neonDataStore } from '../../../../src/utils/neonDataStore';
+import { vpsDataStore } from '../../../../src/utils/vpsDataStore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,56 +12,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Load data from VPS database using neonDataStore
-    const data = await neonDataStore.loadData();
+    // Load users from data store
+    const data = await vpsDataStore.loadData();
     const users = data.users || [];
-    
+
     // Find user by email
-    const userData = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
-    if (!userData) {
+    if (!user) {
       return NextResponse.json(
-        { error: 'Invalid credentials' },
+        { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
 
-    // Simple password validation for demo
-    const validPasswords: { [key: string]: string } = {
-      'admin@zingalinga.com': 'Admin123!',
-      'parent@demo.com': 'Parent123!'
-    };
-
-    if (password !== validPasswords[email.toLowerCase()]) {
+    // Simple password check (in production, use proper hashing)
+    if (user.password !== password) {
       return NextResponse.json(
-        { error: 'Invalid credentials' },
+        { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
 
-    // Update last login (only if database is available)
-    if (isDbAvailable && db) {
-      try {
-        await db
-          .update(users)
-          .set({ lastLogin: new Date().toISOString() })
-          .where(eq(users.id, userData.id));
-      } catch (error) {
-        console.warn('Failed to update last login:', error);
-      }
-    }
+    // Generate session token
+    const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    const expiresAt = Date.now() + (8 * 60 * 60 * 1000); // 8 hours
+
+    // Return user data without password
+    const { password: _, ...userWithoutPassword } = user;
 
     return NextResponse.json({
       success: true,
-      user: {
-        id: userData.id,
-        email: userData.email,
-        name: userData.name,
-        role: userData.role,
-        purchasedModules: userData.purchasedModules || [],
-        totalSpent: userData.totalSpent || 0
-      }
+      user: userWithoutPassword,
+      token,
+      expiresAt
     });
+
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(

@@ -28,3 +28,4 @@ const TroubleshootingPage: React.FC<TroubleshootingPageProps> = ({ onBack, onNav
 };
 
 export default TroubleshootingPage;
+export { TroubleshootingPage };

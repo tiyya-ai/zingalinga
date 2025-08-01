@@ -35,7 +35,7 @@ export const Cart: React.FC<CartProps> = ({
           </button>
         </div>
 
-        {cart.items.length === 0 ? (
+        {(cart.items || []).length === 0 ? (
           <div className="text-center py-12">
             <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-600 mb-2">Your cart is empty</h3>
@@ -44,7 +44,7 @@ export const Cart: React.FC<CartProps> = ({
         ) : (
           <>
             <div className="space-y-4 mb-6">
-              {cart.items.map((item) => (
+              {(cart.items || []).map((item) => (
                 <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
                   <div className="flex-1">
                     <h3 className="font-bold text-gray-800">{item.title}</h3>

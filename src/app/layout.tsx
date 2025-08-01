@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Mali } from 'next/font/google'
 import './globals.css'
+import { NextUIProvider } from '@nextui-org/react'
 
 const mali = Mali({ 
   subsets: ['latin'],
@@ -42,7 +43,9 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className={`${mali.className} font-mali antialiased`} suppressHydrationWarning>
-        {children}
+        <NextUIProvider>
+          {children}
+        </NextUIProvider>
       </body>
     </html>
   )

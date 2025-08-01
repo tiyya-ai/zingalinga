@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { neonDataStore } from '../../../utils/neonDataStore';
+import { vpsDataStore } from '../../../utils/vpsDataStore';
 
 export async function GET() {
   try {
-    const data = await neonDataStore.loadData();
+    const data = await vpsDataStore.loadData();
     const users = data.users || [];
     
     // Sort users by createdAt in descending order

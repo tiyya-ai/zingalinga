@@ -54,12 +54,7 @@ class CloudDataStore {
   private initializeAutoSave() {
     if (typeof window === 'undefined') return;
     
-    // Auto-save every 30 seconds
-    this.autoSaveInterval = setInterval(() => {
-      if (this.autoSaveEnabled && this.currentUser) {
-        this.autoSaveToCloud();
-      }
-    }, 30000);
+    // Auto-save disabled to simplify the application
 
     // Save on page unload
     window.addEventListener('beforeunload', () => {
@@ -165,13 +160,13 @@ class CloudDataStore {
             const isRecentLocalChange = (now - localTime) < (10 * 60 * 1000); // 10 minutes
             
             // Check for deletions in modules or users
-            const hasModuleDeletions = localData.modules.length < cloudData.modules.length;
-            const hasUserDeletions = localData.users.length < cloudData.users.length;
+            const hasModuleDeletions = (localData.modules || []).length < (cloudData.modules || []).length;
+        const hasUserDeletions = (localData.users || []).length < (cloudData.users || []).length;
             
             if (isRecentLocalChange && (hasModuleDeletions || hasUserDeletions)) {
               console.log('🗑️ Recent local deletions detected, syncing deletions to cloud');
-              console.log(`Modules: local=${localData.modules.length}, cloud=${cloudData.modules.length}`);
-              console.log(`Users: local=${localData.users.length}, cloud=${cloudData.users.length}`);
+              console.log(`Modules: local=${(localData.modules || []).length}, cloud=${(cloudData.modules || []).length}`);
+        console.log(`Users: local=${(localData.users || []).length}, cloud=${(cloudData.users || []).length}`);
               
               // Force save the local data to cloud to sync deletions
               await this.autoSaveToCloud(localData);
@@ -205,13 +200,13 @@ class CloudDataStore {
         const data = JSON.parse(stored);
         
         // Check if modules have proper fullContent and fix only those modules
-        if (data.modules && data.modules.length > 0) {
+        if (data.modules && (data.modules || []).length > 0) {
           const defaultData = this.getDefaultData();
           let needsUpdate = false;
           
-          data.modules = data.modules.map((module: Module) => {
-            if (!module.fullContent || module.fullContent.length === 0) {
-              const defaultModule = defaultData.modules.find(dm => dm.id === module.id);
+          data.modules = (data.modules || []).map((module: Module) => {
+            if (!module.fullContent || (module.fullContent || []).length === 0) {
+              const defaultModule = (defaultData.modules || []).find(dm => dm.id === module.id);
               if (defaultModule) {
                 console.log('🔄 Fixing content for module:', module.title);
                 needsUpdate = true;
@@ -276,13 +271,13 @@ class CloudDataStore {
   private mergeCloudAndLocalData(cloudData: CloudData, localData: CloudData): CloudData {
     console.log('🔄 Merging cloud and local data');
     console.log('Local data:', { 
-      users: localData.users.length, 
-      modules: localData.modules.length,
+      users: (localData.users || []).length, 
+      modules: (localData.modules || []).length,
       lastUpdated: localData.lastUpdated 
     });
     console.log('Cloud data:', { 
-      users: cloudData.users.length, 
-      modules: cloudData.modules.length,
+      users: (cloudData.users || []).length, 
+      modules: (cloudData.modules || []).length,
       lastUpdated: cloudData.lastUpdated 
     });
     
@@ -297,19 +292,19 @@ class CloudDataStore {
       console.log('🗑️ Recent local changes detected, preserving local deletions');
       
       // For modules: preserve local deletions but add new cloud modules
-      const localModuleIds = new Set(localData.modules.map(m => m.id));
+      const localModuleIds = new Set((localData.modules || []).map(m => m.id));
       const mergedModules = [
-        ...localData.modules,
-        ...cloudData.modules.filter(cloudModule => 
+        ...(localData.modules || []),
+        ...(cloudData.modules || []).filter(cloudModule => 
           !localModuleIds.has(cloudModule.id)
         )
       ];
       
       // For users: preserve local deletions but add new cloud users
-      const localUserIds = new Set(localData.users.map(u => u.id));
+      const localUserIds = new Set((localData.users || []).map(u => u.id));
       const mergedUsers = [
-        ...localData.users,
-        ...cloudData.users.filter(cloudUser => 
+        ...(localData.users || []),
+        ...(cloudData.users || []).filter(cloudUser => 
           !localUserIds.has(cloudUser.id)
         )
       ];
@@ -350,9 +345,9 @@ class CloudDataStore {
       };
       
       console.log('💾 Saving data:', {
-        modules: dataToSave.modules.length,
-        users: dataToSave.users.length,
-        purchases: dataToSave.purchases.length,
+        modules: (dataToSave.modules || []).length,
+        users: (dataToSave.users || []).length,
+        purchases: (dataToSave.purchases || []).length,
         hasUser: !!this.currentUser,
         userEmail: this.currentUser?.email,
         autoSaveEnabled: this.autoSaveEnabled
@@ -360,7 +355,7 @@ class CloudDataStore {
       
       // Save to localStorage immediately (primary storage)
       const localSaved = this.saveToLocalStorage(dataToSave);
-      console.log('💾 Data saved locally, modules count:', dataToSave.modules.length);
+      console.log('💾 Data saved locally, modules count:', (dataToSave.modules || []).length);
       
       // Auto-save to cloud if user is set (secondary backup)
       if (this.currentUser && this.autoSaveEnabled) {
@@ -421,7 +416,7 @@ class CloudDataStore {
       console.log('🔄 Starting cloud sync for user:', this.currentUser.email);
       
       const dataToSave = data || this.loadFromLocalStorage();
-      console.log('📊 Syncing data - modules:', dataToSave.modules.length, 'users:', dataToSave.users.length);
+      console.log('📊 Syncing data - modules:', (dataToSave.modules || []).length, 'users:', (dataToSave.users || []).length);
       
       await this.saveToCloud(this.currentUser.id, dataToSave);
       
@@ -475,7 +470,7 @@ class CloudDataStore {
       console.warn(`⚠️ Cloud save attempt ${retryCount + 1} failed:`, error);
       
       // Retry up to 3 times with exponential backoff
-      if (retryCount < 3 && (error.code === 'unavailable' || error.code === 'deadline-exceeded')) {
+      if (retryCount < 3 && ((error as any).code === 'unavailable' || (error as any).code === 'deadline-exceeded')) {
         const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
         console.log(`🔄 Retrying cloud save in ${delay}ms...`);
         
@@ -552,14 +547,14 @@ class CloudDataStore {
 
   // Generate analytics from actual data
   generateAnalytics(users: User[], modules: Module[], purchases: Purchase[]): Analytics {
-    const completedPurchases = purchases.filter(p => p.status === 'completed');
-    const totalRevenue = completedPurchases.reduce((sum, p) => sum + p.amount, 0);
+    const completedPurchases = (purchases || []).filter(p => p.status === 'completed');
+    const totalRevenue = (completedPurchases || []).reduce((sum, p) => sum + p.amount, 0);
     
     return {
-      totalUsers: users.length,
+      totalUsers: (users || []).length,
       totalRevenue,
-      totalPurchases: purchases.length,
-      activeModules: modules.filter(m => m.isActive).length,
+      totalPurchases: (purchases || []).length,
+      activeModules: (modules || []).filter(m => m.isActive).length,
       revenueByMonth: [],
       popularModules: [],
       userGrowth: []
@@ -568,20 +563,20 @@ class CloudDataStore {
 
   // Generate content stats
   generateContentStats(contentFiles: ContentFile[]): Record<string, number> {
-    const totalSize = contentFiles.reduce((sum, file) => sum + file.size, 0);
+    const totalSize = (contentFiles || []).reduce((sum, file) => sum + file.size, 0);
     const byType = {
-      video: contentFiles.filter(f => f.type === 'video').length,
-      audio: contentFiles.filter(f => f.type === 'audio').length,
+      video: (contentFiles || []).filter(f => f.type === 'video').length,
+      audio: (contentFiles || []).filter(f => f.type === 'audio').length,
       // game: contentFiles.filter(f => f.type === 'game').length, // 'game' type not supported in ContentFile
-      image: contentFiles.filter(f => f.type === 'image').length,
-      document: contentFiles.filter(f => f.type === 'document').length,
+      image: (contentFiles || []).filter(f => f.type === 'image').length,
+      document: (contentFiles || []).filter(f => f.type === 'document').length,
     };
-    const recentUploads = contentFiles
+    const recentUploads = (contentFiles || [])
       .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
       .slice(0, 10);
 
     return {
-      totalFiles: contentFiles.length,
+      totalFiles: (contentFiles || []).length,
       totalSize,
       byType,
       recentUploads

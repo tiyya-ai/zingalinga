@@ -28,3 +28,4 @@ const TechnicalSupportPage: React.FC<TechnicalSupportPageProps> = ({ onBack, onN
 };
 
 export default TechnicalSupportPage;
+export { TechnicalSupportPage };

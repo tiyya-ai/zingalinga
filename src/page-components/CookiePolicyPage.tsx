@@ -28,3 +28,4 @@ const CookiePolicyPage: React.FC<CookiePolicyPageProps> = ({ onBack, onNavigate 
 };
 
 export default CookiePolicyPage;
+export { CookiePolicyPage };

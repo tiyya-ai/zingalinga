@@ -14,10 +14,13 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
+    "@nextui-org/react": "^2.6.11",
+    "@nextui-org/theme": "^2.4.5",
     "dotenv": "^17.2.1",
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.4",
     "firebase": "^10.7.1",
+    "framer-motion": "^12.23.11",
     "lucide-react": "^0.532.0",
     "next": "15.4.4",
     "pg": "^8.11.3",

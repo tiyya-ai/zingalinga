@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, users } from '../../../../lib/neon';
-import { eq } from 'drizzle-orm';
+import { vpsDataStore } from '../../../../src/utils/vpsDataStore';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, name } = await request.json();
+    const { email, password, name, role = 'user' } = await request.json();
 
     if (!email || !password || !name) {
       return NextResponse.json(
@@ -13,46 +12,53 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists
-    const existingUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
+    // Load existing users
+    const data = await vpsDataStore.loadData();
+    const users = data.users || [];
 
-    if (existingUser.length > 0) {
+    // Check if user already exists
+    const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (existingUser) {
       return NextResponse.json(
-        { error: 'User already exists' },
+        { error: 'User with this email already exists' },
         { status: 409 }
       );
     }
 
     // Create new user
-    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newUser = {
-      id: userId,
-      email,
+      id: Date.now().toString(),
+      email: email.toLowerCase(),
+      password, // In production, hash this password
       name,
-      role: 'user' as const,
-      purchasedModules: [],
-      totalSpent: 0,
+      role,
       createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString()
+      purchases: [],
+      progress: {}
     };
 
-    await db.insert(users).values(newUser);
+    // Add user to data
+    users.push(newUser);
+    data.users = users;
+    
+    // Save data
+    await vpsDataStore.saveData(data);
+
+    // Generate session token
+    const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    const expiresAt = Date.now() + (8 * 60 * 60 * 1000); // 8 hours
+
+    // Return user data without password
+    const { password: _, ...userWithoutPassword } = newUser;
 
     return NextResponse.json({
       success: true,
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role,
-        purchasedModules: newUser.purchasedModules,
-        totalSpent: newUser.totalSpent
-      }
+      user: userWithoutPassword,
+      token,
+      expiresAt,
+      message: 'User registered successfully'
     });
+
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json(

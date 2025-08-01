@@ -9,9 +9,15 @@ export interface User {
   totalSpent?: number;
   phone?: string;
   address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
   dateOfBirth?: string;
   bio?: string;
   profileImage?: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
 }
 
 export interface Module {

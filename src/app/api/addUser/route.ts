@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { neonDataStore } from '../../../utils/neonDataStore';
+import { vpsDataStore } from '../../../utils/vpsDataStore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Load current data
-    const data = await neonDataStore.loadData();
+    const data = await vpsDataStore.loadData();
     const users = data.users || [];
     
     // Create new user with unique ID
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const updatedUsers = [...users, newUser];
     
     // Save updated data
-    await neonDataStore.saveData({ ...data, users: updatedUsers });
+    await vpsDataStore.saveData({ ...data, users: updatedUsers });
 
     return NextResponse.json({
       success: true,

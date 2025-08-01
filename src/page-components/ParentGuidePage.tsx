@@ -28,3 +28,4 @@ const ParentGuidePage: React.FC<ParentGuidePageProps> = ({ onBack, onNavigate })
 };
 
 export default ParentGuidePage;
+export { ParentGuidePage };

@@ -1,5 +1,5 @@
 import { User } from '../types';
-import { neonDataStore } from './neonDataStore';
+import { vpsDataStore } from './vpsDataStore';
 
 export interface AuthSession {
   user: User;
@@ -137,6 +137,53 @@ class AuthManager {
     return hash.toString(16);
   }
 
+  // Register new user
+  async register(email: string, password: string, name: string): Promise<{ success: boolean; user?: User; message: string }> {
+    try {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return { success: false, message: 'Please enter a valid email address' };
+      }
+
+      // Validate password strength
+      const validation = this.validatePassword(password);
+      if (!validation.valid) {
+        return { success: false, message: validation.message };
+      }
+
+      // Validate name
+      if (!name || name.trim().length < 2) {
+        return { success: false, message: 'Name must be at least 2 characters long' };
+      }
+
+      // Register with API
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, name: name.trim() })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        return { success: false, message: result.error || 'Registration failed' };
+      }
+
+      const user = result.user;
+      if (!user) {
+        return { success: false, message: 'Registration failed' };
+      }
+
+      return { success: true, user, message: 'Registration successful! You can now log in.' };
+    } catch (error) {
+      console.error('Registration error:', error);
+      return { success: false, message: 'An error occurred during registration' };
+    }
+  }
+
   // Login with enhanced security
   async login(email: string, password: string): Promise<{ success: boolean; user?: User; message: string; session?: AuthSession }> {
     try {
@@ -252,7 +299,7 @@ class AuthManager {
 
   // Create demo accounts with secure passwords
   async createDemoAccounts(): Promise<void> {
-    const data = await neonDataStore.loadData();
+    const data = await vpsDataStore.loadData();
     
     // Check if demo accounts already exist
     const adminExists = data.users.some(u => u.email === 'admin@zingalinga.com');
@@ -275,7 +322,7 @@ class AuthManager {
 
     // Only create admin user if it doesn't exist - no demo users
     if (!adminExists) {
-      await neonDataStore.saveData({ ...data, users: newUsers });
+      await vpsDataStore.saveData({ ...data, users: newUsers });
     }
   }
 }

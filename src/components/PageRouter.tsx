@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { User, Module, Purchase, ContentFile } from '../types';
 import { LoginModal } from './LoginModal';
-import { ModernUserDashboard } from './ModernUserDashboard';
-import { ComprehensiveAdminDashboard } from './ComprehensiveAdminDashboard';
+import { PremiumUserDashboard } from './PremiumUserDashboard';
+import NextUIVideoAdmin from './NextUIVideoAdmin';
+import ComprehensiveAdminDashboard from './ComprehensiveAdminDashboard';
+import EnhancedUserDashboard from './EnhancedUserDashboard';
+import FixedUserDashboard from './FixedUserDashboard';
 import { Header } from './Header';
 import { Footer } from './footer';
 import AboutPage from '../page-components/AboutPage';
@@ -20,7 +23,7 @@ import { RefundPolicyPage } from '../page-components/RefundPolicyPage';
 import { UserProfilePage } from '../page-components/UserProfilePage';
 
 import { authManager, AuthSession } from '../utils/auth';
-import { neonDataStore } from '../utils/neonDataStore';
+import { vpsDataStore } from '../utils/vpsDataStore';
 
 // Import the main landing page content
 import { LandingPage } from './LandingPage';
@@ -50,16 +53,18 @@ export const PageRouter: React.FC<PageRouterProps> = ({
   // Load data when component mounts with cloud sync
   useEffect(() => {
     const loadInitialData = async () => {
-      console.log('🔄 PageRouter: Loading initial data with cloud sync');
       try {
-        const data = await neonDataStore.loadData();
+        const data = await vpsDataStore.loadData();
         setModules(data.modules || []);
         setPurchases(data.purchases || []);
         setContentFiles(data.contentFiles || []);
-        console.log('📦 PageRouter: Loaded', data.modules?.length || 0, 'modules and', data.purchases?.length || 0, 'purchases');
+        console.log('PageRouter loaded data:', { 
+          modules: data.modules?.length || 0, 
+          purchases: data.purchases?.length || 0 
+        });
       } catch (error) {
         console.warn('⚠️ Cloud load failed, using fallback:', error);
-        const data = await neonDataStore.loadData();
+        const data = await vpsDataStore.loadData();
         setModules(data.modules || []);
         setPurchases(data.purchases || []);
         setContentFiles(data.contentFiles || []);
@@ -68,83 +73,6 @@ export const PageRouter: React.FC<PageRouterProps> = ({
     
     loadInitialData();
   }, []);
-
-  // Auto-refresh for user dashboard to see admin changes (modules, image covers, orders, etc.)
-  useEffect(() => {
-    if (!user || user.role === 'admin') return;
-    
-    console.log('🔄 Setting up auto-refresh for user dashboard to sync admin changes');
-    
-    let lastDataHash = '';
-    
-    const refreshData = async () => {
-      const data = await neonDataStore.loadData();
-      
-      // Create a simple hash of critical data to detect any changes
-      const dataHash = JSON.stringify({
-        moduleCount: data.modules?.length || 0,
-        purchaseCount: data.purchases?.length || 0,
-        contentCount: data.contentFiles?.length || 0,
-        lastUpdated: data.lastUpdated,
-        moduleUpdates: data.modules?.map(m => ({
-          id: m.id,
-          title: m.title,
-          demoVideo: m.demoVideo,
-          updatedAt: m.updatedAt,
-          isActive: m.isActive,
-          isVisible: m.isVisible
-        })) || []
-      });
-      
-      // If data hash changed, refresh everything
-      if (dataHash !== lastDataHash) {
-        console.log('🔄 Data changes detected, refreshing user dashboard...');
-        setModules(data.modules || []);
-        setPurchases(data.purchases || []);
-        setContentFiles(data.contentFiles || []);
-        lastDataHash = dataHash;
-      }
-      
-      // Also check lastUpdated timestamp for immediate updates
-      if (data.lastUpdated) {
-        const storedTime = new Date(data.lastUpdated).getTime();
-        const currentTime = Date.now();
-        const timeDiff = currentTime - storedTime;
-        
-        // If data was updated within the last 3 seconds, force refresh
-        if (timeDiff < 3000) {
-          console.log('⚡ Recent admin update detected, forcing immediate refresh');
-          setModules(data.modules || []);
-          setPurchases(data.purchases || []);
-          setContentFiles(data.contentFiles || []);
-          lastDataHash = dataHash;
-        }
-      }
-    };
-    
-    // Initial refresh
-    refreshData();
-    
-    // Set up interval for continuous checking
-    const interval = setInterval(refreshData, 1000); // Check every 1 second for faster updates
-    return () => clearInterval(interval);
-  }, [user]); // Only depend on user, not on modules/purchases to avoid restart loops
-
-  // Refresh on tab focus to see admin changes immediately
-  useEffect(() => {
-    if (!user || user.role === 'admin') return;
-    
-    const handleFocus = async () => {
-      console.log('👁️ Tab focused, refreshing data for modules and purchases');
-      const data = await neonDataStore.loadData();
-      setModules(data.modules || []);
-      setPurchases(data.purchases || []);
-      setContentFiles(data.contentFiles || []);
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [user]);
 
   // If user is logged in, show appropriate dashboard
   if (user) {
@@ -157,19 +85,13 @@ export const PageRouter: React.FC<PageRouterProps> = ({
       );
     } else {
       return (
-        <ModernUserDashboard 
-          user={user} 
+        <FixedUserDashboard
+          user={user}
           modules={modules}
           purchases={purchases}
           contentFiles={contentFiles}
-          onModuleUpdate={async (updatedModules) => {
-            console.log('📝 User dashboard updating modules:', updatedModules.length);
-            setModules(updatedModules);
-            const data = await neonDataStore.loadData();
-    await neonDataStore.saveData({ ...data, modules: updatedModules });
-          }}
           onLogout={onLogout}
-          onPurchase={onPurchase}
+          onPurchase={(moduleId) => onPurchase([moduleId])}
         />
       );
     }

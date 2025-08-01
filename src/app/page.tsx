@@ -5,10 +5,10 @@ import { Header } from '../components/Header';
 import { LandingPage } from '../components/LandingPage';
 import { Footer } from '../components/footer';
 import { LoginModal } from '../components/LoginModal';
-import { ModernUserDashboard } from '../components/ModernUserDashboard';
-import { AdminDashboard } from '../components/AdminDashboard';
+import FixedUserDashboard from '../components/FixedUserDashboard';
+import ComprehensiveAdminDashboard from '../components/ComprehensiveAdminDashboard';
 import { User, Module, Purchase, ContentFile } from '../types';
-import { neonDataStore } from '../utils/neonDataStore';
+import { vpsDataStore } from '../utils/vpsDataStore';
 
 export default function Home() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -26,7 +26,7 @@ export default function Home() {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const data = await neonDataStore.loadData();
+        const data = await vpsDataStore.loadData();
         setModules(data.modules || []);
         setPurchases(data.purchases || []);
         setContentFiles(data.contentFiles || []);
@@ -71,11 +71,11 @@ export default function Home() {
       // Update user's purchased modules
       const updatedUser = {
         ...user,
-        purchasedModules: [...user.purchasedModules, ...moduleIds.filter(id => !user.purchasedModules.includes(id))]
+        purchasedModules: [...(user.purchasedModules || []), ...moduleIds.filter(id => !(user.purchasedModules || []).includes(id))]
       };
       
       // Calculate total amount
-      const purchasedModules = modules.filter(module => moduleIds.includes(module.id));
+      const purchasedModules = (modules || []).filter(module => moduleIds.includes(module.id));
       const totalAmount = purchasedModules.reduce((sum, module) => sum + module.price, 0);
       updatedUser.totalSpent = (updatedUser.totalSpent || 0) + totalAmount;
       
@@ -91,14 +91,14 @@ export default function Home() {
       };
 
       // Update data store
-      const currentData = await neonDataStore.loadData();
+      const currentData = await vpsDataStore.loadData();
       const updatedData = {
         ...currentData,
-        users: currentData.users.map(u => u.id === user.id ? updatedUser : u),
-        purchases: [...currentData.purchases, purchase]
+        users: (currentData.users || []).map(u => u.id === user.id ? updatedUser : u),
+        purchases: [...(currentData.purchases || []), purchase]
       };
       
-      await neonDataStore.saveData(updatedData);
+      await vpsDataStore.saveData(updatedData);
       
       // Update local state
       setUser(updatedUser);
@@ -115,15 +115,15 @@ export default function Home() {
     switch (currentPage) {
       case 'user-dashboard':
         return user && user.role !== 'admin' ? (
-          <ModernUserDashboard 
+          <FixedUserDashboard 
             user={user} 
             modules={modules}
             purchases={purchases}
             contentFiles={contentFiles}
             onModuleUpdate={async (updatedModules) => {
               setModules(updatedModules);
-              const data = await neonDataStore.loadData();
-              await neonDataStore.saveData({ ...data, modules: updatedModules });
+              const data = await vpsDataStore.loadData();
+              await vpsDataStore.saveData({ ...data, modules: updatedModules });
             }}
             onLogout={handleLogout}
             onPurchase={handlePurchase}
@@ -134,7 +134,7 @@ export default function Home() {
       
       case 'admin-dashboard':
         return user && user.role === 'admin' ? (
-          <AdminDashboard user={user} onLogout={handleLogout} />
+          <ComprehensiveAdminDashboard user={user} onLogout={handleLogout} />
         ) : (
           <LandingPage onLoginClick={handleLoginClick} />
         );
