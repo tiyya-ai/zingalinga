@@ -2929,7 +2929,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      console.log('Logo uploaded:', file.name);
+                      console.log('Logo uploaded successfully');
                     }
                   }}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
@@ -3118,7 +3118,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                                 }, { once: true });
                                 
                                 audio.addEventListener('error', () => {
-                                  console.error('Audio load failed for:', lesson.audioUrl);
+                                  console.error('Audio load failed');
                                   alert('Audio file could not be loaded. Please check the file URL.');
                                 }, { once: true });
                               }
