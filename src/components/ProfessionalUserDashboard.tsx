@@ -6,6 +6,8 @@ import { checkVideoAccess, getVideoUrl } from '../utils/videoAccess';
 import { vpsDataStore } from '../utils/vpsDataStore';
 import { getVideoThumbnail } from '../utils/videoUtils';
 import { ChatModal } from './ChatModal';
+import { FixedVideoPlayer } from './FixedVideoPlayer';
+import { VideoDebugger } from './VideoDebugger';
 
 interface Video {
   id: string;
@@ -2524,103 +2526,20 @@ Total Amount: $${purchases.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
         </div>
       )}
 
-      {/* YouTube-Style Video Modal */}
-      {showVideoModal && selectedVideo && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-lg w-full max-w-4xl max-h-[85vh] overflow-hidden shadow-2xl">
-            {/* Close Button */}
-            <div className="flex justify-end p-2">
-              <button
-                onClick={closeVideoModal}
-                className="text-gray-400 hover:text-white text-2xl p-2 rounded-full hover:bg-gray-800 transition-colors"
-              >
-                ×
-              </button>
-            </div>
-            
-            {/* Video Player */}
-            <div className="px-4 pb-3">
-              <div className="relative bg-black rounded-lg overflow-hidden" style={{aspectRatio: '16/9', maxHeight: '60vh'}}>
-                {selectedVideo.isYouTube ? (
-                  <iframe
-                    src={selectedVideo.videoUrl}
-                    className="absolute inset-0 w-full h-full"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  ></iframe>
-                ) : (
-                  <video
-                    controls
-                    autoPlay
-                    className="absolute inset-0 w-full h-full object-contain"
-                    src={selectedVideo.videoUrl || undefined}
-                    poster={selectedVideo.thumbnail}
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                )}
-              </div>
-            </div>
-            
-            {/* Video Info */}
-            <div className="px-4 pb-4 max-h-[25vh] overflow-y-auto">
-              {/* Title */}
-              <h2 className="text-lg sm:text-xl font-semibold text-white mb-3">{selectedVideo.title}</h2>
-              
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
-                <div className="flex items-center space-x-2 text-sm">
-                  <span className="text-gray-400">{selectedVideo.views?.toLocaleString() || '1,234'} views</span>
-                  <span className="text-gray-400">•</span>
-                  <span className="text-gray-400">{selectedVideo.duration}</span>
-                </div>
-                
-                <div className="flex items-center space-x-2 sm:space-x-4">
-                  {/* Like Button */}
-                  <button className="flex items-center space-x-1 sm:space-x-2 text-gray-300 hover:text-white transition-colors px-2 py-1 rounded">
-                    <svg className="w-4 h-4 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L9 6v11.5m-3-2.5v-9" />
-                    </svg>
-                    <span className="text-xs sm:text-sm">Like</span>
-                  </button>
-                  
-                  {/* Playlist Button */}
-                  <button 
-                    onClick={() => addToPlaylist(selectedVideo.id)}
-                    className={`flex items-center space-x-1 sm:space-x-2 transition-colors px-2 py-1 rounded ${
-                      playlist.includes(selectedVideo.id)
-                        ? 'text-blue-400'
-                        : 'text-gray-300 hover:text-white'
-                    }`}
-                  >
-                    <svg className="w-4 h-4 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    <span className="text-xs sm:text-sm">
-                      {playlist.includes(selectedVideo.id) ? 'Added' : 'Save'}
-                    </span>
-                  </button>
-                </div>
-              </div>
-              
-              {/* Description */}
-              <div className="bg-gray-800 rounded-lg p-3 sm:p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-purple-900 font-bold text-xs sm:text-sm">Z</span>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-white font-medium text-sm sm:text-base">Zinga Linga</div>
-                    <div className="text-gray-400 text-xs sm:text-sm">{selectedVideo.category}</div>
-                  </div>
-                </div>
-                <p className="text-gray-300 text-xs sm:text-sm leading-relaxed">{selectedVideo.description}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Fixed Video Player Modal */}
+      <FixedVideoPlayer
+        isOpen={showVideoModal}
+        onClose={closeVideoModal}
+        video={selectedVideo || {
+          id: '',
+          title: '',
+          description: '',
+          thumbnail: '',
+          videoUrl: '',
+          duration: '',
+          category: ''
+        }}
+      />
 
       {/* Thank You Modal */}
       {showThankYou && (
@@ -2756,6 +2675,9 @@ Total Amount: $${purchases.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
           </div>
         </div>
       )}
+
+      {/* Video Debugger - Remove this in production */}
+      {process.env.NODE_ENV === 'development' && <VideoDebugger />}
     </div>
   );
 }

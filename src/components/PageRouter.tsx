@@ -173,14 +173,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
     loadInitialData();
   }, []);
 
-  // Refresh data every 30 seconds to catch new videos
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadInitialData();
-    }, 30000); // 30 seconds
-    
-    return () => clearInterval(interval);
-  }, []);
+
 
   const handleNavigation = (page: string) => {
     setCurrentPage(page);
