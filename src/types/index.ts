@@ -18,30 +18,52 @@ export interface User {
   profileImage?: string;
   emergencyContact?: string;
   emergencyPhone?: string;
+  avatar?: string;
 }
 
 export interface Module {
   id: string;
   title: string;
   description: string;
-  price: number;
+  price?: number;
   originalPrice?: number;
-  character: 'kiki' | 'tano';
-  ageRange: string;
-  features: string[];
-  rating: number;
-  totalRatings: number;
-  demoVideo: string;
-  fullContent: ContentItem[];
+  character?: 'kiki' | 'tano';
+  ageRange?: string;
+  features?: string[];
+  rating?: number;
+  totalRatings?: number;
+  demoVideo?: string;
+  fullContent?: ContentItem[];
   isPurchased?: boolean;
-  isActive: boolean;
-  isVisible?: boolean; // Controls if module appears in user dashboard/store
-  category?: string;
+  isActive?: boolean;
+  isVisible?: boolean;
+  category?: 'Audio Lessons' | 'Video Lessons' | 'PP1 Program' | 'PP2 Program' | string;
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
   estimatedDuration?: string;
+  duration?: string;
   tags?: string[];
-  createdAt: string;
-  updatedAt: string;
+  aiTags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  type?: 'video' | 'audio' | 'program' | 'game' | 'product';
+  thumbnail?: string;
+  videoUrl?: string;
+  audioUrl?: string;
+  programFiles?: ProgramFile[];
+  gameUrl?: string;
+  isPremium?: boolean;
+  hasPreview?: boolean;
+  previewUrl?: string;
+  accessLevel?: 'free' | 'paid' | 'premium';
+}
+
+export interface ProgramFile {
+  id: string;
+  name: string;
+  type: 'pdf' | 'text' | 'multimedia';
+  url: string;
+  size: number;
+  order: number;
 }
 
 export interface ContentItem {
@@ -98,13 +120,16 @@ export interface PaymentInfo {
 export interface Purchase {
   id: string;
   userId: string;
-  moduleIds: string[];
+  moduleId: string;
+  moduleIds?: string[];
   bundleId?: string;
   amount: number;
-  paymentMethod: string;
+  paymentMethod?: string;
   status: 'pending' | 'completed' | 'failed' | 'refunded';
-  createdAt: string;
+  purchaseDate: string;
+  createdAt?: string;
   completedAt?: string;
+  type?: 'video' | 'product';
 }
 
 export interface Analytics {
@@ -120,10 +145,34 @@ export interface Analytics {
 export interface ContentFile {
   id: string;
   name: string;
-  type: 'video' | 'audio' | 'image' | 'document';
+  type: 'video' | 'audio' | 'image' | 'document' | 'pdf';
   url: string;
   size: number;
   uploadedAt: string;
   moduleId?: string;
   isPublic: boolean;
+}
+
+export interface UserProgress {
+  id: string;
+  userId: string;
+  moduleId: string;
+  progress: number;
+  completedLessons: string[];
+  timeSpent: number;
+  lastAccessed: string;
+  quizScores?: { [lessonId: string]: number };
+}
+
+export interface ContentBundle {
+  id: string;
+  name: string;
+  description: string;
+  moduleIds: string[];
+  price: number;
+  originalPrice: number;
+  discount: number;
+  isActive: boolean;
+  category: 'mixed' | 'audio-only' | 'video-only' | 'program-only';
+  createdAt: string;
 }

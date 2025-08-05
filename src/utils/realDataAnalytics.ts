@@ -156,6 +156,37 @@ class RealDataAnalytics {
     return 10; // Default 10 minutes if parsing fails
   }
 
+  async getVideoPerformance(): Promise<any[]> {
+    try {
+      const data = await vpsDataStore.loadData();
+      const realUserIds = new Set(data.users.filter(u => !u.email.includes('admin@videostore.com') && !u.email.includes('parent@example.com') && !u.email.includes('@example.com') && u.id !== 'videoadmin_001' && u.id !== 'parent_001').map(u => u.id));
+      const realPurchases = data.purchases.filter(p => realUserIds.has(p.userId));
+
+      const videoPerformance = data.modules.map(module => {
+        const modulePurchases = realPurchases.filter(p => p.moduleId === module.id);
+        const revenue = modulePurchases.reduce((acc, p) => acc + (p.amount || module.price), 0);
+        const views = modulePurchases.length * 10; // Placeholder
+        const completionRate = Math.floor(Math.random() * 40) + 60; // Placeholder
+        const trend = Math.random() > 0.5 ? 'up' : 'down'; // Placeholder
+
+        return {
+          id: module.id,
+          title: module.title,
+          category: module.category || 'Educational',
+          views,
+          completionRate,
+          revenue,
+          trend,
+        };
+      });
+
+      return videoPerformance.sort((a, b) => b.revenue - a.revenue);
+    } catch (error) {
+      console.error('Error getting video performance data:', error);
+      return [];
+    }
+  }
+
   async inspectCurrentData(): Promise<{
     totalUsers: number;
     realUsers: number;

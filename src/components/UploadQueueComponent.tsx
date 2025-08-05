@@ -31,6 +31,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { vpsDataStore } from '../utils/vpsDataStore';
+import { sanitizeInput, validateId } from '../utils/securityUtils';
 
 interface UploadItem {
   id: string;
@@ -183,6 +184,7 @@ export default function UploadQueueComponent({
       duration: '0:00'
     };
 
+    await vpsDataStore.addToUploadQueue(newUpload);
     setUploadQueue([newUpload, ...uploadQueue]);
     setShowUploadModal(false);
 
@@ -201,10 +203,15 @@ export default function UploadQueueComponent({
   };
 
   const handleRetryUpload = (uploadId: string) => {
-    const uploadItem = uploadQueue.find(item => item.id === uploadId);
+    const sanitizedUploadId = sanitizeInput(uploadId);
+    if (!validateId(sanitizedUploadId)) {
+      console.error('Invalid upload ID provided');
+      return;
+    }
+    const uploadItem = uploadQueue.find(item => item.id === sanitizedUploadId);
     if (uploadItem) {
       setUploadQueue(prev => prev.map(item => 
-        item.id === uploadId 
+        item.id === sanitizedUploadId 
           ? { ...item, status: 'uploading' as const, progress: 0, errorMessage: undefined }
           : item
       ));
@@ -217,7 +224,7 @@ export default function UploadQueueComponent({
         ageGroup: '3-8 years',
         price: 0
       };
-      processRealUpload(uploadId, retryFormData);
+      processRealUpload(sanitizedUploadId, retryFormData);
     }
   };
 
@@ -294,7 +301,7 @@ export default function UploadQueueComponent({
         </CardHeader>
         <CardBody>
           <div className="overflow-x-auto">
-            <Table>
+            <Table aria-label="Upload queue table">
               <TableHeader>
                 <TableColumn>VIDEO</TableColumn>
                 <TableColumn>SIZE</TableColumn>
@@ -389,6 +396,7 @@ export default function UploadQueueComponent({
               <div className="grid grid-cols-2 gap-4">
                 <Select
                   label="Category"
+                  aria-label="Select video category"
                   selectedKeys={[uploadForm.category]}
                   onSelectionChange={(keys) => setUploadForm({ ...uploadForm, category: Array.from(keys)[0] as string })}
                 >
@@ -398,6 +406,7 @@ export default function UploadQueueComponent({
                 </Select>
                 <Select
                   label="Age Group"
+                  aria-label="Select target age group"
                   selectedKeys={[uploadForm.ageGroup]}
                   onSelectionChange={(keys) => setUploadForm({ ...uploadForm, ageGroup: Array.from(keys)[0] as string })}
                 >

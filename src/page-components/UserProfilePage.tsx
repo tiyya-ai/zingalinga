@@ -43,11 +43,18 @@ import {
   User as UserIcon,
   Lock,
   Receipt,
+  Users,
+  Share2,
+  Copy,
+  Check,
   Download,
   CreditCard,
   Gift,
-  Check,
-  X
+  Settings,
+  Bell,
+  Shield,
+  Heart,
+  Send
 } from 'lucide-react';
 import { User as UserType, Purchase } from '../types';
 import { vpsDataStore } from '../utils/vpsDataStore';
@@ -68,11 +75,21 @@ interface Invoice {
   paymentMethod: string;
 }
 
+interface FriendInvite {
+  id: string;
+  email: string;
+  status: 'pending' | 'accepted' | 'expired';
+  sentAt: string;
+  referralCode: string;
+}
+
 const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavigate, onUserUpdate }) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isInviteFriendOpen, setIsInviteFriendOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   
   // Form states
@@ -97,7 +114,9 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
     confirmPassword: ''
   });
   
+  const [inviteEmail, setInviteEmail] = useState('');
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [friendInvites, setFriendInvites] = useState<FriendInvite[]>([]);
   const [notifications, setNotifications] = useState({
     emailUpdates: true,
     pushNotifications: true,
@@ -113,6 +132,7 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
   // Load user data and invoices
   useEffect(() => {
     loadUserInvoices();
+    loadFriendInvites();
   }, [user.id]);
 
   const loadUserInvoices = async () => {
@@ -133,6 +153,27 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
     } catch (error) {
       console.error('Error loading invoices:', error);
     }
+  };
+
+  const loadFriendInvites = async () => {
+    // Mock friend invites data - in real app, this would come from backend
+    const mockInvites: FriendInvite[] = [
+      {
+        id: '1',
+        email: 'friend1@example.com',
+        status: 'pending',
+        sentAt: new Date(Date.now() - 86400000).toISOString(),
+        referralCode: 'ZL-' + user.id.slice(-4).toUpperCase() + '-001'
+      },
+      {
+        id: '2',
+        email: 'friend2@example.com',
+        status: 'accepted',
+        sentAt: new Date(Date.now() - 172800000).toISOString(),
+        referralCode: 'ZL-' + user.id.slice(-4).toUpperCase() + '-002'
+      }
+    ];
+    setFriendInvites(mockInvites);
   };
 
   const handleProfileImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -240,6 +281,36 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
     }
   };
 
+  const handleInviteFriend = async () => {
+    if (!inviteEmail) return;
+    
+    setLoading(true);
+    try {
+      const newInvite: FriendInvite = {
+        id: Date.now().toString(),
+        email: inviteEmail,
+        status: 'pending',
+        sentAt: new Date().toISOString(),
+        referralCode: 'ZL-' + user.id.slice(-4).toUpperCase() + '-' + String(friendInvites.length + 1).padStart(3, '0')
+      };
+      
+      setFriendInvites(prev => [...prev, newInvite]);
+      setInviteEmail('');
+      setIsInviteFriendOpen(false);
+      alert('Invitation sent successfully!');
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyReferralCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const downloadInvoice = (invoice: Invoice) => {
     // Generate invoice content as HTML
     const invoiceHTML = `
@@ -298,7 +369,7 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
               <tr>
                 <td>${item}</td>
                 <td>Educational Video Module</td>
-                <td>$${(invoice.amount / (invoice.items || []).length).toFixed(2)}</td>
+                <td>$${(invoice.amount / (invoice.items?.length || 1)).toFixed(2)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -402,47 +473,57 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Full Name"
-              value={profileData.name}
-              onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
-              startContent={<UserIcon className="w-4 h-4" />}
-              isReadOnly={!isEditing}
-              variant={isEditing ? "bordered" : "flat"}
-              isRequired
-            />
+          <div className="form-grid">
+            <div className="w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+              <Input
+                value={profileData.name}
+                onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
+                startContent={<UserIcon className="w-4 h-4" />}
+                isReadOnly={!isEditing}
+                variant={isEditing ? "bordered" : "flat"}
+                className="w-full"
+              />
+            </div>
             
-            <Input
-              label="Email Address"
-              value={profileData.email}
-              onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
-              startContent={<Mail className="w-4 h-4" />}
-              isReadOnly={!isEditing}
-              variant={isEditing ? "bordered" : "flat"}
-              type="email"
-              isRequired
-            />
+            <div className="w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+              <Input
+                value={profileData.email}
+                onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                startContent={<Mail className="w-4 h-4" />}
+                isReadOnly={!isEditing}
+                variant={isEditing ? "bordered" : "flat"}
+                type="email"
+                className="w-full"
+              />
+            </div>
             
-            <Input
-              label="Phone Number"
-              value={profileData.phone}
-              onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
-              startContent={<Phone className="w-4 h-4" />}
-              isReadOnly={!isEditing}
-              variant={isEditing ? "bordered" : "flat"}
-              placeholder="+1 (555) 123-4567"
-            />
+            <div className="w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+              <Input
+                value={profileData.phone}
+                onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
+                startContent={<Phone className="w-4 h-4" />}
+                isReadOnly={!isEditing}
+                variant={isEditing ? "bordered" : "flat"}
+                placeholder="+1 (555) 123-4567"
+                className="w-full"
+              />
+            </div>
             
-            <Input
-              label="Date of Birth"
-              type="date"
-              value={profileData.dateOfBirth}
-              onChange={(e) => setProfileData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
-              startContent={<Calendar className="w-4 h-4" />}
-              isReadOnly={!isEditing}
-              variant={isEditing ? "bordered" : "flat"}
-            />
+            <div className="w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+              <Input
+                type="date"
+                value={profileData.dateOfBirth}
+                onChange={(e) => setProfileData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                startContent={<Calendar className="w-4 h-4" />}
+                isReadOnly={!isEditing}
+                variant={isEditing ? "bordered" : "flat"}
+                className="w-full"
+              />
+            </div>
           </div>
           
           <Divider className="my-6" />
@@ -450,53 +531,70 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
           <div className="space-y-4">
             <h4 className="text-lg font-semibold text-gray-700">Address Information</h4>
             
-            <Input
-              label="Street Address"
-              value={profileData.address}
-              onChange={(e) => setProfileData(prev => ({ ...prev, address: e.target.value }))}
-              startContent={<MapPin className="w-4 h-4" />}
-              isReadOnly={!isEditing}
-              variant={isEditing ? "bordered" : "flat"}
-              placeholder="123 Main Street"
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Input
-                label="City"
-                value={profileData.city}
-                onChange={(e) => setProfileData(prev => ({ ...prev, city: e.target.value }))}
-                isReadOnly={!isEditing}
-                variant={isEditing ? "bordered" : "flat"}
-                placeholder="New York"
-              />
+            <div className="space-y-4">
+              <div className="w-full">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <Input
+                  value={profileData.address}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, address: e.target.value }))}
+                  startContent={<MapPin className="w-4 h-4" />}
+                  isReadOnly={!isEditing}
+                  variant={isEditing ? "bordered" : "flat"}
+                  placeholder="123 Main Street"
+                  className="w-full"
+                />
+              </div>
               
-              <Input
-                label="State/Province"
-                value={profileData.state}
-                onChange={(e) => setProfileData(prev => ({ ...prev, state: e.target.value }))}
-                isReadOnly={!isEditing}
-                variant={isEditing ? "bordered" : "flat"}
-                placeholder="NY"
-              />
+              <div className="form-grid form-grid-3">
+                <div className="w-full">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                  <Input
+                    value={profileData.city}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, city: e.target.value }))}
+                    isReadOnly={!isEditing}
+                    variant={isEditing ? "bordered" : "flat"}
+                    placeholder="New York"
+                    className="w-full"
+                  />
+                </div>
+                
+                <div className="w-full">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                  <Input
+                    value={profileData.state}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, state: e.target.value }))}
+                    isReadOnly={!isEditing}
+                    variant={isEditing ? "bordered" : "flat"}
+                    placeholder="NY"
+                    className="w-full"
+                  />
+                </div>
+                
+                <div className="w-full">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
+                  <Input
+                    value={profileData.zipCode}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, zipCode: e.target.value }))}
+                    isReadOnly={!isEditing}
+                    variant={isEditing ? "bordered" : "flat"}
+                    placeholder="10001"
+                    className="w-full"
+                  />
+                </div>
+              </div>
               
-              <Input
-                label="ZIP/Postal Code"
-                value={profileData.zipCode}
-                onChange={(e) => setProfileData(prev => ({ ...prev, zipCode: e.target.value }))}
-                isReadOnly={!isEditing}
-                variant={isEditing ? "bordered" : "flat"}
-                placeholder="10001"
-              />
+              <div className="w-full">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                <Input
+                  value={profileData.country}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, country: e.target.value }))}
+                  isReadOnly={!isEditing}
+                  variant={isEditing ? "bordered" : "flat"}
+                  placeholder="United States"
+                  className="w-full"
+                />
+              </div>
             </div>
-            
-            <Input
-              label="Country"
-              value={profileData.country}
-              onChange={(e) => setProfileData(prev => ({ ...prev, country: e.target.value }))}
-              isReadOnly={!isEditing}
-              variant={isEditing ? "bordered" : "flat"}
-              placeholder="United States"
-            />
           </div>
           
           <Divider className="my-6" />
@@ -504,37 +602,47 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
           <div className="space-y-4">
             <h4 className="text-lg font-semibold text-gray-700">Emergency Contact</h4>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="Emergency Contact Name"
-                value={profileData.emergencyContact}
-                onChange={(e) => setProfileData(prev => ({ ...prev, emergencyContact: e.target.value }))}
-                startContent={<UserIcon className="w-4 h-4" />}
-                isReadOnly={!isEditing}
-                variant={isEditing ? "bordered" : "flat"}
-                placeholder="John Doe"
-              />
+            <div className="form-grid">
+              <div className="w-full">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Emergency Contact Name</label>
+                <Input
+                  value={profileData.emergencyContact}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, emergencyContact: e.target.value }))}
+                  startContent={<UserIcon className="w-4 h-4" />}
+                  isReadOnly={!isEditing}
+                  variant={isEditing ? "bordered" : "flat"}
+                  placeholder="John Doe"
+                  className="w-full"
+                />
+              </div>
               
-              <Input
-                label="Emergency Contact Phone"
-                value={profileData.emergencyPhone}
-                onChange={(e) => setProfileData(prev => ({ ...prev, emergencyPhone: e.target.value }))}
-                startContent={<Phone className="w-4 h-4" />}
-                isReadOnly={!isEditing}
-                variant={isEditing ? "bordered" : "flat"}
-                placeholder="+1 (555) 987-6543"
-              />
+              <div className="w-full">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Emergency Contact Phone</label>
+                <Input
+                  value={profileData.emergencyPhone}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, emergencyPhone: e.target.value }))}
+                  startContent={<Phone className="w-4 h-4" />}
+                  isReadOnly={!isEditing}
+                  variant={isEditing ? "bordered" : "flat"}
+                  placeholder="+1 (555) 987-6543"
+                  className="w-full"
+                />
+              </div>
             </div>
           </div>
           
-          <Textarea
-            label="Bio"
-            value={profileData.bio}
-            onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
-            isReadOnly={!isEditing}
-            variant={isEditing ? "bordered" : "flat"}
-            placeholder="Tell us about yourself..."
-          />
+          <div className="w-full">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+            <Textarea
+              value={profileData.bio}
+              onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+              isReadOnly={!isEditing}
+              variant={isEditing ? "bordered" : "flat"}
+              placeholder="Tell us about yourself..."
+              minRows={3}
+              className="w-full"
+            />
+          </div>
         </CardBody>
       </Card>
       
@@ -695,10 +803,10 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{(invoice.items || []).length} item(s)</p>
+                          <p className="font-medium">{invoice.items?.length || 0} item(s)</p>
                           <p className="text-xs text-gray-500">
-                            {(invoice.items || []).slice(0, 2).join(', ')}
-                            {(invoice.items || []).length > 2 && ` +${(invoice.items || []).length - 2} more`}
+                            {invoice.items?.slice(0, 2).join(', ') || 'No items'}
+                            {(invoice.items?.length || 0) > 2 && ` +${(invoice.items?.length || 0) - 2} more`}
                           </p>
                         </div>
                       </TableCell>
@@ -726,7 +834,7 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
                               variant="flat"
                               isIconOnly
                               onPress={() => {
-                                alert(`Invoice Details:\n\nID: ${invoice.id}\nDate: ${new Date(invoice.date).toLocaleString()}\nAmount: ${invoice.amount.toFixed(2)}\nStatus: ${invoice.status}\nPayment: ${invoice.paymentMethod}\nItems: ${(invoice.items || []).join(', ')}`);
+                                alert(`Invoice Details:\n\nID: ${invoice.id}\nDate: ${new Date(invoice.date).toLocaleString()}\nAmount: ${invoice.amount.toFixed(2)}\nStatus: ${invoice.status}\nPayment: ${invoice.paymentMethod}\nItems: ${(invoice.items || []).join(', ') || 'No items'}`);
                               }}
                             >
                               <Eye className="w-4 h-4" />
@@ -780,6 +888,110 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
               <p className="text-sm text-purple-600">Member Since</p>
             </div>
           </div>
+        </CardBody>
+      </Card>
+    </div>
+  );
+
+  const renderFriendsTab = () => (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex justify-between items-center">
+          <div>
+            <h3 className="text-xl font-bold">Invite Friends</h3>
+            <p className="text-gray-500">Share Zinga Linga with your friends and family</p>
+          </div>
+          <Button
+            color="primary"
+            startContent={<Users className="w-4 h-4" />}
+            onPress={() => setIsInviteFriendOpen(true)}
+          >
+            Send Invitation
+          </Button>
+        </CardHeader>
+        <CardBody>
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg mb-6">
+            <div className="flex items-center gap-4 mb-4">
+              <Gift className="w-8 h-8 text-purple-600" />
+              <div>
+                <h4 className="font-bold text-purple-800">Referral Program</h4>
+                <p className="text-purple-600">Earn rewards when friends join!</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-white rounded-lg">
+                <Heart className="w-6 h-6 mx-auto text-red-500 mb-2" />
+                <p className="font-semibold">You Get</p>
+                <p className="text-sm text-gray-600">1 Free Module</p>
+              </div>
+              <div className="text-center p-4 bg-white rounded-lg">
+                <Gift className="w-6 h-6 mx-auto text-green-500 mb-2" />
+                <p className="font-semibold">Friend Gets</p>
+                <p className="text-sm text-gray-600">20% Off First Purchase</p>
+              </div>
+            </div>
+          </div>
+          
+          {friendInvites.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-gray-500">No invitations sent yet</p>
+              <p className="text-sm text-gray-400">Start inviting friends to earn rewards!</p>
+            </div>
+          ) : (
+            <Table aria-label="Friend invitations table">
+              <TableHeader>
+                <TableColumn>EMAIL</TableColumn>
+                <TableColumn>STATUS</TableColumn>
+                <TableColumn>SENT DATE</TableColumn>
+                <TableColumn>REFERRAL CODE</TableColumn>
+                <TableColumn>ACTIONS</TableColumn>
+              </TableHeader>
+              <TableBody>
+                {friendInvites.map((invite) => (
+                  <TableRow key={invite.id}>
+                    <TableCell>{invite.email}</TableCell>
+                    <TableCell>
+                      <Chip
+                        size="sm"
+                        color={invite.status === 'accepted' ? 'success' : invite.status === 'pending' ? 'warning' : 'danger'}
+                        variant="flat"
+                      >
+                        {invite.status.toUpperCase()}
+                      </Chip>
+                    </TableCell>
+                    <TableCell>{new Date(invite.sentAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">{invite.referralCode}</code>
+                        <Button
+                          size="sm"
+                          variant="flat"
+                          isIconOnly
+                          onPress={() => copyReferralCode(invite.referralCode)}
+                        >
+                          {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        startContent={<Share2 className="w-3 h-3" />}
+                        onPress={() => {
+                          const shareText = `Join me on Zinga Linga! Use code ${invite.referralCode} for 20% off your first purchase.`;
+                          navigator.share ? navigator.share({ text: shareText }) : navigator.clipboard.writeText(shareText);
+                        }}
+                      >
+                        Share
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardBody>
       </Card>
     </div>
@@ -842,6 +1054,15 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
           }>
             {renderInvoicesTab()}
           </Tab>
+          
+          <Tab key="friends" title={
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Invite Friends
+            </div>
+          }>
+            {renderFriendsTab()}
+          </Tab>
         </Tabs>
       </div>
       
@@ -889,6 +1110,45 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
               isDisabled={!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
             >
               Change Password
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      
+      {/* Invite Friend Modal */}
+      <Modal isOpen={isInviteFriendOpen} onClose={() => setIsInviteFriendOpen(false)}>
+        <ModalContent>
+          <ModalHeader>
+            <h3 className="text-xl font-bold">Invite a Friend</h3>
+          </ModalHeader>
+          <ModalBody className="space-y-4">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <Gift className="w-8 h-8 mx-auto text-blue-600 mb-2" />
+              <p className="font-semibold text-blue-800">Referral Rewards</p>
+              <p className="text-sm text-blue-600">You both get rewards when they join!</p>
+            </div>
+            
+            <Input
+              label="Friend's Email"
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="friend@example.com"
+              startContent={<Mail className="w-4 h-4" />}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={() => setIsInviteFriendOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              color="primary" 
+              onPress={handleInviteFriend}
+              isLoading={loading}
+              isDisabled={!inviteEmail}
+              startContent={<Send className="w-4 h-4" />}
+            >
+              Send Invitation
             </Button>
           </ModalFooter>
         </ModalContent>

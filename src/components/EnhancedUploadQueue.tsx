@@ -261,7 +261,7 @@ export default function EnhancedUploadQueue({ loadVideos }: EnhancedUploadQueueP
         </CardHeader>
         <CardBody>
           <div className="overflow-x-auto">
-            <Table>
+            <Table aria-label="Upload queue table">
               <TableHeader>
                 <TableColumn>VIDEO</TableColumn>
                 <TableColumn>SIZE</TableColumn>
@@ -367,6 +367,7 @@ export default function EnhancedUploadQueue({ loadVideos }: EnhancedUploadQueueP
               <div className="grid grid-cols-2 gap-4">
                 <Select
                   label="Category"
+                  aria-label="Select video category"
                   selectedKeys={[uploadForm.category]}
                   onSelectionChange={(keys) => setUploadForm({ ...uploadForm, category: Array.from(keys)[0] as string })}
                 >
@@ -376,6 +377,7 @@ export default function EnhancedUploadQueue({ loadVideos }: EnhancedUploadQueueP
                 </Select>
                 <Select
                   label="Age Group"
+                  aria-label="Select target age group"
                   selectedKeys={[uploadForm.ageGroup]}
                   onSelectionChange={(keys) => setUploadForm({ ...uploadForm, ageGroup: Array.from(keys)[0] as string })}
                 >

@@ -136,11 +136,14 @@ export const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
 
   const relatedVideos = getRelatedVideos();
 
-  // Debug logging
-  console.log('🎬 AdvancedVideoPlayer - Access Result:', accessResult);
-  console.log('🎬 AdvancedVideoPlayer - Video URL:', videoUrl);
+  // Debug logging with sanitized output
+  console.log('🎬 AdvancedVideoPlayer - Access Result:', {
+    hasAccess: accessResult.hasAccess,
+    isDemo: accessResult.isDemo,
+    requiresPurchase: accessResult.requiresPurchase
+  });
   console.log('🎬 AdvancedVideoPlayer - Video Type:', videoType);
-  console.log('🎬 AdvancedVideoPlayer - Related Videos:', relatedVideos.length);
+  console.log('🎬 AdvancedVideoPlayer - Related Videos Count:', relatedVideos.length);
 
   // Get the appropriate embed URL based on video type
   const getEmbedUrl = () => {
@@ -167,7 +170,7 @@ export const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
       };
       const handleLoadStart = () => setIsLoading(true);
       const handleError = (e: any) => {
-        console.error('Video error:', e);
+        console.error('Video error: Failed to load video content');
         setError('Failed to load video. Please check the video URL.');
         setIsLoading(false);
       };

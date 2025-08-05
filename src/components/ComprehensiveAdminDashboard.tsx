@@ -170,9 +170,7 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
     price: 0,
     category: '',
     thumbnail: '',
-    imageUploadType: 'file', // 'file', 'youtube', 'url'
     videoUrl: '',
-    videoUploadType: 'file', // 'file', 'youtube', 'url'
     duration: '',
     ageGroup: '3-8 years',
   });
@@ -185,15 +183,6 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
   const { isOpen: isEditUserOpen, onOpen: onEditUserOpen, onClose: onEditUserClose } = useDisclosure();
   const { isOpen: isAddUserOpen, onOpen: onAddUserOpen, onClose: onAddUserClose } = useDisclosure();
   const { isOpen: isChangePasswordOpen, onOpen: onChangePasswordOpen, onClose: onChangePasswordClose } = useDisclosure();
-  const { isOpen: isEditTemplateOpen, onOpen: onEditTemplateOpen, onClose: onEditTemplateClose } = useDisclosure();
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
-  const [templateForm, setTemplateForm] = useState({
-    name: '',
-    subject: '',
-    description: '',
-    content: '',
-    status: 'active'
-  });
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [editUserForm, setEditUserForm] = useState({
@@ -235,7 +224,7 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
     features: {
       userRegistration: true,
       videoComments: true,
-      videoDownloads: true,
+      videoDownloads: false,
       socialSharing: false
     }
   });
@@ -282,6 +271,42 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
   const [notifications, setNotifications] = useState<any[]>([]);
   const [lastOrderCheck, setLastOrderCheck] = useState<string>('');
 
+  // User edit handlers
+  const handleEditUser = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUser(user);
+      setEditUserForm({
+        name: user.name || '',
+        email: user.email || '',
+        role: user.role || 'user',
+        status: 'active'
+      });
+      onEditUserOpen();
+    }
+  };
+
+  const handleUpdateUser = async () => {
+    try {
+      setLoading(true);
+      const updatedUser = { ...selectedUser, ...editUserForm };
+      await vpsDataStore.updateUser(updatedUser);
+      
+      setUsers(prev => prev.map(user => 
+        user.id === selectedUser?.id ? updatedUser : user
+      ));
+      
+      onEditUserClose();
+      setSelectedUser(null);
+      alert('User updated successfully!');
+    } catch (error) {
+      console.error('Error updating user:', error);
+      alert('Error updating user. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Handle form data updates when editing video changes
   useEffect(() => {
     if (editingVideo) {
@@ -291,9 +316,7 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
         price: editingVideo.price || 0,
         category: editingVideo.category || '',
         thumbnail: editingVideo.thumbnail || '',
-        imageUploadType: 'file',
         videoUrl: editingVideo.videoUrl || '',
-        videoUploadType: 'file',
         duration: editingVideo.estimatedDuration || '',
         ageGroup: editingVideo.ageRange || '3-8 years',
       });
@@ -304,6 +327,376 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
         price: 0,
         category: '',
         thumbnail: '',
+        imageUploadType: 'file',
+        videoUrl: '',
+        videoUploadType: 'file',
+        duration: '',
+        ageGroup: '3-8 years',
+      });
+    }
+  }, [editingVideo]);
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">Admin Dashboard</h1>
+        <div className="text-center py-12">
+          <p className="text-gray-600">Dashboard is loading...</p>
+        </div>
+      </div>
+    </div>
+  );
+}il: '',
+        imageUploadType: 'file',
+        videoUrl: '',
+        videoUploadType: 'file',
+        duration: '',
+        ageGroup: '3-8 years',
+      });
+    }
+  }, [editingVideo]);
+
+  // Load users data
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      const usersData = await vpsDataStore.getUsers();
+      setUsers(usersData);
+    } catch (error) {
+      console.error('Error loading users:', error);
+    }
+  };
+
+  const renderAllUsers = () => {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">All Users</h1>
+            <Button 
+              color="primary"
+              startContent={<Plus className="h-4 w-4" />}
+              onPress={onAddUserOpen}
+            >
+              Add New User
+            </Button>
+          </div>
+          
+          <Card className="shadow-lg">
+            <CardHeader className="border-b border-gray-200">
+              <div className="flex justify-between items-center w-full">
+                <h3 className="text-lg font-semibold text-gray-900">Users ({users.length})</h3>
+                <Input
+                  placeholder="Search users..."
+                  startContent={<Search className="h-4 w-4" />}
+                  className="w-64"
+                />
+              </div>
+            </CardHeader>
+            <CardBody className="p-0">
+              <div className="overflow-x-auto">
+                <Table removeWrapper aria-label="Users table">
+                  <TableHeader>
+                    <TableColumn>USER</TableColumn>
+                    <TableColumn>EMAIL</TableColumn>
+                    <TableColumn>ROLE</TableColumn>
+                    <TableColumn>STATUS</TableColumn>
+                    <TableColumn>ACTIONS</TableColumn>
+                  </TableHeader>
+                  <TableBody emptyContent="No users found">
+                    {users.map((user) => (
+                      <TableRow key={user.id} className="hover:bg-gray-50">
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <Avatar name={user.name} size="sm" className="bg-blue-500" />
+                            <div>
+                              <p className="font-medium text-gray-900">{user.name}</p>
+                              <p className="text-sm text-gray-500">ID: {user.id}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-gray-600">{user.email}</TableCell>
+                        <TableCell>
+                          <Chip size="sm" color={user.role === 'admin' ? 'danger' : 'primary'} variant="flat">
+                            {user.role}
+                          </Chip>
+                        </TableCell>
+                        <TableCell>
+                          <Chip size="sm" color="success" variant="flat">Active</Chip>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-1">
+                            <Button 
+                              size="sm" 
+                              variant="light" 
+                              onPress={() => handleEditUser(user.id)}
+                              title="Edit User"
+                              className="hover:bg-blue-50"
+                            >
+                              <Edit className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="light" 
+                              color="danger"
+                              title="Delete User"
+                              className="hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* Edit User Modal */}
+          <Modal isOpen={isEditUserOpen} onClose={onEditUserClose} size="lg">
+            <ModalContent>
+              <ModalHeader className="text-xl font-semibold">Edit User</ModalHeader>
+              <ModalBody>
+                <div className="space-y-4">
+                  <Input
+                    label="Name"
+                    value={editUserForm.name}
+                    onChange={(e) => setEditUserForm(prev => ({ ...prev, name: e.target.value }))}
+                    variant="bordered"
+                  />
+                  <Input
+                    label="Email"
+                    type="email"
+                    value={editUserForm.email}
+                    onChange={(e) => setEditUserForm(prev => ({ ...prev, email: e.target.value }))}
+                    variant="bordered"
+                  />
+                  <Select
+                    label="Role"
+                    selectedKeys={[editUserForm.role]}
+                    onSelectionChange={(keys) => {
+                      const role = Array.from(keys)[0] as string;
+                      setEditUserForm(prev => ({ ...prev, role }));
+                    }}
+                    variant="bordered"
+                  >
+                    <SelectItem key="user" value="user">User</SelectItem>
+                    <SelectItem key="admin" value="admin">Admin</SelectItem>
+                  </Select>
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button color="danger" variant="light" onPress={onEditUserClose}>
+                  Cancel
+                </Button>
+                <Button color="primary" onPress={handleUpdateUser} isLoading={loading}>
+                  Update User
+                </Button>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
+        </div>
+      </div>
+    );
+  };
+
+  const renderOverview = () => (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard Overview</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="shadow-lg hover:shadow-xl transition-shadow">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Users</p>
+                  <p className="text-3xl font-bold text-gray-900">{users.length}</p>
+                </div>
+                <Users className="h-8 w-8 text-blue-500" />
+              </div>
+            </CardBody>
+          </Card>
+          <Card className="shadow-lg hover:shadow-xl transition-shadow">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Videos</p>
+                  <p className="text-3xl font-bold text-gray-900">{videos.length}</p>
+                </div>
+                <Video className="h-8 w-8 text-green-500" />
+              </div>
+            </CardBody>
+          </Card>
+          <Card className="shadow-lg hover:shadow-xl transition-shadow">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Orders</p>
+                  <p className="text-3xl font-bold text-gray-900">{orders.length}</p>
+                </div>
+                <ShoppingCart className="h-8 w-8 text-purple-500" />
+              </div>
+            </CardBody>
+          </Card>
+          <Card className="shadow-lg hover:shadow-xl transition-shadow">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Revenue</p>
+                  <p className="text-3xl font-bold text-gray-900">$0</p>
+                </div>
+                <DollarSign className="h-8 w-8 text-yellow-500" />
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'overview':
+        return renderOverview();
+      case 'all-users':
+        return renderAllUsers();
+      default:
+        return (
+          <div className="min-h-screen bg-gray-50 p-6">
+            <div className="max-w-7xl mx-auto">
+              <h1 className="text-3xl font-bold text-gray-900 mb-6">Coming Soon</h1>
+              <Card className="shadow-lg">
+                <CardBody className="p-12">
+                  <div className="text-center">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Settings className="h-10 w-10 text-gray-600" />
+                    </div>
+                    <h3 className="text-2xl font-semibold text-gray-900 mb-3">Feature Coming Soon</h3>
+                    <p className="text-gray-600 text-lg">This section is under development and will be available soon.</p>
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <Shield className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold text-gray-900">Admin Dashboard</h1>
+                  <p className="text-xs text-gray-500">Zinga Linga Management</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              <Button 
+                variant="light" 
+                isIconOnly 
+                className="hover:bg-gray-100 relative"
+              >
+                <Bell className="h-4 w-4 text-gray-600" />
+                <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-xs text-white font-bold">3</span>
+                </div>
+              </Button>
+              
+              <Dropdown>
+                <DropdownTrigger>
+                  <div className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 rounded-lg p-2">
+                    <Avatar name={user?.name || 'Admin'} size="sm" className="bg-blue-600" />
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-gray-900">{user?.name || 'Admin'}</p>
+                      <p className="text-xs text-gray-500">Administrator</p>
+                    </div>
+                  </div>
+                </DropdownTrigger>
+                <DropdownMenu>
+                  <DropdownItem key="profile" startContent={<Users className="h-4 w-4" />}>
+                    Profile
+                  </DropdownItem>
+                  <DropdownItem key="settings" startContent={<Settings className="h-4 w-4" />}>
+                    Settings
+                  </DropdownItem>
+                  <DropdownItem key="logout" color="danger" startContent={<LogOut className="h-4 w-4" />} onPress={onLogout}>
+                    Sign Out
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8">
+            <button
+              onClick={() => setActiveSection('overview')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeSection === 'overview'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveSection('all-users')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeSection === 'all-users'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Users
+            </button>
+            <button
+              onClick={() => setActiveSection('videos')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeSection === 'videos'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Videos
+            </button>
+            <button
+              onClick={() => setActiveSection('orders')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeSection === 'orders'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Orders
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      {renderContent()}
+    </div>
+  );
+}il: '',
         imageUploadType: 'file',
         videoUrl: '',
         videoUploadType: 'file',
@@ -335,6 +728,163 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
       label: 'Users / Parents',
       icon: <Users className="h-4 w-4" />,
       children: [
+        { id: 'all-users', label: 'All Users', icon: <Users className="h-4 w-4" /> },
+        { id: 'children-profiles', label: 'Children Profiles', icon: <UserCheck className="h-4 w-4" /> },
+        { id: 'access-logs', label: 'Access Logs / IPs', icon: <Activity className="h-4 w-4" /> }
+      ]
+    }
+  ];
+
+  // Load users data
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      const usersData = await vpsDataStore.getUsers();
+      setUsers(usersData);
+    } catch (error) {
+      console.error('Error loading users:', error);
+    }
+  };
+
+  const renderAllUsers = () => {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">All Users</h1>
+          <Button 
+            color="primary"
+            startContent={<Plus className="h-4 w-4" />}
+            onPress={onAddUserOpen}
+          >
+            Add New User
+          </Button>
+        </div>
+        <Card>
+          <CardBody>
+            <div className="overflow-x-auto">
+              <Table aria-label="Users table">
+                <TableHeader>
+                  <TableColumn>USER</TableColumn>
+                  <TableColumn>EMAIL</TableColumn>
+                  <TableColumn>ROLE</TableColumn>
+                  <TableColumn>STATUS</TableColumn>
+                  <TableColumn>ACTIONS</TableColumn>
+                </TableHeader>
+                <TableBody emptyContent="No users found">
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <Avatar name={user.name} size="sm" />
+                          <span>{user.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Chip size="sm" color={user.role === 'admin' ? 'danger' : 'primary'}>
+                          {user.role}
+                        </Chip>
+                      </TableCell>
+                      <TableCell>
+                        <Chip size="sm" color="success">Active</Chip>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="light" 
+                            onPress={() => handleEditUser(user.id)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="light" color="danger">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Edit User Modal */}
+        <Modal isOpen={isEditUserOpen} onClose={onEditUserClose}>
+          <ModalContent>
+            <ModalHeader>Edit User</ModalHeader>
+            <ModalBody>
+              <div className="space-y-4">
+                <Input
+                  label="Name"
+                  value={editUserForm.name}
+                  onChange={(e) => setEditUserForm(prev => ({ ...prev, name: e.target.value }))}
+                />
+                <Input
+                  label="Email"
+                  type="email"
+                  value={editUserForm.email}
+                  onChange={(e) => setEditUserForm(prev => ({ ...prev, email: e.target.value }))}
+                />
+                <Select
+                  label="Role"
+                  selectedKeys={[editUserForm.role]}
+                  onSelectionChange={(keys) => {
+                    const role = Array.from(keys)[0] as string;
+                    setEditUserForm(prev => ({ ...prev, role }));
+                  }}
+                >
+                  <SelectItem key="user" value="user">User</SelectItem>
+                  <SelectItem key="admin" value="admin">Admin</SelectItem>
+                </Select>
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button color="danger" variant="light" onPress={onEditUserClose}>
+                Cancel
+              </Button>
+              <Button color="primary" onPress={handleUpdateUser} isLoading={loading}>
+                Update User
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      </div>
+    );
+  };
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'all-users':
+        return renderAllUsers();
+      default:
+        return (
+          <div className="space-y-6">
+            <h1 className="text-3xl font-bold">Coming Soon</h1>
+            <Card>
+              <CardBody>
+                <p className="text-center text-gray-500 py-8">
+                  This section is under development.
+                </p>
+              </CardBody>
+            </Card>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-6">
+        {renderContent()}
+      </div>
+    </div>
+  );
+}n: [
         { id: 'all-users', label: 'All Users', icon: <Users className="h-4 w-4" /> },
         { id: 'children-profiles', label: 'Children Profiles', icon: <UserCheck className="h-4 w-4" /> },
         { id: 'access-logs', label: 'Access Logs / IPs', icon: <Activity className="h-4 w-4" /> }
@@ -464,21 +1014,12 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
       const realUsers = await vpsDataStore.getUsers();
       const realProducts = await vpsDataStore.getProducts();
       
-      // Convert purchases to order format with proper pricing
+      // Convert purchases to order format
       const convertedOrders = realPurchases.map(purchase => {
         const user = realUsers.find(u => u.id === purchase.userId);
         const modules = purchase.moduleIds ? 
           purchase.moduleIds.map(id => realProducts.find(p => p.id === id)).filter(Boolean) :
           [realProducts.find(p => p.id === purchase.moduleId)].filter(Boolean);
-        
-        // Calculate proper amount from modules if not provided
-        let orderAmount = purchase.amount;
-        if (!orderAmount && modules.length > 0) {
-          orderAmount = modules.reduce((sum, module) => sum + (module?.price || 0), 0);
-        }
-        if (!orderAmount) {
-          orderAmount = Math.random() * 50 + 9.99; // Fallback random price
-        }
         
         return {
           id: purchase.id,
@@ -489,10 +1030,10 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
           },
           item: {
             name: modules.length > 1 ? `Bundle (${modules.length} videos)` : modules[0]?.title || 'Unknown Product',
-            count: modules.length || 1,
+            count: modules.length,
             type: modules.length > 1 ? 'bundle' : 'video'
           },
-          amount: Number(orderAmount) || 0,
+          amount: purchase.amount || 0,
           status: purchase.status || 'completed',
           orderType: modules.length > 1 ? 'Bundle' : 'Video Purchase',
           date: new Date(purchase.createdAt || purchase.purchaseDate || Date.now()),
@@ -578,21 +1119,11 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
       const status = statuses[i % statuses.length];
       const orderType = orderTypes[i % orderTypes.length];
       
-      // Generate realistic pricing based on item type
-      let amount;
-      if (item.type === 'subscription') {
-        amount = [9.99, 19.99, 29.99][Math.floor(Math.random() * 3)];
-      } else if (item.type === 'videos' && item.count > 1) {
-        amount = item.count * (Math.random() * 10 + 5); // $5-15 per video
-      } else {
-        amount = Math.random() * 15 + 4.99; // $4.99-19.99 for single videos
-      }
-      
       return {
         id: `ORD-2024-${String(i + 1).padStart(3, '0')}`,
         customer,
         item,
-        amount: Number(amount.toFixed(2)),
+        amount: Math.random() * 50 + 9.99,
         status,
         orderType,
         date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
@@ -1366,7 +1897,9 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
                           className="w-full h-48 object-cover"
                           controls
                           onError={(e) => {
-                            console.error('Video load error:', e);
+                            // Sanitize error message to prevent log injection
+                            const safeError = String(e).replace(/[\r\n]+/g, ' ');
+                            console.error('Video load error:', safeError);
                           }}
                         >
                           Your browser does not support the video tag.
@@ -1757,59 +2290,6 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
             </ModalFooter>
           </ModalContent>
         </Modal>
-
-        {/* Edit Template Modal */}
-        <Modal isOpen={isEditTemplateOpen} onClose={onEditTemplateClose} size="2xl">
-          <ModalContent>
-            <ModalHeader>Edit Email Template</ModalHeader>
-            <ModalBody>
-              <div className="space-y-4">
-                <Input
-                  label="Template Name"
-                  value={templateForm.name}
-                  onChange={(e) => setTemplateForm(prev => ({ ...prev, name: e.target.value }))}
-                />
-                <Input
-                  label="Subject Line"
-                  value={templateForm.subject}
-                  onChange={(e) => setTemplateForm(prev => ({ ...prev, subject: e.target.value }))}
-                />
-                <Input
-                  label="Description"
-                  value={templateForm.description}
-                  onChange={(e) => setTemplateForm(prev => ({ ...prev, description: e.target.value }))}
-                />
-                <Textarea
-                  label="Email Content"
-                  value={templateForm.content}
-                  onChange={(e) => setTemplateForm(prev => ({ ...prev, content: e.target.value }))}
-                  minRows={8}
-                  placeholder="Enter your email template content here..."
-                />
-                <Select
-                  label="Status"
-                  selectedKeys={[templateForm.status]}
-                  onSelectionChange={(keys) => setTemplateForm(prev => ({ ...prev, status: Array.from(keys)[0] as string }))}
-                >
-                  <SelectItem key="active" value="active">Active</SelectItem>
-                  <SelectItem key="draft" value="draft">Draft</SelectItem>
-                  <SelectItem key="inactive" value="inactive">Inactive</SelectItem>
-                </Select>
-              </div>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="light" onPress={onEditTemplateClose}>
-                Cancel
-              </Button>
-              <Button color="primary" onPress={() => {
-                alert(`Template "${templateForm.name}" updated successfully!`);
-                onEditTemplateClose();
-              }}>
-                Save Template
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
       </div>
     );
   };
@@ -1823,9 +2303,7 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
             <Button startContent={<Plus className="h-4 w-4" />} color="primary" onPress={onAddUserOpen}>
               Add New User
             </Button>
-            <Button startContent={<Filter className="h-4 w-4" />} variant="flat">
-              Filter Users
-            </Button>
+
             <Button startContent={<Download className="h-4 w-4" />} color="secondary">
               Export Data
             </Button>
@@ -1973,9 +2451,7 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Access Logs & IPs</h1>
           <div className="flex space-x-2">
-            <Button startContent={<Filter className="h-4 w-4" />} variant="flat">
-              Filter Logs
-            </Button>
+
             <Button startContent={<Download className="h-4 w-4" />} color="primary">
               Export Logs
             </Button>
@@ -2141,9 +2617,7 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Transaction History</h1>
           <div className="flex space-x-2">
-            <Button startContent={<Filter className="h-4 w-4" />} variant="flat">
-              Filter Transactions
-            </Button>
+
             <Button startContent={<Download className="h-4 w-4" />} color="primary">
               Export Report
             </Button>
@@ -2262,13 +2736,7 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Moderate Comments</h1>
           <div className="flex space-x-2">
-            <Button 
-              startContent={<Filter className="h-4 w-4" />} 
-              variant="flat"
-              onPress={() => alert('Filter comments functionality - would open filter modal')}
-            >
-              Filter Comments
-            </Button>
+
             <Button 
               startContent={<CheckCircle className="h-4 w-4" />} 
               color="success"
@@ -2648,62 +3116,30 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
           <Button 
             color="primary" 
             startContent={<Plus className="h-4 w-4" />}
-            onPress={() => alert('Create Template functionality')}
+            onPress={() => alert('Create Template functionality - would open template creation modal')}
           >
             Create Template
           </Button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[
-            {
-              id: 'welcome',
-              name: 'Welcome Email',
-              subject: 'Welcome to Zinga Linga!',
-              description: 'Welcome new users to the platform',
-              status: 'active',
-              lastModified: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-              usage: 156
-            },
-            {
-              id: 'password-reset',
-              name: 'Password Reset',
-              subject: 'Reset Your Password',
-              description: 'Help users reset their passwords',
-              status: 'active',
-              lastModified: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-              usage: 23
-            },
-            {
-              id: 'subscription-reminder',
-              name: 'Subscription Reminder',
-              subject: 'Your subscription expires soon',
-              description: 'Remind users about subscription renewal',
-              status: 'active',
-              lastModified: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-              usage: 89
-            }
-          ].map((template) => (
-            <Card key={template.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start w-full">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-lg font-bold text-gray-800">{template.name}</h3>
-                      <Chip 
-                        color={template.status === 'active' ? 'success' : 'warning'} 
-                        size="sm"
-                        variant="flat"
-                      >
-                        {template.status.toUpperCase()}
-                      </Chip>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">
-                      {template.description}
-                    </p>
-                  </div>
+          {emailTemplates.map((template) => (
+            <Card key={template.id}>
+              <CardHeader className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold">{template.name}</h3>
+                  <Chip 
+                    color={template.status === 'active' ? 'success' : 'default'} 
+                    size="sm" 
+                    className="mt-1"
+                  >
+                    {template.status}
+                  </Chip>
                 </div>
               </CardHeader>
-              <CardBody className="pt-0">
+              <CardBody>
+                <p className="text-sm text-gray-600 mb-2">
+                  {template.description}
+                </p>
                 <p className="text-xs text-gray-500 mb-4">
                   Subject: {template.subject}
                 </p>
@@ -2715,17 +3151,7 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
                     size="sm" 
                     variant="light"
                     title="Edit Template"
-                    onPress={() => {
-                      setSelectedTemplate(template);
-                      setTemplateForm({
-                        name: template.name,
-                        subject: template.subject,
-                        description: template.description,
-                        content: `Dear {{user_name}},\n\nWelcome to Zinga Linga! We're excited to have you join our educational platform.\n\nBest regards,\nThe Zinga Linga Team`,
-                        status: template.status
-                      });
-                      onEditTemplateOpen();
-                    }}
+                    onPress={() => alert(`Edit template: "${template.name}"\nSubject: ${template.subject}`)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -2733,7 +3159,7 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
                     size="sm" 
                     variant="light"
                     title="Preview Template"
-                    onPress={() => alert(`Preview template: "${template.name}"`)}
+                    onPress={() => alert(`Preview template: "${template.name}"\n\nSubject: ${template.subject}\nDescription: ${template.description}\nStatus: ${template.status}`)}
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
@@ -2751,7 +3177,10 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
                     color="danger" 
                     variant="light"
                     title="Delete Template"
-                    onPress={() => alert(`Template deleted: "${template.name}"`)}
+                    onPress={() => {
+                      setEmailTemplates(prev => prev.filter(t => t.id !== template.id));
+                      alert(`Template deleted: "${template.name}"`);
+                    }}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -3322,7 +3751,7 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
               <h3 className="text-lg font-semibold">User Activity Trends</h3>
               <Button 
                 size="sm" 
-                variant="flat"
+                color="primary"
                 onPress={() => alert('Export engagement data functionality - would download detailed analytics report')}
               >
                 Export Data
@@ -4456,12 +4885,7 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
             <div className="flex justify-between items-center">
               <h1 className="text-3xl font-bold">Purchase History</h1>
               <div className="flex space-x-2">
-                <Button 
-                  startContent={<Filter className="h-4 w-4" />} 
-                  variant="flat"
-                >
-                  Filter Orders
-                </Button>
+
                 <Button 
                   startContent={<Download className="h-4 w-4" />} 
                   color="primary"
@@ -4568,24 +4992,24 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
                             >
                               <Download className="h-4 w-4" />
                             </Button>
-                            {transaction.status === 'completed' && (
+                            {order.status === 'completed' && (
                               <Button 
                                 size="sm" 
                                 variant="light" 
                                 color="warning" 
                                 title="Refund"
-                                onPress={() => alert(`Refund initiated for transaction ${transaction.orderId}`)}
+                                onClick={() => handleRefundOrder(order.id)}
                               >
                                 <Receipt className="h-4 w-4" />
                               </Button>
                             )}
-                            {transaction.status === 'failed' && (
+                            {order.status === 'failed' && (
                               <Button 
                                 size="sm" 
                                 variant="light" 
                                 color="primary" 
                                 title="Retry Payment"
-                                onPress={() => alert(`Payment retry initiated for ${transaction.orderId}`)}
+                                onClick={() => handleRetryPayment(order.id)}
                               >
                                 <CreditCard className="h-4 w-4" />
                               </Button>
@@ -4607,12 +5031,7 @@ export default function ComprehensiveAdminDashboard({ user, onLogout }: Comprehe
             <div className="flex justify-between items-center">
               <h1 className="text-3xl font-bold">Video Access Logs</h1>
               <div className="flex space-x-2">
-                <Button 
-                  startContent={<Filter className="h-4 w-4" />} 
-                  variant="flat"
-                >
-                  Filter Logs
-                </Button>
+
                 <Button 
                   startContent={<Download className="h-4 w-4" />} 
                   color="primary"

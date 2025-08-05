@@ -1,15 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import Header from '../components/Header';
 
 interface CookiePolicyPageProps {
   onBack: () => void;
   onNavigate: (page: string) => void;
+  onLoginClick?: () => void;
 }
 
-const CookiePolicyPage: React.FC<CookiePolicyPageProps> = ({ onBack, onNavigate }) => {
+const CookiePolicyPage: React.FC<CookiePolicyPageProps> = ({ onBack, onNavigate, onLoginClick }) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-white font-mali">
+      <Header 
+        onLoginClick={onLoginClick || (() => {})}
+        isMenuOpen={isMenuOpen}
+        setIsMenuOpen={setIsMenuOpen}
+        onNavigate={onNavigate}
+      />
+      
+      <div className="pt-32">
+        <div className="max-w-4xl mx-auto px-4 py-8">
         <button onClick={onBack} className="flex items-center gap-2 text-brand-green hover:text-green-600 transition-colors mb-6 font-mali">
           <ArrowLeft className="w-5 h-5" />
           Back to Home
@@ -23,6 +35,10 @@ const CookiePolicyPage: React.FC<CookiePolicyPageProps> = ({ onBack, onNavigate 
           <p className="font-mali text-gray-700">Cookie policy content coming soon...</p>
         </div>
       </div>
+      </div>
+      
+      {/* Spacer to ensure footer appears */}
+      <div className="h-20"></div>
     </div>
   );
 };

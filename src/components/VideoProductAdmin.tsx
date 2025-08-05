@@ -235,24 +235,33 @@ export const VideoProductAdmin: React.FC<VideoProductAdminProps> = ({ user, onLo
       const data = await vpsDataStore.loadData();
       const modules = data.modules || [];
 
-      // Handle file uploads
       let videoUrl = productForm.videoUrl;
       let thumbnailUrl = productForm.thumbnail;
 
-      // Process video file upload
       if (productForm.videoSource === 'file' && productForm.videoFile) {
-        // In a real application, you would upload the file to a server or cloud storage
-        // For now, we'll create a placeholder URL
-        videoUrl = `uploads/videos/${productForm.videoFile.name}`;
-        console.log('Video file selected:', productForm.videoFile.name);
+        const formData = new FormData();
+        formData.append('file', productForm.videoFile);
+        const response = await fetch('/api/upload', { method: 'POST', body: formData });
+        const result = await response.json();
+        if (result.success) {
+          videoUrl = result.url;
+        } else {
+          alert('Video upload failed');
+          return;
+        }
       }
 
-      // Process cover image upload
       if (productForm.coverSource === 'file' && productForm.coverFile) {
-        // In a real application, you would upload the file to a server or cloud storage
-        // For now, we'll create a placeholder URL
-        thumbnailUrl = `uploads/images/${productForm.coverFile.name}`;
-        console.log('Cover image selected:', productForm.coverFile.name);
+        const formData = new FormData();
+        formData.append('file', productForm.coverFile);
+        const response = await fetch('/api/upload', { method: 'POST', body: formData });
+        const result = await response.json();
+        if (result.success) {
+          thumbnailUrl = result.url;
+        } else {
+          alert('Cover image upload failed');
+          return;
+        }
       }
 
       if (editingProduct) {

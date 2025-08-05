@@ -1,11 +1,21 @@
 @echo off
 echo ========================================
-echo    Zinga Linga VPS Deployment Script
+echo    ZINGA LINGA VPS DEPLOYMENT
 echo ========================================
+echo Target VPS: 109.199.106.28:22
 echo.
 
-echo [1/5] Building the application...
-npm run build
+echo [1/6] Installing dependencies...
+call npm install
+if %errorlevel% neq 0 (
+    echo ERROR: npm install failed!
+    pause
+    exit /b 1
+)
+
+echo.
+echo [2/6] Building production version...
+call npm run build
 if %errorlevel% neq 0 (
     echo ERROR: Build failed!
     pause
@@ -13,38 +23,41 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo [2/5] Creating deployment package...
-tar -czf zinga-linga-working-login.tar.gz --exclude=node_modules --exclude=.git --exclude=*.zip --exclude=*.tar.gz .
-if %errorlevel% neq 0 (
-    echo ERROR: Failed to create deployment package!
-    pause
-    exit /b 1
-)
+echo [3/6] Creating deployment package...
+tar -czf zinga-linga-deploy.tar.gz src public data package.json next.config.js tailwind.config.js tsconfig.json postcss.config.js .env.production
 
 echo.
-echo [3/5] Package created successfully!
-dir zinga-linga-working-login.tar.gz
+echo [4/6] Package created successfully!
+dir zinga-linga-deploy.tar.gz
 
 echo.
-echo [4/5] Upload commands for VPS:
+echo [5/6] Uploading to VPS...
+echo ========================================
+echo VPS Details:
+echo IP: 109.199.106.28
+echo Port: 22
+echo Password: Secureweb25
+echo ========================================
 echo.
-echo Run these commands to upload to your VPS:
-echo scp zinga-linga-working-login.tar.gz root@109.199.106.28:/tmp/
-echo scp update-vps.sh root@109.199.106.28:/tmp/
+echo Manual upload required:
+echo 1. Use WinSCP, FileZilla, or SCP to upload zinga-linga-deploy.tar.gz
+echo 2. SSH to server: ssh root@109.199.106.28
+echo 3. Extract: tar -xzf zinga-linga-deploy.tar.gz
+echo 4. Install: npm install --production
+echo 5. Start: npm start
 echo.
-echo [5/5] VPS deployment commands:
-echo.
-echo SSH into your VPS and run:
+
+echo [6/6] VPS Commands to run:
+echo ========================================
 echo ssh root@109.199.106.28
-echo cd /tmp
-echo chmod +x update-vps.sh
-echo ./update-vps.sh
-echo.
+echo tar -xzf zinga-linga-deploy.tar.gz
+echo cd zinga-linga-nextjs
+echo npm install --production
+echo npm run build
+echo npm start
 echo ========================================
-echo    Deployment package ready!
-echo ========================================
 echo.
-echo Your application will be available at:
-echo http://109.199.106.28:3000
+echo Deployment package ready: zinga-linga-deploy.tar.gz
+echo Upload this file to your VPS and run the commands above.
 echo.
 pause

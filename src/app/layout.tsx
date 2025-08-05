@@ -1,34 +1,5 @@
-import type { Metadata } from 'next'
-import { Mali } from 'next/font/google'
+import React from 'react'
 import './globals.css'
-import { NextUIProvider } from '@nextui-org/react'
-
-const mali = Mali({ 
-  subsets: ['latin'],
-  weight: ['200', '300', '400', '500', '600', '700'],
-  variable: '--font-mali'
-})
-
-export const metadata: Metadata = {
-  title: 'Zinga Linga - African Alphabet Adventures with Kiki & Tano',
-  description: 'Join Kiki and Tano on magical African alphabet adventures! Fun, educational, and culturally rich learning experiences for children ages 1-6.',
-  keywords: 'children education, alphabet learning, African culture, kids videos, educational games, preschool learning',
-  authors: [{ name: 'Zinga Linga Team' }],
-  openGraph: {
-    title: 'Zinga Linga - African Alphabet Adventures',
-    description: 'Fun learning for children ages 1-6 with audio lessons, videos & interactive games.',
-    images: ['/zinga linga logo.png'],
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Zinga Linga - African Alphabet Adventures',
-    description: 'Fun learning for children ages 1-6 with audio lessons, videos & interactive games.',
-    images: ['/zinga linga logo.png'],
-  },
-  viewport: 'width=device-width, initial-scale=1',
-  robots: 'index, follow',
-}
 
 export default function RootLayout({
   children,
@@ -36,16 +7,19 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={mali.variable}>
+    <html lang="en" className="font-inter">
       <head>
-        <link rel="icon" href="/favicon.ico" />
+        <title>Zinga Linga</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" />
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Mali:wght@300;400;500;600;700&display=swap" 
+          rel="stylesheet" 
+        />
       </head>
-      <body className={`${mali.className} font-mali antialiased`} suppressHydrationWarning>
-        <NextUIProvider>
-          {children}
-        </NextUIProvider>
+      <body suppressHydrationWarning className="font-inter antialiased">
+        {children}
       </body>
     </html>
   )

@@ -1,0 +1,58 @@
+name: 🚀 Auto Deploy to VPS
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Get Code
+      uses: actions/checkout@v4
+
+    - name: 🔧 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: 📦 Install & Build
+      run: |
+        npm ci
+        npm run build
+
+    - name: 🚀 Deploy to VPS
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        script: |
+          # Go to app directory
+          cd /var/www/zinga-linga || mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
+          
+          # Get latest code
+          if [ -d ".git" ]; then
+            git pull origin main
+          else
+            git clone https://github.com/${{ github.repository }} .
+          fi
+          
+          # Install and build
+          npm install --production
+          npm run build
+          
+          # Restart app
+          pm2 stop zinga-linga || true
+          pm2 start npm --name "zinga-linga" -- start
+          pm2 save
+          
+          echo "✅ Deployment successful!"
+          echo "🌐 Website: http://zingalinga.io/"
+
+    - name: 🎉 Success Notification
+      run: |
+        echo "🎉 Deployment completed successfully!"
+        echo "🌐 Your website is live at: http://zingalinga.io/"

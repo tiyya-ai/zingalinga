@@ -66,6 +66,8 @@ import { User, Module, Purchase, ContentFile } from '../types';
 import { vpsDataStore } from '../utils/vpsDataStore';
 import { checkVideoAccess, getUserPurchasedModules, getUserAvailableModules } from '../utils/videoAccess';
 import { CleanVideoPlayer } from './CleanVideoPlayer';
+import { sanitizeInput, sanitizeForLog } from '../utils/securityUtils';
+import { applySecurityFixes } from '../utils/comprehensiveSecurityFix';
 
 interface UserDashboardProps {
   user: User;
@@ -182,8 +184,8 @@ export default function CleanUserDashboard({
       const data = await vpsDataStore.loadData();
       setRealModules(data.modules || modules || []);
       setRealPurchases(data.purchases || purchases || []);
-      console.log('Loaded modules:', data.modules || modules);
-      console.log('Loaded purchases:', data.purchases || purchases);
+      console.log('Loaded modules count:', (data.modules || modules || []).length);
+      console.log('Loaded purchases count:', (data.purchases || purchases || []).length);
     } catch (error) {
       console.error('Error loading real data:', error);
       setRealModules(modules || []);
@@ -193,35 +195,35 @@ export default function CleanUserDashboard({
 
   const loadUserPreferences = async () => {
     try {
-      const userData = await vpsDataStore.getUserData(user.id);
+      const userData = await vpsDataStore.getUserData(applySecurityFixes.secureUserId(user.id));
       if (userData) {
         setSelectedTheme(userData.theme || themes[0]);
         setSelectedAvatar(userData.avatar || avatars[0]);
       }
     } catch (error) {
-      console.error('Error loading user preferences:', error);
+      console.error('Error loading user preferences:', applySecurityFixes.sanitizeLogData(error));
     }
   };
 
   // Video player functions
   const handleVideoPlay = (moduleId: string) => {
-    console.log('Attempting to play video for module:', moduleId);
+    console.log('Attempting to play video for module ID');
     const module = realModules.find(m => m.id === moduleId);
-    console.log('Found module:', module);
+    console.log('Module found:', !!module);
     
     if (module) {
       const accessResult = checkVideoAccess(user, module, realPurchases);
-      console.log('Access result:', accessResult);
+      console.log('Access granted:', accessResult.hasAccess);
       
       setSelectedModule(module);
       setShowVideoPlayer(true);
     } else {
-      console.error('Module not found:', moduleId);
+      console.error('Module not found for provided ID');
     }
   };
 
   const handleVideoPurchase = (moduleId: string) => {
-    console.log('Purchase requested for module:', moduleId);
+    console.log('Purchase requested for module ID');
     if (onPurchase) {
       onPurchase(moduleId);
     }
@@ -234,12 +236,12 @@ export default function CleanUserDashboard({
 
   const handleThemeChange = (theme: Theme) => {
     setSelectedTheme(theme);
-    vpsDataStore.updateUserPreferences(user.id, { theme });
+    vpsDataStore.updateUserPreferences(applySecurityFixes.secureUserId(user.id), { theme });
   };
 
   const handleAvatarChange = (avatar: string) => {
     setSelectedAvatar(avatar);
-    vpsDataStore.updateUserPreferences(user.id, { avatar });
+    vpsDataStore.updateUserPreferences(applySecurityFixes.secureUserId(user.id), { avatar });
   };
 
   const addToCart = (module: Module) => {
@@ -270,9 +272,11 @@ export default function CleanUserDashboard({
   const availableModules = getUserAvailableModules(user, realModules, realPurchases);
 
   const filteredModules = realModules.filter(module => {
-    const matchesSearch = module.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         module.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || module.category?.toLowerCase() === selectedCategory.toLowerCase();
+    const secureQuery = applySecurityFixes.secureSearch(searchQuery);
+    const secureCategory = applySecurityFixes.secureCategory(selectedCategory);
+    const matchesSearch = module.title.toLowerCase().includes(secureQuery) ||
+                         module.description.toLowerCase().includes(secureQuery);
+    const matchesCategory = secureCategory === 'all' || module.category?.toLowerCase() === secureCategory.toLowerCase();
     return matchesSearch && matchesCategory;
   });
 

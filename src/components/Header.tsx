@@ -1,194 +1,161 @@
+'use client';
+
 import React from 'react';
-import { Play, ShoppingCart, User, Menu, X, Star, Heart, Gift } from 'lucide-react';
 
 interface HeaderProps {
   onLoginClick: () => void;
   isMenuOpen: boolean;
   setIsMenuOpen: (open: boolean) => void;
-  onNavigate?: (page: string) => void;
+  onNavigate: (page: string) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onLoginClick, isMenuOpen, setIsMenuOpen, onNavigate }) => {
-  const handleNavigation = (sectionId: string) => {
-    // Pages that should navigate to separate pages
-    const separatePages = ['about', 'contact'];
-    
-    if (onNavigate && separatePages.includes(sectionId)) {
-      // Navigate to separate page
-      onNavigate(sectionId);
-    } else if (onNavigate) {
-      // Navigate to home page first, then scroll to section
-      onNavigate('home');
-      setTimeout(() => {
-        const element = document.getElementById(sectionId);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
-    } else {
-      // Fallback: scroll to section if on same page
-      const element = document.getElementById(sectionId);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-    setIsMenuOpen(false);
-  };
-
+export default function Header({
+  onLoginClick,
+  isMenuOpen,
+  setIsMenuOpen,
+  onNavigate,
+}: HeaderProps) {
+  const [showCart, setShowCart] = React.useState(false);
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm shadow-lg border-b border-white/20">
+    <header className="bg-gradient-to-r from-purple-800 via-blue-800 to-indigo-800 shadow-2xl border-b border-purple-500/30 fixed top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
-          {/* Logo Only */}
+        <div className="flex justify-between items-center py-3 sm:py-4">
+          {/* Logo Section */}
           <div className="flex items-center">
-            <img 
-              src="/zinga linga logo.png" 
-              alt="Zinga Linga" 
-              className="h-16 w-auto cursor-pointer hover:scale-105 transition-transform"
-              onClick={() => handleNavigation('home')}
-            />
-          </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-8">
-            <button
-              onClick={() => handleNavigation('home')}
-              className="font-mali text-gray-700 hover:text-brand-green transition-colors"
+            <button 
+              onClick={() => onNavigate('home')} 
+              className="flex items-center focus:outline-none transform hover:scale-105 transition-transform duration-200"
             >
+              <img 
+                src="/zinga linga logo.png" 
+                alt="Zinga Linga Logo" 
+                className="h-12 sm:h-14 md:h-16 w-auto"
+              />
+            </button>
+          </div>
+          
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center justify-center space-x-6 xl:space-x-8">
+            <button onClick={() => onNavigate('home')} className="text-white hover:text-yellow-400 transition-colors font-medium text-sm xl:text-base">
               Home
             </button>
-            <button
-              onClick={() => handleNavigation('about')}
-              className="font-mali text-gray-700 hover:text-brand-green transition-colors"
-            >
+            <button onClick={() => onNavigate('about')} className="text-white hover:text-yellow-400 transition-colors font-medium text-sm xl:text-base">
               About
             </button>
-
-            <button
-              onClick={() => handleNavigation('features')}
-              className="font-mali text-gray-700 hover:text-brand-green transition-colors"
-            >
-              Features
+            <button onClick={() => onNavigate('packages')} className="text-white hover:text-yellow-400 transition-colors font-medium text-sm xl:text-base">
+              Packages
             </button>
-            <button
-              onClick={() => handleNavigation('modules')}
-              className="font-mali text-gray-700 hover:text-brand-green transition-colors"
-            >
-              Modules
-            </button>
-            <button
-              onClick={() => handleNavigation('contact')}
-              className="font-mali text-gray-700 hover:text-brand-green transition-colors"
-            >
+            <button onClick={() => onNavigate('contact')} className="text-white hover:text-yellow-400 transition-colors font-medium text-sm xl:text-base">
               Contact
             </button>
+            <button onClick={() => onNavigate('help')} className="text-white hover:text-yellow-400 transition-colors font-medium text-sm xl:text-base">
+              Help
+            </button>
           </nav>
-
+          
           {/* Action Buttons */}
-          <div className="flex items-center gap-3">
-            {/* Quick Stats */}
-            <div className="hidden md:flex items-center gap-4 mr-4">
-              <div className="flex items-center gap-1 text-brand-yellow">
-                <Star className="w-4 h-4 fill-current" />
-                <span className="font-mali text-sm font-bold">4.9</span>
-              </div>
-              <div className="flex items-center gap-1 text-brand-pink">
-                <Heart className="w-4 h-4 fill-current" />
-                <span className="font-mali text-sm font-bold">1.2k</span>
-              </div>
-            </div>
-
-
-
-            {/* Login Button */}
+          <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4">
+            {/* Cart Button */}
+            <button 
+              onClick={() => setShowCart(true)}
+              className="relative bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-2 py-2 sm:px-3 sm:py-2 lg:px-4 rounded-lg font-semibold transition-all duration-200 shadow-lg text-xs sm:text-sm lg:text-base"
+            >
+              <span className="hidden sm:inline">🛒 Cart</span>
+              <span className="sm:hidden">🛒</span>
+              <span className="absolute -top-2 -right-2 bg-yellow-400 text-purple-900 text-xs w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 rounded-full flex items-center justify-center font-bold">
+                0
+              </span>
+            </button>
+            
+            {/* Parent Portal Button */}
             <button
               onClick={onLoginClick}
-              className="flex items-center gap-2 bg-gradient-to-r from-brand-green to-brand-blue text-white px-4 py-2 rounded-full hover:from-brand-green hover:to-brand-blue transform hover:scale-105 transition-all duration-200 font-mali font-bold shadow-lg"
+              className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold px-3 py-2 sm:px-4 sm:py-2 lg:px-6 rounded-lg transition-all duration-200 shadow-lg text-xs sm:text-sm lg:text-base"
             >
-              <User className="w-4 h-4" />
-              <span className="hidden sm:inline">Login</span>
+              <span className="hidden sm:inline">Parent Portal</span>
+              <span className="sm:hidden">Portal</span>
             </button>
 
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden p-2 text-gray-700 hover:text-brand-green transition-colors"
+              className="lg:hidden text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
             >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
             </button>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Navigation Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden border-t border-gray-200 py-4">
-            <nav className="flex flex-col space-y-4">
-              <button
-                onClick={() => handleNavigation('home')}
-                className="text-left font-mali text-gray-700 hover:text-brand-green transition-colors py-2"
+          <div className="lg:hidden py-4 border-t border-white/20 bg-gradient-to-r from-purple-800/95 via-blue-800/95 to-indigo-800/95 backdrop-blur-sm">
+            <div className="flex flex-col space-y-3">
+              <button 
+                onClick={() => { onNavigate('home'); setIsMenuOpen(false); }}
+                className="text-white hover:text-yellow-400 hover:bg-white/10 transition-all font-medium text-left py-2 px-4 rounded-lg block w-full"
               >
-                Home
+                🏠 Home
               </button>
-              <button
-                onClick={() => handleNavigation('about')}
-                className="text-left font-mali text-gray-700 hover:text-brand-green transition-colors py-2"
+              <button 
+                onClick={() => { onNavigate('about'); setIsMenuOpen(false); }}
+                className="text-white hover:text-yellow-400 hover:bg-white/10 transition-all font-medium text-left py-2 px-4 rounded-lg block w-full"
               >
-                About
+                ℹ️ About
               </button>
-
-              <button
-                onClick={() => handleNavigation('features')}
-                className="text-left font-mali text-gray-700 hover:text-brand-green transition-colors py-2"
+              <button 
+                onClick={() => { onNavigate('packages'); setIsMenuOpen(false); }}
+                className="text-white hover:text-yellow-400 hover:bg-white/10 transition-all font-medium text-left py-2 px-4 rounded-lg block w-full"
               >
-                Features
+                📦 Packages
               </button>
-              <button
-                onClick={() => handleNavigation('modules')}
-                className="text-left font-mali text-gray-700 hover:text-brand-green transition-colors py-2"
+              <button 
+                onClick={() => { onNavigate('contact'); setIsMenuOpen(false); }}
+                className="text-white hover:text-yellow-400 hover:bg-white/10 transition-all font-medium text-left py-2 px-4 rounded-lg block w-full"
               >
-                Modules
+                📞 Contact
               </button>
-              <button
-                onClick={() => handleNavigation('contact')}
-                className="text-left font-mali text-gray-700 hover:text-brand-green transition-colors py-2"
+              <button 
+                onClick={() => { onNavigate('help'); setIsMenuOpen(false); }}
+                className="text-white hover:text-yellow-400 hover:bg-white/10 transition-all font-medium text-left py-2 px-4 rounded-lg block w-full"
               >
-                Contact
+                ❓ Help
               </button>
-              
-              {/* Mobile Action Buttons */}
-              <div className="pt-4 border-t border-gray-200 space-y-3">
-
-                
-                <div className="flex items-center justify-center gap-6 text-sm">
-                  <div className="flex items-center gap-1 text-brand-yellow">
-                    <Star className="w-4 h-4 fill-current" />
-                    <span className="font-mali font-bold">4.9 Rating</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-brand-pink">
-                    <Heart className="w-4 h-4 fill-current" />
-                    <span className="font-mali font-bold">1.2k Families</span>
-                  </div>
-                </div>
-              </div>
-            </nav>
+            </div>
           </div>
         )}
       </div>
-
-      {/* Promotional Banner */}
-      <div className="bg-gradient-to-r from-brand-yellow to-brand-red text-white py-2 px-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 text-sm font-mali">
-          <Gift className="w-4 h-4" />
-          <span className="font-bold">Limited Time:</span>
-          <span>Get Kiki's Alphabet + Tano's Songs for just $14.99 (Save $3!)</span>
-          <button
-            onClick={() => handleNavigation('modules')}
-            className="underline hover:no-underline ml-2"
-          >
-            Learn More
-          </button>
+      
+      {showCart && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl border border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-mali font-bold text-brand-green">Shopping Cart</h3>
+              <button 
+                onClick={() => setShowCart(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">🛒</div>
+              <p className="text-gray-600 font-mali text-lg mb-6">Your cart is empty</p>
+              <button 
+                onClick={() => setShowCart(false)}
+                className="bg-gradient-to-r from-brand-yellow to-brand-red text-white font-mali font-bold py-4 px-8 rounded-2xl hover:from-brand-yellow hover:to-brand-red transform hover:scale-105 transition-all duration-300 shadow-lg"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </header>
   );
-};
+}

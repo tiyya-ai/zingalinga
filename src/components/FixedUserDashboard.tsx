@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import UserProfilePage from '../page-components/UserProfilePage';
 import {
   Card,
@@ -24,6 +24,8 @@ import {
   Tabs,
   Tab
 } from '@nextui-org/react';
+import { CartModal } from './CartModal';
+import { useCart, PRODUCTS } from '../hooks/useCart';
 import {
   Play,
   Heart,
@@ -86,13 +88,7 @@ interface Theme {
   preview: string;
 }
 
-interface CartItem {
-  id: string;
-  title: string;
-  price: number;
-  thumbnail: string;
-  quantity: number;
-}
+
 
 const themes: Theme[] = [
   {
@@ -126,6 +122,14 @@ const themes: Theme[] = [
     secondary: 'from-yellow-400 to-orange-500',
     background: 'from-orange-900 via-red-900 to-pink-900',
     preview: 'bg-gradient-to-r from-orange-500 to-red-500'
+  },
+  {
+    id: 'neon',
+    name: 'Neon',
+    primary: 'from-pink-500 to-purple-600',
+    secondary: 'from-yellow-400 to-pink-500',
+    background: 'from-pink-900 via-purple-900 to-black',
+    preview: 'bg-gradient-to-r from-pink-500 to-purple-600'
   }
 ];
 
@@ -159,16 +163,14 @@ export default function FixedUserDashboard({
   const [showThemeModal, setShowThemeModal] = useState(false);
 
   // E-commerce state
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const { items: cartItems, addItem, getTotalItems } = useCart();
+  const [showCartModal, setShowCartModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // User progress state
-  const [userLevel, setUserLevel] = useState(5);
-  const [currentXP, setCurrentXP] = useState(750);
-  const [nextLevelXP, setNextLevelXP] = useState(1000);
   const [dailyStreak, setDailyStreak] = useState(12);
 
   // Load real data on component mount
@@ -177,15 +179,21 @@ export default function FixedUserDashboard({
     loadUserPreferences();
   }, [modules, purchases]);
 
+  // Force re-render when real data changes
+  useEffect(() => {
+    if (realModules.length > 0) {
+      console.log('Real modules loaded:', realModules.length);
+    }
+  }, [realModules]);
+
   const loadRealData = async () => {
     try {
       const data = await vpsDataStore.loadData();
       setRealModules(data.modules || modules || []);
       setRealPurchases(data.purchases || purchases || []);
-      console.log('Loaded modules:', data.modules || modules);
-      console.log('Loaded purchases:', data.purchases || purchases);
+      // Data loaded successfully
     } catch (error) {
-      console.error('Error loading real data:', error);
+      // Using fallback data
       setRealModules(modules || []);
       setRealPurchases(purchases || []);
     }
@@ -193,77 +201,104 @@ export default function FixedUserDashboard({
 
   const loadUserPreferences = async () => {
     try {
+      // First try to load from localStorage for immediate response
+      const localTheme = localStorage.getItem(`user-theme-${user.id}`);
+      const localAvatar = localStorage.getItem(`user-avatar-${user.id}`);
+      
+      if (localTheme) {
+        const theme = themes.find(t => t.id === localTheme) || themes[0];
+        setSelectedTheme(theme);
+      }
+      if (localAvatar) {
+        setSelectedAvatar(localAvatar);
+      }
+      
+      // Then load from VPS data store
       const userData = await vpsDataStore.getUserData(user.id);
       if (userData) {
-        setSelectedTheme(userData.theme || themes[0]);
-        setSelectedAvatar(userData.avatar || avatars[0]);
+        if (userData.theme) {
+          const theme = themes.find(t => t.id === userData.theme.id) || userData.theme;
+          setSelectedTheme(theme);
+          localStorage.setItem(`user-theme-${user.id}`, theme.id);
+        }
+        if (userData.avatar) {
+          setSelectedAvatar(userData.avatar);
+          localStorage.setItem(`user-avatar-${user.id}`, userData.avatar);
+        }
       }
     } catch (error) {
-      console.error('Error loading user preferences:', error);
+      console.warn('Error loading user preferences:', error);
+      // Using default preferences
     }
   };
 
   // Video player functions
-  const handleVideoPlay = (moduleId: string) => {
-    console.log('Attempting to play video for module:', moduleId);
+  const handleVideoPlay = useCallback((moduleId: string) => {
     const module = realModules.find(m => m.id === moduleId);
-    console.log('Found module:', module);
     
     if (module) {
       const accessResult = checkVideoAccess(user, module, realPurchases);
-      console.log('Access result:', accessResult);
-      
       setSelectedModule(module);
       setShowVideoPlayer(true);
-    } else {
-      console.error('Module not found:', moduleId);
     }
-  };
+  }, [realModules, user, realPurchases]);
 
-  const handleVideoPurchase = (moduleId: string) => {
-    console.log('Purchase requested for module:', moduleId);
+  const handleVideoPurchase = useCallback((moduleId: string) => {
     if (onPurchase) {
       onPurchase(moduleId);
     }
-  };
+  }, [onPurchase]);
 
-  const handleVideoPlayerClose = () => {
+  const handleVideoPlayerClose = useCallback(() => {
     setShowVideoPlayer(false);
     setSelectedModule(null);
-  };
+  }, []);
 
-  const handleThemeChange = (theme: Theme) => {
+  const handleThemeChange = useCallback(async (theme: Theme) => {
     setSelectedTheme(theme);
-    vpsDataStore.updateUserPreferences(user.id, { theme });
-  };
-
-  const handleAvatarChange = (avatar: string) => {
-    setSelectedAvatar(avatar);
-    vpsDataStore.updateUserPreferences(user.id, { avatar });
-  };
-
-  const addToCart = (module: Module) => {
-    const existingItem = cart.find(item => item.id === module.id);
-    if (existingItem) {
-      setCart(cart.map(item => 
-        item.id === module.id 
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      ));
-    } else {
-      setCart([...cart, {
-        id: module.id,
-        title: module.title,
-        price: module.price || 0,
-        thumbnail: module.thumbnail || '',
-        quantity: 1
-      }]);
+    // Save to localStorage immediately for instant response
+    localStorage.setItem(`user-theme-${user.id}`, theme.id);
+    // Also save to VPS data store
+    try {
+      await vpsDataStore.updateUserPreferences(user.id, { theme });
+      // Show success feedback
+      if (typeof window !== 'undefined') {
+        const event = new CustomEvent('theme-changed', { detail: { theme: theme.name } });
+        window.dispatchEvent(event);
+      }
+    } catch (error) {
+      console.warn('Failed to save theme to VPS:', error);
     }
-  };
+  }, [user.id]);
 
-  const removeFromCart = (moduleId: string) => {
-    setCart(cart.filter(item => item.id !== moduleId));
-  };
+  const handleAvatarChange = useCallback(async (avatar: string) => {
+    setSelectedAvatar(avatar);
+    // Save to localStorage immediately for instant response
+    localStorage.setItem(`user-avatar-${user.id}`, avatar);
+    // Also save to VPS data store
+    try {
+      await vpsDataStore.updateUserPreferences(user.id, { avatar });
+    } catch (error) {
+      console.warn('Failed to save avatar to VPS:', error);
+    }
+  }, [user.id]);
+
+  const addToCart = useCallback((module: Module) => {
+    try {
+      addItem({
+        id: module.id,
+        name: module.title,
+        price: module.price || 0,
+        description: module.description,
+        type: 'module' as const
+      });
+      // Show success feedback
+      alert(`${module.title} added to cart!`);
+    } catch (error) {
+      console.error('Failed to add to cart:', error);
+      alert('Failed to add item to cart. Please try again.');
+    }
+  }, [addItem]);
 
   // Get user's purchased and available modules using access control
   const purchasedModules = getUserPurchasedModules(user, realModules, realPurchases);
@@ -296,7 +331,7 @@ export default function FixedUserDashboard({
     const isPurchased = purchasedModules.some(p => p.id === module.id);
     
     return (
-      <Card key={module.id} className={`bg-white/5 hover:bg-white/10 transition-all duration-300 group ${viewMode === 'list' ? 'flex-row' : ''}`}>
+      <Card key={module.id} className={`bg-gray-800/50 hover:bg-gray-700/70 transition-all duration-300 group shadow-lg rounded-2xl ${viewMode === 'list' ? 'flex-row' : ''}`}>
         <CardBody className={`p-4 ${viewMode === 'list' ? 'flex flex-row items-center gap-4' : ''}`}>
           {/* Video Thumbnail with Play Button */}
           <div className={`relative overflow-hidden rounded-lg cursor-pointer ${viewMode === 'list' ? 'w-32 h-20' : 'aspect-video mb-3'}`}>
@@ -400,7 +435,7 @@ export default function FixedUserDashboard({
                   onClick={() => addToCart(module)}
                 >
                   <ShoppingCart className="w-4 h-4 mr-1" />
-                  Add to Cart
+                  Buy Now
                 </Button>
               )}
               
@@ -439,7 +474,6 @@ export default function FixedUserDashboard({
             onBack={() => setCurrentPage('dashboard')}
             onNavigate={(page) => setCurrentPage(page as any)}
             onUserUpdate={(updatedUser) => {
-              console.log('User updated:', updatedUser);
               loadUserPreferences();
             }}
           />
@@ -452,7 +486,7 @@ export default function FixedUserDashboard({
   const renderStorePage = () => (
     <div className="space-y-6">
       {/* Search and Filters */}
-      <Card className="bg-white/10 backdrop-blur-md border-white/20">
+      <Card className="bg-gray-800/50 backdrop-blur-md border-white/20 shadow-lg rounded-2xl">
         <CardBody className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
@@ -460,38 +494,51 @@ export default function FixedUserDashboard({
                 placeholder="Search videos..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                startContent={<Search className="w-4 h-4" />}
-                className="bg-white/5"
+                startContent={<Search className="w-4 h-4 text-gray-400" />}
+                classNames={{
+                  input: "text-white placeholder:text-gray-400",
+                  inputWrapper: "bg-white/10 border-white/20 hover:bg-white/15"
+                }}
               />
             </div>
             <Select
               placeholder="Category"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              selectedKeys={selectedCategory ? [selectedCategory] : []}
+              onSelectionChange={(keys) => setSelectedCategory(Array.from(keys)[0] as string)}
               className="md:w-48"
+              classNames={{
+                trigger: "bg-white/10 border-white/20 hover:bg-white/15",
+                value: "text-white",
+                selectorIcon: "text-gray-400"
+              }}
             >
-              <SelectItem key="all" value="all">All Categories</SelectItem>
+              <SelectItem key="all" value="all" className="text-gray-900">All Categories</SelectItem>
               {realModules
                 .map(module => module.category)
                 .filter((category, index, self) => category && self.indexOf(category) === index)
                 .sort()
                 .map(category => (
-                  <SelectItem key={category} value={category}>
+                  <SelectItem key={category} value={category} className="text-gray-900">
                     {category.charAt(0).toUpperCase() + category.slice(1)}
                   </SelectItem>
                 ))}
             </Select>
             <Select
               placeholder="Sort by"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
+              selectedKeys={sortBy ? [sortBy] : []}
+              onSelectionChange={(keys) => setSortBy(Array.from(keys)[0] as string)}
               className="md:w-48"
+              classNames={{
+                trigger: "bg-white/10 border-white/20 hover:bg-white/15",
+                value: "text-white",
+                selectorIcon: "text-gray-400"
+              }}
             >
-              <SelectItem key="popular" value="popular">Most Popular</SelectItem>
-              <SelectItem key="rating" value="rating">Highest Rated</SelectItem>
-              <SelectItem key="price-low" value="price-low">Price: Low to High</SelectItem>
-              <SelectItem key="price-high" value="price-high">Price: High to Low</SelectItem>
-              <SelectItem key="newest" value="newest">Newest</SelectItem>
+              <SelectItem key="popular" value="popular" className="text-gray-900">Most Popular</SelectItem>
+              <SelectItem key="rating" value="rating" className="text-gray-900">Highest Rated</SelectItem>
+              <SelectItem key="price-low" value="price-low" className="text-gray-900">Price: Low to High</SelectItem>
+              <SelectItem key="price-high" value="price-high" className="text-gray-900">Price: High to Low</SelectItem>
+              <SelectItem key="newest" value="newest" className="text-gray-900">Newest</SelectItem>
             </Select>
             <div className="flex gap-2">
               <Button
@@ -535,81 +582,10 @@ export default function FixedUserDashboard({
     </div>
   );
 
-  const renderCartPage = () => (
-    <div className="space-y-6">
-      <Card className="bg-white/10 backdrop-blur-md border-white/20">
-        <CardHeader>
-          <h3 className="text-xl font-bold text-white">Shopping Cart ({cart.length} items)</h3>
-        </CardHeader>
-        <CardBody>
-          {cart.length === 0 ? (
-            <div className="text-center py-8">
-              <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-400 mb-4">Your cart is empty</p>
-              <Button
-                className={`bg-gradient-to-r ${selectedTheme.primary} text-white`}
-                onClick={() => setCurrentPage('store')}
-              >
-                Browse Videos
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {cart.map((item) => (
-                <Card key={item.id} className="bg-white/5">
-                  <CardBody className="p-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-20 h-14 bg-gray-300 rounded-lg" />
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-white">{item.title}</h4>
-                        <p className="text-green-400 font-bold">${item.price}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          isIconOnly
-                          variant="ghost"
-                          color="danger"
-                          onClick={() => removeFromCart(item.id)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardBody>
-                </Card>
-              ))}
-              <Divider className="bg-white/20" />
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-white text-lg font-bold">
-                    Total: ${cart.reduce((sum, item) => sum + item.price, 0).toFixed(2)}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    onClick={() => setCart([])}
-                  >
-                    Clear Cart
-                  </Button>
-                  <Button
-                    className={`bg-gradient-to-r ${selectedTheme.primary} text-white`}
-                    onClick={() => {
-                      cart.forEach(item => handleVideoPurchase(item.id));
-                      setCart([]);
-                    }}
-                  >
-                    Purchase All
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </CardBody>
-      </Card>
-    </div>
-  );
+  const renderCartPage = () => {
+    setShowCartModal(true);
+    return null;
+  };
 
   const renderDashboardPage = () => (
     <div className="space-y-6">
@@ -653,10 +629,10 @@ export default function FixedUserDashboard({
             </Button>
             <Button
               className={`bg-gradient-to-r ${selectedTheme.secondary} text-white h-20 flex-col gap-2`}
-              onClick={() => setCurrentPage('cart')}
+              onClick={() => setShowCartModal(true)}
             >
               <ShoppingCart className="w-6 h-6" />
-              <span>Cart ({cart.length})</span>
+              <span>Cart ({getTotalItems()})</span>
             </Button>
             <Button
               className="bg-gradient-to-r from-pink-500 to-red-500 text-white h-20 flex-col gap-2"
@@ -704,16 +680,6 @@ export default function FixedUserDashboard({
                 </Avatar>
                 <div>
                   <h1 className="text-white font-bold">Welcome back, {user.name}!</h1>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-gray-300">Level {userLevel}</span>
-                    <div className="w-20 h-2 bg-white/20 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full bg-gradient-to-r ${selectedTheme.primary} transition-all duration-500`}
-                        style={{ width: `${(currentXP / nextLevelXP) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-gray-300">{currentXP}/{nextLevelXP} XP</span>
-                  </div>
                 </div>
               </div>
 
@@ -735,14 +701,14 @@ export default function FixedUserDashboard({
                     Store
                   </Button>
                   <Button
-                    variant={currentPage === 'cart' ? 'solid' : 'ghost'}
-                    className={currentPage === 'cart' ? `bg-gradient-to-r ${selectedTheme.primary} text-white` : 'text-white'}
-                    onClick={() => setCurrentPage('cart')}
+                    variant="ghost"
+                    className="text-white"
+                    onClick={() => setShowCartModal(true)}
                   >
                     <ShoppingCart className="w-4 h-4" />
                     Cart
-                    {cart.length > 0 && (
-                      <Badge content={cart.length} color="danger" size="sm" />
+                    {getTotalItems() > 0 && (
+                      <Badge content={getTotalItems()} color="danger" size="sm" />
                     )}
                   </Button>
                 </div>
@@ -794,27 +760,38 @@ export default function FixedUserDashboard({
             <ModalBody>
               <Tabs aria-label="Customization options" className="w-full">
                 <Tab key="themes" title="Themes">
+                  <div className="mb-4">
+                    <p className="text-gray-300 text-sm">Choose a theme to customize your dashboard appearance. Changes are saved automatically.</p>
+                  </div>
                   <div className="grid grid-cols-2 gap-4 mt-4">
                     {themes.map((theme) => (
                       <Card 
                         key={theme.id} 
-                        className={`cursor-pointer transition-all duration-300 ${selectedTheme.id === theme.id ? 'ring-2 ring-white' : ''} bg-white/5 hover:bg-white/10`}
+                        className={`cursor-pointer transition-all duration-300 ${selectedTheme.id === theme.id ? 'ring-2 ring-white shadow-lg scale-105' : ''} bg-white/5 hover:bg-white/10 hover:scale-102`}
                         onClick={() => handleThemeChange(theme)}
                       >
                         <CardBody className="p-4">
-                          <div className={`w-full h-20 rounded-lg ${theme.preview} mb-3`} />
-                          <h4 className="text-white font-semibold">{theme.name}</h4>
+                          <div className={`w-full h-20 rounded-lg ${theme.preview} mb-3 shadow-md`} />
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-white font-semibold">{theme.name}</h4>
+                            {selectedTheme.id === theme.id && (
+                              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                            )}
+                          </div>
                         </CardBody>
                       </Card>
                     ))}
                   </div>
                 </Tab>
                 <Tab key="avatars" title="Avatars">
+                  <div className="mb-4">
+                    <p className="text-gray-300 text-sm">Select an avatar to represent you in the dashboard.</p>
+                  </div>
                   <div className="grid grid-cols-5 gap-4 mt-4">
                     {avatars.map((avatar, index) => (
                       <Button
                         key={index}
-                        className={`h-16 text-2xl ${selectedAvatar === avatar ? `bg-gradient-to-r ${selectedTheme.primary}` : 'bg-white/5 hover:bg-white/10'}`}
+                        className={`h-16 text-2xl transition-all duration-300 ${selectedAvatar === avatar ? `bg-gradient-to-r ${selectedTheme.primary} scale-110 shadow-lg` : 'bg-white/5 hover:bg-white/10 hover:scale-105'}`}
                         onClick={() => handleAvatarChange(avatar)}
                       >
                         {avatar}
@@ -857,14 +834,14 @@ export default function FixedUserDashboard({
             <Button
               isIconOnly
               variant="ghost"
-              className={currentPage === 'cart' ? 'text-white' : 'text-gray-400'}
-              onClick={() => setCurrentPage('cart')}
+              className="text-gray-400"
+              onClick={() => setShowCartModal(true)}
             >
               <div className="relative">
                 <ShoppingCart className="w-5 h-5" />
-                {cart.length > 0 && (
+                {getTotalItems() > 0 && (
                   <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white">
-                    {cart.length}
+                    {getTotalItems()}
                   </div>
                 )}
               </div>
@@ -895,6 +872,7 @@ export default function FixedUserDashboard({
               isIconOnly
               className={`bg-gradient-to-r ${selectedTheme.secondary} text-white shadow-lg hover:shadow-xl transition-all duration-300`}
               size="lg"
+              onClick={() => alert('Help & Support: Contact us at support@zingalinga.com or call 1-800-ZINGA')}
             >
               <HelpCircle className="w-6 h-6" />
             </Button>
@@ -912,6 +890,16 @@ export default function FixedUserDashboard({
             onPurchase={handleVideoPurchase}
           />
         )}
+        
+        {/* Cart Modal */}
+        <CartModal 
+          isOpen={showCartModal}
+          onClose={() => setShowCartModal(false)}
+          onPurchase={(items) => {
+            items.forEach(item => handleVideoPurchase(item.id));
+            setShowCartModal(false);
+          }}
+        />
       </div>
     </div>
   );

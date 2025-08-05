@@ -41,11 +41,11 @@ export function checkVideoAccess(
   }
 
   // Check if user has purchased this module
-  const hasPurchased = purchases.some(purchase => 
+  const hasPurchased = purchases && purchases.length > 0 ? purchases.some(purchase => 
     purchase.userId === user.id && 
     (purchase.moduleId === module.id || purchase.moduleIds?.includes(module.id)) &&
     purchase.status === 'completed'
-  );
+  ) : false;
 
   console.log('💰 Purchase check:', { hasPurchased, purchases: purchases.length });
 
@@ -128,16 +128,18 @@ export function getUserPurchasedModules(
   user.purchasedModules?.forEach(id => purchasedModuleIds.add(id));
 
   // Add from purchase records
-  purchases
-    .filter(purchase => purchase.userId === user.id && purchase.status === 'completed')
-    .forEach(purchase => {
-      if (purchase.moduleId) {
-        purchasedModuleIds.add(purchase.moduleId);
-      }
-      if (purchase.moduleIds) {
-        purchase.moduleIds.forEach(id => purchasedModuleIds.add(id));
-      }
-    });
+  if (purchases && purchases.length > 0) {
+    purchases
+      .filter(purchase => purchase.userId === user.id && purchase.status === 'completed')
+      .forEach(purchase => {
+        if (purchase.moduleId) {
+          purchasedModuleIds.add(purchase.moduleId);
+        }
+        if (purchase.moduleIds) {
+          purchase.moduleIds.forEach(id => purchasedModuleIds.add(id));
+        }
+      });
+  }
 
   const purchased = modules.filter(module => purchasedModuleIds.has(module.id));
   console.log('📚 User purchased modules:', purchased.map(m => m.title));

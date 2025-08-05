@@ -133,6 +133,16 @@ const avatars = [
   '🦸‍♂️', '🦸‍♀️', '🧙‍♂️', '🧙‍♀️', '🦄', '🐉', '🦋', '🌟', '🎭', '🎨'
 ];
 
+const getGradientColors = (gradientClass: string) => {
+  const colorMap: { [key: string]: string } = {
+    'from-purple-900 via-blue-900 to-indigo-900': '#581c87, #1e3a8a, #312e81',
+    'from-blue-900 via-teal-900 to-cyan-900': '#1e3a8a, #134e4a, #164e63',
+    'from-green-900 via-emerald-900 to-teal-900': '#14532d, #064e3b, #134e4a',
+    'from-orange-900 via-red-900 to-pink-900': '#7c2d12, #7f1d1d, #831843'
+  };
+  return colorMap[gradientClass] || '#581c87, #1e3a8a, #312e81';
+};
+
 export default function FinalUserDashboard({ 
   user, 
   modules = [], 
@@ -193,10 +203,23 @@ export default function FinalUserDashboard({
 
   const loadUserPreferences = async () => {
     try {
+      // Try to load from localStorage first for immediate theme application
+      const savedTheme = localStorage.getItem(`user-theme-${user.id}`);
+      const savedAvatar = localStorage.getItem(`user-avatar-${user.id}`);
+      
+      if (savedTheme) {
+        const theme = themes.find(t => t.id === savedTheme) || themes[0];
+        setSelectedTheme(theme);
+      }
+      if (savedAvatar) {
+        setSelectedAvatar(savedAvatar);
+      }
+      
+      // Then try to load from VPS data store
       const userData = await vpsDataStore.getUserData(user.id);
       if (userData) {
-        setSelectedTheme(userData.theme || themes[0]);
-        setSelectedAvatar(userData.avatar || avatars[0]);
+        if (userData.theme) setSelectedTheme(userData.theme);
+        if (userData.avatar) setSelectedAvatar(userData.avatar);
       }
     } catch (error) {
       console.error('Error loading user preferences:', error);
@@ -234,11 +257,17 @@ export default function FinalUserDashboard({
 
   const handleThemeChange = (theme: Theme) => {
     setSelectedTheme(theme);
+    // Save to localStorage for immediate persistence
+    localStorage.setItem(`user-theme-${user.id}`, theme.id);
+    // Also save to VPS data store
     vpsDataStore.updateUserPreferences(user.id, { theme });
   };
 
   const handleAvatarChange = (avatar: string) => {
     setSelectedAvatar(avatar);
+    // Save to localStorage for immediate persistence
+    localStorage.setItem(`user-avatar-${user.id}`, avatar);
+    // Also save to VPS data store
     vpsDataStore.updateUserPreferences(user.id, { avatar });
   };
 
@@ -675,7 +704,13 @@ export default function FinalUserDashboard({
   );
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${selectedTheme.background} relative overflow-hidden`}>
+    <div 
+      className="min-h-screen relative overflow-hidden"
+      style={{
+        background: `linear-gradient(to bottom right, ${getGradientColors(selectedTheme.background)})`,
+        backgroundColor: '#581c87'
+      }}
+    >
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl animate-pulse" />

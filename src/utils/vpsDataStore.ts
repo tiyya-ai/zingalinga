@@ -181,23 +181,8 @@ class VPSDataStore {
   // Load data with global synchronization
   async loadData(): Promise<AppData> {
     try {
-      // Try to fetch from global API first
+      // Skip API call for now, use localStorage directly
       if (typeof window !== 'undefined') {
-        try {
-          const response = await fetch(this.apiEndpoint, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-          
-          if (response.ok) {
-            const globalData = await response.json();
-            return globalData;
-          }
-        } catch (apiError) {
-          // Global API not available, falling back to localStorage
-        }
         
         // Fallback to localStorage if API fails
         const savedData = localStorage.getItem(this.storageKey);
@@ -226,25 +211,8 @@ class VPSDataStore {
   // Save data with global synchronization
   async saveData(data: AppData): Promise<boolean> {
     try {
-      // Try to save to global API first
+      // Skip API call for now, use localStorage directly
       if (typeof window !== 'undefined') {
-        try {
-          const response = await fetch(this.apiEndpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-          });
-          
-          if (response.ok) {
-            // Also save to localStorage as backup
-            localStorage.setItem(this.storageKey, JSON.stringify(data));
-            return true;
-          }
-        } catch (apiError) {
-          // Global API save failed, saving to localStorage only
-        }
         
         // Fallback to localStorage if API fails
         localStorage.setItem(this.storageKey, JSON.stringify(data));
@@ -307,13 +275,13 @@ class VPSDataStore {
     }
   }
 
-  async updateProduct(productId: string, updatedProduct: any): Promise<boolean> {
+  async updateProduct(updatedProduct: any): Promise<boolean> {
     try {
       const data = await this.loadData();
       data.modules = data.modules || [];
-      const index = data.modules.findIndex(p => p.id === productId);
+      const index = data.modules.findIndex(p => p.id === updatedProduct.id);
       if (index !== -1) {
-        data.modules[index] = { ...data.modules[index], ...updatedProduct };
+        data.modules[index] = updatedProduct;
         return await this.saveData(data);
       }
       return false;

@@ -1,7 +1,7 @@
 import React from 'react';
 
 export const Kiki = ({ className = "" }: { className?: string }) => (
-  <div className={`${className} animate-bounce`} style={{ animationDuration: '2s' }} suppressHydrationWarning>
+  <div className={`${className} animate-bounce`} style={{ animationDuration: '2s' }}>
     <div className="relative">
       {/* Monkey body */}
       <div className="w-16 h-20 bg-gradient-to-b from-brand-yellow to-yellow-500 rounded-full relative">
@@ -31,7 +31,7 @@ export const Kiki = ({ className = "" }: { className?: string }) => (
 );
 
 export const Tano = ({ className = "" }: { className?: string }) => (
-  <div className={`${className} animate-bounce`} style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} suppressHydrationWarning>
+  <div className={`${className} animate-bounce`} style={{ animationDuration: '2.5s', animationDelay: '0.5s' }}>
     <div className="relative">
       {/* Elephant body */}
       <div className="w-20 h-16 bg-gradient-to-b from-brand-pink to-pink-500 rounded-full relative">

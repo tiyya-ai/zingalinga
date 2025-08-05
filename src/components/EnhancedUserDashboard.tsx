@@ -67,10 +67,12 @@ import {
   DollarSign,
   Trash2,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  MessageCircle
 } from 'lucide-react';
 import { vpsDataStore } from '../utils/vpsDataStore';
 import { User, Module } from '../types';
+import { ChatModal } from './ChatModal';
 
 interface UserDashboardProps {
   user: User;
@@ -345,6 +347,7 @@ export default function EnhancedUserDashboard({ user, onLogout }: UserDashboardP
   const [selectedPaymentCard, setSelectedPaymentCard] = useState<PaymentCard | null>(null);
   const [orderComplete, setOrderComplete] = useState(false);
   const [purchasedVideos, setPurchasedVideos] = useState<string[]>([]);
+  const [showChatModal, setShowChatModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -1316,6 +1319,73 @@ export default function EnhancedUserDashboard({ user, onLogout }: UserDashboardP
         </Card>
       </div>
 
+      {/* Additional Quick Actions Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        {/* Chat Support */}
+        <Card 
+          isPressable
+          onPress={() => setShowChatModal(true)}
+          className="hover:scale-105 transition-transform"
+          style={{ backgroundColor: currentTheme.colors.card }}
+        >
+          <CardBody className="text-center p-4">
+            <div className="text-3xl mb-2 relative">
+              💬
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+            </div>
+            <p className="font-semibold" style={{ color: currentTheme.colors.primary }}>
+              Chat Support
+            </p>
+            <p className="text-xs text-gray-600">Get help instantly</p>
+          </CardBody>
+        </Card>
+
+        {/* Help Center */}
+        <Card 
+          isPressable
+          className="hover:scale-105 transition-transform"
+          style={{ backgroundColor: currentTheme.colors.card }}
+        >
+          <CardBody className="text-center p-4">
+            <div className="text-3xl mb-2">❓</div>
+            <p className="font-semibold" style={{ color: currentTheme.colors.primary }}>
+              Help Center
+            </p>
+            <p className="text-xs text-gray-600">FAQs & guides</p>
+          </CardBody>
+        </Card>
+
+        {/* Parent Guide */}
+        <Card 
+          isPressable
+          className="hover:scale-105 transition-transform"
+          style={{ backgroundColor: currentTheme.colors.card }}
+        >
+          <CardBody className="text-center p-4">
+            <div className="text-3xl mb-2">👨‍👩‍👧‍👦</div>
+            <p className="font-semibold" style={{ color: currentTheme.colors.primary }}>
+              Parent Guide
+            </p>
+            <p className="text-xs text-gray-600">Tips for parents</p>
+          </CardBody>
+        </Card>
+
+        {/* Contact Us */}
+        <Card 
+          isPressable
+          className="hover:scale-105 transition-transform"
+          style={{ backgroundColor: currentTheme.colors.card }}
+        >
+          <CardBody className="text-center p-4">
+            <div className="text-3xl mb-2">📞</div>
+            <p className="font-semibold" style={{ color: currentTheme.colors.primary }}>
+              Contact Us
+            </p>
+            <p className="text-xs text-gray-600">Email & phone</p>
+          </CardBody>
+        </Card>
+      </div>
+
       {/* Continue Watching */}
       {continueWatching.length > 0 && (
         <Card className="mb-6" style={{ backgroundColor: currentTheme.colors.card }}>
@@ -1451,6 +1521,17 @@ export default function EnhancedUserDashboard({ user, onLogout }: UserDashboardP
             onPress={() => setShowThemeModal(true)}
           >
             <Palette className="w-5 h-5" />
+          </Button>
+          
+          {/* Chat Support */}
+          <Button
+            isIconOnly
+            variant="light"
+            onPress={() => setShowChatModal(true)}
+            className="relative"
+          >
+            <MessageCircle className="w-5 h-5" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
           </Button>
           
           {/* Parent Mode */}
@@ -1695,9 +1776,34 @@ export default function EnhancedUserDashboard({ user, onLogout }: UserDashboardP
         </ModalContent>
       </Modal>
 
+      {/* Floating Chat Button */}
+      <Button
+        isIconOnly
+        color="primary"
+        size="lg"
+        className="fixed bottom-20 right-6 z-40 shadow-lg hover:scale-110 transition-transform"
+        onPress={() => setShowChatModal(true)}
+      >
+        <MessageCircle className="w-6 h-6" />
+      </Button>
+
+      {/* Chat Support Modal */}
+      <ChatModal 
+        isOpen={showChatModal} 
+        onClose={() => setShowChatModal(false)} 
+        user={user}
+      />
+
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
         <div className="flex justify-around items-center max-w-md mx-auto">
+          <Button 
+            isIconOnly 
+            variant="light"
+            onPress={() => setShowChatModal(true)}
+          >
+            <MessageCircle className="w-5 h-5" />
+          </Button>
           <Button isIconOnly variant="light">
             <HelpCircle className="w-5 h-5" />
           </Button>

@@ -364,6 +364,9 @@ export const ImprovedVideoPlayer: React.FC<ImprovedVideoPlayerProps> = ({
             onClick={togglePlay}
             src={videoUrl}
             crossOrigin="anonymous"
+            onContextMenu={(e) => e.preventDefault()}
+            controlsList="nodownload nofullscreen noremoteplayback"
+            disablePictureInPicture
           >
             <source src={videoUrl} type="video/mp4" />
             Your browser does not support the video tag.
@@ -383,17 +386,10 @@ export const ImprovedVideoPlayer: React.FC<ImprovedVideoPlayerProps> = ({
                 setError('Failed to load embedded video');
                 setIsLoading(false);
               }}
+              onContextMenu={(e) => e.preventDefault()}
+
             />
-            {/* External link indicator */}
-            <div className="absolute top-2 right-2">
-              <Chip 
-                size="sm" 
-                className="bg-blue-500/90 text-white backdrop-blur-sm"
-                startContent={<ExternalLink className="w-3 h-3" />}
-              >
-                {videoType === 'youtube' ? 'YouTube' : videoType === 'vimeo' ? 'Vimeo' : 'External'}
-              </Chip>
-            </div>
+
           </div>
         )}
 
@@ -734,11 +730,7 @@ export const ImprovedVideoPlayer: React.FC<ImprovedVideoPlayerProps> = ({
                 <Chip size="sm" className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 text-purple-300 border border-purple-500/30 font-medium">
                   {module.category || 'Educational'}
                 </Chip>
-                {videoType !== 'direct' && videoType !== 'none' && (
-                  <Chip size="sm" className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium">
-                    {videoType.charAt(0).toUpperCase() + videoType.slice(1)}
-                  </Chip>
-                )}
+
               </div>
             </div>
             {!accessResult.hasAccess && accessResult.requiresPurchase && (
