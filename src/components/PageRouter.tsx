@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { User, Module, Purchase, ContentFile } from '../types';
 import { LoginModal } from './LoginModal';
 import ModernAdminDashboard from './ModernAdminDashboard';
-import ProfessionalUserDashboard from './ProfessionalUserDashboard';
+
+const ProfessionalUserDashboard = dynamic(() => import('./ProfessionalUserDashboard'), {
+  ssr: false
+});
 import Header from './Header';
 import { Footer } from './footer';
 import AboutPage from '../page-components/AboutPage';
