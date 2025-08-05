@@ -1,6 +1,7 @@
 // Simplified Data Store
 import { User, Module, Purchase, ContentFile } from '../types';
 import { modules as defaultModules } from '../data/modules';
+import { realTimeSync } from './realTimeSync';
 
 interface UploadQueueItem {
   id: string;
@@ -181,10 +182,19 @@ class VPSDataStore {
   // Load data with global synchronization
   async loadData(): Promise<AppData> {
     try {
-      // Skip API call for now, use localStorage directly
+      // Try to load from VPS API first
+      const response = await fetch(this.apiEndpoint);
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      }
+    } catch (error) {
+      console.warn('Failed to load data from VPS, trying localStorage:', error);
+    }
+    
+    try {
+      // Fallback to localStorage if API fails
       if (typeof window !== 'undefined') {
-        
-        // Fallback to localStorage if API fails
         const savedData = localStorage.getItem(this.storageKey);
         if (savedData) {
           const parsedData = JSON.parse(savedData);
@@ -211,11 +221,42 @@ class VPSDataStore {
   // Save data with global synchronization
   async saveData(data: AppData): Promise<boolean> {
     try {
-      // Skip API call for now, use localStorage directly
-      if (typeof window !== 'undefined') {
+      // Try to save to VPS API first
+      const response = await fetch(this.apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (response.ok) {
+        // Also save to localStorage as backup
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(this.storageKey, JSON.stringify(data));
+        }
         
-        // Fallback to localStorage if API fails
+        // Trigger real-time updates
+        realTimeSync.triggerUpdate('modules', data.modules);
+        realTimeSync.triggerUpdate('users', data.users);
+        realTimeSync.triggerUpdate('all', data);
+        
+        return true;
+      }
+    } catch (error) {
+      console.error('Failed to save data to VPS:', error);
+    }
+    
+    try {
+      // Fallback to localStorage if API fails
+      if (typeof window !== 'undefined') {
         localStorage.setItem(this.storageKey, JSON.stringify(data));
+        
+        // Trigger real-time updates
+        realTimeSync.triggerUpdate('modules', data.modules);
+        realTimeSync.triggerUpdate('users', data.users);
+        realTimeSync.triggerUpdate('all', data);
+        
         return true;
       }
       return false;

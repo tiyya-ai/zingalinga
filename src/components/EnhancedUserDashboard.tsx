@@ -73,6 +73,7 @@ import {
 import { vpsDataStore } from '../utils/vpsDataStore';
 import { User, Module } from '../types';
 import { ChatModal } from './ChatModal';
+import { realTimeSync } from '../utils/realTimeSync';
 
 interface UserDashboardProps {
   user: User;
@@ -354,6 +355,28 @@ export default function EnhancedUserDashboard({ user, onLogout }: UserDashboardP
     generateDailyPicks();
     generateLearningPath();
     loadAchievements();
+    
+    // Subscribe to real-time updates
+    const handleModulesUpdate = (updatedModules: Module[]) => {
+      setModules(updatedModules);
+      setVideoProducts(updatedModules.map(module => ({
+        ...module,
+        price: module.price || 9.99,
+        discount: module.originalPrice ? Math.round(((module.originalPrice - module.price) / module.originalPrice) * 100) : undefined,
+        rating: module.rating || 4.5,
+        reviews: module.totalRatings || Math.floor(Math.random() * 200) + 50,
+        thumbnail: module.thumbnail || '/api/placeholder/300/200',
+        tags: module.tags || [module.category || 'educational'],
+        ageGroup: module.ageRange || '5-8 years',
+        featured: module.rating > 4.7 || false
+      })));
+    };
+    
+    realTimeSync.subscribe('modules', handleModulesUpdate);
+    
+    return () => {
+      realTimeSync.unsubscribe('modules', handleModulesUpdate);
+    };
   }, []);
 
   const loadData = async () => {
