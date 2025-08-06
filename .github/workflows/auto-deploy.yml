@@ -80,4 +80,15 @@ EOF
           a2enmod proxy_http
           systemctl reload apache2
           
-          echo "✅ Deployment complete! Site live at zingalinga.io"
+          echo "🔍 Checking DNS configuration..."
+          echo "Current server IP: $(curl -s ifconfig.me)"
+          echo "DNS lookup for zingalinga.io: $(nslookup zingalinga.io | grep 'Address:' | tail -1)"
+          
+          echo "📋 DNS Configuration Required:"
+          echo "Domain: zingalinga.io"
+          echo "A Record: 109.199.106.28"
+          echo "WWW Record: 109.199.106.28"
+          
+          echo "✅ Deployment complete!"
+          echo "🌐 IP Access: http://109.199.106.28"
+          echo "🌐 Domain Access: http://zingalinga.io (if DNS is correct)"
