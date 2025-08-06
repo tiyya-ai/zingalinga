@@ -30,14 +30,20 @@ jobs:
         username: root
         password: Secureweb25
         script: |
-          echo "🚀 Deploying to zingalinga.io..."
+          echo "🛑 Stopping Apache to free port 80..."
+          systemctl stop apache2
+          systemctl disable apache2
+          
+          echo "🚀 Deploying Next.js app..."
           cd /var/www/zinga-linga || mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
           git pull origin main || git clone https://github.com/${{ github.repository }} .
           npm install
           npm run build
           
-          echo "🔄 Restarting application..."
+          echo "🔄 Starting Next.js on port 80..."
           pm2 stop zinga-linga || echo "No process to stop"
+          pm2 delete zinga-linga || echo "No process to delete"
           pm2 start npm --name "zinga-linga" -- start -- --port 80
+          pm2 save
           
-          echo "✅ Deployment successful! Check zingalinga.io"
+          echo "✅ Next.js app running on port 80! Check zingalinga.io"
