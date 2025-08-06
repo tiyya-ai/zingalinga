@@ -30,21 +30,8 @@ jobs:
         username: root
         password: Secureweb25
         script: |
-          echo "🧹 Cleaning up existing website..."
-          pm2 stop zinga-linga || echo "No existing process to stop"
-          pm2 delete zinga-linga || echo "No existing process to delete"
-          rm -rf /var/www/zinga-linga
-          echo "✅ Cleanup completed!"
-          
-          echo "📥 Deploying new website..."
-          mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
-          git clone https://github.com/${{ github.repository }} .
+          cd /var/www/zinga-linga || mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
+          git pull origin main || git clone https://github.com/${{ github.repository }} .
           npm install
           npm run build
-          pm2 start npm --name "zinga-linga" -- start
-          echo "✅ Deployment successful!"
-
-    - name: 🎉 Success Notification
-      run: |
-        echo "🎉 Deployment completed successfully!"
-        echo "🌐 Your website is live at: http://zingalinga.io/"
+          pm2 restart zinga-linga || pm2 start npm --name "zinga-linga" -- start
