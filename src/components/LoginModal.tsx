@@ -74,12 +74,38 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
           return;
         }
 
-        // Simple client-side registration
-        setSuccess('Account created successfully! You can now log in.');
-        setTimeout(() => {
-          setIsRegisterMode(false);
-          resetForm();
-        }, 2000);
+        // Save new user to database
+        try {
+          const { vpsDataStore } = await import('../utils/vpsDataStore');
+          const newUser = {
+            id: `user_${Date.now()}`,
+            email: sanitizedEmail,
+            password: sanitizedPassword,
+            name: sanitizedName,
+            role: 'user',
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString(),
+            isActive: true,
+            purchasedModules: [],
+            totalSpent: 0
+          };
+          
+          const success = await vpsDataStore.addUser(newUser);
+          if (success) {
+            setSuccess('Account created successfully! Logging you in...');
+            setTimeout(() => {
+              const { password: _, ...userWithoutPassword } = newUser;
+              onLogin(userWithoutPassword);
+              onClose();
+              resetForm();
+            }, 1500);
+          } else {
+            setError('Failed to create account. Please try again.');
+          }
+        } catch (error) {
+          console.error('Registration error:', error);
+          setError('Failed to create account. Please try again.');
+        }
       } else {
         // Login logic - check both static users and database users
         const staticUsers = [

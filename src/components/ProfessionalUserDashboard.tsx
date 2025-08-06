@@ -473,11 +473,9 @@ export default function ProfessionalUserDashboard({
                 onClick={() => setActiveTab('profile')}
                 className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-all duration-200 backdrop-blur-sm border border-white/20"
               >
-                <img 
-                  src={user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'} 
-                  alt="Profile" 
-                  className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-yellow-400/50" 
-                />
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center border-2 border-yellow-400/50">
+                  <span className="text-purple-900 font-bold text-xs sm:text-sm">{(user?.name || 'U').charAt(0).toUpperCase()}</span>
+                </div>
               </button>
               
               <button 
@@ -525,6 +523,9 @@ export default function ProfessionalUserDashboard({
                 purchase.status === 'completed'
               )
             ).length },
+            { id: 'packages', label: '📦 Packages', count: null },
+            { id: 'orders', label: '📋 Orders', count: localPurchases.filter(p => p.userId === user?.id).length },
+            { id: 'settings', label: '⚙️ Settings', count: null },
             { id: 'profile', label: '👤 Profile', count: null }
           ].map(tab => (
             <button
@@ -641,6 +642,117 @@ export default function ProfessionalUserDashboard({
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Recent Videos */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-white flex items-center">
+                  <span className="mr-2">🎬</span>
+                  Recent Videos
+                </h3>
+                <button 
+                  onClick={() => setActiveTab('all-content')}
+                  className="text-yellow-400 hover:text-yellow-300 text-sm"
+                >
+                  View All →
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {allContent.slice(0, 3).map((content) => {
+                  const isPurchased = localPurchases.some(purchase => 
+                    purchase.moduleId === content.id && 
+                    purchase.userId === user?.id && 
+                    purchase.status === 'completed'
+                  );
+                  
+                  return (
+                    <div key={content.id} className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:scale-105 hover:border-purple-400/50 hover:shadow-2xl transition-all duration-300 group shadow-xl">
+                      <div className="relative">
+                        <div className="relative w-full h-48 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-600 rounded-t-2xl overflow-hidden">
+                          {content.thumbnail ? (
+                            <img 
+                              src={content.thumbnail} 
+                              alt={content.title} 
+                              className="w-full h-full object-cover" 
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div 
+                            className="absolute inset-0 flex items-center justify-center text-white text-4xl bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-600"
+                            style={{ display: content.thumbnail ? 'none' : 'flex' }}
+                          >
+                            🎬
+                          </div>
+                        </div>
+                        
+                        <div className="absolute top-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-sm font-medium">
+                          ${content.price || 0}
+                        </div>
+                        
+                        {!isPurchased && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                            <div className="text-center text-white">
+                              <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mb-3 mx-auto shadow-lg">
+                                <span className="text-2xl">🔒</span>
+                              </div>
+                              <div className="text-sm font-bold mb-1">Purchase Required</div>
+                              <div className="text-xs opacity-80">Buy to unlock video</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="p-4">
+                        <h3 className="text-lg font-bold text-white mb-2 line-clamp-2">{content.title}</h3>
+                        <p className="text-purple-200 text-sm mb-3 line-clamp-2">{content.description || 'No description available'}</p>
+                        
+                        <div className="flex justify-between items-center">
+                          <div className="text-purple-200 text-xs">{content.category}</div>
+                          
+                          {isPurchased ? (
+                            <button 
+                              onClick={() => {
+                                if (content.type === 'video' || !content.type) {
+                                  const video = adminVideos.find(v => v.id === content.id);
+                                  if (video) playVideo(video);
+                                }
+                              }}
+                              className="bg-green-500 hover:bg-green-600 text-white font-medium px-4 py-2 rounded-lg transition-all duration-300 text-xs flex items-center gap-1 shadow-md hover:scale-105"
+                            >
+                              <span>▶</span>
+                              <span>Watch</span>
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => {
+                                addToCart(content.id);
+                                setShowCartPopup(true);
+                                setTimeout(() => setShowCartPopup(false), 2000);
+                              }}
+                              className="bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-medium px-4 py-2 rounded-lg transition-all duration-300 text-xs flex items-center gap-1 shadow-md hover:scale-105"
+                            >
+                              <span>🛒</span>
+                              <span>Add to Cart</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {allContent.length === 0 && (
+                <div className="col-span-full text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+                  <div className="text-6xl mb-4">🎬</div>
+                  <div className="text-white text-xl mb-2">No videos available yet</div>
+                  <div className="text-purple-200 text-sm">New content will appear here</div>
+                </div>
+              )}
             </div>
 
             {/* Quick Actions */}
@@ -1634,17 +1746,156 @@ export default function ProfessionalUserDashboard({
           </section>
         )}
 
-        {/* Profile Tab - Personalized Account Panel */}
-        {activeTab === 'profile' && (
+        {/* Packages Tab */}
+        {activeTab === 'packages' && (
           <section className="space-y-6">
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
               <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
-                <span className="mr-2">👤</span>
-                Profile
+                <span className="mr-2">📦</span>
+                Learning Packages
               </h2>
-              <p className="text-purple-200">Your personal account dashboard</p>
+              <p className="text-purple-200">Discover bundled content packages with special pricing</p>
             </div>
             
+            <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+              <div className="text-6xl mb-4">📦</div>
+              <div className="text-white text-xl mb-2">Learning Packages Coming Soon</div>
+              <div className="text-purple-200 text-sm">We're preparing special bundled packages for you</div>
+            </div>
+          </section>
+        )}
+
+        {/* Orders Tab */}
+        {activeTab === 'orders' && (
+          <section className="space-y-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="mr-2">📋</span>
+                My Orders
+              </h2>
+              <p className="text-purple-200">View your purchase history and order details</p>
+            </div>
+            
+            <div className="space-y-4">
+              {localPurchases.filter(p => p.userId === user?.id).length > 0 ? (
+                localPurchases.filter(p => p.userId === user?.id).map(purchase => {
+                  const video = displayVideos.find(v => v.id === purchase.moduleId);
+                  return (
+                    <div key={purchase.id} className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl flex items-center justify-center">
+                            <span className="text-white text-2xl">🎥</span>
+                          </div>
+                          <div>
+                            <h3 className="text-white font-bold text-lg">{video?.title || 'Video Content'}</h3>
+                            <p className="text-purple-200 text-sm">Order #{purchase.id.slice(-8)}</p>
+                            <p className="text-purple-200 text-sm">Purchased: {new Date(purchase.purchaseDate).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-yellow-400 font-bold text-xl">${purchase.amount.toFixed(2)}</div>
+                          <div className="text-green-400 text-sm flex items-center">
+                            <span className="mr-1">✓</span>
+                            Completed
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+                  <div className="text-6xl mb-4">📋</div>
+                  <div className="text-white text-xl mb-2">No orders yet</div>
+                  <div className="text-purple-200 text-sm mb-6">Your purchase history will appear here</div>
+                  <button 
+                    onClick={() => setActiveTab('store')}
+                    className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold px-6 py-3 rounded-lg transition-all duration-200"
+                  >
+                    Browse Store
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Settings Tab */}
+        {activeTab === 'settings' && (
+          <section className="space-y-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="mr-2">⚙️</span>
+                Settings
+              </h2>
+              <p className="text-purple-200">Manage your account preferences and settings</p>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                  <span className="mr-2">👤</span>
+                  Account Settings
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-purple-200 text-sm mb-2">Display Name</label>
+                    <input 
+                      type="text" 
+                      defaultValue={user?.name || ''}
+                      className="w-full px-4 py-2 bg-white/20 text-white rounded-lg border border-white/30 focus:border-yellow-400 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-purple-200 text-sm mb-2">Email</label>
+                    <input 
+                      type="email" 
+                      defaultValue={user?.email || ''}
+                      className="w-full px-4 py-2 bg-white/20 text-white rounded-lg border border-white/30 focus:border-yellow-400 focus:outline-none"
+                    />
+                  </div>
+                  <button className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold py-3 rounded-lg">
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                  <span className="mr-2">🔒</span>
+                  Security
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-purple-200 text-sm mb-2">Current Password</label>
+                    <input 
+                      type="password" 
+                      placeholder="Enter current password"
+                      className="w-full px-4 py-2 bg-white/20 text-white rounded-lg border border-white/30 focus:border-yellow-400 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-purple-200 text-sm mb-2">New Password</label>
+                    <input 
+                      type="password" 
+                      placeholder="Enter new password"
+                      className="w-full px-4 py-2 bg-white/20 text-white rounded-lg border border-white/30 focus:border-yellow-400 focus:outline-none"
+                    />
+                  </div>
+                  <button className="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold py-3 rounded-lg">
+                    Change Password
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Profile Tab - Personalized Account Panel */}
+        {activeTab === 'profile' && (
+          <section className="space-y-6">
+
             {/* Account Overview */}
             <div className="bg-gradient-to-r from-purple-800/50 to-blue-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-500/30">
               <div className="flex flex-col md:flex-row items-center justify-between">

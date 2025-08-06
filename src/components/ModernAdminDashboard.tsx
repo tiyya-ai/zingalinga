@@ -95,6 +95,7 @@ import {
 } from 'lucide-react';
 import { vpsDataStore } from '../utils/vpsDataStore';
 import { AdminChatManager } from './AdminChatManager';
+import { UserManagement } from './UserManagement';
 import { Module, Package } from '../types';
 
 interface ModernAdminDashboardProps {
@@ -140,6 +141,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [orderFilter, setOrderFilter] = useState('all');
   const { isOpen: isOrderModalOpen, onOpen: onOrderModalOpen, onClose: onOrderModalClose } = useDisclosure();
+  
+
 
   const [notifications, setNotifications] = useState([
     { id: 1, type: 'success', message: 'New video uploaded successfully', time: '2 min ago' },
@@ -149,7 +152,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const [dataStatus, setDataStatus] = useState({
     isRealData: false,
-    lastUpdated: new Date(),
+    lastUpdated: null as Date | null,
     hasRealUsers: false,
     hasRealOrders: false
   });
@@ -165,32 +168,23 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     customerSatisfaction: 0
   });
 
-  const [recentActivities, setRecentActivities] = useState([
-    { id: 1, type: 'user', message: 'New user Sarah Johnson registered', time: '5 min ago', avatar: 'SJ' },
-    { id: 2, type: 'video', message: 'Video "Math Adventures" uploaded', time: '15 min ago', avatar: 'MA' },
-    { id: 3, type: 'purchase', message: 'Premium subscription purchased', time: '32 min ago', avatar: 'PS' },
-    { id: 4, type: 'comment', message: 'New comment on "ABC Learning"', time: '1 hour ago', avatar: 'AC' }
-  ]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
   useEffect(() => {
     setMounted(true);
     const checkMobile = () => {
-      if (typeof window !== 'undefined') {
-        const mobile = window.innerWidth < 768;
-        setIsMobile(mobile);
-        if (mobile) {
-          setSidebarOpen(false);
-        } else {
-          setSidebarOpen(true);
-        }
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
       }
     };
     
     checkMobile();
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', checkMobile);
-      return () => window.removeEventListener('resize', checkMobile);
-    }
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   // Load real data from vpsDataStore
@@ -214,6 +208,20 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       const realUploadQueue = await vpsDataStore.getUploadQueue();
 
       // Set real users data
+      console.log('🔍 Raw user data from database:', realUsers);
+      console.log('📊 User data details:', {
+        totalUsers: realUsers.length,
+        userSample: realUsers.slice(0, 5).map(u => ({
+          id: u.id,
+          name: u.name,
+          username: u.username,
+          email: u.email,
+          role: u.role,
+          createdAt: u.createdAt,
+          lastLogin: u.lastLogin
+        }))
+      });
+      
       setUsers(realUsers.map(user => ({
         id: user.id,
         name: user.name || user.username || 'Unknown User',
@@ -324,6 +332,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         hasRealOrders: convertedOrders.length > 0
       });
 
+      // Set initial activities if none exist
+      if (recentActivities.length === 0) {
+        setRecentActivities([
+          { id: 1, type: 'user', message: 'New user Sarah Johnson registered', time: '5 min ago', avatar: 'SJ' },
+          { id: 2, type: 'video', message: 'Video "Math Adventures" uploaded', time: '15 min ago', avatar: 'MA' },
+          { id: 3, type: 'purchase', message: 'Premium subscription purchased', time: '32 min ago', avatar: 'PS' },
+          { id: 4, type: 'comment', message: 'New comment on "ABC Learning"', time: '1 hour ago', avatar: 'AC' }
+        ]);
+      }
+
       console.log('✅ Real data loaded:', {
         users: realUsers.length,
         videos: realVideos.length,
@@ -340,6 +358,14 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         hasRealUsers: false,
         hasRealOrders: false
       });
+
+      // Set fallback activities
+      setRecentActivities([
+        { id: 1, type: 'user', message: 'New user Sarah Johnson registered', time: '5 min ago', avatar: 'SJ' },
+        { id: 2, type: 'video', message: 'Video "Math Adventures" uploaded', time: '15 min ago', avatar: 'MA' },
+        { id: 3, type: 'purchase', message: 'Premium subscription purchased', time: '32 min ago', avatar: 'PS' },
+        { id: 4, type: 'comment', message: 'New comment on "ABC Learning"', time: '1 hour ago', avatar: 'AC' }
+      ]);
     }
   };
 
@@ -403,7 +429,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           email: user.email,
           type: ['Premium User', 'Basic User', 'Family Plan'][index % 3]
         },
-        ipAddress: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+        ipAddress: `192.168.${(index * 17) % 255}.${(index * 23) % 255}`,
         location: ['New York, US', 'California, US', 'Texas, US'][index % 3],
         device: ['Desktop', 'Mobile', 'Tablet'][index % 3],
         timestamp: new Date(user.lastLogin || user.createdAt),
@@ -437,6 +463,17 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       label: 'Analytics',
       icon: <BarChart3 className="h-5 w-5" />,
       color: 'text-purple-600'
+    },
+    {
+      id: 'users',
+      label: 'User Management',
+      icon: <Users className="h-5 w-5" />,
+      color: 'text-blue-600',
+      children: [
+        { id: 'all-users', label: 'All Users', icon: <Users className="h-4 w-4" /> },
+        { id: 'add-user', label: 'Add New User', icon: <Plus className="h-4 w-4" /> },
+        { id: 'user-roles', label: 'User Roles', icon: <Shield className="h-4 w-4" /> }
+      ]
     },
     {
       id: 'videos',
@@ -473,17 +510,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         { id: 'add-package', label: 'Add Package', icon: <Plus className="h-4 w-4" /> }
       ]
     },
-    {
-      id: 'users',
-      label: 'Users',
-      icon: <Users className="h-5 w-5" />,
-      color: 'text-orange-600',
-      children: [
-        { id: 'all-users', label: 'All Users', icon: <Users className="h-4 w-4" /> },
-        { id: 'children-profiles', label: 'Children', icon: <UserCheck className="h-4 w-4" /> },
-        { id: 'access-logs', label: 'Access Logs', icon: <Activity className="h-4 w-4" /> }
-      ]
-    },
+
     {
       id: 'commerce',
       label: 'Commerce',
@@ -695,11 +722,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               </Button>
               <Button 
                 className="h-24 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('all-users')}
+                onPress={() => setActiveSection('categories')}
               >
                 <div className="text-center">
-                  <Users className="h-8 w-8 mx-auto mb-2" />
-                  <span className="text-sm font-semibold">Manage Users</span>
+                  <Tag className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">Content Categories</span>
                 </div>
               </Button>
               <Button 
@@ -722,11 +749,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               </Button>
               <Button 
                 className="h-24 bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('upload-queue')}
+                onPress={() => setActiveSection('all-users')}
               >
                 <div className="text-center">
-                  <Upload className="h-8 w-8 mx-auto mb-2" />
-                  <span className="text-sm font-semibold">Upload Queue</span>
+                  <Users className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">Manage Users</span>
                 </div>
               </Button>
               <Button 
@@ -787,7 +814,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       : '0.0';
 
     const totalShares = Math.floor(totalViews * 0.08); // Estimate 8% share rate
-    const completionRate = videos.length > 0 ? 85 + Math.random() * 10 : 0; // Simulate completion rate
+    const completionRate = videos.length > 0 ? 87.5 : 0; // Fixed completion rate
 
     // Calculate video performance data
     const videoPerformanceData = videos.map(video => {
@@ -802,7 +829,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         revenue: estimatedRevenue,
         rating: video.rating || 0,
         category: video.category || 'Educational',
-        completionRate: 75 + Math.random() * 20, // Simulate completion rate
+        completionRate: 82.5, // Fixed completion rate
         engagement: Math.floor(estimatedViews * 0.12), // Estimate engagement
         shares: Math.floor(estimatedViews * 0.08)
       };
@@ -812,7 +839,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     const userEngagementData = {
       totalSessions: users.length * 3.2, // Estimate sessions per user
       avgSessionDuration: '8m 32s',
-      bounceRate: 25 + Math.random() * 15, // Simulate bounce rate
+      bounceRate: 32.5, // Fixed bounce rate
       returnVisitors: Math.floor(users.length * 0.65), // 65% return rate
       newUsers: users.filter(user => {
         const createdDate = new Date(user.createdAt);
@@ -1176,6 +1203,23 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
   const [audioUploadProgress, setAudioUploadProgress] = useState(0);
   
+  // User form state
+  const [userForm, setUserForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'user' as 'user' | 'admin' | 'moderator',
+    status: 'active' as 'active' | 'inactive' | 'suspended',
+    avatar: '',
+    phone: '',
+    dateOfBirth: '',
+    subscription: 'free' as 'free' | 'basic' | 'premium' | 'family'
+  });
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [userFilter, setUserFilter] = useState('all');
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const { isOpen: isUserModalOpen, onOpen: onUserModalOpen, onClose: onUserModalClose } = useDisclosure();
+  
   // Package form state
   const [packageForm, setPackageForm] = useState({
     name: '',
@@ -1303,7 +1347,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             
             // Add to upload queue for tracking
             const newUploadItem = {
-              id: Date.now().toString(),
+              id: `upload_${Date.now()}`,
               name: file.name,
               size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
               status: 'completed',
@@ -1317,7 +1361,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             
             return 100;
           }
-          return prev + Math.random() * 15 + 5; // More realistic progress increments
+          return prev + 8; // Fixed progress increments
         });
       }, 300);
     }
@@ -1407,7 +1451,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         }
       } else {
         const newVideo: Module = {
-          id: Date.now().toString(),
+          id: `video_${Date.now()}`,
           title: videoForm.title,
           description: videoForm.description,
           price: videoForm.price,
@@ -2497,184 +2541,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     </div>
   );
 
-  const renderAllUsersPage = () => (
-    <div className="space-y-6">
-      <PageHeader 
-        title="All Users" 
-        actions={
-          <Button 
-            className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
-            startContent={<Plus className="h-4 w-4" />}
-            onPress={() => {
-              const name = prompt('Enter user name:');
-              const email = prompt('Enter user email:');
-              if (name && email) {
-                const newUser = {
-                  id: Date.now().toString(),
-                  name,
-                  email,
-                  role: 'user',
-                  createdAt: new Date().toISOString(),
-                  totalSpent: 0
-                };
-                setUsers(prev => [newUser, ...prev]);
-                alert(`User ${name} created successfully!`);
-              }
-            }}
-          >
-            Add New User
-          </Button>
-        }
-      />
-      
-      <Card className="bg-white border border-gray-200">
-        <CardHeader className="border-b border-gray-200">
-          <div className="flex justify-between items-center w-full">
-            <h3 className="text-lg font-semibold text-gray-900">Users ({users.length})</h3>
-            <Input
-              placeholder="Search users..."
-              startContent={<Search className="h-4 w-4" />}
-              className="w-64"
-            />
-          </div>
-        </CardHeader>
-        <CardBody className="p-0">
-          <Table removeWrapper aria-label="Users table">
-            <TableHeader>
-              <TableColumn>USER</TableColumn>
-              <TableColumn>ROLE</TableColumn>
-              <TableColumn>STATUS</TableColumn>
-              <TableColumn>JOINED</TableColumn>
-              <TableColumn>ACTIONS</TableColumn>
-            </TableHeader>
-            <TableBody emptyContent="No users found">
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">{user.name.charAt(0).toUpperCase()}</span>
-                      </div>
-                      <div>
-                        <p className="font-medium">{user.name}</p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Chip size="sm" color={user.role === 'admin' ? 'danger' : 'primary'} variant="flat">
-                      {user.role}
-                    </Chip>
-                  </TableCell>
-                  <TableCell>
-                    <Chip size="sm" color="success" variant="flat">Active</Chip>
-                  </TableCell>
-                  <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <div className="flex space-x-1">
-                      <Button size="sm" variant="light">
-                        <Eye className="h-4 w-4 text-blue-600" />
-                      </Button>
-                      <Button size="sm" variant="light">
-                        <Edit className="h-4 w-4 text-green-600" />
-                      </Button>
-                      <Button size="sm" variant="light" className="hover:bg-red-50">
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardBody>
-      </Card>
-    </div>
-  );
 
-  const renderChildrenProfilesPage = () => (
-    <div className="space-y-6">
-      <PageHeader 
-        title="Children Profiles" 
-        actions={
-          <Button 
-            className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
-            startContent={<Plus className="h-4 w-4" />}
-          >
-            Add Child Profile
-          </Button>
-        }
-      />
-      
-      <Card className="bg-white border border-gray-200">
-        <CardHeader className="border-b border-gray-200">
-          <div className="flex justify-between items-center w-full">
-            <h3 className="text-lg font-semibold text-gray-900">Child Profiles ({childrenProfiles.length})</h3>
-            <Input
-              placeholder="Search children..."
-              startContent={<Search className="h-4 w-4" />}
-              className="w-64"
-            />
-          </div>
-        </CardHeader>
-        <CardBody className="p-0">
-          <Table removeWrapper aria-label="Children profiles table">
-            <TableHeader>
-              <TableColumn>CHILD</TableColumn>
-              <TableColumn>AGE</TableColumn>
-              <TableColumn>SCREEN TIME</TableColumn>
-              <TableColumn>PARENT</TableColumn>
-              <TableColumn>ACTIONS</TableColumn>
-            </TableHeader>
-            <TableBody emptyContent="No child profiles found">
-              {users.filter(user => user.role === 'child').map((child) => (
-                <TableRow key={child.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">{child.name.charAt(0).toUpperCase()}</span>
-                      </div>
-                      <div>
-                        <p className="font-medium">{child.name}</p>
-                        <p className="text-sm text-gray-500">Active profile</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Chip size="sm" color="primary" variant="flat">
-                      {Math.floor(Math.random() * 10) + 3} years
-                    </Chip>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Clock className="h-4 w-4 text-gray-400" />
-                      <span>{Math.floor(Math.random() * 3) + 1}h {Math.floor(Math.random() * 60)}m</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-gray-600">Parent User</span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-1">
-                      <Button size="sm" variant="light">
-                        <Eye className="h-4 w-4 text-blue-600" />
-                      </Button>
-                      <Button size="sm" variant="light">
-                        <Edit className="h-4 w-4 text-green-600" />
-                      </Button>
-                      <Button size="sm" variant="light" className="hover:bg-red-50">
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardBody>
-      </Card>
-    </div>
-  );
+
+
 
   const renderOrdersPage = () => (
     <div className="space-y-6">
@@ -2833,9 +2702,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         isOpen={isOrderModalOpen} 
         onClose={onOrderModalClose} 
         size="2xl"
-        backdrop="blur"
+        backdrop="opaque"
         classNames={{
-          backdrop: "bg-gradient-to-t from-zinc-900/50 to-zinc-900/30 backdrop-blur-md"
+          backdrop: "bg-black/40"
         }}
       >
         <ModalContent>
@@ -3401,7 +3270,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             setAudioForm(prevForm => ({ ...prevForm, audioUrl: audioUrl }));
             return 100;
           }
-          return prev + Math.random() * 15 + 5;
+          return prev + 8;
         });
       }, 300);
     }
@@ -3446,7 +3315,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       } else {
         // Create new lesson
         const newAudioLesson: Module = {
-          id: Date.now().toString(),
+          id: `audio_${Date.now()}`,
           title: audioForm.title,
           description: audioForm.description,
           price: audioForm.price,
@@ -3909,7 +3778,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       }
       
       const newContent: Module = {
-        id: Date.now().toString(),
+        id: `pp1_${Date.now()}`,
         title: pp1Form.title,
         description: pp1Form.description,
         price: pp1Form.price,
@@ -4221,7 +4090,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       }
       
       const newContent: Module = {
-        id: Date.now().toString(),
+        id: `pp2_${Date.now()}`,
         title: pp2Form.title,
         description: pp2Form.description,
         price: pp2Form.price,
@@ -4611,6 +4480,472 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       </Card>
     </div>
   );
+
+  const renderAllUsersPage = () => (
+    <div className="space-y-6">
+      <PageHeader 
+        title="All Users" 
+        actions={
+          <Button 
+            className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
+            startContent={<Plus className="h-4 w-4" />}
+            onPress={() => setActiveSection('add-user')}
+          >
+            Add New User
+          </Button>
+        }
+      />
+      
+      <Card className="bg-white border border-gray-200">
+        <CardHeader className="border-b border-gray-200">
+          <div className="flex justify-between items-center w-full">
+            <h3 className="text-lg font-semibold text-gray-900">All Users ({users.length})</h3>
+            <Button 
+              size="sm" 
+              variant="flat" 
+              startContent={<RotateCcw className="h-4 w-4" />}
+              onPress={loadRealData}
+              className="bg-blue-50 text-blue-600 hover:bg-blue-100"
+            >
+              Refresh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardBody className="p-0">
+          <Table removeWrapper aria-label="Users table">
+            <TableHeader>
+              <TableColumn>USER</TableColumn>
+              <TableColumn>EMAIL</TableColumn>
+              <TableColumn>ROLE</TableColumn>
+              <TableColumn>JOINED</TableColumn>
+              <TableColumn>ACTIONS</TableColumn>
+            </TableHeader>
+            <TableBody emptyContent="No users found">
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm font-medium">{user.name.charAt(0).toUpperCase()}</span>
+                      </div>
+                      <span className="font-medium">{user.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Chip size="sm" color={user.role === 'admin' ? 'success' : 'default'} variant="flat">
+                      {user.role}
+                    </Chip>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-gray-600">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-1">
+                      <Button 
+                        size="sm" 
+                        variant="light"
+                        onPress={() => handleEditUser(user)}
+                      >
+                        <Edit className="h-4 w-4 text-gray-600" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="light" 
+                        className="hover:bg-red-50"
+                        onPress={() => {
+                          if (confirm(`Delete user ${user.name}?`)) {
+                            setUsers(prev => prev.filter(u => u.id !== user.id));
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardBody>
+      </Card>
+    </div>
+  );
+
+  const renderChildrenProfilesPage = () => (
+    <div className="space-y-6">
+      <PageHeader title="Children Profiles" />
+      <Card className="bg-white border border-gray-200">
+        <CardHeader className="border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Children Profiles ({childrenProfiles.length})</h3>
+        </CardHeader>
+        <CardBody>
+          {childrenProfiles.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No children profiles yet</h3>
+              <p className="text-gray-600">Children profiles will appear here when parents create them.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {childrenProfiles.map((profile, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-medium">{profile.name?.charAt(0) || 'C'}</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">{profile.name || 'Child Profile'}</h4>
+                      <p className="text-sm text-gray-500">Age: {profile.age || 'N/A'}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <p><span className="font-medium">Parent:</span> {profile.parentName || 'N/A'}</p>
+                    <p><span className="font-medium">Progress:</span> {profile.progress || '0'}% complete</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardBody>
+      </Card>
+    </div>
+  );
+
+  const renderAddUser = () => (
+    <div className="space-y-6">
+      <PageHeader 
+        title={editingUser ? 'Edit User' : 'Add New User'}
+        actions={
+          <Button 
+            variant="flat" 
+            onPress={() => setActiveSection('all-users')}
+            className="bg-gray-100 text-gray-700 hover:bg-gray-200"
+            startContent={<X className="h-4 w-4" />}
+          >
+            Cancel
+          </Button>
+        }
+      />
+      
+      <Card className="bg-white border border-gray-200">
+        <CardHeader className="border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">User Information</h3>
+        </CardHeader>
+        <CardBody className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Name *</label>
+              <Input
+                value={userForm.name}
+                onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+                placeholder="Enter full name"
+                classNames={{
+                  input: "bg-white",
+                  inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Email *</label>
+              <Input
+                type="email"
+                value={userForm.email}
+                onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                placeholder="Enter email address"
+                classNames={{
+                  input: "bg-white",
+                  inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
+                }}
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">
+              Password {!editingUser ? '*' : '(leave blank to keep current)'}
+            </label>
+            <Input
+              type="password"
+              value={userForm.password}
+              onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+              placeholder={editingUser ? "Enter new password (optional)" : "Enter password"}
+              classNames={{
+                input: "bg-white",
+                inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
+              }}
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Role</label>
+              <Select
+                selectedKeys={[userForm.role]}
+                onSelectionChange={(keys) => {
+                  const selected = Array.from(keys)[0] as 'user' | 'admin' | 'moderator';
+                  setUserForm({ ...userForm, role: selected });
+                }}
+                classNames={{
+                  trigger: "bg-white border-gray-300 hover:border-blue-400 focus:border-blue-500"
+                }}
+              >
+                <SelectItem key="user" value="user">User</SelectItem>
+                <SelectItem key="admin" value="admin">Admin</SelectItem>
+                <SelectItem key="moderator" value="moderator">Moderator</SelectItem>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Status</label>
+              <Select
+                selectedKeys={[userForm.status]}
+                onSelectionChange={(keys) => {
+                  const selected = Array.from(keys)[0] as 'active' | 'inactive' | 'suspended';
+                  setUserForm({ ...userForm, status: selected });
+                }}
+                classNames={{
+                  trigger: "bg-white border-gray-300 hover:border-blue-400 focus:border-blue-500"
+                }}
+              >
+                <SelectItem key="active" value="active">Active</SelectItem>
+                <SelectItem key="inactive" value="inactive">Inactive</SelectItem>
+                <SelectItem key="suspended" value="suspended">Suspended</SelectItem>
+              </Select>
+            </div>
+          </div>
+          
+          <Button 
+            className="w-full bg-gray-900 text-white hover:bg-gray-800 h-12 text-lg font-semibold"
+            onPress={handleSaveUser}
+            startContent={editingUser ? <Edit className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+            isDisabled={!userForm.name.trim() || !userForm.email.trim() || (!editingUser && !userForm.password.trim())}
+          >
+            {editingUser ? 'Update User' : 'Create User'}
+          </Button>
+        </CardBody>
+      </Card>
+    </div>
+  );
+
+  const renderUserRoles = () => {
+    const roleStats = {
+      admin: users.filter(u => u.role === 'admin').length,
+      moderator: users.filter(u => u.role === 'moderator').length,
+      user: users.filter(u => u.role === 'user' || !u.role).length
+    };
+
+    return (
+      <div className="space-y-6">
+        <PageHeader title="User Roles" />
+        
+        <StatsGrid stats={[
+          { 
+            label: 'Administrators', 
+            value: roleStats.admin, 
+            color: '', 
+            change: 'Full access',
+            icon: <Shield className="h-6 w-6 text-red-600" />
+          },
+          { 
+            label: 'Moderators', 
+            value: roleStats.moderator, 
+            color: '', 
+            change: 'Content management',
+            icon: <UserCheck className="h-6 w-6 text-orange-600" />
+          },
+          { 
+            label: 'Regular Users', 
+            value: roleStats.user, 
+            color: '', 
+            change: 'Standard access',
+            icon: <Users className="h-6 w-6 text-blue-600" />
+          },
+          { 
+            label: 'Total Users', 
+            value: users.length, 
+            color: '', 
+            change: 'All roles',
+            icon: <Activity className="h-6 w-6 text-green-600" />
+          }
+        ]} />
+        
+        <Card className="bg-white border border-gray-200">
+          <CardHeader className="border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Role Permissions</h3>
+          </CardHeader>
+          <CardBody>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="border border-red-200 rounded-lg p-4 bg-red-50">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Shield className="h-8 w-8 text-red-600" />
+                  <div>
+                    <h4 className="font-semibold text-red-900">Administrator</h4>
+                    <p className="text-sm text-red-700">{roleStats.admin} users</p>
+                  </div>
+                </div>
+                <ul className="text-sm text-red-800 space-y-1">
+                  <li>• Full system access</li>
+                  <li>• User management</li>
+                  <li>• Content management</li>
+                  <li>• System settings</li>
+                </ul>
+              </div>
+              
+              <div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
+                <div className="flex items-center space-x-3 mb-3">
+                  <UserCheck className="h-8 w-8 text-orange-600" />
+                  <div>
+                    <h4 className="font-semibold text-orange-900">Moderator</h4>
+                    <p className="text-sm text-orange-700">{roleStats.moderator} users</p>
+                  </div>
+                </div>
+                <ul className="text-sm text-orange-800 space-y-1">
+                  <li>• Content moderation</li>
+                  <li>• Comment management</li>
+                  <li>• User support</li>
+                  <li>• Basic analytics</li>
+                </ul>
+              </div>
+              
+              <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Users className="h-8 w-8 text-blue-600" />
+                  <div>
+                    <h4 className="font-semibold text-blue-900">User</h4>
+                    <p className="text-sm text-blue-700">{roleStats.user} users</p>
+                  </div>
+                </div>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• View content</li>
+                  <li>• Purchase videos</li>
+                  <li>• Manage profile</li>
+                  <li>• Leave comments</li>
+                </ul>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  };
+
+  // User Management Functions
+  const handleEditUser = (user: any) => {
+    setEditingUser(user);
+    setUserForm({
+      name: user.name || '',
+      email: user.email || '',
+      password: '',
+      role: user.role || 'user',
+      status: user.status || 'active',
+      avatar: user.avatar || '',
+      phone: user.phone || '',
+      dateOfBirth: user.dateOfBirth || '',
+      subscription: user.subscription || 'free'
+    });
+    setActiveSection('add-user');
+  };
+
+  const handleSaveUser = async () => {
+    try {
+      if (!userForm.name.trim()) {
+        alert('Please enter a name');
+        return;
+      }
+      if (!userForm.email.trim()) {
+        alert('Please enter an email');
+        return;
+      }
+      if (!editingUser && !userForm.password.trim()) {
+        alert('Please enter a password for new users');
+        return;
+      }
+      
+      if (editingUser) {
+        // Update existing user
+        const updatedUser = {
+          ...editingUser,
+          name: userForm.name,
+          email: userForm.email,
+          role: userForm.role,
+          status: userForm.status,
+          avatar: userForm.avatar,
+          phone: userForm.phone,
+          dateOfBirth: userForm.dateOfBirth,
+          subscription: userForm.subscription,
+          updatedAt: new Date().toISOString()
+        };
+        
+        const success = await vpsDataStore.updateUser(updatedUser);
+        if (success) {
+          setUsers(prev => prev.map(u => u.id === editingUser.id ? updatedUser : u));
+          alert('✅ User updated successfully!');
+        } else {
+          alert('❌ Failed to update user.');
+          return;
+        }
+      } else {
+        // Create new user
+        const newUser = {
+          id: Date.now().toString(),
+          name: userForm.name,
+          email: userForm.email,
+          password: userForm.password,
+          role: userForm.role,
+          status: userForm.status,
+          avatar: userForm.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userForm.name)}&background=random`,
+          phone: userForm.phone,
+          dateOfBirth: userForm.dateOfBirth,
+          subscription: userForm.subscription,
+          totalSpent: 0,
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        };
+        
+        const success = await vpsDataStore.addUser(newUser);
+        if (success) {
+          setUsers(prev => [...prev, newUser]);
+          alert('✅ User created successfully!');
+        } else {
+          alert('❌ Failed to create user.');
+          return;
+        }
+      }
+      
+      setActiveSection('all-users');
+      setEditingUser(null);
+      
+      // Reset form
+      setUserForm({
+        name: '',
+        email: '',
+        password: '',
+        role: 'user',
+        status: 'active',
+        avatar: '',
+        phone: '',
+        dateOfBirth: '',
+        subscription: 'free'
+      });
+    } catch (error) {
+      console.error('❌ Failed to save user:', error);
+      alert('Failed to save user. Please try again.');
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      const success = await vpsDataStore.deleteUser(userId);
+      if (success) {
+        setUsers(prev => prev.filter(u => u.id !== userId));
+        alert('✅ User deleted successfully!');
+      } else {
+        alert('❌ Failed to delete user.');
+      }
+    }
+  };
 
   const renderAllPackages = () => (
     <div className="space-y-6">
@@ -5193,6 +5528,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       case 'categories': return renderCategoriesPage();
       case 'upload-queue': return renderUploadQueuePage();
       case 'all-users': return renderAllUsersPage();
+      case 'add-user': return renderAddUser();
+      case 'user-roles': return renderUserRoles();
       case 'children-profiles': return renderChildrenProfilesPage();
       case 'access-logs': return renderGenericPage('Access Logs', 'Monitor user access', <Activity className="h-8 w-8 text-white" />, accessLogs, ['User', 'IP Address', 'Location', 'Device', 'Actions']);
       case 'orders': return renderOrdersPage();
@@ -5373,7 +5710,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     </Button>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
-                    Updated {dataStatus.lastUpdated.toLocaleTimeString()}
+                    Updated {dataStatus.lastUpdated ? dataStatus.lastUpdated.toLocaleTimeString() : 'Never'}
                   </p>
                 </div>
               </div>
