@@ -26,9 +26,9 @@ jobs:
     - name: SSH and deploy
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.VPS_HOST }}
-        username: ${{ secrets.VPS_USERNAME }}
-        password: ${{ secrets.VPS_PASSWORD }}
+        host: 109.199.106.28
+        username: root
+        password: Secureweb25
         script: |
           echo "Connected successfully!"
           cd /var/www/zinga-linga || mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
