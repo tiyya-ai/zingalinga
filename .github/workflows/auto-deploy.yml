@@ -26,9 +26,9 @@ jobs:
     - name: SSH and deploy
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.VPS_HOST }}
-        username: ${{ secrets.VPS_USERNAME }}
-        password: ${{ secrets.VPS_PASSWORD }}
+        host: 109.199.106.28
+        username: root
+        password: Secureweb25
         script: |
           echo "🧹 Cleaning up existing website..."
           pm2 stop zinga-linga || echo "No existing process to stop"
