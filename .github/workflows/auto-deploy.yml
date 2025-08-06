@@ -30,8 +30,45 @@ jobs:
         username: root
         password: Secureweb25
         script: |
+          echo "🔧 Setting up deployment..."
           cd /var/www/zinga-linga || mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
           git pull origin main || git clone https://github.com/${{ github.repository }} .
           npm install
           npm run build
-          pm2 restart zinga-linga || pm2 start npm --name "zinga-linga" -- start
+          
+          echo "🚀 Starting Next.js app..."
+          pm2 stop zinga-linga || echo "No existing process"
+          pm2 start npm --name "zinga-linga" -- start -- --port 3000
+          
+          echo "⚙️ Configuring Apache proxy..."
+          cat > /etc/apache2/sites-available/zingalinga.conf << 'EOF'
+<VirtualHost *:80>
+    ServerName zingalinga.io
+    ServerAlias www.zingalinga.io
+    
+    ProxyPreserveHost On
+    ProxyPass / http://localhost:3000/
+    ProxyPassReverse / http://localhost:3000/
+    
+    ErrorLog ${APACHE_LOG_DIR}/zingalinga_error.log
+    CustomLog ${APACHE_LOG_DIR}/zingalinga_access.log combined
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName zingalinga.io
+    ServerAlias www.zingalinga.io
+    
+    ProxyPreserveHost On
+    ProxyPass / http://localhost:3000/
+    ProxyPassReverse / http://localhost:3000/
+    
+    ErrorLog ${APACHE_LOG_DIR}/zingalinga_error.log
+    CustomLog ${APACHE_LOG_DIR}/zingalinga_access.log combined
+EOF
+          
+          a2enmod proxy
+          a2enmod proxy_http
+          a2ensite zingalinga.conf
+          systemctl reload apache2
+          
+          echo "✅ Deployment completed! Site should be live at zingalinga.io"
