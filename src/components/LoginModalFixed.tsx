@@ -45,31 +45,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
     resetForm();
   };
 
-  const handleDirectLogin = async (email: string, password: string) => {
-    setIsLoading(true);
-    setError('');
-    setSuccess('');
 
-    try {
-      const result = await authManager.login(email, password);
-      
-      if (result.success && result.user) {
-        setSuccess('Welcome! Redirecting...');
-        setTimeout(() => {
-          onLogin(result.user!);
-          onClose();
-          resetForm();
-        }, 1000);
-      } else {
-        setError(result.message || 'Login failed');
-      }
-    } catch (error) {
-      console.error('Direct login error:', error);
-      setError('Login failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,9 +129,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
         </button>
 
         {/* Header */}
-        <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-6 sm:p-10 text-white">
+        <div className="relative bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 p-6 sm:p-10 text-white">
           <div className="text-center">
-            <div className="bg-white/25 rounded-full p-5 w-fit mx-auto mb-6 backdrop-blur-sm shadow-lg">
+            <div className="bg-amber-800/30 rounded-full p-5 w-fit mx-auto mb-6 backdrop-blur-sm shadow-lg">
               {isRegisterMode ? (
                 <User className="w-10 h-10" />
               ) : (
@@ -219,7 +195,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                     type="text"
                     value={name}
                     onChange={(e) => setName(sanitizeInput(e.target.value))}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 font-mali bg-gray-50 focus:bg-white"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 font-mali bg-gray-50 focus:bg-white"
                     placeholder="Enter your full name"
                     required
                   />
@@ -240,7 +216,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(sanitizeInput(e.target.value))}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 font-mali bg-gray-50 focus:bg-white"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 font-mali bg-gray-50 focus:bg-white"
                   placeholder="Enter your email"
                   required
                 />
@@ -260,7 +236,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(sanitizeInput(e.target.value))}
-                  className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 font-mali bg-gray-50 focus:bg-white"
+                  className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 font-mali bg-gray-50 focus:bg-white"
                   placeholder="Enter your password"
                   required
                 />
@@ -292,7 +268,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(sanitizeInput(e.target.value))}
-                    className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 font-mali bg-gray-50 focus:bg-white"
+                    className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 font-mali bg-gray-50 focus:bg-white"
                     placeholder="Confirm your password"
                     required
                   />
@@ -315,7 +291,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-bold py-4 px-6 rounded-xl hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none font-mali text-lg shadow-lg"
+              className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white font-bold py-4 px-6 rounded-xl hover:from-orange-700 hover:to-amber-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none font-mali text-lg shadow-lg"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center gap-3">
@@ -328,38 +304,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             </button>
           </form>
 
-          {/* Direct Login Buttons */}
-          {!isRegisterMode && (
-            <div className="mt-6 space-y-3">
-              <div className="text-center">
-                <p className="text-sm text-gray-600 font-mali mb-3">Quick Login (Demo)</p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  onClick={() => handleDirectLogin('admin@zinga-linga.com', 'admin123')}
-                  disabled={isLoading}
-                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold py-3 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none font-mali text-sm shadow-lg"
-                >
-                  <User className="w-4 h-4" />
-                  Admin Login
-                </button>
-                <button
-                  onClick={() => handleDirectLogin('user@example.com', 'user123')}
-                  disabled={isLoading}
-                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold py-3 px-4 rounded-xl hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none font-mali text-sm shadow-lg"
-                >
-                  <Heart className="w-4 h-4" />
-                  User Login
-                </button>
-              </div>
-            </div>
-          )}
+
 
           {/* Mode Switch */}
           <div className="mt-6 text-center">
             <button
               onClick={switchMode}
-              className="text-purple-600 hover:text-purple-800 font-bold text-sm transition-colors font-mali"
+              className="text-amber-700 hover:text-orange-800 font-bold text-sm transition-colors font-mali"
             >
               {isRegisterMode 
                 ? 'Already have an account? Sign In' 
