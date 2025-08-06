@@ -29,28 +29,14 @@ jobs:
         host: ${{ secrets.VPS_HOST }}
         username: ${{ secrets.VPS_USERNAME }}
         password: ${{ secrets.VPS_PASSWORD }}
+        port: 22
         script: |
-          # Go to app directory
           cd /var/www/zinga-linga || mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
-          
-          # Get latest code
-          if [ -d ".git" ]; then
-            git pull origin main
-          else
-            git clone https://github.com/${{ github.repository }} .
-          fi
-          
-          # Install and build
-          npm install --production
+          git pull origin main || git clone https://github.com/${{ github.repository }} .
+          npm install
           npm run build
-          
-          # Restart app
-          pm2 stop zinga-linga || true
-          pm2 start npm --name "zinga-linga" -- start
-          pm2 save
-          
+          pm2 restart zinga-linga || pm2 start npm --name "zinga-linga" -- start
           echo "✅ Deployment successful!"
-          echo "🌐 Website: http://zingalinga.io/"
 
     - name: 🎉 Success Notification
       run: |
