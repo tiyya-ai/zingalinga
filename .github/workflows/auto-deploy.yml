@@ -30,20 +30,38 @@ jobs:
         username: root
         password: Secureweb25
         script: |
-          echo "🛑 Stopping Apache to free port 80..."
-          systemctl stop apache2
-          systemctl disable apache2
-          
           echo "🚀 Deploying Next.js app..."
           cd /var/www/zinga-linga || mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
           git pull origin main || git clone https://github.com/${{ github.repository }} .
           npm install
           npm run build
           
-          echo "🔄 Starting Next.js on port 80..."
+          echo "🔄 Starting Next.js on port 3000..."
           pm2 stop zinga-linga || echo "No process to stop"
           pm2 delete zinga-linga || echo "No process to delete"
-          pm2 start npm --name "zinga-linga" -- start -- --port 80
+          pm2 start npm --name "zinga-linga" -- start
           pm2 save
           
-          echo "✅ Next.js app running on port 80! Check zingalinga.io"
+          echo "⚙️ Setting up Apache reverse proxy..."
+          systemctl enable apache2
+          systemctl start apache2
+          
+          cat > /etc/apache2/sites-available/000-default.conf << 'EOF'
+<VirtualHost *:80>
+    ServerName zingalinga.io
+    DocumentRoot /var/www/html
+    
+    ProxyPreserveHost On
+    ProxyPass / http://127.0.0.1:3000/
+    ProxyPassReverse / http://127.0.0.1:3000/
+    
+    ErrorLog \${APACHE_LOG_DIR}/error.log
+    CustomLog \${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+EOF
+          
+          a2enmod proxy
+          a2enmod proxy_http
+          systemctl reload apache2
+          
+          echo "✅ Deployment complete! Site live at zingalinga.io"
