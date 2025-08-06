@@ -668,14 +668,21 @@ export default function ProfessionalUserDashboard({
                   
                   return (
                     <div key={content.id} className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:scale-105 hover:border-purple-400/50 hover:shadow-2xl transition-all duration-300 group shadow-xl">
-                      <div className="relative">
+                      <div className="relative cursor-pointer" onClick={() => {
+                        if (isPurchased && (content.type === 'video' || !content.type)) {
+                          const video = adminVideos.find(v => v.id === content.id);
+                          if (video) playVideo(video);
+                        }
+                      }}>
                         <div className="relative w-full h-48 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-600 rounded-t-2xl overflow-hidden">
                           {content.thumbnail ? (
                             <img 
                               src={content.thumbnail} 
                               alt={content.title} 
                               className="w-full h-full object-cover" 
+                              onLoad={() => console.log('✅ Recent video thumbnail loaded:', content.thumbnail)}
                               onError={(e) => {
+                                console.log('❌ Recent video thumbnail failed:', content.thumbnail);
                                 e.currentTarget.style.display = 'none';
                                 const fallback = e.currentTarget.nextElementSibling as HTMLElement;
                                 if (fallback) fallback.style.display = 'flex';
@@ -688,12 +695,31 @@ export default function ProfessionalUserDashboard({
                           >
                             🎬
                           </div>
+                          
+                          {/* Duration Badge */}
+                          {content.duration && (
+                            <div className="absolute bottom-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-xs font-medium">
+                              {content.duration}
+                            </div>
+                          )}
                         </div>
                         
                         <div className="absolute top-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-sm font-medium">
                           ${content.price || 0}
                         </div>
                         
+                        {/* Play Button for Purchased Videos */}
+                        {isPurchased && (content.type === 'video' || !content.type) && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors group-hover:bg-black/30">
+                            <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/30 backdrop-blur-sm group-hover:scale-110 transition-all duration-300">
+                              <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                              </svg>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Lock Overlay for Unpurchased Videos */}
                         {!isPurchased && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/60">
                             <div className="text-center text-white">

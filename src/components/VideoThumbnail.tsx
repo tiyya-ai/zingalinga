@@ -43,12 +43,23 @@ export const VideoThumbnail: React.FC<VideoThumbnailProps> = ({
           {video.duration}
         </div>
         
-        {/* Play Button Overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center">
-          <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-200 shadow-lg">
-            <Play className="w-6 h-6 text-gray-900 ml-1" fill="currentColor" />
+        {/* Play Button Overlay - Always visible for purchased videos */}
+        {isPurchased && (
+          <div className="absolute inset-0 bg-black/20 hover:bg-black/40 transition-all duration-200 flex items-center justify-center cursor-pointer">
+            <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-full flex items-center justify-center opacity-80 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all duration-200 shadow-2xl border-4 border-white/30">
+              <Play className="w-8 h-8 text-white ml-1" fill="currentColor" />
+            </div>
           </div>
-        </div>
+        )}
+        
+        {/* Hover Play Button for unpurchased videos */}
+        {!isPurchased && (
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center">
+            <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-200 shadow-lg">
+              <Play className="w-6 h-6 text-gray-900 ml-1" fill="currentColor" />
+            </div>
+          </div>
+        )}
         
         {/* Lock Overlay for Unpurchased */}
         {!isPurchased && (
