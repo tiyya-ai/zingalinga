@@ -162,10 +162,12 @@ export default function ProfessionalUserDashboard({
       };
     });
 
-  // Check if item is purchased
+  // Check if item is purchased by current user
   const isItemPurchased = (itemId: string) => {
     return localPurchases.some(purchase => 
-      purchase.moduleId === itemId && purchase.status === 'completed'
+      purchase.moduleId === itemId && 
+      purchase.userId === user?.id && 
+      purchase.status === 'completed'
     );
   };
 
@@ -379,7 +381,9 @@ export default function ProfessionalUserDashboard({
   const playVideo = (video: Video) => {
     // Check if user has purchased this specific video
     const hasPurchased = localPurchases.some(purchase => 
-      purchase.moduleId === video.id && purchase.status === 'completed'
+      purchase.moduleId === video.id && 
+      purchase.userId === user?.id && 
+      purchase.status === 'completed'
     );
     
     if (!hasPurchased) {
@@ -2346,18 +2350,18 @@ Total Amount: $${purchases.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
         </div>
       )}
 
-      {/* Checkout Modal */}
+      {/* Enhanced Checkout Modal */}
       {showCheckout && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl border border-gray-200">
-            <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
-              <h3 className="text-2xl font-bold text-gray-800 flex items-center">
-                <span className="mr-2">🛍️</span>
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl border border-purple-200">
+            <div className="flex justify-between items-center p-6 border-b border-purple-200 bg-gradient-to-r from-purple-600 to-blue-600">
+              <h3 className="text-2xl font-bold text-white flex items-center">
+                <span className="mr-3 text-3xl">🛍️</span>
                 Secure Checkout
               </h3>
               <button
                 onClick={() => setShowCheckout(false)}
-                className="text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+                className="text-white/80 hover:text-white text-2xl font-bold w-10 h-10 rounded-full hover:bg-white/20 flex items-center justify-center transition-all duration-200"
               >
                 ×
               </button>
@@ -2366,8 +2370,8 @@ Total Amount: $${purchases.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
             <div className="p-6 overflow-y-auto max-h-[70vh]">
               {/* Cart Items */}
               <div className="mb-8">
-                <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                  <span className="mr-2">📋</span>
+                <h4 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                  <span className="mr-3 text-2xl">📋</span>
                   Order Summary
                 </h4>
                 
@@ -2396,18 +2400,18 @@ Total Amount: $${purchases.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
                   })}
                 </div>
                 
-                <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border border-green-200">
-                  <div className="flex justify-between items-center text-xl font-bold">
-                    <span className="text-gray-800">Total:</span>
-                    <span className="text-green-600">${getTotalPrice()}</span>
+                <div className="mt-6 p-6 bg-gradient-to-r from-green-100 to-blue-100 rounded-2xl border-2 border-green-300 shadow-lg">
+                  <div className="flex justify-between items-center text-2xl font-bold">
+                    <span className="text-gray-800">Total Amount:</span>
+                    <span className="text-green-600 text-3xl">${getTotalPrice()}</span>
                   </div>
                 </div>
               </div>
               
               {/* Payment Form */}
               <div className="space-y-6">
-                <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                  <span className="mr-2">💳</span>
+                <h4 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                  <span className="mr-3 text-2xl">💳</span>
                   Payment Information
                 </h4>
                 
@@ -2462,7 +2466,7 @@ Total Amount: $${purchases.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
               <div className="flex space-x-4 mt-8">
                 <button 
                   onClick={() => setShowCheckout(false)}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 rounded-xl transition-colors"
+                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-4 rounded-xl transition-all duration-200 shadow-md"
                 >
                   Continue Shopping
                 </button>
@@ -2496,19 +2500,32 @@ Total Amount: $${purchases.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
                       setShowCheckout(false);
                       setShowThankYou(true);
                       
-                      // Auto-close thank you modal after 5 seconds
+                      // Auto-redirect after 3 seconds
                       setTimeout(() => {
                         setShowThankYou(false);
-                        setActiveTab('library');
-                      }, 5000);
+                        // Check what was purchased and redirect accordingly
+                        const hasVideos = newPurchases.some(p => p.type === 'video');
+                        const hasAudio = newPurchases.some(p => {
+                          const item = storeItems.find(s => s.id === p.moduleId);
+                          return item?.category === 'Audio Lessons';
+                        });
+                        
+                        if (hasVideos) {
+                          setActiveTab('videos');
+                        } else if (hasAudio) {
+                          setActiveTab('audio-lessons');
+                        } else {
+                          setActiveTab('dashboard');
+                        }
+                      }, 3000);
                     } catch (error) {
                       console.error('Purchase failed:', error);
                       alert('❌ Purchase failed. Please try again.');
                     }
                   }}
-                  className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg flex items-center justify-center space-x-2"
+                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg flex items-center justify-center space-x-3 transform hover:scale-105"
                 >
-                  <span>💳</span>
+                  <span className="text-xl">💳</span>
                   <span>Complete Purchase - ${getTotalPrice()}</span>
                 </button>
               </div>
@@ -2623,79 +2640,88 @@ Total Amount: $${purchases.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
         </div>
       )}
 
-      {/* Thank You Modal */}
+      {/* Enhanced Thank You Modal */}
       {showThankYou && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-gray-200 text-center p-8">
-            <div className="mb-6">
-              <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-                <span className="text-4xl">🎉</span>
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl max-w-lg w-full shadow-2xl border-2 border-green-300 text-center p-8">
+            <div className="mb-8">
+              <div className="w-24 h-24 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce shadow-lg">
+                <span className="text-5xl">🎉</span>
               </div>
-              <h3 className="text-3xl font-bold text-gray-800 mb-2">{user ? 'Thank You!' : 'Account Created!'}</h3>
-              <p className="text-gray-600 text-lg">{user ? 'Your purchase was successful' : 'Your account and purchase were successful'}</p>
+              <h3 className="text-4xl font-bold text-gray-800 mb-3">Purchase Successful!</h3>
+              <p className="text-gray-600 text-xl">Your content is now available</p>
             </div>
             
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-6 mb-6">
-              <div className="flex items-center justify-center space-x-2 mb-3">
-                <span className="text-2xl">💳</span>
-                <span className="text-gray-800 font-semibold">Payment Confirmed</span>
+            <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl p-6 mb-8 border border-green-300">
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <span className="text-3xl">✅</span>
+                <span className="text-gray-800 font-bold text-lg">Payment Confirmed</span>
               </div>
-              <p className="text-gray-600 text-sm mb-3">{user ? 'You can now access your purchased videos!' : 'Please login with your email to access your videos'}</p>
-              <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
-                <div className="flex items-center space-x-1">
-                  <span>🎬</span>
-                  <span>{cartItems.length} Video{cartItems.length !== 1 ? 's' : ''}</span>
+              <p className="text-gray-700 text-base mb-4">You can now access your purchased content!</p>
+              <div className="flex items-center justify-center space-x-6 text-base text-gray-600">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xl">🎬</span>
+                  <span className="font-semibold">{localPurchases.filter(p => p.userId === user?.id).length + cartItems.length} Items</span>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <span>💰</span>
-                  <span>${getTotalPrice()}</span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xl">💰</span>
+                  <span className="font-semibold">${getTotalPrice()}</span>
                 </div>
               </div>
             </div>
             
-            <div className="space-y-3">
-              {user ? (
-                <>
-                  <button 
-                    onClick={() => {
-                      setShowThankYou(false);
-                      setActiveTab('videos');
-                    }}
-                    className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 rounded-xl transition-all duration-200 shadow-lg"
-                  >
-                    🎬 Watch Your Videos
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setShowThankYou(false);
-                      setActiveTab('store');
-                    }}
-                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 rounded-xl transition-colors"
-                  >
-                    Continue Shopping
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button 
-                    onClick={() => {
-                      window.location.href = '/';
-                    }}
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold py-3 rounded-xl transition-all duration-200 shadow-lg"
-                  >
-                    🔑 Login to Your Account
-                  </button>
-                  <div className="text-center mt-3">
-                    <p className="text-gray-600 text-sm">Use the email you provided to login</p>
-                    <p className="text-gray-500 text-xs mt-1">Your videos will be waiting for you!</p>
-                  </div>
-                </>
-              )}
+            <div className="space-y-4">
+              <button 
+                onClick={() => {
+                  setShowThankYou(false);
+                  // Smart redirect based on purchase type
+                  const hasVideos = localPurchases.some(p => p.userId === user?.id && p.type === 'video');
+                  const hasAudio = storeItems.some(item => 
+                    cartItems.includes(item.id) && item.category === 'Audio Lessons'
+                  );
+                  
+                  if (hasVideos || cartItems.length > 0) {
+                    setActiveTab('videos');
+                  } else if (hasAudio) {
+                    setActiveTab('audio-lessons');
+                  } else {
+                    setActiveTab('dashboard');
+                  }
+                }}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg transform hover:scale-105 flex items-center justify-center space-x-3"
+              >
+                <span className="text-xl">🎬</span>
+                <span>Access My Content</span>
+              </button>
+              
+              <button 
+                onClick={() => {
+                  setShowThankYou(false);
+                  setActiveTab('dashboard');
+                }}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg transform hover:scale-105 flex items-center justify-center space-x-3"
+              >
+                <span className="text-xl">🏠</span>
+                <span>Go to Dashboard</span>
+              </button>
+              
+              <button 
+                onClick={() => {
+                  setShowThankYou(false);
+                  setActiveTab('store');
+                }}
+                className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 rounded-xl transition-all duration-200"
+              >
+                Continue Shopping
+              </button>
             </div>
             
-            <div className="mt-6 text-xs text-gray-400">
-              <p>🔒 Your payment is secure and encrypted</p>
-              <p className="mt-1">{user ? 'Taking you to your library in 5 seconds...' : 'Redirecting to login in 5 seconds...'}</p>
+            <div className="mt-6 text-sm text-gray-500">
+              <p className="flex items-center justify-center space-x-2">
+                <span>🔒</span>
+                <span>Your payment is secure and encrypted</span>
+              </p>
+              <p className="mt-2 text-center">Redirecting to your content in 3 seconds...</p>
             </div>
           </div>
         </div>
