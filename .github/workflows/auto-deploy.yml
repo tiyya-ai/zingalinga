@@ -30,56 +30,9 @@ jobs:
         username: root
         password: Secureweb25
         script: |
-          echo "🚀 Deploying Next.js app..."
           cd /var/www/zinga-linga || mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
           git pull origin main || git clone https://github.com/${{ github.repository }} .
           npm install
           npm run build
-          
-          echo "🔄 Starting Next.js on port 3000..."
-          pm2 stop zinga-linga || echo "No process to stop"
-          pm2 delete zinga-linga || echo "No process to delete"
-          pm2 start npm --name "zinga-linga" -- start
-          pm2 save
-          
-          echo "⚙️ Setting up Apache reverse proxy..."
-          systemctl enable apache2
-          systemctl start apache2
-          
-          cat > /etc/apache2/sites-available/zingalinga.conf << 'EOF'
-<VirtualHost *:80>
-    ServerName zingalinga.io
-    ServerAlias www.zingalinga.io
-    DocumentRoot /var/www/html
-    
-    ProxyPreserveHost On
-    ProxyPass / http://127.0.0.1:3000/
-    ProxyPassReverse / http://127.0.0.1:3000/
-    
-    ErrorLog \${APACHE_LOG_DIR}/zingalinga_error.log
-    CustomLog \${APACHE_LOG_DIR}/zingalinga_access.log combined
-</VirtualHost>
-
-<VirtualHost *:80>
-    ServerName 109.199.106.28
-    DocumentRoot /var/www/html
-    
-    ProxyPreserveHost On
-    ProxyPass / http://127.0.0.1:3000/
-    ProxyPassReverse / http://127.0.0.1:3000/
-    
-    ErrorLog \${APACHE_LOG_DIR}/ip_access_error.log
-    CustomLog \${APACHE_LOG_DIR}/ip_access.log combined
-</VirtualHost>
-EOF
-          
-          a2ensite zingalinga.conf
-          a2dissite 000-default.conf
-          
-          a2enmod proxy
-          a2enmod proxy_http
-          systemctl reload apache2
-          
-          echo "✅ Deployment complete!"
-          echo "🌐 IP Access: http://109.199.106.28"
-          echo "🌐 Domain Access: http://zingalinga.io"
+          pm2 restart zinga-linga || pm2 start npm --name "zinga-linga" -- start
+          echo "Deployment complete"
