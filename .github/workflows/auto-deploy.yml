@@ -46,19 +46,35 @@ jobs:
           systemctl enable apache2
           systemctl start apache2
           
-          cat > /etc/apache2/sites-available/000-default.conf << 'EOF'
+          cat > /etc/apache2/sites-available/zingalinga.conf << 'EOF'
 <VirtualHost *:80>
     ServerName zingalinga.io
+    ServerAlias www.zingalinga.io
     DocumentRoot /var/www/html
     
     ProxyPreserveHost On
     ProxyPass / http://127.0.0.1:3000/
     ProxyPassReverse / http://127.0.0.1:3000/
     
-    ErrorLog \${APACHE_LOG_DIR}/error.log
-    CustomLog \${APACHE_LOG_DIR}/access.log combined
+    ErrorLog \${APACHE_LOG_DIR}/zingalinga_error.log
+    CustomLog \${APACHE_LOG_DIR}/zingalinga_access.log combined
+</VirtualHost>
+
+<VirtualHost *:80>
+    ServerName 109.199.106.28
+    DocumentRoot /var/www/html
+    
+    ProxyPreserveHost On
+    ProxyPass / http://127.0.0.1:3000/
+    ProxyPassReverse / http://127.0.0.1:3000/
+    
+    ErrorLog \${APACHE_LOG_DIR}/ip_access_error.log
+    CustomLog \${APACHE_LOG_DIR}/ip_access.log combined
 </VirtualHost>
 EOF
+          
+          a2ensite zingalinga.conf
+          a2dissite 000-default.conf
           
           a2enmod proxy
           a2enmod proxy_http
