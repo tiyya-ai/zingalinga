@@ -338,13 +338,24 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers,
                   <TableCell>
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center overflow-hidden">
-                        {user.avatar ? (
-                          <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-white text-sm font-medium">
-                            {user.name.charAt(0).toUpperCase()}
-                          </span>
-                        )}
+                        {user.avatar && user.avatar.trim() ? (
+                          <img 
+                            src={user.avatar} 
+                            alt={user.name} 
+                            className="w-full h-full object-cover" 
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <span 
+                          className="text-white text-sm font-medium" 
+                          style={{ display: user.avatar && user.avatar.trim() ? 'none' : 'flex' }}
+                        >
+                          {user.name.charAt(0).toUpperCase()}
+                        </span>
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">{user.name}</p>
@@ -439,13 +450,24 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers,
               <div className="space-y-6">
                 <div className="flex items-center space-x-4">
                   <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center overflow-hidden">
-                    {selectedUser.avatar ? (
-                      <img src={selectedUser.avatar} alt={selectedUser.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-white text-xl font-medium">
-                        {selectedUser.name.charAt(0).toUpperCase()}
-                      </span>
-                    )}
+                    {selectedUser.avatar && selectedUser.avatar.trim() ? (
+                      <img 
+                        src={selectedUser.avatar} 
+                        alt={selectedUser.name} 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <span 
+                      className="text-white text-xl font-medium" 
+                      style={{ display: selectedUser.avatar && selectedUser.avatar.trim() ? 'none' : 'flex' }}
+                    >
+                      {selectedUser.name.charAt(0).toUpperCase()}
+                    </span>
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900">{selectedUser.name}</h3>
@@ -625,13 +647,24 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers,
             <CardBody className="space-y-4">
               <div className="flex items-center space-x-6">
                 <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center overflow-hidden">
-                  {userForm.avatar ? (
-                    <img src={userForm.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-white text-2xl font-medium">
-                      {userForm.name.charAt(0).toUpperCase() || 'U'}
-                    </span>
-                  )}
+                  {userForm.avatar && userForm.avatar.trim() ? (
+                    <img 
+                      src={userForm.avatar} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover" 
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <span 
+                    className="text-white text-2xl font-medium" 
+                    style={{ display: userForm.avatar && userForm.avatar.trim() ? 'none' : 'flex' }}
+                  >
+                    {userForm.name.charAt(0).toUpperCase() || 'U'}
+                  </span>
                 </div>
                 <div className="flex-1">
                   <div className="space-y-2">

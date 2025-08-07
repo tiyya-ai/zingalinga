@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { User, Module } from '../types';
 import { vpsDataStore } from '../utils/vpsDataStore';
+import { imageUtils } from '../utils/imageUtils';
+
+interface Purchase {
+  id: string;
+  userId: string;
+  moduleIds: string[];
+  amount: number;
+  createdAt: string;
+}
 
 // Premium Icons (using Lucide React icons style)
 const Icons = {
@@ -152,7 +161,7 @@ export const VideoProductAdmin: React.FC<VideoProductAdminProps> = ({ user, onLo
         category: 'educational',
         ageGroup: '5-7',
         duration: module.estimatedDuration || '30 min',
-        thumbnail: '/images/video-placeholder.jpg',
+        thumbnail: '/zinga-linga-logo.png',
         videoUrl: '/videos/' + module.id + '.mp4',
         previewUrl: '/previews/' + module.id + '.mp4',
         tags: module.tags || [],
@@ -735,7 +744,19 @@ export const VideoProductAdmin: React.FC<VideoProductAdminProps> = ({ user, onLo
                               <input
                                 type="url"
                                 value={productForm.videoUrl}
-                                onChange={(e) => setProductForm({...productForm, videoUrl: e.target.value})}
+                                onChange={(e) => {
+                                  const url = e.target.value;
+                                  setProductForm({...productForm, videoUrl: url});
+                                  
+                                  // Auto-extract YouTube thumbnail
+                                  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                                    const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+                                    if (videoId) {
+                                      const thumbnailUrl = `https://img.youtube.com/vi/${videoId[1]}/maxresdefault.jpg`;
+                                      setProductForm(prev => ({...prev, videoUrl: url, thumbnail: thumbnailUrl}));
+                                    }
+                                  }
+                                }}
                                 placeholder="https://www.youtube.com/watch?v=..."
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
                               />
@@ -791,7 +812,18 @@ export const VideoProductAdmin: React.FC<VideoProductAdminProps> = ({ user, onLo
                                 <input
                                   type="file"
                                   accept="image/*"
-                                  onChange={(e) => setProductForm({...productForm, coverFile: e.target.files?.[0] || null})}
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const validation = imageUtils.validateImageFile(file);
+                                      if (validation.valid) {
+                                        setProductForm({...productForm, coverFile: file});
+                                      } else {
+                                        alert(validation.error);
+                                        e.target.value = '';
+                                      }
+                                    }
+                                  }}
                                   className="hidden"
                                   id="cover-upload"
                                 />
@@ -808,40 +840,56 @@ export const VideoProductAdmin: React.FC<VideoProductAdminProps> = ({ user, onLo
                             )}
                             
                             {productForm.coverSource === 'url' && (
-                              <input
-                                type="url"
-                                value={productForm.thumbnail}
-                                onChange={(e) => setProductForm({...productForm, thumbnail: e.target.value})}
-                                placeholder="https://example.com/image.jpg"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                              />
+                              <div className="space-y-2">
+                                <input
+                                  type="url"
+                                  value={productForm.thumbnail}
+                                  onChange={(e) => setProductForm({...productForm, thumbnail: e.target.value})}
+                                  placeholder="https://example.com/image.jpg"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                />
+                                {productForm.thumbnail && !imageUtils.isValidImageUrl(productForm.thumbnail) && (
+                                  <p className="text-xs text-amber-600 flex items-center space-x-1">
+                                    <span>⚠️</span>
+                                    <span>URL may not be a valid image. Please verify it works.</span>
+                                  </p>
+                                )}
+                              </div>
                             )}
                             
                             {/* Preview */}
-                            {(productForm.thumbnail || productForm.coverFile) && (
-                              <div className="mt-3">
-                                <p className="text-xs text-gray-500 mb-2">Preview:</p>
-                                <div className="w-24 h-16 bg-gray-100 rounded border overflow-hidden">
-                                  {productForm.coverFile ? (
-                                    <img 
-                                      src={URL.createObjectURL(productForm.coverFile)} 
-                                      alt="Preview" 
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : productForm.thumbnail ? (
-                                    <img 
-                                      src={productForm.thumbnail} 
-                                      alt="Preview" 
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                      <span className="text-xs">No image</span>
-                                    </div>
-                                  )}
-                                </div>
+                            <div className="mt-3">
+                              <p className="text-xs text-gray-500 mb-2">Preview:</p>
+                              <div className="w-24 h-16 bg-gray-100 rounded border overflow-hidden">
+                                {productForm.coverFile ? (
+                                  <img 
+                                    src={URL.createObjectURL(productForm.coverFile)} 
+                                    alt="Preview" 
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.src = '/zinga-linga-logo.png';
+                                    }}
+                                  />
+                                ) : productForm.thumbnail ? (
+                                  <img 
+                                    src={productForm.thumbnail} 
+                                    alt="Preview" 
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.src = '/zinga-linga-logo.png';
+                                    }}
+                                  />
+                                ) : productForm.videoSource === 'youtube' && productForm.videoUrl ? (
+                                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                    <span className="text-xs">🎬 YouTube</span>
+                                  </div>
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                    <span className="text-xs">No image</span>
+                                  </div>
+                                )}
                               </div>
-                            )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -901,7 +949,18 @@ export const VideoProductAdmin: React.FC<VideoProductAdminProps> = ({ user, onLo
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                              {product.thumbnail ? (
+                                <img 
+                                  src={product.thumbnail} 
+                                  alt={product.title}
+                                  className="h-10 w-10 rounded-lg object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    e.currentTarget.nextElementSibling.style.display = 'flex';
+                                  }}
+                                />
+                              ) : null}
+                              <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center" style={{display: product.thumbnail ? 'none' : 'flex'}}>
                                 <span className="text-lg">🎬</span>
                               </div>
                             </div>

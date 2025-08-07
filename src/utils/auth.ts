@@ -311,11 +311,12 @@ class AuthManager {
       newUsers.push({
         id: 'admin-demo',
         email: 'admin@zingalinga.com',
-        name: 'Admin Demo',
+        username: 'admin',
+        name: 'Admin User',
         role: 'admin',
         purchasedModules: [],
         createdAt: new Date().toISOString(),
-        lastLogin: undefined,
+        lastLogin: new Date().toISOString(),
         totalSpent: 0
       });
     }

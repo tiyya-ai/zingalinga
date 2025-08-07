@@ -81,7 +81,11 @@ export default function EnhancedCheckout({ items, onClose, onSuccess }: Enhanced
             <div className="space-y-4 mb-6">
               {items.map(item => (
                 <div key={item.id} className="flex items-center space-x-3">
-                  <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
+                  {item.image && item.image.trim() ? (
+                    <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
+                  ) : (
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center text-white">🎬</div>
+                  )}
                   <div className="flex-1">
                     <div className="text-white font-medium text-sm">{item.name}</div>
                     <div className="flex items-center space-x-2">

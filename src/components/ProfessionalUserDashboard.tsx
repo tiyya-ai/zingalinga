@@ -63,11 +63,22 @@ export default function ProfessionalUserDashboard({
   purchases = [],
   contentFiles = [],
   onLogout,
-  onPurchase
+  onPurchase,
+  setUser
 }: ProfessionalUserDashboardProps) {
+  console.log('🔍 Dashboard props received:', {
+    modulesCount: modules.length,
+    purchasesCount: purchases.length,
+    userExists: !!user
+  });
+  const [mounted, setMounted] = useState(false);
   const [localPurchases, setLocalPurchases] = useState<Purchase[]>(purchases);
   const [liveModules, setLiveModules] = useState<Module[]>(modules);
   const [savedCategories, setSavedCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // Update local purchases when prop changes
   useEffect(() => {
@@ -126,7 +137,8 @@ export default function ProfessionalUserDashboard({
   };
 
   // Convert admin modules to store items (all videos as purchasable content)
-  const storeItems = liveModules
+  const allModules = liveModules.length > 0 ? liveModules : modules; // Use props if liveModules is empty
+  const storeItems = allModules
     .filter(module => module.type === 'video' || !module.type) // All videos
     .map(module => {
       let thumbnail = module.thumbnail || '';
@@ -136,8 +148,8 @@ export default function ProfessionalUserDashboard({
         thumbnail = URL.createObjectURL(module.thumbnail);
       }
       
-      // Handle YouTube thumbnails
-      if (module.videoUrl && typeof module.videoUrl === 'string') {
+      // Handle YouTube thumbnails - check if we need to extract from video URL
+      if (module.videoUrl && typeof module.videoUrl === 'string' && (!thumbnail || thumbnail === '/zinga-linga-logo.png')) {
         let videoId = null;
         if (module.videoUrl.includes('youtube.com/watch')) {
           videoId = module.videoUrl.split('v=')[1]?.split('&')[0];
@@ -145,7 +157,7 @@ export default function ProfessionalUserDashboard({
           videoId = module.videoUrl.split('youtu.be/')[1]?.split('?')[0];
         }
         
-        if (videoId && !thumbnail) {
+        if (videoId) {
           thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
         }
       }
@@ -175,17 +187,28 @@ export default function ProfessionalUserDashboard({
 
   const loadLatestModules = async () => {
     try {
+      // Try localStorage first since VPS is failing
+      const localData = localStorage.getItem('zingalinga_data');
+      console.log('💾 Raw localStorage data exists:', !!localData);
+      if (localData) {
+        const data = JSON.parse(localData);
+        console.log('💾 Parsed data modules count:', data.modules?.length || 0);
+        if (data.modules) {
+          setLiveModules(data.modules);
+          console.log('🔍 Modules with thumbnails:', data.modules.map(m => ({
+            id: m.id,
+            title: m.title,
+            thumbnail: m.thumbnail
+          })));
+          return;
+        }
+      }
+      console.log('💾 No localStorage data, trying VPS...');
+      
+      // Fallback to VPS
       const data = await vpsDataStore.loadData();
       if (data.modules) {
         setLiveModules(data.modules);
-        console.log('🔍 Loaded modules:', data.modules.map(m => ({
-          id: m.id,
-          title: m.title,
-          hasVideoUrl: !!m.videoUrl,
-          videoUrlType: typeof m.videoUrl,
-          hasThumbnail: !!m.thumbnail,
-          thumbnailType: typeof m.thumbnail
-        })));
       }
     } catch (error) {
       console.warn('Error loading latest modules:', error);
@@ -298,7 +321,7 @@ export default function ProfessionalUserDashboard({
   });
 
   // Convert admin modules to videos with proper URL handling
-  const adminVideos: Video[] = liveModules
+  const adminVideos: Video[] = allModules
     .filter(module => module.type === 'video' || !module.type)
     .map(module => {
       // Handle File objects by converting to blob URLs
@@ -333,8 +356,8 @@ export default function ProfessionalUserDashboard({
         
         if (videoId) {
           videoUrl = `https://www.youtube.com/embed/${videoId}`;
-          // Use YouTube thumbnail if no custom thumbnail
-          if (!thumbnail) {
+          // Use YouTube thumbnail if no custom thumbnail or default logo
+          if (!thumbnail || thumbnail === '/zinga-linga-logo.png') {
             thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
           }
           isYouTube = true;
@@ -380,29 +403,7 @@ export default function ProfessionalUserDashboard({
     }
   });
 
-  const playVideo = (video: Video) => {
-    // Check if user has purchased this specific video
-    const hasPurchased = localPurchases.some(purchase => 
-      purchase.moduleId === video.id && 
-      purchase.userId === user?.id && 
-      purchase.status === 'completed'
-    );
-    
-    if (!hasPurchased) {
-      alert(`🔒 You need to purchase "${video.title}" to watch it. Please buy it from the store first!`);
-      setActiveTab('store'); // Redirect to store
-      return;
-    }
-    
-    console.log('🎬 Playing video:', {
-      title: video.title,
-      videoUrl: video.videoUrl,
-      thumbnail: video.thumbnail,
-      hasVideoUrl: !!video.videoUrl,
-      videoUrlType: typeof video.videoUrl,
-      isBlob: video.videoUrl?.startsWith('blob:')
-    });
-    
+  const playVideo = (video: any) => {
     setSelectedVideo(video);
     setShowVideoModal(true);
   };
@@ -451,6 +452,14 @@ export default function ProfessionalUserDashboard({
   };
 
 
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <ClientOnly>
@@ -705,7 +714,7 @@ export default function ProfessionalUserDashboard({
                   <div key={content.id} className="bg-black/30 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden hover:scale-105 hover:border-yellow-400 transition-all duration-300 group">
                     <div className="relative">
                       <div className={`w-full h-48 bg-gradient-to-br ${getContentColor(content.category || '')} relative overflow-hidden`}>
-                        {content.thumbnail ? (
+                        {content.thumbnail && content.thumbnail.trim() ? (
                           <img 
                             src={content.thumbnail} 
                             alt={content.title} 
@@ -855,7 +864,7 @@ export default function ProfessionalUserDashboard({
                     <div key={content.id} className="bg-black/30 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden hover:scale-105 hover:border-yellow-400 transition-all duration-300 group">
                       <div className="relative">
                         <div className={`w-full h-48 bg-gradient-to-br ${getContentColor(content.category || '')} relative overflow-hidden`}>
-                          {content.thumbnail ? (
+                          {content.thumbnail && content.thumbnail.trim() ? (
                             <img 
                               src={content.thumbnail} 
                               alt={content.title} 
@@ -1043,29 +1052,34 @@ export default function ProfessionalUserDashboard({
               )}
             </div>
 
-            {/* Videos Grid - Only show videos this user purchased */}
+            {/* Real Video Cards from Admin */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredVideos.filter(video => {
-                // Only show videos purchased by this specific user
-                return localPurchases.some(purchase => 
-                  purchase.moduleId === video.id && 
-                  purchase.userId === user?.id && 
-                  purchase.status === 'completed'
-                );
-              }).map((video) => {
-                // User has access since we already filtered for their purchases
-                const isPurchased = true; // Always true since we filtered above
+              {allModules.filter(module => module.type === 'video' || !module.type).map(module => {
+                const isPurchased = isItemPurchased(module.id);
+                let thumbnail = module.thumbnail || '';
+                
+                if (module.videoUrl && typeof module.videoUrl === 'string' && (!thumbnail || thumbnail === '/zinga-linga-logo.png')) {
+                  let videoId = null;
+                  if (module.videoUrl.includes('youtube.com/watch')) {
+                    videoId = module.videoUrl.split('v=')[1]?.split('&')[0];
+                  } else if (module.videoUrl.includes('youtu.be/')) {
+                    videoId = module.videoUrl.split('youtu.be/')[1]?.split('?')[0];
+                  }
+                  if (videoId) {
+                    thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                  }
+                }
+                
                 return (
-                  <div key={video.id} className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:scale-105 hover:border-purple-400/50 hover:shadow-2xl transition-all duration-300 group shadow-xl">
-                    <div className="relative cursor-pointer" onClick={() => isPurchased && playVideo(video)}>
-                      <div className="relative w-full h-48 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-600 rounded-t-2xl overflow-hidden">
-                        {video.thumbnail ? (
+                  <div key={module.id} className="bg-black/30 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden hover:scale-105 hover:border-yellow-400 transition-all duration-300 group">
+                    <div className="relative">
+                      <div className="w-full h-48 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-600 relative overflow-hidden">
+                        {thumbnail && thumbnail.trim() ? (
                           <img 
-                            src={video.thumbnail} 
-                            alt={video.title} 
+                            src={thumbnail} 
+                            alt={module.title} 
                             className="w-full h-full object-cover" 
                             onError={(e) => {
-                              console.log('Thumbnail failed to load:', video.thumbnail);
                               e.currentTarget.style.display = 'none';
                               const fallback = e.currentTarget.nextElementSibling as HTMLElement;
                               if (fallback) fallback.style.display = 'flex';
@@ -1074,41 +1088,55 @@ export default function ProfessionalUserDashboard({
                         ) : null}
                         <div 
                           className="absolute inset-0 flex items-center justify-center text-white text-4xl bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-600"
-                          style={{ display: video.thumbnail ? 'none' : 'flex' }}
+                          style={{ display: thumbnail && thumbnail.trim() ? 'none' : 'flex' }}
                         >
                           🎬
                         </div>
                         
-                        {/* Duration Badge */}
-                        <div className="absolute bottom-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-xs font-medium">
-                          {video.duration || '0:00'}
-                        </div>
+                        {/* Play icon for purchased videos */}
+                        {isPurchased && (
+                          <div 
+                            className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors group-hover:bg-black/30 cursor-pointer"
+                            onClick={() => {
+                              const video = {
+                                id: module.id,
+                                title: module.title || 'Untitled Video',
+                                thumbnail: thumbnail || '/zinga-linga-logo.png',
+                                duration: module.duration || '5:00',
+                                description: module.description || '',
+                                videoUrl: module.videoUrl || '',
+                                category: module.category || 'Videos',
+                                isPremium: module.price > 0,
+                                price: module.price || 0
+                              };
+                              playVideo(video);
+                            }}
+                          >
+                            <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/30 backdrop-blur-sm group-hover:scale-110 transition-all duration-300">
+                              <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                              </svg>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
-                      {/* Status Overlay */}
+                      <div className="absolute top-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-sm font-medium">
+                        ${module.price || 0}
+                      </div>
+                      
+                      <div className="absolute bottom-2 right-2 bg-purple-600 text-white px-2 py-1 rounded text-xs">
+                        {module.category || 'Content'}
+                      </div>
+                      
                       {!isPurchased && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
                           <div className="text-center text-white">
-                            <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center mb-3 mx-auto shadow-lg">
+                            <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mb-3 mx-auto">
                               <span className="text-2xl">🔒</span>
                             </div>
-                            <div className="text-sm font-bold mb-1">Purchase Required</div>
-                            <div className="text-xs opacity-80">Buy from store to watch</div>
+                            <div className="text-sm font-bold">Purchase Required</div>
                           </div>
-                        </div>
-                      )}
-                      
-                      {/* Play Button for Purchased Videos */}
-                      {isPurchased && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors group-hover:bg-black/30">
-                          <button
-                            onClick={() => playVideo(video)}
-                            className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-full flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-2xl border-4 border-white/30 backdrop-blur-sm"
-                          >
-                            <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z"/>
-                            </svg>
-                          </button>
                         </div>
                       )}
                       
@@ -1116,36 +1144,28 @@ export default function ProfessionalUserDashboard({
                     </div>
                     
                     <div className="p-4">
-                      {/* Status and Category Badges */}
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {isPurchased && (
-                          <span className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-xl text-xs font-bold shadow-lg">
-                            ✓ Owned
-                          </span>
-                        )}
-                        <span className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-1 rounded-xl text-xs font-bold shadow-lg">
-                          {video.category}
-                        </span>
-                      </div>
-                      
-                      <h3 className="text-lg font-bold text-white mb-2 line-clamp-2">{video.title}</h3>
-                      <p className="text-gray-300 text-sm line-clamp-2 mb-3">{video.description}</p>
-                      
-                      {/* Rating only */}
-                      <div className="flex items-center space-x-3 mb-3">
-                        <div className="bg-white/20 text-white px-2 py-1 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-1">
-                          <span>⭐</span>
-                          <span>{video.rating?.toFixed(1)}</span>
-                        </div>
-                      </div>
+                      <h3 className="text-lg font-bold text-white mb-2">{module.title || 'Untitled Video'}</h3>
+                      <p className="text-purple-200 text-sm mb-3 line-clamp-2">{module.description || 'No description available'}</p>
                       
                       <div className="flex items-center justify-between">
-                        {!isPurchased && (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-gray-400 text-xs">⏱️ {module.duration || '5:00'}</span>
+                        </div>
+                        
+                        {isPurchased ? (
+                          <div className="bg-green-600 text-white px-3 py-1 rounded-lg text-xs font-medium">
+                            ✓ Owned
+                          </div>
+                        ) : (
                           <button 
-                            onClick={() => setActiveTab('store')}
-                            className="text-yellow-400 hover:text-yellow-300 text-sm font-medium transition-colors"
+                            onClick={() => {
+                              addToCart(module.id);
+                              setShowCartPopup(true);
+                              setTimeout(() => setShowCartPopup(false), 2000);
+                            }}
+                            className="bg-yellow-400 hover:bg-yellow-500 text-purple-800 px-4 py-2 rounded-lg font-semibold transition-colors text-sm"
                           >
-                            Buy Now →
+                            Buy Now
                           </button>
                         )}
                       </div>
@@ -1156,13 +1176,15 @@ export default function ProfessionalUserDashboard({
             </div>
             
             {/* Show message if user has no purchased videos */}
-            {filteredVideos.filter(video => 
-              localPurchases.some(purchase => 
+            {filteredVideos.filter(video => {
+              const module = liveModules.find(m => m.id === video.id);
+              const isVideo = !module?.category || module.category !== 'Audio Lessons';
+              return isVideo && localPurchases.some(purchase => 
                 purchase.moduleId === video.id && 
                 purchase.userId === user?.id && 
                 purchase.status === 'completed'
-              )
-            ).length === 0 && (
+              );
+            }).length === 0 && (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <div className="text-6xl mb-4">🛒</div>
                 <div className="text-white text-xl mb-2">No purchased videos</div>
@@ -1364,16 +1386,16 @@ export default function ProfessionalUserDashboard({
                   <div key={item.id} className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:scale-105 hover:border-purple-400/50 hover:shadow-2xl transition-all duration-300 group shadow-xl">
                     <div className="relative">
                       <div className="relative w-full h-48 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-600 rounded-t-2xl overflow-hidden">
-                        {item.image ? (
+                        {item.image && item.image.trim() ? (
                           <img 
                             src={item.image} 
                             alt={item.name} 
                             className="w-full h-full object-cover" 
-                            onLoad={(e) => {
-                              console.log('Store thumbnail loaded successfully:', item.image);
+                            onLoad={() => {
+                              console.log('✅ Store thumbnail loaded:', item.image);
                             }}
                             onError={(e) => {
-                              console.log('Store thumbnail failed to load:', item.image);
+                              console.log('❌ Store thumbnail failed to load:', item.image);
                               e.currentTarget.style.display = 'none';
                               const fallback = e.currentTarget.nextElementSibling as HTMLElement;
                               if (fallback) fallback.style.display = 'flex';
@@ -1382,7 +1404,7 @@ export default function ProfessionalUserDashboard({
                         ) : null}
                         <div 
                           className="absolute inset-0 flex items-center justify-center text-white text-4xl bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-600"
-                          style={{ display: item.image ? 'none' : 'flex' }}
+                          style={{ display: item.image && item.image.trim() ? 'none' : 'flex' }}
                         >
                           🎬
                         </div>
@@ -1482,7 +1504,11 @@ export default function ProfessionalUserDashboard({
                     const video = displayVideos.find(v => v.id === purchase.moduleId);
                     return video ? (
                       <div key={purchase.id} className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg">
-                        <img src={video.thumbnail} alt={video.title} className="w-16 h-12 rounded object-cover" />
+                        {video.thumbnail && video.thumbnail.trim() ? (
+                          <img src={video.thumbnail} alt={video.title} className="w-16 h-12 rounded object-cover" />
+                        ) : (
+                          <div className="w-16 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded flex items-center justify-center text-white text-xs">🎬</div>
+                        )}
                         <div className="flex-1">
                           <div className="text-white font-medium">{video.title}</div>
                           <div className="text-purple-200 text-sm">Purchased on {new Date(purchase.purchaseDate).toLocaleDateString()}</div>
@@ -1702,7 +1728,7 @@ export default function ProfessionalUserDashboard({
               <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8">
                 <div className="relative">
                   <img 
-                    src={user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'} 
+                    src={user?.avatar && user.avatar.trim() ? user.avatar : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'} 
                     alt="Profile" 
                     className="w-32 h-32 rounded-full border-4 border-white shadow-2xl object-cover" 
                     key={user?.avatar || Date.now()}
@@ -2146,7 +2172,7 @@ export default function ProfessionalUserDashboard({
               <div className="text-center mb-6">
                 <div className="relative inline-block">
                   <img 
-                    src={profileData.avatar || user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'} 
+                    src={(profileData.avatar && profileData.avatar.trim()) || (user?.avatar && user.avatar.trim()) || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'} 
                     alt="Profile" 
                     className="w-24 h-24 rounded-full border-4 border-purple-400 object-cover shadow-lg" 
                     key={profileData.avatar || user?.avatar || Date.now()}
@@ -2252,7 +2278,11 @@ export default function ProfessionalUserDashboard({
                       setProfileData({ name: '', phone: '', address: '', avatar: '' });
                       
                       // Update user state without logout
-                      if (typeof window !== 'undefined') {
+                      if (setUser) {
+                        setUser(updatedUser);
+                      }
+                      
+                      if (mounted) {
                         const currentSession = JSON.parse(localStorage.getItem('authSession') || '{}');
                         if (currentSession.user) {
                           currentSession.user = updatedUser;
@@ -2608,7 +2638,7 @@ export default function ProfessionalUserDashboard({
                   ></iframe>
                 ) : (
                   <PlyrVideoPlayer
-                    src={selectedVideo.videoUrl || ''}
+                    src={selectedVideo.videoUrl || undefined}
                     poster={selectedVideo.thumbnail}
                     className="absolute inset-0 w-full h-full"
                   />
@@ -2804,7 +2834,7 @@ export default function ProfessionalUserDashboard({
                 controls 
                 autoPlay
                 className="w-full mb-4"
-                src={selectedAudio.audioUrl}
+                src={selectedAudio.audioUrl || undefined}
               >
                 Your browser does not support audio.
               </audio>

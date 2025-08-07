@@ -191,7 +191,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   // Load real data from vpsDataStore
   useEffect(() => {
-    loadRealData();
+    if (mounted) {
+      loadRealData();
+    }
     
     // Cleanup function to revoke object URLs when component unmounts
     return () => {
@@ -199,9 +201,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         URL.revokeObjectURL(videoForm.videoUrl);
       }
     };
-  }, []);
+  }, [mounted]);
 
   const loadRealData = async () => {
+    if (!mounted) return;
+    
     try {
       // Load real data from vpsDataStore
       const realUsers = await vpsDataStore.getUsers();
@@ -326,11 +330,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
       setRecentActivities(activities.slice(0, 4));
 
-      // Update data status
+      // Update data status - consider admin users as real data
+      const hasRealUsers = realUsers.length > 0 && realUsers.some(u => u.role === 'admin' || u.role === 'user');
       setDataStatus({
-        isRealData: true,
+        isRealData: hasRealUsers || realVideos.length > 0 || convertedOrders.length > 0,
         lastUpdated: new Date(),
-        hasRealUsers: realUsers.length > 0,
+        hasRealUsers: hasRealUsers,
         hasRealOrders: convertedOrders.length > 0
       });
 
@@ -1361,8 +1366,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     language: 'English',
     status: 'active'
   });
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
+
   
   // Audio lesson form state
   const [audioForm, setAudioForm] = useState({
@@ -1379,8 +1383,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     previewUrl: '',
     previewDuration: ''
   });
-  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
-  const [audioUploadProgress, setAudioUploadProgress] = useState(0);
+
   
   // User form state
   const [userForm, setUserForm] = useState({
@@ -1559,8 +1562,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         return;
       }
       
-      setIsUploading(true);
-      setUploadProgress(0);
+
       
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -1580,8 +1582,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             videoType: 'upload'
           }));
           
-          setIsUploading(false);
-          setUploadProgress(100);
+
           
           setUploadQueue(prev => [{
             id: `upload_${Date.now()}`,
@@ -1597,15 +1598,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         video.src = base64Video;
       };
       
-      const interval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(interval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 200);
+
       
       reader.readAsDataURL(file);
     }
@@ -1868,19 +1861,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 >
                   <div className="space-y-6 pt-6">
                     <div className="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center hover:border-blue-500 transition-all duration-300 bg-blue-50/30 relative">
-                      {isUploading ? (
-                        <div className="space-y-4">
-                          <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto">
-                            <Upload className="h-8 w-8 text-white animate-bounce" />
-                          </div>
-                          <div>
-                            <p className="text-lg font-semibold text-gray-900">Uploading video...</p>
-                            <p className="text-sm text-gray-600">Please wait while we process your file</p>
-                          </div>
-                          <Progress value={uploadProgress} className="w-full max-w-md mx-auto" color="primary" size="lg" />
-                          <p className="text-sm font-medium text-blue-600">{uploadProgress}% complete</p>
-                        </div>
-                      ) : videoForm.videoUrl ? (
+                      {videoForm.videoUrl ? (
                         <div className="space-y-4">
                           <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto">
                             <CheckCircle className="h-8 w-8 text-white" />
@@ -2319,7 +2300,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     <div className="space-y-4">
                       <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden max-w-xs mx-auto shadow-lg">
                         <img 
-                          src={videoForm.thumbnail} 
+                          src={videoForm.thumbnail || undefined} 
                           alt="Thumbnail preview" 
                           className="w-full h-full object-cover"
                           onError={(e) => {
@@ -2395,7 +2376,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               className="w-full bg-gray-900 text-white hover:bg-gray-800 h-12 text-lg font-semibold"
               onPress={handleSaveVideo}
               startContent={editingVideo ? <Edit className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-              isDisabled={editingVideo ? false : (!videoForm.title.trim() || !videoForm.category || !videoForm.videoUrl || isUploading)}
+              isDisabled={editingVideo ? false : (!videoForm.title.trim() || !videoForm.category || !videoForm.videoUrl)}
             >
               {editingVideo ? 'Update Video' : 'Create Video'}
             </Button>
@@ -2552,7 +2533,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       <Card className="bg-white border border-gray-200">
         <CardHeader className="border-b border-gray-200 p-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 w-full">
-            <h3 className="text-lg font-semibold text-gray-900">Video Library ({videos.filter(v => v.type !== 'audio').length})</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Video Library ({videos.filter(v => v.type !== 'audio' && v.category !== 'Audio Lessons' && v.category !== 'audio').length})</h3>
             <Input
               placeholder="Search videos..."
               startContent={<Search className="h-4 w-4" />}
@@ -2575,9 +2556,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-16">
                   <input 
                     type="checkbox" 
-                    checked={selectedVideos.length === videos.filter(v => v.type !== 'audio' && v.category !== 'Audio Lessons').length && videos.filter(v => v.type !== 'audio' && v.category !== 'Audio Lessons').length > 0}
+                    checked={selectedVideos.length === videos.filter(v => v.type !== 'audio' && v.category !== 'Audio Lessons' && v.category !== 'audio').length && videos.filter(v => v.type !== 'audio' && v.category !== 'Audio Lessons' && v.category !== 'audio').length > 0}
                     onChange={(e) => {
-                      const videoList = videos.filter(v => v.type !== 'audio' && v.category !== 'Audio Lessons');
+                      const videoList = videos.filter(v => v.type !== 'audio' && v.category !== 'Audio Lessons' && v.category !== 'audio');
                       if (e.target.checked) {
                         setSelectedVideos(videoList.map(v => v.id));
                       } else {
@@ -2594,7 +2575,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-1/6">ACTIONS</TableColumn>
               </TableHeader>
               <TableBody emptyContent="No videos found">
-                {videos.filter(video => video.type !== 'audio' && video.category !== 'Audio Lessons').map((video) => (
+                {videos.filter(video => video.type !== 'audio' && video.category !== 'Audio Lessons' && video.category !== 'audio').map((video) => (
                   <TableRow key={video.id} className={`hover:bg-gray-50 transition-colors ${selectedVideos.includes(video.id) ? 'bg-blue-50' : ''}`}>
                     <TableCell className="py-4 px-6 text-center">
                       <input 
@@ -2612,8 +2593,20 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     </TableCell>
                     <TableCell className="py-4 px-6">
                       <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Video className="h-6 w-6 text-white" />
+                        <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {video.thumbnail && video.thumbnail.trim() ? (
+                            <img 
+                              src={video.thumbnail} 
+                              alt={video.title} 
+                              className="w-full h-full object-cover" 
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon') as HTMLElement;
+                                if (fallback) fallback.style.display = 'block';
+                              }}
+                            />
+                          ) : null}
+                          <Video className="h-6 w-6 text-white fallback-icon" style={{ display: video.thumbnail && video.thumbnail.trim() ? 'none' : 'block' }} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-gray-900 truncate">{video.title}</p>
@@ -3348,33 +3341,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                             
                             // Check if audio element exists and has a valid source
                             if (audio && lesson.audioUrl && lesson.audioUrl.trim() !== '') {
-                              // Check if audio has loaded metadata
-                              if (audio.readyState >= 1) {
-                                if (audio.paused) {
-                                  audio.play().catch(e => {
-                                    console.error('Audio play failed:', e);
-                                    alert('Unable to play audio. The audio file may be corrupted or unavailable.');
-                                  });
-                                } else {
-                                  audio.pause();
-                                }
+                              if (audio.paused) {
+                                audio.play().catch(() => alert('Unable to play audio'));
                               } else {
-                                // Try to load the audio first
-                                audio.load();
-                                audio.addEventListener('canplay', () => {
-                                  audio.play().catch(e => {
-                                    console.error('Audio play failed after load:', e);
-                                    alert('Unable to play audio. The audio file may be corrupted or unavailable.');
-                                  });
-                                }, { once: true });
-                                
-                                audio.addEventListener('error', () => {
-                                  console.error('Audio load failed');
-                                  alert('Audio file could not be loaded. Please check the file URL.');
-                                }, { once: true });
+                                audio.pause();
                               }
                             } else {
-                              alert('No audio file available for this lesson.');
+                              alert('No audio file available');
                             }
                           }}
                         >
@@ -3382,13 +3355,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         </button>
                         <audio 
                           id={`audio-${lesson.id}`} 
-                          preload="none"
+                          preload="metadata"
                           style={{ display: 'none' }}
-                        >
-                          {lesson.audioUrl && lesson.audioUrl.trim() !== '' && (
-                            <source src={lesson.audioUrl} type="audio/mpeg" />
-                          )}
-                        </audio>
+                          src={lesson.audioUrl && lesson.audioUrl.trim() !== '' ? lesson.audioUrl : undefined}
+                        />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-1">
@@ -3465,7 +3435,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             {videos.filter(v => v.category === 'Video Lessons').map((lesson) => (
               <div key={lesson.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="aspect-video bg-gray-100 rounded-lg mb-3 overflow-hidden">
-                  {lesson.thumbnail ? (
+                  {lesson.thumbnail && lesson.thumbnail.trim() ? (
                     <img src={lesson.thumbnail} alt={lesson.title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
@@ -3623,8 +3593,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         return;
       }
       
-      setIsUploadingAudio(true);
-      setAudioUploadProgress(0);
+
       
       // Create a local URL for the audio file
       const audioUrl = URL.createObjectURL(file);
@@ -3643,18 +3612,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       };
       audio.src = audioUrl;
       
-      // Simulate upload progress
-      const interval = setInterval(() => {
-        setAudioUploadProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setIsUploadingAudio(false);
-            setAudioForm(prevForm => ({ ...prevForm, audioUrl: audioUrl }));
-            return 100;
-          }
-          return prev + 8;
-        });
-      }, 300);
+      setAudioForm(prevForm => ({ ...prevForm, audioUrl: audioUrl }));
     }
   };
 
@@ -3843,17 +3801,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             <CardBody className="space-y-6">
               <div className="space-y-4">
                 <div className="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center hover:border-blue-500 transition-all duration-300 bg-blue-50/30">
-                  {isUploadingAudio ? (
-                    <div className="space-y-4">
-                      <Headphones className="h-16 w-16 text-blue-500 mx-auto animate-pulse" />
-                      <div>
-                        <p className="text-lg font-semibold text-gray-900">Uploading audio...</p>
-                        <p className="text-sm text-gray-600">Please wait while we process your file</p>
-                      </div>
-                      <Progress value={audioUploadProgress} className="w-full max-w-md mx-auto" color="primary" size="lg" />
-                      <p className="text-sm font-medium text-blue-600">{audioUploadProgress.toFixed(0)}% complete</p>
-                    </div>
-                  ) : audioForm.audioUrl ? (
+                  {audioForm.audioUrl ? (
                     <div className="space-y-4">
                       <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
                       <div>
@@ -3981,7 +3929,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     <div className="space-y-4">
                       <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden max-w-xs mx-auto shadow-lg">
                         <img 
-                          src={audioForm.thumbnail} 
+                          src={audioForm.thumbnail || undefined} 
                           alt="Cover preview" 
                           className="w-full h-full object-cover"
                           onError={(e) => {
@@ -4088,7 +4036,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             <button 
               className="w-full bg-gray-900 text-white hover:bg-gray-800 h-12 text-lg font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleSaveAudioLesson}
-              disabled={!audioForm.title.trim() || !audioForm.audioUrl || isUploadingAudio}
+              disabled={!audioForm.title.trim() || !audioForm.audioUrl}
             >
               <Plus className="h-5 w-5" />
               Create Audio Lesson
@@ -4283,7 +4231,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     <div className="space-y-4">
                       <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden max-w-xs mx-auto shadow-lg">
                         <img 
-                          src={pp1Form.coverImage} 
+                          src={pp1Form.coverImage || undefined} 
                           alt="Cover preview" 
                           className="w-full h-full object-cover"
                         />
@@ -4596,7 +4544,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     <div className="space-y-4">
                       <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden max-w-xs mx-auto shadow-lg">
                         <img 
-                          src={pp2Form.coverImage} 
+                          src={pp2Form.coverImage || undefined} 
                           alt="Cover preview" 
                           className="w-full h-full object-cover"
                         />
@@ -5653,7 +5601,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     <div className="space-y-3">
                       <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden max-w-xs mx-auto">
                         <img 
-                          src={packageForm.coverImage} 
+                          src={packageForm.coverImage || undefined} 
                           alt="Package cover" 
                           className="w-full h-full object-cover"
                         />

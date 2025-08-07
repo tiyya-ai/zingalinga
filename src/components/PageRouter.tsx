@@ -47,61 +47,66 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
   const [contentFiles, setContentFiles] = useState<ContentFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    // Only run client-side code
-    if (typeof window !== 'undefined') {
-      const session = authManager.getCurrentSession();
-      if (session && authManager.isSessionValid(session)) {
-        setUser(session.user);
-        setCurrentSession(session);
-        vpsDataStore.setCurrentUser(session.user);
-      }
-      
-      // Set page based on current URL
-      const path = window.location.pathname;
-      if (path === '/packages') {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const session = authManager.getCurrentSession();
+    if (session && authManager.isSessionValid(session)) {
+      setUser(session.user);
+      setCurrentSession(session);
+      vpsDataStore.setCurrentUser(session.user);
+    }
+    
+    // Set page based on current URL
+    const path = window.location.pathname;
+    if (path === '/packages') {
+      setCurrentPage('packages');
+    } else if (path === '/about') {
+      setCurrentPage('about');
+    } else if (path === '/contact') {
+      setCurrentPage('contact');
+    } else if (path === '/help') {
+      setCurrentPage('help');
+    } else {
+      setCurrentPage('home');
+    }
+    
+    // Handle browser back/forward buttons
+    const handlePopState = () => {
+      const currentPath = window.location.pathname;
+      if (currentPath === '/packages') {
         setCurrentPage('packages');
-      } else if (path === '/about') {
+      } else if (currentPath === '/about') {
         setCurrentPage('about');
-      } else if (path === '/contact') {
+      } else if (currentPath === '/contact') {
         setCurrentPage('contact');
-      } else if (path === '/help') {
+      } else if (currentPath === '/help') {
         setCurrentPage('help');
       } else {
         setCurrentPage('home');
       }
-      
-      // Handle browser back/forward buttons
-      const handlePopState = () => {
-        const currentPath = window.location.pathname;
-        if (currentPath === '/packages') {
-          setCurrentPage('packages');
-        } else if (currentPath === '/about') {
-          setCurrentPage('about');
-        } else if (currentPath === '/contact') {
-          setCurrentPage('contact');
-        } else if (currentPath === '/help') {
-          setCurrentPage('help');
-        } else {
-          setCurrentPage('home');
-        }
-      };
-      
-      window.addEventListener('popstate', handlePopState);
-      
-      // Listen for guest login modal trigger
-      const handleShowGuestLogin = () => {
-        setShowGuestLoginModal(true);
-      };
-      
-      window.addEventListener('showGuestLogin', handleShowGuestLogin);
-      
-      return () => {
-        window.removeEventListener('popstate', handlePopState);
-        window.removeEventListener('showGuestLogin', handleShowGuestLogin);
-      };
-    }
-  }, []);
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    
+    // Listen for guest login modal trigger
+    const handleShowGuestLogin = () => {
+      setShowGuestLoginModal(true);
+    };
+    
+    window.addEventListener('showGuestLogin', handleShowGuestLogin);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('showGuestLogin', handleShowGuestLogin);
+    };
+  }, [mounted]);
 
   const handleLogin = async (userData: User) => {
     setUser(userData);
@@ -260,6 +265,14 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
 
 
 
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-gray-600 text-xl">Loading...</div>
+      </div>
+    );
+  }
+
   const content = renderCurrentPage();
 
   return (
@@ -314,7 +327,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                 <h4 className="font-bold text-green-800 font-mali mb-2">🎉 Welcome Back!</h4>
                 <p className="text-sm text-green-700 font-mali mb-3">
-                  Your account: <strong>{typeof window !== 'undefined' ? localStorage.getItem('guestAccountEmail') : ''}</strong><br/>
+                  Your account: <strong>{mounted ? localStorage.getItem('guestAccountEmail') : ''}</strong><br/>
                   Password: <span className="bg-green-200 px-2 py-1 rounded font-mono">guest123</span>
                 </p>
               </div>
@@ -324,7 +337,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
                   <label className="block text-sm font-bold text-gray-700 font-mali">Email Address</label>
                   <input
                     type="email"
-                    defaultValue={typeof window !== 'undefined' ? localStorage.getItem('guestAccountEmail') || '' : ''}
+                    defaultValue={mounted ? localStorage.getItem('guestAccountEmail') || '' : ''}
                     className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-mali bg-gray-50 focus:bg-white"
                     readOnly
                   />

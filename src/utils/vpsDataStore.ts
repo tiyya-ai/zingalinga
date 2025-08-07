@@ -410,8 +410,11 @@ class VPSDataStore {
       const index = data.users.findIndex(u => u.id === userId);
       if (index !== -1) {
         data.users[index] = { ...data.users[index], ...updatedUser };
-        return await this.saveData(data);
+        const success = await this.saveData(data);
+        console.log('User update result:', success, 'Updated user:', data.users[index]);
+        return success;
       }
+      console.log('User not found for update:', userId);
       return false;
     } catch (error) {
       console.error('Error updating user:', error);

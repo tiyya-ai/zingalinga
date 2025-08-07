@@ -11,12 +11,13 @@ const nextConfig = {
     unoptimized: true
   },
   experimental: {
-    // Removed deprecated options for Next.js 15
+    serverComponentsExternalPackages: [],
+    esmExternals: 'loose',
   },
   async generateBuildId() {
     return 'static-build'
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -29,6 +30,22 @@ const nextConfig = {
         os: false,
       };
     }
+    
+    // Fix for metadata boundary issue in development
+    if (dev) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          ...config.optimization.splitChunks,
+          cacheGroups: {
+            ...config.optimization.splitChunks?.cacheGroups,
+            default: false,
+            vendors: false,
+          },
+        },
+      };
+    }
+    
     return config;
   },
 }
