@@ -7,6 +7,7 @@ import { vpsDataStore } from '../utils/vpsDataStore';
 import { getVideoThumbnail } from '../utils/videoUtils';
 import { ChatModal } from './ChatModal';
 import ClientOnly from './ClientOnly';
+import { PlyrVideoPlayer } from './PlyrVideoPlayer';
 
 interface Video {
   id: string;
@@ -53,6 +54,7 @@ interface ProfessionalUserDashboardProps {
   contentFiles?: ContentFile[];
   onLogout?: () => void;
   onPurchase?: (moduleId: string) => void;
+  setUser?: (user: User) => void;
 }
 
 export default function ProfessionalUserDashboard({
@@ -525,7 +527,6 @@ export default function ProfessionalUserDashboard({
             ).length },
             { id: 'packages', label: '📦 Packages', count: null },
             { id: 'orders', label: '📋 Orders', count: localPurchases.filter(p => p.userId === user?.id).length },
-            { id: 'settings', label: '⚙️ Settings', count: null },
             { id: 'profile', label: '👤 Profile', count: null }
           ].map(tab => (
             <button
@@ -642,143 +643,6 @@ export default function ProfessionalUserDashboard({
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Recent Videos */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-white flex items-center">
-                  <span className="mr-2">🎬</span>
-                  Recent Videos
-                </h3>
-                <button 
-                  onClick={() => setActiveTab('all-content')}
-                  className="text-yellow-400 hover:text-yellow-300 text-sm"
-                >
-                  View All →
-                </button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {allContent.slice(0, 3).map((content) => {
-                  const isPurchased = localPurchases.some(purchase => 
-                    purchase.moduleId === content.id && 
-                    purchase.userId === user?.id && 
-                    purchase.status === 'completed'
-                  );
-                  
-                  return (
-                    <div key={content.id} className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:scale-105 hover:border-purple-400/50 hover:shadow-2xl transition-all duration-300 group shadow-xl">
-                      <div className="relative cursor-pointer" onClick={() => {
-                        if (isPurchased && (content.type === 'video' || !content.type)) {
-                          const video = adminVideos.find(v => v.id === content.id);
-                          if (video) playVideo(video);
-                        }
-                      }}>
-                        <div className="relative w-full h-48 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-600 rounded-t-2xl overflow-hidden">
-                          {content.thumbnail ? (
-                            <img 
-                              src={content.thumbnail} 
-                              alt={content.title} 
-                              className="w-full h-full object-cover" 
-                              onLoad={() => console.log('✅ Recent video thumbnail loaded:', content.thumbnail)}
-                              onError={(e) => {
-                                console.log('❌ Recent video thumbnail failed:', content.thumbnail);
-                                e.currentTarget.style.display = 'none';
-                                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                                if (fallback) fallback.style.display = 'flex';
-                              }}
-                            />
-                          ) : null}
-                          <div 
-                            className="absolute inset-0 flex items-center justify-center text-white text-4xl bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-600"
-                            style={{ display: content.thumbnail ? 'none' : 'flex' }}
-                          >
-                            🎬
-                          </div>
-                          
-                          {/* Duration Badge */}
-                          {content.duration && (
-                            <div className="absolute bottom-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-xs font-medium">
-                              {content.duration}
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="absolute top-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-sm font-medium">
-                          ${content.price || 0}
-                        </div>
-                        
-                        {/* Play Button for Purchased Videos */}
-                        {isPurchased && (content.type === 'video' || !content.type) && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors group-hover:bg-black/30">
-                            <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/30 backdrop-blur-sm group-hover:scale-110 transition-all duration-300">
-                              <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z"/>
-                              </svg>
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Lock Overlay for Unpurchased Videos */}
-                        {!isPurchased && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                            <div className="text-center text-white">
-                              <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mb-3 mx-auto shadow-lg">
-                                <span className="text-2xl">🔒</span>
-                              </div>
-                              <div className="text-sm font-bold mb-1">Purchase Required</div>
-                              <div className="text-xs opacity-80">Buy to unlock video</div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="p-4">
-                        <h3 className="text-lg font-bold text-white mb-2 line-clamp-2">{content.title}</h3>
-                        <p className="text-purple-200 text-sm mb-3 line-clamp-2">{content.description || 'No description available'}</p>
-                        
-                        <div className="flex justify-between items-center">
-                          <div className="text-purple-200 text-xs">{content.category}</div>
-                          
-                          {isPurchased ? (
-                            <button 
-                              onClick={() => {
-                                if (content.type === 'video' || !content.type) {
-                                  const video = adminVideos.find(v => v.id === content.id);
-                                  if (video) playVideo(video);
-                                }
-                              }}
-                              className="bg-green-500 hover:bg-green-600 text-white font-medium px-4 py-2 rounded-lg transition-all duration-300 text-xs flex items-center gap-1 shadow-md hover:scale-105"
-                            >
-                              <span>▶</span>
-                              <span>Watch</span>
-                            </button>
-                          ) : (
-                            <button 
-                              onClick={() => {
-                                addToCart(content.id);
-                                setShowCartPopup(true);
-                                setTimeout(() => setShowCartPopup(false), 2000);
-                              }}
-                              className="bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-medium px-4 py-2 rounded-lg transition-all duration-300 text-xs flex items-center gap-1 shadow-md hover:scale-105"
-                            >
-                              <span>🛒</span>
-                              <span>Add to Cart</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              {allContent.length === 0 && (
-                <div className="col-span-full text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-                  <div className="text-6xl mb-4">🎬</div>
-                  <div className="text-white text-xl mb-2">No videos available yet</div>
-                  <div className="text-purple-200 text-sm">New content will appear here</div>
-                </div>
-              )}
             </div>
 
             {/* Quick Actions */}
@@ -1276,27 +1140,7 @@ export default function ProfessionalUserDashboard({
                       </div>
                       
                       <div className="flex items-center justify-between">
-                        {isPurchased ? (
-                          <div className="flex items-center space-x-2">
-                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                            <span className="text-green-400 text-xs font-medium">Ready to Watch</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center space-x-2">
-                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                            <span className="text-red-400 text-xs">Purchase Required</span>
-                          </div>
-                        )}
-                        
-                        {isPurchased ? (
-                          <button 
-                            onClick={() => playVideo(video)}
-                            className="text-green-400 hover:text-green-300 text-sm font-medium transition-colors flex items-center gap-1"
-                          >
-                            <span>▶</span>
-                            <span>Watch</span>
-                          </button>
-                        ) : (
+                        {!isPurchased && (
                           <button 
                             onClick={() => setActiveTab('store')}
                             className="text-yellow-400 hover:text-yellow-300 text-sm font-medium transition-colors"
@@ -1847,282 +1691,224 @@ export default function ProfessionalUserDashboard({
           </section>
         )}
 
-        {/* Settings Tab */}
-        {activeTab === 'settings' && (
-          <section className="space-y-6">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
-                <span className="mr-2">⚙️</span>
-                Settings
-              </h2>
-              <p className="text-purple-200">Manage your account preferences and settings</p>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                  <span className="mr-2">👤</span>
-                  Account Settings
-                </h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-purple-200 text-sm mb-2">Display Name</label>
-                    <input 
-                      type="text" 
-                      defaultValue={user?.name || ''}
-                      className="w-full px-4 py-2 bg-white/20 text-white rounded-lg border border-white/30 focus:border-yellow-400 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-purple-200 text-sm mb-2">Email</label>
-                    <input 
-                      type="email" 
-                      defaultValue={user?.email || ''}
-                      className="w-full px-4 py-2 bg-white/20 text-white rounded-lg border border-white/30 focus:border-yellow-400 focus:outline-none"
-                    />
-                  </div>
-                  <button className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold py-3 rounded-lg">
-                    Save Changes
-                  </button>
-                </div>
-              </div>
-              
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                  <span className="mr-2">🔒</span>
-                  Security
-                </h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-purple-200 text-sm mb-2">Current Password</label>
-                    <input 
-                      type="password" 
-                      placeholder="Enter current password"
-                      className="w-full px-4 py-2 bg-white/20 text-white rounded-lg border border-white/30 focus:border-yellow-400 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-purple-200 text-sm mb-2">New Password</label>
-                    <input 
-                      type="password" 
-                      placeholder="Enter new password"
-                      className="w-full px-4 py-2 bg-white/20 text-white rounded-lg border border-white/30 focus:border-yellow-400 focus:outline-none"
-                    />
-                  </div>
-                  <button className="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold py-3 rounded-lg">
-                    Change Password
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
 
-        {/* Profile Tab - Personalized Account Panel */}
+
+        {/* New Modern Profile Tab */}
         {activeTab === 'profile' && (
-          <section className="space-y-6">
-
-            {/* Account Overview */}
-            <div className="bg-gradient-to-r from-purple-800/50 to-blue-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-500/30">
-              <div className="flex flex-col md:flex-row items-center justify-between">
-                <div className="text-center md:text-left mb-6 md:mb-0">
-                  <h3 className="text-3xl font-bold text-white mb-2">
-                    Welcome, {user?.name || 'User'}! 🌟
-                  </h3>
-                  <p className="text-purple-200 text-lg">
-                    Account ID: {user?.id || 'N/A'}
-                  </p>
-                  <p className="text-purple-200 text-sm">
-                    Member since: {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
-                  </p>
-                </div>
-                <div className="flex items-center space-x-4">
+          <section className="space-y-8">
+            {/* Profile Header */}
+            <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
+              <div className="absolute inset-0 bg-black/10"></div>
+              <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8">
+                <div className="relative">
                   <img 
-                    src={user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face'} 
+                    src={user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'} 
                     alt="Profile" 
-                    className="w-20 h-20 rounded-full border-4 border-yellow-400" 
+                    className="w-32 h-32 rounded-full border-4 border-white shadow-2xl object-cover" 
+                    key={user?.avatar || Date.now()}
                   />
+                  <div className="absolute -bottom-2 -right-2 bg-green-500 w-10 h-10 rounded-full border-4 border-white flex items-center justify-center">
+                    <span className="text-white text-lg">✓</span>
+                  </div>
                 </div>
+                
+                <div className="text-center lg:text-left flex-1">
+                  <h1 className="text-4xl font-bold mb-2">{user?.name || 'User'}</h1>
+                  <p className="text-white/80 text-lg mb-4">{user?.email}</p>
+                  <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
+                    <span className="bg-white/20 px-4 py-2 rounded-full text-sm font-semibold">🏆 Premium Member</span>
+                    <span className="bg-white/20 px-4 py-2 rounded-full text-sm font-semibold">💎 Level {Math.floor((localPurchases.filter(p => p.userId === user?.id).length) / 3) + 1}</span>
+                    <span className="bg-white/20 px-4 py-2 rounded-full text-sm font-semibold">🎬 {localPurchases.filter(p => p.userId === user?.id).length} Videos</span>
+                  </div>
+                </div>
+                
+                <button 
+                  onClick={() => {
+                    setProfileData({
+                      name: user?.name || '',
+                      phone: user?.phone || '',
+                      address: user?.address || '',
+                      avatar: user?.avatar || ''
+                    });
+                    setShowEditProfile(true);
+                  }}
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 shadow-lg"
+                >
+                  ✏️ Edit Profile
+                </button>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Personal Account Information */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl p-6 text-white shadow-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="bg-white/20 rounded-full p-3">
+                    <span className="text-2xl">📅</span>
+                  </div>
+                  <span className="text-blue-100 text-sm font-semibold">JOINED</span>
+                </div>
+                <div className="text-2xl font-bold">{user?.createdAt ? new Date(user.createdAt).getFullYear() : 'N/A'}</div>
+                <div className="text-blue-100 text-sm">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}</div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="bg-white/20 rounded-full p-3">
+                    <span className="text-2xl">🎬</span>
+                  </div>
+                  <span className="text-green-100 text-sm font-semibold">VIDEOS</span>
+                </div>
+                <div className="text-2xl font-bold">{localPurchases.filter(p => p.userId === user?.id).length}</div>
+                <div className="text-green-100 text-sm">Owned</div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 text-white shadow-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="bg-white/20 rounded-full p-3">
+                    <span className="text-2xl">💰</span>
+                  </div>
+                  <span className="text-purple-100 text-sm font-semibold">SPENT</span>
+                </div>
+                <div className="text-2xl font-bold">${user?.totalSpent?.toFixed(2) || '0.00'}</div>
+                <div className="text-purple-100 text-sm">Total</div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl p-6 text-white shadow-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="bg-white/20 rounded-full p-3">
+                    <span className="text-2xl">⭐</span>
+                  </div>
+                  <span className="text-orange-100 text-sm font-semibold">STATUS</span>
+                </div>
+                <div className="text-2xl font-bold">Active</div>
+                <div className="text-orange-100 text-sm">Verified</div>
+              </div>
+            </div>
+            
+            {/* Profile Info & Purchases */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Profile Info */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-lg">
                 <h3 className="text-xl font-bold text-white mb-6 flex items-center">
-                  <span className="mr-2">🏠</span>
-                  My Account Details
+                  <span className="mr-3 text-2xl">👤</span>
+                  Profile Info
                 </h3>
                 
                 <div className="space-y-4">
-                  <div className="bg-white/5 p-4 rounded-lg">
-                    <div className="text-purple-200 text-sm">Full Name</div>
-                    <div className="text-white font-bold text-lg">{user?.name || 'User'}</div>
+                  <div className="bg-white/5 rounded-xl p-4">
+                    <div className="text-purple-200 text-sm mb-1">Name</div>
+                    <div className="text-white font-semibold">{user?.name || 'Not set'}</div>
                   </div>
                   
-                  <div className="bg-white/5 p-4 rounded-lg">
-                    <div className="text-purple-200 text-sm">Email Address</div>
-                    <div className="text-white font-bold">{user?.email || 'N/A'}</div>
+                  <div className="bg-white/5 rounded-xl p-4">
+                    <div className="text-purple-200 text-sm mb-1">Email</div>
+                    <div className="text-white font-semibold text-sm">{user?.email || 'Not set'}</div>
                   </div>
                   
-                  <div className="bg-white/5 p-4 rounded-lg">
-                    <div className="text-purple-200 text-sm">Account Type</div>
-                    <div className="text-white font-bold capitalize">{user?.role || 'User'}</div>
+                  <div className="bg-white/5 rounded-xl p-4">
+                    <div className="text-purple-200 text-sm mb-1">Phone</div>
+                    <div className="text-white font-semibold">{user?.phone || 'Not set'}</div>
                   </div>
                   
-                  <div className="bg-white/5 p-4 rounded-lg">
-                    <div className="text-purple-200 text-sm">Unique Account ID</div>
-                    <div className="text-yellow-400 font-bold font-mono text-sm">{user?.id || 'N/A'}</div>
+                  <div className="bg-white/5 rounded-xl p-4">
+                    <div className="text-purple-200 text-sm mb-1">Address</div>
+                    <div className="text-white font-semibold text-sm">{user?.address || 'Not set'}</div>
                   </div>
                 </div>
               </div>
               
-              {/* Account Statistics */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                <h3 className="text-xl font-bold text-white mb-6 flex items-center">
-                  <span className="mr-2">📊</span>
-                  My Account Stats
-                </h3>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 p-4 rounded-lg border border-green-500/30">
-                    <div className="text-green-200 text-sm">Member Since</div>
-                    <div className="text-white font-bold">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</div>
-                  </div>
-                  <div className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 p-4 rounded-lg border border-yellow-500/30">
-                    <div className="text-yellow-200 text-sm">Total Spent</div>
-                    <div className="text-yellow-400 font-bold">${user?.totalSpent?.toFixed(2) || '0.00'}</div>
-                  </div>
-                  <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 p-4 rounded-lg border border-blue-500/30">
-                    <div className="text-blue-200 text-sm">Videos Owned</div>
-                    <div className="text-white font-bold">{localPurchases.filter(p => p.userId === user?.id).length}</div>
-                  </div>
-                  <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 p-4 rounded-lg border border-purple-500/30">
-                    <div className="text-purple-200 text-sm">Account Status</div>
-                    <div className="text-green-400 font-bold">✅ Active</div>
-                  </div>
-                </div>
-                
-                <div className="mt-6 p-4 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-lg border border-indigo-500/30">
-                  <h4 className="text-white font-bold mb-2">🎯 Account Summary</h4>
-                  <p className="text-indigo-200 text-sm">
-                    You have your own personal account with {localPurchases.filter(p => p.userId === user?.id).length} purchased videos. 
-                    Your account is secure and all your content is saved.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            {/* My Purchases Section */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-              <h3 className="text-xl font-bold text-white mb-6 flex items-center">
-                <span className="mr-2">🛍️</span>
-                My Personal Purchases
-              </h3>
-              
-              <div className="space-y-3">
-                {localPurchases.filter(p => p.userId === user?.id).length > 0 ? (
-                  localPurchases.filter(p => p.userId === user?.id).map(purchase => {
-                    const video = displayVideos.find(v => v.id === purchase.moduleId);
-                    return (
-                      <div key={purchase.id} className="bg-white/5 p-4 rounded-lg flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
-                            <span className="text-white text-xl">🎬</span>
+              {/* Recent Purchases */}
+              <div className="lg:col-span-2">
+                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-lg">
+                  <h3 className="text-xl font-bold text-white mb-6 flex items-center">
+                    <span className="mr-3 text-2xl">🛒</span>
+                    Recent Purchases
+                  </h3>
+                  
+                  <div className="space-y-3 max-h-80 overflow-y-auto">
+                    {localPurchases.filter(p => p.userId === user?.id).length > 0 ? (
+                      localPurchases.filter(p => p.userId === user?.id).slice(0, 5).map(purchase => {
+                        const video = displayVideos.find(v => v.id === purchase.moduleId);
+                        return (
+                          <div key={purchase.id} className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-colors">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-4">
+                                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                                  <span className="text-white text-xl">🎬</span>
+                                </div>
+                                <div>
+                                  <div className="text-white font-semibold">{video?.title || `Video #${purchase.moduleId}`}</div>
+                                  <div className="text-purple-200 text-sm">{new Date(purchase.purchaseDate).toLocaleDateString()}</div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-green-400 font-bold">${purchase.amount.toFixed(2)}</div>
+                                <div className="text-green-300 text-xs">✓ Owned</div>
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="text-white font-medium">{video?.title || `Video #${purchase.moduleId}`}</div>
-                            <div className="text-purple-200 text-sm">Purchased: {new Date(purchase.purchaseDate).toLocaleDateString()}</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-yellow-400 font-bold">${purchase.amount.toFixed(2)}</div>
-                          <div className="text-green-400 text-xs">✅ Owned</div>
-                        </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="text-6xl mb-4">🛒</div>
+                        <div className="text-white text-xl mb-2">No purchases yet</div>
+                        <div className="text-purple-200 text-sm mb-6">Start exploring our video collection</div>
+                        <button 
+                          onClick={() => setActiveTab('store')}
+                          className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-3 rounded-xl font-semibold hover:scale-105 transition-transform"
+                        >
+                          Browse Store
+                        </button>
                       </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-center py-8 text-purple-200">
-                    <div className="text-4xl mb-2">🛒</div>
-                    <div>No purchases yet</div>
-                    <div className="text-sm">Your purchased videos will appear here</div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
-
             
-            {/* Account Actions */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+            {/* Quick Actions */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-lg">
               <h3 className="text-xl font-bold text-white mb-6 flex items-center">
-                <span className="mr-2">⚙️</span>
-                Account Settings
+                <span className="mr-3 text-2xl">⚡</span>
+                Quick Actions
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <button 
                   onClick={() => {
-                    // Initialize form with current user data
-                    const initialData = {
+                    setProfileData({
                       name: user?.name || '',
                       phone: user?.phone || '',
                       address: user?.address || '',
                       avatar: user?.avatar || ''
-                    };
-                    console.log('📝 Initializing profile form with:', initialData);
-                    setProfileData(initialData);
+                    });
                     setShowEditProfile(true);
                   }}
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white p-4 rounded-lg transition-colors text-center"
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white p-6 rounded-xl transition-all hover:scale-105 shadow-lg text-center"
                 >
-                  <div className="text-2xl mb-2">✏️</div>
-                  <div className="font-medium">Edit Profile</div>
+                  <div className="text-3xl mb-3">✏️</div>
+                  <div className="font-bold text-lg">Edit Profile</div>
+                  <div className="text-blue-100 text-sm">Update your info</div>
                 </button>
                 
                 <button 
-                  onClick={() => setShowChangePassword(true)}
-                  className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white p-4 rounded-lg transition-colors text-center"
+                  onClick={() => setActiveTab('videos')}
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white p-6 rounded-xl transition-all hover:scale-105 shadow-lg text-center"
                 >
-                  <div className="text-2xl mb-2">🔒</div>
-                  <div className="font-medium">Change Password</div>
+                  <div className="text-3xl mb-3">🎬</div>
+                  <div className="font-bold text-lg">My Videos</div>
+                  <div className="text-green-100 text-sm">{localPurchases.filter(p => p.userId === user?.id).length} videos owned</div>
                 </button>
                 
                 <button 
-                  onClick={() => {
-                    // Create PDF-like content
-                    const invoiceContent = `
-=== ZINGA LINGA INVOICES ===
-Generated: ${new Date().toLocaleDateString()}
-
-${purchases.map(p => {
-  const video = displayVideos.find(v => v.id === p.moduleId);
-  return `
---- INVOICE ---
-Invoice ID: ${p.id}
-Product: ${video?.title || 'Video Content'}
-Amount: $${p.amount.toFixed(2)}
-Date: ${new Date(p.purchaseDate).toLocaleDateString()}
-Status: ${p.status.toUpperCase()}
-`;
-}).join('\n')}
-
-Total Amount: $${purchases.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
-
---- END OF INVOICES ---`;
-                    
-                    const blob = new Blob([invoiceContent], { type: 'application/pdf' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'zinga-linga-invoices.pdf';
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white p-4 rounded-lg transition-colors text-center"
+                  onClick={() => setActiveTab('store')}
+                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white p-6 rounded-xl transition-all hover:scale-105 shadow-lg text-center"
                 >
-                  <div className="text-2xl mb-2">📊</div>
-                  <div className="font-medium">Download Invoices</div>
+                  <div className="text-3xl mb-3">🛍️</div>
+                  <div className="font-bold text-lg">Browse Store</div>
+                  <div className="text-orange-100 text-sm">Discover new content</div>
                 </button>
               </div>
             </div>
@@ -2338,183 +2124,159 @@ Total Amount: $${purchases.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
         </div>
       </footer>
 
-      {/* Edit Profile Modal */}
+      {/* Enhanced Edit Profile Modal */}
       {showEditProfile && (
-        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl max-w-md w-full border border-purple-500/30 shadow-2xl">
-            <div className="flex justify-between items-center p-6 border-b border-purple-500/30">
-              <h3 className="text-2xl font-bold text-white">Edit Profile</h3>
-              <button
-                onClick={() => setShowEditProfile(false)}
-                className="text-gray-400 hover:text-white text-2xl"
-              >
-                ×
-              </button>
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-6 text-white">
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-bold">✏️ Edit Profile</h3>
+                <button
+                  onClick={() => setShowEditProfile(false)}
+                  className="text-white/80 hover:text-white text-2xl w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-all"
+                >
+                  ×
+                </button>
+              </div>
             </div>
+            
             <div className="p-6">
-              <div className="space-y-4">
-                <div className="text-center mb-4">
+              {/* Avatar Section */}
+              <div className="text-center mb-6">
+                <div className="relative inline-block">
                   <img 
-                    src={profileData.avatar || user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face'} 
+                    src={profileData.avatar || user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'} 
                     alt="Profile" 
-                    className="w-20 h-20 rounded-full border-4 border-yellow-400 mx-auto mb-2 object-cover" 
-                  />
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    id="avatar-upload"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        // Validate file size (max 5MB)
-                        if (file.size > 5 * 1024 * 1024) {
-                          alert('Image size must be less than 5MB');
-                          return;
-                        }
-                        
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                          const result = e.target?.result as string;
-                          console.log('🖼️ Avatar changed, size:', result.length);
-                          setProfileData(prev => ({ ...prev, avatar: result }));
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
+                    className="w-24 h-24 rounded-full border-4 border-purple-400 object-cover shadow-lg" 
+                    key={profileData.avatar || user?.avatar || Date.now()}
                   />
                   <button 
                     onClick={() => document.getElementById('avatar-upload')?.click()}
-                    className="text-yellow-400 text-sm hover:text-yellow-300"
+                    className="absolute bottom-0 right-0 bg-purple-500 hover:bg-purple-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-colors"
                   >
-                    Change Photo
+                    📷
                   </button>
                 </div>
-                
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  id="avatar-upload"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 2 * 1024 * 1024) {
+                        alert('Image size must be less than 2MB');
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = (e) => {
+                        setProfileData(prev => ({ ...prev, avatar: e.target?.result as string }));
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+                <p className="text-gray-500 text-sm mt-2">Click camera to change photo</p>
+              </div>
+              
+              {/* Form Fields */}
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-white text-sm font-medium mb-2">Name *</label>
+                  <label className="block text-gray-700 text-sm font-semibold mb-2">👤 Full Name *</label>
                   <input 
                     type="text" 
                     value={profileData.name !== undefined ? profileData.name : (user?.name || '')}
-                    onChange={(e) => {
-                      console.log('📝 Name changed to:', e.target.value);
-                      setProfileData(prev => ({ ...prev, name: e.target.value }));
-                    }}
-                    placeholder="Enter your name"
-                    className="w-full px-4 py-2 bg-white/20 text-white rounded-lg border border-white/30 focus:border-yellow-400 focus:outline-none placeholder-white/60"
+                    onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter your full name"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none transition-colors bg-gray-50 focus:bg-white"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-white text-sm font-medium mb-2">Phone</label>
+                  <label className="block text-gray-700 text-sm font-semibold mb-2">📞 Phone Number</label>
                   <input 
                     type="tel" 
                     value={profileData.phone !== undefined ? profileData.phone : (user?.phone || '')}
-                    onChange={(e) => {
-                      console.log('📞 Phone changed to:', e.target.value);
-                      setProfileData(prev => ({ ...prev, phone: e.target.value }));
-                    }}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
                     placeholder="+1 (555) 123-4567"
-                    className="w-full px-4 py-2 bg-white/20 text-white rounded-lg border border-white/30 focus:border-yellow-400 focus:outline-none placeholder-white/60"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none transition-colors bg-gray-50 focus:bg-white"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-white text-sm font-medium mb-2">Address</label>
+                  <label className="block text-gray-700 text-sm font-semibold mb-2">🏠 Address</label>
                   <textarea 
                     value={profileData.address !== undefined ? profileData.address : (user?.address || '')}
-                    onChange={(e) => {
-                      console.log('🏠 Address changed to:', e.target.value);
-                      setProfileData(prev => ({ ...prev, address: e.target.value }));
-                    }}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, address: e.target.value }))}
                     placeholder="123 Main Street, City, State, ZIP"
                     rows={3}
-                    className="w-full px-4 py-2 bg-white/20 text-white rounded-lg border border-white/30 focus:border-yellow-400 focus:outline-none placeholder-white/60 resize-none"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none transition-colors bg-gray-50 focus:bg-white resize-none"
                   />
                 </div>
-                
-                <div className="flex space-x-3 mt-6">
-                  <button 
-                    onClick={async () => {
-                      try {
-                        console.log('🔧 Profile Update Debug:', {
-                          currentUser: user,
-                          profileData: profileData,
-                          userId: user?.id
-                        });
-
-                        // Validate required fields
-                        const finalName = profileData.name || user?.name;
-                        if (!finalName) {
-                          alert('Name is required');
-                          return;
-                        }
-
-                        // Create updated user object with all fields
-                        const updatedUser = {
-                          ...user,
-                          name: profileData.name || user?.name,
-                          phone: profileData.phone !== undefined ? profileData.phone : (user?.phone || ''),
-                          address: profileData.address !== undefined ? profileData.address : (user?.address || ''),
-                          avatar: profileData.avatar || user?.avatar,
-                          // Ensure we keep all existing user properties
-                          id: user?.id,
-                          email: user?.email,
-                          role: user?.role,
-                          createdAt: user?.createdAt,
-                          totalSpent: user?.totalSpent
-                        };
-                        
-                        console.log('💾 Saving updated user:', updatedUser);
-
-                        // Save to VPS data store
-                        const data = await vpsDataStore.loadData();
-                        console.log('📂 Current data:', data);
-                        
-                        // Find and update the user
-                        const userIndex = (data.users || []).findIndex(u => u.id === user?.id);
-                        if (userIndex === -1) {
-                          // User not found, add them
-                          data.users = [...(data.users || []), updatedUser];
-                        } else {
-                          // Update existing user
-                          data.users[userIndex] = updatedUser;
-                        }
-                        
-                        console.log('💾 Saving data with updated users:', data.users);
-                        await vpsDataStore.saveData(data);
-                        
-                        // Update localStorage to persist the changes
-                        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-                        console.log('💾 Updated localStorage with:', updatedUser);
-                        
-                        alert(`✅ Profile updated successfully!\n\nName: ${updatedUser.name}\nPhone: ${updatedUser.phone}\nAddress: ${updatedUser.address}`);
-                        setShowEditProfile(false);
-                        setProfileData({ name: '', phone: '', address: '', avatar: '' });
-                        
-                        // Force component re-render with updated data
-                        setTimeout(() => {
-                          window.location.reload();
-                        }, 1500);
-                      } catch (error) {
-                        console.error('❌ Profile update error:', error);
-                        alert(`❌ Failed to update profile: ${error.message}`);
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex space-x-3 mt-8">
+                <button 
+                  onClick={async () => {
+                    try {
+                      const finalName = profileData.name || user?.name;
+                      if (!finalName?.trim()) {
+                        alert('❌ Name is required!');
+                        return;
                       }
-                    }}
-                    className="flex-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-purple-900 font-bold py-2 rounded-lg"
-                  >
-                    Save Changes
-                  </button>
-                  <button 
-                    onClick={() => {
+
+                      const updatedUser = {
+                        ...user,
+                        name: finalName.trim(),
+                        phone: (profileData.phone || user?.phone || '').trim(),
+                        address: (profileData.address || user?.address || '').trim(),
+                        avatar: profileData.avatar || user?.avatar
+                      };
+                      
+                      const data = await vpsDataStore.loadData();
+                      const userIndex = (data.users || []).findIndex(u => u.id === user?.id);
+                      
+                      if (userIndex !== -1) {
+                        data.users[userIndex] = updatedUser;
+                      } else {
+                        data.users = [...(data.users || []), updatedUser];
+                      }
+                      
+                      await vpsDataStore.saveData(data);
+                      
+                      alert('✅ Profile updated successfully!');
                       setShowEditProfile(false);
                       setProfileData({ name: '', phone: '', address: '', avatar: '' });
-                    }}
-                    className="flex-1 bg-gray-600 text-white py-2 rounded-lg"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                      
+                      // Update user state without logout
+                      if (typeof window !== 'undefined') {
+                        const currentSession = JSON.parse(localStorage.getItem('authSession') || '{}');
+                        if (currentSession.user) {
+                          currentSession.user = updatedUser;
+                          localStorage.setItem('authSession', JSON.stringify(currentSession));
+                        }
+                        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+                      }
+                    } catch (error) {
+                      alert('❌ Failed to update profile. Please try again.');
+                    }
+                  }}
+                  className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-bold py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  💾 Save Changes
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowEditProfile(false);
+                    setProfileData({ name: '', phone: '', address: '', avatar: '' });
+                  }}
+                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
@@ -2845,15 +2607,11 @@ Total Amount: $${purchases.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
                     allowFullScreen
                   ></iframe>
                 ) : (
-                  <video
-                    controls
-                    autoPlay
-                    className="absolute inset-0 w-full h-full object-contain"
-                    src={selectedVideo.videoUrl || undefined}
+                  <PlyrVideoPlayer
+                    src={selectedVideo.videoUrl || ''}
                     poster={selectedVideo.thumbnail}
-                  >
-                    Your browser does not support the video tag.
-                  </video>
+                    className="absolute inset-0 w-full h-full"
+                  />
                 )}
               </div>
             </div>
@@ -2866,7 +2624,7 @@ Total Amount: $${purchases.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
                 <div className="flex items-center space-x-2 text-sm">
-                  <span className="text-gray-400">{selectedVideo.views?.toLocaleString() || '1,234'} views</span>
+                  <span className="text-gray-400">{selectedVideo.views?.toLocaleString() || '0'} views</span>
                   <span className="text-gray-400">•</span>
                   <span className="text-gray-400">{selectedVideo.duration}</span>
                 </div>

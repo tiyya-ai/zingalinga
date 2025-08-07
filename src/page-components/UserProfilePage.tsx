@@ -254,8 +254,10 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
       }
       
       setIsEditing(false);
+      alert('✅ Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
+      alert('❌ Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
     }

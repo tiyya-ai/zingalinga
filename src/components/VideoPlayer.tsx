@@ -240,6 +240,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         poster={video.thumbnail}
         preload="metadata"
         onClick={togglePlay}
+        controlsList="nodownload"
+        disablePictureInPicture
+        onContextMenu={(e) => e.preventDefault()}
       >
         <source src={video.videoUrl} type="video/mp4" />
         Your browser does not support the video tag.

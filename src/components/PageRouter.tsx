@@ -212,6 +212,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
           contentFiles={contentFiles}
           onLogout={handleLogout}
           onPurchase={(moduleId) => handlePurchase([moduleId])}
+          setUser={setUser}
         />
       );
     }

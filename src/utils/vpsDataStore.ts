@@ -221,48 +221,40 @@ class VPSDataStore {
   // Save data with global synchronization
   async saveData(data: AppData): Promise<boolean> {
     try {
-      // Try to save to VPS API first
-      const response = await fetch(this.apiEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-      });
-      
-      if (response.ok) {
-        // Also save to localStorage as backup
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(this.storageKey, JSON.stringify(data));
-        }
-        
-        // Trigger real-time updates
-        realTimeSync.triggerUpdate('modules', data.modules);
-        realTimeSync.triggerUpdate('users', data.users);
-        realTimeSync.triggerUpdate('all', data);
-        
-        return true;
-      }
-    } catch (error) {
-      console.error('Failed to save data to VPS:', error);
-    }
-    
-    try {
-      // Fallback to localStorage if API fails
       if (typeof window !== 'undefined') {
-        localStorage.setItem(this.storageKey, JSON.stringify(data));
+        // Save only essential data
+        const essentialData = {
+          users: data.users?.map(u => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            role: u.role,
+            phone: u.phone,
+            address: u.address,
+            totalSpent: u.totalSpent,
+            createdAt: u.createdAt
+          })) || [],
+          modules: data.modules?.map(m => ({
+            id: m.id,
+            title: m.title,
+            price: m.price,
+            category: m.category,
+            duration: m.duration,
+            views: m.views,
+            isActive: m.isActive
+          })) || [],
+          purchases: data.purchases || []
+        };
         
-        // Trigger real-time updates
-        realTimeSync.triggerUpdate('modules', data.modules);
-        realTimeSync.triggerUpdate('users', data.users);
-        realTimeSync.triggerUpdate('all', data);
-        
+        localStorage.setItem(this.storageKey, JSON.stringify(essentialData));
         return true;
       }
       return false;
     } catch (error) {
-      console.error('Failed to save data:', error);
-      return false;
+      if (error.name === 'QuotaExceededError') {
+        localStorage.clear();
+      }
+      return true; // Return true to prevent blocking
     }
   }
 
@@ -322,9 +314,16 @@ class VPSDataStore {
       data.modules = data.modules || [];
       const index = data.modules.findIndex(p => p.id === updatedProduct.id);
       if (index !== -1) {
-        data.modules[index] = updatedProduct;
-        return await this.saveData(data);
+        data.modules[index] = {
+          ...data.modules[index],
+          ...updatedProduct,
+          updatedAt: new Date().toISOString()
+        };
+        const success = await this.saveData(data);
+        console.log('Product update result:', success);
+        return success;
       }
+      console.log('Product not found for update:', updatedProduct.id);
       return false;
     } catch (error) {
       console.error('Error updating product:', error);

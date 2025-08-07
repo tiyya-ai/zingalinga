@@ -12,7 +12,8 @@ import {
   Chip,
   Card,
   CardBody,
-  Divider
+  Divider,
+  Input
 } from '@nextui-org/react';
 import {
   Play,
@@ -28,18 +29,23 @@ import {
   Star,
   Clock,
   Eye,
-  AlertCircle
+  AlertCircle,
+  RefreshCw,
+  ExternalLink
 } from 'lucide-react';
 import { User, Module, Purchase } from '../types';
 import { checkVideoAccess, getVideoUrl } from '../utils/videoAccess';
+import { purchaseManager } from '../utils/purchaseManager';
+import { vpsDataStore } from '../utils/vpsDataStore';
 
 interface EnhancedVideoPlayerProps {
   isOpen: boolean;
   onClose: () => void;
   module: Module;
-  user: User | null;
+  user: User;
   purchases: Purchase[];
   onPurchase: (moduleId: string) => void;
+  onVideoUpdate?: (module: Module) => void;
 }
 
 export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
@@ -48,7 +54,8 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
   module,
   user,
   purchases,
-  onPurchase
+  onPurchase,
+  onVideoUpdate
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -60,11 +67,32 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
   const [showControls, setShowControls] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string>('');
+  const [hasAccess, setHasAccess] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [newVideoUrl, setNewVideoUrl] = useState('');
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
-  // Check access when component mounts or dependencies change
-  const accessResult = checkVideoAccess(user, module, purchases);
-  const videoUrl = getVideoUrl(module, accessResult.hasAccess);
+  // Check access and set video URL
+  useEffect(() => {
+    if (module && user) {
+      const accessResult = checkVideoAccess(user, module, purchases);
+      setHasAccess(accessResult.hasAccess);
+      
+      const url = getVideoUrl(module, accessResult.hasAccess);
+      setVideoUrl(url);
+      
+      console.log('🎥 Video player setup:', {
+        moduleId: module.id,
+        hasAccess: accessResult.hasAccess,
+        videoUrl: url,
+        reason: accessResult.reason
+      });
+    }
+  }, [module, user, purchases]);
 
+  // Video event handlers
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -73,26 +101,38 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
     const updateDuration = () => {
       setDuration(video.duration);
       setIsLoading(false);
+      setError(null);
     };
-    const handleLoadStart = () => setIsLoading(true);
-    const handleError = () => {
-      setError('Failed to load video');
+    const handleLoadStart = () => {
+      setIsLoading(true);
+      setError(null);
+    };
+    const handleError = (e: Event) => {
+      console.error('Video error:', e);
+      setError('Failed to load video. The video URL might be invalid or the video is not accessible.');
       setIsLoading(false);
+    };
+    const handleCanPlay = () => {
+      setIsLoading(false);
+      setError(null);
     };
 
     video.addEventListener('timeupdate', updateTime);
     video.addEventListener('loadedmetadata', updateDuration);
     video.addEventListener('loadstart', handleLoadStart);
     video.addEventListener('error', handleError);
+    video.addEventListener('canplay', handleCanPlay);
 
     return () => {
       video.removeEventListener('timeupdate', updateTime);
       video.removeEventListener('loadedmetadata', updateDuration);
       video.removeEventListener('loadstart', handleLoadStart);
       video.removeEventListener('error', handleError);
+      video.removeEventListener('canplay', handleCanPlay);
     };
   }, [videoUrl]);
 
+  // Auto-hide controls
   useEffect(() => {
     let hideControlsTimer: NodeJS.Timeout;
     
@@ -109,17 +149,8 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
     };
   }, [isPlaying, showControls]);
 
-  // Reset video state when modal opens/closes
-  useEffect(() => {
-    if (!isOpen) {
-      setIsPlaying(false);
-      setCurrentTime(0);
-      setError(null);
-    }
-  }, [isOpen]);
-
   const togglePlay = () => {
-    if (!accessResult.hasAccess && !accessResult.isDemo) return;
+    if (!hasAccess) return;
     
     const videoElement = videoRef.current;
     if (!videoElement) return;
@@ -127,13 +158,31 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
     if (isPlaying) {
       videoElement.pause();
     } else {
-      videoElement.play();
+      videoElement.play().catch(err => {
+        console.error('Play failed:', err);
+        setError('Failed to play video. Please try again.');
+      });
+      // Increment view count when video starts playing
+      incrementViewCount();
     }
     setIsPlaying(!isPlaying);
   };
 
+  const incrementViewCount = async () => {
+    try {
+      const data = await vpsDataStore.loadData();
+      const moduleIndex = data.modules.findIndex(m => m.id === module.id);
+      if (moduleIndex !== -1) {
+        data.modules[moduleIndex].views = (data.modules[moduleIndex].views || 0) + 1;
+        await vpsDataStore.saveData(data);
+      }
+    } catch (error) {
+      console.error('Failed to increment view count:', error);
+    }
+  };
+
   const handleSeek = (newTime: number) => {
-    if (!accessResult.hasAccess && !accessResult.isDemo) return;
+    if (!hasAccess) return;
     
     const videoElement = videoRef.current;
     if (videoElement) {
@@ -150,6 +199,17 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
       setIsMuted(newVolume === 0);
     }
   };
+
+  const handleSpeedChange = (speed: number) => {
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      videoElement.playbackRate = speed;
+      setPlaybackRate(speed);
+      setShowSpeedMenu(false);
+    }
+  };
+
+  const speedOptions = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
   const toggleMute = () => {
     const videoElement = videoRef.current;
@@ -177,7 +237,7 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
   };
 
   const skipTime = (seconds: number) => {
-    if (!accessResult.hasAccess && !accessResult.isDemo) return;
+    if (!hasAccess) return;
     
     const videoElement = videoRef.current;
     if (videoElement) {
@@ -188,6 +248,7 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
   };
 
   const formatTime = (time: number) => {
+    if (isNaN(time)) return '0:00';
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -195,6 +256,86 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
 
   const handleMouseMove = () => {
     setShowControls(true);
+  };
+
+  const retryVideo = () => {
+    setError(null);
+    setIsLoading(true);
+    const video = videoRef.current;
+    if (video) {
+      video.load();
+    }
+  };
+
+  const isValidVideoUrl = (url: string): boolean => {
+    if (!url) return false;
+    
+    // Check for common video formats
+    const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi'];
+    const hasVideoExtension = videoExtensions.some(ext => url.toLowerCase().includes(ext));
+    
+    // Check for common video hosting platforms
+    const videoHosts = ['youtube.com', 'vimeo.com', 'dailymotion.com', 'twitch.tv'];
+    const isVideoHost = videoHosts.some(host => url.toLowerCase().includes(host));
+    
+    // Check for direct video URLs or streaming URLs
+    const isDirectVideo = url.startsWith('http') && (hasVideoExtension || url.includes('video') || isVideoHost);
+    
+    return isDirectVideo;
+  };
+
+  const updateVideoUrl = async () => {
+    if (!newVideoUrl.trim()) {
+      setError('Please enter a valid video URL');
+      return;
+    }
+
+    if (!isValidVideoUrl(newVideoUrl)) {
+      setError('Invalid video URL. Please use a direct video link (.mp4, .webm, etc.) or a supported platform.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Update the module with new video URL
+      const updatedModule = {
+        ...module,
+        videoUrl: newVideoUrl,
+        videoSource: newVideoUrl
+      };
+
+      setVideoUrl(newVideoUrl);
+      setShowUrlInput(false);
+      setNewVideoUrl('');
+
+      // Notify parent component of the update
+      if (onVideoUpdate) {
+        onVideoUpdate(updatedModule);
+      }
+
+      console.log('✅ Video URL updated:', newVideoUrl);
+    } catch (error) {
+      console.error('Error updating video URL:', error);
+      setError('Failed to update video URL');
+    }
+  };
+
+  const handlePurchase = async () => {
+    try {
+      const success = await purchaseManager.purchaseVideo(user.id, module.id, module.price || 0);
+      if (success) {
+        // Refresh access after purchase
+        const accessResult = checkVideoAccess(user, module, purchases);
+        setHasAccess(accessResult.hasAccess);
+        
+        // Call parent purchase handler
+        onPurchase(module.id);
+      }
+    } catch (error) {
+      console.error('Purchase failed:', error);
+    }
   };
 
   const renderAccessDeniedContent = () => (
@@ -205,10 +346,7 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
         </div>
         <h3 className="text-xl font-bold">Premium Content</h3>
         <p className="text-gray-300 max-w-md">
-          {accessResult.reason === 'User not logged in' 
-            ? 'Please log in to access this content.'
-            : 'This video requires a purchase to watch. Get instant access and support our creators!'
-          }
+          This video requires a purchase to watch. Get instant access and support our creators!
         </p>
         <div className="flex items-center justify-center gap-4 text-sm text-gray-400">
           <div className="flex items-center gap-1">
@@ -217,41 +355,21 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
           </div>
           <div className="flex items-center gap-1">
             <Clock className="w-4 h-4" />
-            <span>{module.estimatedDuration || '30 min'}</span>
+            <span>{module.estimatedDuration || '5 min'}</span>
           </div>
           <div className="flex items-center gap-1">
             <Eye className="w-4 h-4" />
-            <span>{module.category || 'Educational'}</span>
+            <span>{module.category}</span>
           </div>
         </div>
-        {accessResult.requiresPurchase && user && (
-          <Button
-            size="lg"
-            className="bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold"
-            startContent={<ShoppingCart className="w-5 h-5" />}
-            onClick={() => onPurchase(module.id)}
-          >
-            Purchase for ${module.price}
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderDemoContent = () => (
-    <div className="relative">
-      {renderVideoPlayer()}
-      {/* Demo overlay */}
-      <div className="absolute top-4 left-4 right-4">
-        <Card className="bg-yellow-500/90 backdrop-blur-sm">
-          <CardBody className="p-3">
-            <div className="flex items-center gap-2 text-black">
-              <AlertCircle className="w-5 h-5" />
-              <span className="font-semibold">Demo Preview</span>
-              <span className="text-sm">Purchase to unlock full content</span>
-            </div>
-          </CardBody>
-        </Card>
+        <Button
+          size="lg"
+          className="bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold"
+          startContent={<ShoppingCart className="w-5 h-5" />}
+          onClick={handlePurchase}
+        >
+          Purchase for ${module.price || 0}
+        </Button>
       </div>
     </div>
   );
@@ -264,12 +382,15 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
       <video
         ref={videoRef}
         className="w-full h-64 md:h-96 object-cover"
-        poster={module.thumbnail || module.imageUrl}
+        poster={module.thumbnail}
         preload="metadata"
         onClick={togglePlay}
-        src={videoUrl}
+        crossOrigin="anonymous"
+        controlsList="nodownload"
+        disablePictureInPicture
+        onContextMenu={(e) => e.preventDefault()}
       >
-        <source src={videoUrl} type="video/mp4" />
+        {videoUrl && <source src={videoUrl} type="video/mp4" />}
         Your browser does not support the video tag.
       </video>
 
@@ -286,31 +407,42 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
       {/* Error Overlay */}
       {error && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-          <div className="text-white text-center">
-            <p className="text-red-400">{error}</p>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-white mt-2"
-              onClick={() => {
-                setError(null);
-                setIsLoading(true);
-                videoRef.current?.load();
-              }}
-            >
-              Retry
-            </Button>
+          <div className="text-white text-center max-w-md p-4">
+            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            <p className="text-red-400 mb-4">{error}</p>
+            <div className="flex gap-2 justify-center">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-white"
+                startContent={<RefreshCw className="w-4 h-4" />}
+                onClick={retryVideo}
+              >
+                Retry
+              </Button>
+              {user.role === 'admin' && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-white"
+                  startContent={<ExternalLink className="w-4 h-4" />}
+                  onClick={() => setShowUrlInput(true)}
+                >
+                  Update URL
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       )}
 
       {/* Video Controls */}
-      {showControls && (accessResult.hasAccess || accessResult.isDemo) && !isLoading && !error && (
+      {showControls && hasAccess && !isLoading && !error && (
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
           {/* Progress Bar */}
           <div className="mb-4">
             <Progress
-              value={(currentTime / duration) * 100}
+              value={duration > 0 ? (currentTime / duration) * 100 : 0}
               className="cursor-pointer"
               classNames={{
                 indicator: "bg-gradient-to-r from-purple-500 to-blue-500"
@@ -381,6 +513,32 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
                 />
               </div>
               
+              <div className="relative">
+                <Button
+                  isIconOnly
+                  variant="ghost"
+                  className="text-white"
+                  onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                >
+                  <span className="text-sm font-bold">{playbackRate}x</span>
+                </Button>
+                {showSpeedMenu && (
+                  <div className="absolute bottom-full right-0 mb-2 bg-black/90 rounded-lg p-2 min-w-[80px]">
+                    {speedOptions.map((speed) => (
+                      <button
+                        key={speed}
+                        onClick={() => handleSpeedChange(speed)}
+                        className={`block w-full text-left px-3 py-1 text-sm rounded hover:bg-white/20 ${
+                          playbackRate === speed ? 'bg-white/30 text-white' : 'text-gray-300'
+                        }`}
+                      >
+                        {speed}x
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
               <Button
                 isIconOnly
                 variant="ghost"
@@ -395,7 +553,7 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
       )}
 
       {/* Play Button Overlay */}
-      {!isPlaying && (accessResult.hasAccess || accessResult.isDemo) && !isLoading && !error && (
+      {!isPlaying && hasAccess && !isLoading && !error && (
         <div className="absolute inset-0 flex items-center justify-center">
           <Button
             isIconOnly
@@ -408,16 +566,6 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
       )}
     </div>
   );
-
-  const renderContent = () => {
-    if (!accessResult.hasAccess && !accessResult.isDemo) {
-      return renderAccessDeniedContent();
-    } else if (accessResult.isDemo) {
-      return renderDemoContent();
-    } else {
-      return renderVideoPlayer();
-    }
-  };
 
   return (
     <Modal 
@@ -442,19 +590,19 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
                     Premium
                   </Chip>
                 )}
-                {accessResult.isDemo && (
-                  <Chip size="sm" className="bg-blue-500 text-white">
-                    Demo
+                <Chip size="sm" variant="flat" className="text-white">
+                  {module.category}
+                </Chip>
+                {hasAccess && (
+                  <Chip size="sm" className="bg-green-500 text-white">
+                    Owned
                   </Chip>
                 )}
-                <Chip size="sm" variant="flat" className="text-white">
-                  {module.category || 'Educational'}
-                </Chip>
               </div>
             </div>
-            {!accessResult.hasAccess && accessResult.requiresPurchase && (
+            {!hasAccess && (
               <div className="text-right">
-                <div className="text-2xl font-bold text-green-400">${module.price}</div>
+                <div className="text-2xl font-bold text-green-400">${module.price || 0}</div>
                 <div className="text-sm text-gray-300">One-time purchase</div>
               </div>
             )}
@@ -462,36 +610,54 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
         </ModalHeader>
         
         <ModalBody>
-          {renderContent()}
+          {hasAccess ? renderVideoPlayer() : renderAccessDeniedContent()}
+          
+          {/* URL Input Modal for Admin */}
+          {showUrlInput && user.role === 'admin' && (
+            <Card className="bg-white/10 mt-4">
+              <CardBody className="p-4">
+                <h4 className="text-white font-semibold mb-3">Update Video URL</h4>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter video URL (e.g., https://example.com/video.mp4)"
+                    value={newVideoUrl}
+                    onChange={(e) => setNewVideoUrl(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    color="primary"
+                    onClick={updateVideoUrl}
+                  >
+                    Update
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setShowUrlInput(false);
+                      setNewVideoUrl('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+                <p className="text-gray-400 text-xs mt-2">
+                  Supported: Direct video links (.mp4, .webm, .ogg) or streaming URLs
+                </p>
+              </CardBody>
+            </Card>
+          )}
           
           <Divider className="bg-white/20 my-4" />
           
           <div className="text-white">
             <h4 className="font-semibold mb-2">About this video</h4>
             <p className="text-gray-300 text-sm leading-relaxed">{module.description}</p>
-            
-            {/* Access Status */}
-            <div className="mt-4 p-3 rounded-lg bg-white/5">
-              <div className="flex items-center gap-2">
-                {accessResult.hasAccess ? (
-                  <>
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-green-400 text-sm">Full Access</span>
-                  </>
-                ) : accessResult.isDemo ? (
-                  <>
-                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                    <span className="text-yellow-400 text-sm">Demo Access</span>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                    <span className="text-red-400 text-sm">Purchase Required</span>
-                  </>
-                )}
-                <span className="text-gray-400 text-sm">• {accessResult.reason}</span>
+            {videoUrl && (
+              <div className="mt-2 text-xs text-gray-400">
+                <span>Video URL: </span>
+                <span className="font-mono">{videoUrl.substring(0, 50)}...</span>
               </div>
-            </div>
+            )}
           </div>
         </ModalBody>
         
@@ -503,13 +669,23 @@ export const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
           >
             Close
           </Button>
-          {!accessResult.hasAccess && accessResult.requiresPurchase && user && (
+          {!hasAccess && (
             <Button
               className="bg-gradient-to-r from-purple-500 to-blue-500 text-white"
               startContent={<ShoppingCart className="w-4 h-4" />}
-              onClick={() => onPurchase(module.id)}
+              onClick={handlePurchase}
             >
-              Add to Cart - ${module.price}
+              Purchase - ${module.price || 0}
+            </Button>
+          )}
+          {user.role === 'admin' && (
+            <Button
+              variant="ghost"
+              className="text-white"
+              startContent={<ExternalLink className="w-4 h-4" />}
+              onClick={() => setShowUrlInput(true)}
+            >
+              Update URL
             </Button>
           )}
         </ModalFooter>

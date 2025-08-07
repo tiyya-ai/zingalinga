@@ -64,8 +64,9 @@ import {
 } from 'lucide-react';
 import { User, Module, Purchase, ContentFile } from '../types';
 import { vpsDataStore } from '../utils/vpsDataStore';
-import { checkVideoAccess, getUserPurchasedModules, getUserAvailableModules } from '../utils/videoAccess';
-import { ImprovedVideoPlayer } from './ImprovedVideoPlayer';
+import { checkVideoAccessSync, getUserPurchasedModules, getUserAvailableModules } from '../utils/videoAccess';
+import { EnhancedVideoPlayer } from './EnhancedVideoPlayer';
+import { purchaseManager } from '../utils/purchaseManager';
 
 interface UserDashboardProps {
   user: User;
@@ -233,7 +234,7 @@ export default function FinalUserDashboard({
     console.log('Found module:', module);
     
     if (module) {
-      const accessResult = checkVideoAccess(user, module, realPurchases);
+      const accessResult = checkVideoAccessSync(user, module, realPurchases);
       console.log('Access result:', accessResult);
       
       setSelectedModule(module);
@@ -243,10 +244,29 @@ export default function FinalUserDashboard({
     }
   };
 
-  const handleVideoPurchase = (moduleId: string) => {
+  const handleVideoPurchase = async (moduleId: string) => {
     console.log('Purchase requested for module:', moduleId);
-    if (onPurchase) {
-      onPurchase(moduleId);
+    const module = realModules.find(m => m.id === moduleId);
+    
+    if (module) {
+      try {
+        const success = await purchaseManager.purchaseVideo(user.id, moduleId, module.price || 0);
+        if (success) {
+          // Refresh data after purchase
+          await loadRealData();
+          
+          // Call parent purchase handler if provided
+          if (onPurchase) {
+            onPurchase(moduleId);
+          }
+          
+          console.log('✅ Purchase completed and data refreshed');
+        } else {
+          console.error('❌ Purchase failed');
+        }
+      } catch (error) {
+        console.error('Purchase error:', error);
+      }
     }
   };
 
@@ -321,7 +341,7 @@ export default function FinalUserDashboard({
   });
 
   const renderVideoCard = (module: Module) => {
-    const accessResult = checkVideoAccess(user, module, realPurchases);
+    const accessResult = checkVideoAccessSync(user, module, realPurchases);
     const isPurchased = purchasedModules.some(p => p.id === module.id);
     
     return (
@@ -433,14 +453,7 @@ export default function FinalUserDashboard({
                 </Button>
               )}
               
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-white"
-                onClick={() => handleVideoPlay(module.id)}
-              >
-                {accessResult.hasAccess ? 'Watch' : 'Preview'}
-              </Button>
+
             </div>
 
             {/* Access Status */}
@@ -929,17 +942,21 @@ export default function FinalUserDashboard({
           </Tooltip>
         </div>
 
-        {/* Beautiful Improved Video Player with Related Videos */}
+        {/* Enhanced Video Player with Better URL Handling */}
         {showVideoPlayer && selectedModule && (
-          <ImprovedVideoPlayer
+          <EnhancedVideoPlayer
             isOpen={showVideoPlayer}
             onClose={handleVideoPlayerClose}
             module={selectedModule}
             user={user}
             purchases={realPurchases}
             onPurchase={handleVideoPurchase}
-            allModules={realModules}
-            onVideoSelect={handleVideoPlay}
+            onVideoUpdate={(updatedModule) => {
+              // Update the module in the list
+              setRealModules(prev => prev.map(m => 
+                m.id === updatedModule.id ? updatedModule : m
+              ));
+            }}
           />
         )}
       </div>

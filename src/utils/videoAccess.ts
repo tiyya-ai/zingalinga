@@ -1,4 +1,5 @@
 import { User, Module, Purchase } from '../types';
+import { purchaseManager } from './purchaseManager';
 
 export interface VideoAccessResult {
   hasAccess: boolean;
@@ -9,13 +10,13 @@ export interface VideoAccessResult {
 
 /**
  * Determines if a user has access to a specific video/module
- * STRICT ACCESS CONTROL: Users can only watch videos they have purchased or free content
+ * ENHANCED ACCESS CONTROL: Checks multiple sources for purchase verification
  */
-export function checkVideoAccess(
+export async function checkVideoAccess(
   user: User | null,
   module: Module,
-  purchases: Purchase[]
-): VideoAccessResult {
+  purchases: Purchase[] = []
+): Promise<VideoAccessResult> {
   console.log('🔍 Checking video access for:', {
     user: user?.name,
     userRole: user?.role,
@@ -40,30 +41,52 @@ export function checkVideoAccess(
     };
   }
 
-  // Check if user has purchased this module
-  const hasPurchased = purchases && purchases.length > 0 ? purchases.some(purchase => 
-    purchase.userId === user.id && 
-    (purchase.moduleId === module.id || purchase.moduleIds?.includes(module.id)) &&
-    purchase.status === 'completed'
-  ) : false;
-
-  console.log('💰 Purchase check:', { hasPurchased, purchases: purchases.length });
-
-  if (hasPurchased) {
-    console.log('✅ User has purchased this module');
-    return { hasAccess: true, reason: 'Purchased' };
-  }
-
-  // Check if user has the module in their purchased modules list
-  if (user.purchasedModules?.includes(module.id)) {
-    console.log('✅ Module in user purchased list');
-    return { hasAccess: true, reason: 'In purchased modules' };
-  }
-
-  // Check if it's a free module (price is 0)
-  if (module.price === 0) {
+  // Check if it's a free module (price is 0 or undefined)
+  if (!module.price || module.price === 0) {
     console.log('✅ Free content access granted');
     return { hasAccess: true, reason: 'Free content' };
+  }
+
+  // Check multiple sources for purchase verification
+  try {
+    // 1. Check purchase manager (most reliable)
+    const hasPurchasedViaManager = await purchaseManager.hasPurchased(user.id, module.id);
+    if (hasPurchasedViaManager) {
+      console.log('✅ Purchase verified via purchase manager');
+      return { hasAccess: true, reason: 'Purchased (verified)' };
+    }
+
+    // 2. Check provided purchases array
+    const hasPurchasedInArray = purchases && purchases.length > 0 ? purchases.some(purchase => 
+      purchase.userId === user.id && 
+      (purchase.moduleId === module.id || purchase.moduleIds?.includes(module.id)) &&
+      purchase.status === 'completed'
+    ) : false;
+
+    if (hasPurchasedInArray) {
+      console.log('✅ Purchase found in purchases array');
+      return { hasAccess: true, reason: 'Purchased' };
+    }
+
+    // 3. Check user's purchased modules list
+    if (user.purchasedModules?.includes(module.id)) {
+      console.log('✅ Module in user purchased list');
+      return { hasAccess: true, reason: 'In purchased modules' };
+    }
+
+    // 4. Check localStorage as fallback
+    const localPurchases = JSON.parse(localStorage.getItem(`user_purchases_${user.id}`) || '[]');
+    const hasLocalPurchase = localPurchases.some((p: Purchase) => 
+      p.moduleId === module.id && p.status === 'completed'
+    );
+
+    if (hasLocalPurchase) {
+      console.log('✅ Purchase found in localStorage');
+      return { hasAccess: true, reason: 'Purchased (local)' };
+    }
+
+  } catch (error) {
+    console.error('Error checking purchase status:', error);
   }
 
   // For paid content, users must purchase to access
@@ -76,7 +99,71 @@ export function checkVideoAccess(
 }
 
 /**
- * Gets the video URL based on access level
+ * Synchronous version for backward compatibility
+ */
+export function checkVideoAccessSync(
+  user: User | null,
+  module: Module,
+  purchases: Purchase[] = []
+): VideoAccessResult {
+  // Admin users have access to everything
+  if (user?.role === 'admin') {
+    return { hasAccess: true, reason: 'Admin access' };
+  }
+
+  // If no user is logged in, no access
+  if (!user) {
+    return { 
+      hasAccess: false, 
+      reason: 'User not logged in',
+      requiresPurchase: true 
+    };
+  }
+
+  // Check if it's a free module
+  if (!module.price || module.price === 0) {
+    return { hasAccess: true, reason: 'Free content' };
+  }
+
+  // Check purchases array
+  const hasPurchased = purchases.some(purchase => 
+    purchase.userId === user.id && 
+    (purchase.moduleId === module.id || purchase.moduleIds?.includes(module.id)) &&
+    purchase.status === 'completed'
+  );
+
+  if (hasPurchased) {
+    return { hasAccess: true, reason: 'Purchased' };
+  }
+
+  // Check user's purchased modules list
+  if (user.purchasedModules?.includes(module.id)) {
+    return { hasAccess: true, reason: 'In purchased modules' };
+  }
+
+  // Check localStorage
+  try {
+    const localPurchases = JSON.parse(localStorage.getItem(`user_purchases_${user.id}`) || '[]');
+    const hasLocalPurchase = localPurchases.some((p: Purchase) => 
+      p.moduleId === module.id && p.status === 'completed'
+    );
+
+    if (hasLocalPurchase) {
+      return { hasAccess: true, reason: 'Purchased (local)' };
+    }
+  } catch (error) {
+    console.error('Error checking localStorage purchases:', error);
+  }
+
+  return { 
+    hasAccess: false, 
+    reason: 'Purchase required - $' + module.price,
+    requiresPurchase: true 
+  };
+}
+
+/**
+ * Gets the video URL based on access level with enhanced validation
  */
 export function getVideoUrl(module: Module, hasAccess: boolean): string {
   console.log('🎥 getVideoUrl called with:', {
@@ -90,18 +177,74 @@ export function getVideoUrl(module: Module, hasAccess: boolean): string {
 
   if (hasAccess) {
     // Return full video URL if user has access
-    // Try multiple possible video URL fields
-    const url = module.videoUrl || 
-                module.videoSource || 
-                module.demoVideo || 
-                '';
-    console.log('🎬 Returning full access URL:', url);
-    return url;
+    // Try multiple possible video URL fields with validation
+    const possibleUrls = [
+      module.videoUrl,
+      module.videoSource,
+      module.demoVideo
+    ].filter(Boolean); // Remove empty/null values
+
+    // Find the first valid URL
+    for (const url of possibleUrls) {
+      if (isValidVideoUrl(url)) {
+        console.log('🎬 Returning validated full access URL:', url);
+        return url;
+      }
+    }
+
+    // If no valid URL found, return the first available one
+    const fallbackUrl = possibleUrls[0] || '';
+    console.log('🎬 Returning fallback URL:', fallbackUrl);
+    return fallbackUrl;
   } else {
-    // Return demo/preview URL if available, otherwise empty
-    const url = module.demoVideo || '';
-    console.log('🎭 Returning demo URL:', url);
-    return url;
+    // Return demo/preview URL if available and valid
+    const demoUrl = module.demoVideo || '';
+    if (demoUrl && isValidVideoUrl(demoUrl)) {
+      console.log('🎭 Returning validated demo URL:', demoUrl);
+      return demoUrl;
+    }
+    
+    console.log('🎭 No valid demo URL available');
+    return demoUrl; // Return even if invalid, let player handle the error
+  }
+}
+
+/**
+ * Validates if a URL is likely to be a valid video URL
+ */
+export function isValidVideoUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') return false;
+  
+  try {
+    // Check if it's a valid URL
+    new URL(url);
+    
+    // Check for common video formats
+    const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv', '.flv'];
+    const hasVideoExtension = videoExtensions.some(ext => 
+      url.toLowerCase().includes(ext)
+    );
+    
+    // Check for common video hosting platforms
+    const videoHosts = [
+      'youtube.com', 'youtu.be', 'vimeo.com', 'dailymotion.com', 
+      'twitch.tv', 'wistia.com', 'brightcove.com', 'jwplayer.com',
+      'commondatastorage.googleapis.com' // Google Cloud Storage
+    ];
+    const isVideoHost = videoHosts.some(host => 
+      url.toLowerCase().includes(host)
+    );
+    
+    // Check for streaming indicators
+    const streamingIndicators = ['video', 'stream', 'media', 'content'];
+    const hasStreamingIndicator = streamingIndicators.some(indicator => 
+      url.toLowerCase().includes(indicator)
+    );
+    
+    return hasVideoExtension || isVideoHost || hasStreamingIndicator;
+  } catch (error) {
+    console.warn('Invalid URL format:', url);
+    return false;
   }
 }
 
