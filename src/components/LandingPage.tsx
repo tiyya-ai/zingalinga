@@ -44,7 +44,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
   return (
     <>
       {/* Hero Section */}
-      <section id="home" className="relative min-h-screen flex items-center justify-center px-4 py-20 bg-gradient-to-br from-white via-blue-50 to-purple-50">
+      <section id="home" className="relative min-h-screen flex items-center justify-center px-4 py-20 bg-gradient-to-br from-white via-blue-50 to-purple-50" suppressHydrationWarning>
         {/* Animated jungle background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-10 w-32 h-32 bg-brand-green/10 rounded-full animate-pulse"></div>

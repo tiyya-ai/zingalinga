@@ -261,7 +261,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-white overflow-hidden font-mali">
+      <div className="min-h-screen bg-white overflow-hidden font-mali" suppressHydrationWarning>
         <Header 
           onLoginClick={() => setShowLoginModal(true)}
           isMenuOpen={isMenuOpen}

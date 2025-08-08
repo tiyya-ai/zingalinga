@@ -3358,29 +3358,45 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         <button 
                           className="w-8 h-8 bg-black rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors"
                           onClick={() => {
-                            const audioId = `audio-${lesson.id}`;
-                            const audio = document.getElementById(audioId) as HTMLAudioElement;
+                            let audioUrl = lesson.audioUrl || lesson.videoUrl;
                             
-                            // Check if audio element exists and has a valid source
-                            if (audio && lesson.audioUrl && lesson.audioUrl.trim() !== '') {
+                            // Handle File objects by creating blob URL
+                            if (lesson.audioUrl instanceof File) {
+                              audioUrl = URL.createObjectURL(lesson.audioUrl);
+                            } else if (lesson.videoUrl instanceof File) {
+                              audioUrl = URL.createObjectURL(lesson.videoUrl);
+                            }
+                            
+                            if (audioUrl && audioUrl.trim() !== '') {
+                              const audioId = `audio-${lesson.id}`;
+                              let audio = document.getElementById(audioId) as HTMLAudioElement;
+                              
+                              // Create audio element if it doesn't exist
+                              if (!audio) {
+                                audio = document.createElement('audio');
+                                audio.id = audioId;
+                                audio.preload = 'metadata';
+                                audio.src = audioUrl;
+                                document.body.appendChild(audio);
+                              } else if (audio.src !== audioUrl) {
+                                audio.src = audioUrl;
+                              }
+                              
                               if (audio.paused) {
-                                audio.play().catch(() => alert('Unable to play audio'));
+                                audio.play().catch((error) => {
+                                  console.error('Audio play failed:', error);
+                                  alert('Unable to play audio. Please check the audio file.');
+                                });
                               } else {
                                 audio.pause();
                               }
                             } else {
-                              alert('No audio file available');
+                              alert('No audio file available for this lesson.');
                             }
                           }}
                         >
                           <span className="text-white text-sm">▶</span>
                         </button>
-                        <audio 
-                          id={`audio-${lesson.id}`} 
-                          preload="metadata"
-                          style={{ display: 'none' }}
-                          src={lesson.audioUrl && lesson.audioUrl.trim() !== '' ? lesson.audioUrl : undefined}
-                        />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-1">

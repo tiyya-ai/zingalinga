@@ -908,13 +908,64 @@ export default function ProfessionalUserDashboard({
                           ) : null}
 
                           
-                          {/* Play icon for videos */}
-                          {(content.type === 'video' || !content.type) && isPurchased && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors group-hover:bg-black/30">
+                          {/* Play icon for videos and audio */}
+                          {isPurchased && (
+                            <div 
+                              className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors group-hover:bg-black/30 cursor-pointer"
+                              onClick={() => {
+                                if (content.category === 'Audio Lessons') {
+                                  let audioUrl = content.audioUrl || content.videoUrl;
+                                  let audioFile = null;
+                                  
+                                  // Handle File objects
+                                  if (content.audioUrl instanceof File) {
+                                    audioUrl = URL.createObjectURL(content.audioUrl);
+                                    audioFile = content.audioUrl;
+                                  } else if (content.videoUrl instanceof File) {
+                                    audioUrl = URL.createObjectURL(content.videoUrl);
+                                    audioFile = content.videoUrl;
+                                  }
+                                  
+                                  if (audioUrl) {
+                                    setSelectedAudio({
+                                      ...content,
+                                      audioUrl: audioUrl,
+                                      audioFile: audioFile
+                                    });
+                                    setShowAudioModal(true);
+                                  } else {
+                                    alert('⚠️ Audio file not available.');
+                                  }
+                                } else if (content.type === 'video' || !content.type) {
+                                  const video = {
+                                    id: content.id,
+                                    title: content.title,
+                                    thumbnail: content.thumbnail || '',
+                                    duration: content.duration || '5:00',
+                                    description: content.description || '',
+                                    videoUrl: content.videoUrl || '',
+                                    category: content.category || 'Videos',
+                                    isPremium: content.isPremium || false,
+                                    price: content.price || 0,
+                                    rating: content.rating,
+                                    views: content.views,
+                                    tags: content.tags,
+                                    isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
+                                  };
+                                  playVideo(video);
+                                }
+                              }}
+                            >
                               <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/30 backdrop-blur-sm group-hover:scale-110 transition-all duration-300">
-                                <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M8 5v14l11-7z"/>
-                                </svg>
+                                {content.category === 'Audio Lessons' ? (
+                                  <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                                  </svg>
+                                ) : (
+                                  <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                  </svg>
+                                )}
                               </div>
                             </div>
                           )}
@@ -960,9 +1011,27 @@ export default function ProfessionalUserDashboard({
                                   isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
                                 };
                                 playVideo(video);
-                              } else if (content.category === 'Audio Lessons' && content.audioUrl) {
-                                setSelectedAudio(content);
-                                setShowAudioModal(true);
+                              } else if (content.category === 'Audio Lessons') {
+                                // Handle audio content
+                                let audioUrl = content.audioUrl || content.videoUrl;
+                                
+                                // Handle File objects by creating blob URL
+                                if (content.audioUrl instanceof File) {
+                                  audioUrl = URL.createObjectURL(content.audioUrl);
+                                } else if (content.videoUrl instanceof File) {
+                                  audioUrl = URL.createObjectURL(content.videoUrl);
+                                }
+                                
+                                if (audioUrl) {
+                                  setSelectedAudio({
+                                    ...content,
+                                    audioUrl: audioUrl,
+                                    audioFile: content.audioUrl instanceof File ? content.audioUrl : (content.videoUrl instanceof File ? content.videoUrl : null)
+                                  });
+                                  setShowAudioModal(true);
+                                } else {
+                                  alert('⚠️ Audio file not available for this content.');
+                                }
                               } else {
                                 alert(`✅ You own this ${content.category}! Content access available.`);
                               }
@@ -2782,16 +2851,56 @@ export default function ProfessionalUserDashboard({
                 <h4 className="text-white font-bold text-xl mb-2">{selectedAudio.title}</h4>
                 <p className="text-gray-400 text-sm">{selectedAudio.description}</p>
               </div>
-              <audio 
-                controls 
-                autoPlay
-                className="w-full mb-4"
-                src={selectedAudio.audioUrl || undefined}
-              >
-                Your browser does not support audio.
-              </audio>
+              {(() => {
+                let audioSrc = selectedAudio.audioUrl;
+                
+                // Create fresh blob URL if we have a File object
+                if (selectedAudio.audioFile instanceof File) {
+                  audioSrc = URL.createObjectURL(selectedAudio.audioFile);
+                }
+                
+                return audioSrc ? (
+                  <audio 
+                    controls 
+                    autoPlay
+                    className="w-full mb-4"
+                    src={audioSrc}
+                    onError={(e) => {
+                      console.error('Audio failed to load:', audioSrc);
+                      console.log('Audio file type:', selectedAudio.audioFile?.type);
+                      console.log('Audio file size:', selectedAudio.audioFile?.size);
+                    }}
+                    onLoadStart={() => {
+                      console.log('Audio loading started:', audioSrc);
+                    }}
+                    onCanPlay={() => {
+                      console.log('Audio can play:', audioSrc);
+                    }}
+                  >
+                    <source src={audioSrc} type="audio/mpeg" />
+                    <source src={audioSrc} type="audio/wav" />
+                    <source src={audioSrc} type="audio/ogg" />
+                    <source src={audioSrc} type="audio/mp3" />
+                    Your browser does not support the audio element.
+                  </audio>
+                ) : (
+                  <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-4">
+                    <div className="text-red-400 text-center">
+                      <div className="text-2xl mb-2">⚠️</div>
+                      <div className="text-sm">Audio file not available</div>
+                    </div>
+                  </div>
+                );
+              })()}
               <button
-                onClick={() => setShowAudioModal(false)}
+                onClick={() => {
+                  // Cleanup blob URL if it was created from a File
+                  if (selectedAudio.audioFile instanceof File && selectedAudio.audioUrl?.startsWith('blob:')) {
+                    URL.revokeObjectURL(selectedAudio.audioUrl);
+                  }
+                  setShowAudioModal(false);
+                  setSelectedAudio(null);
+                }}
                 className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold py-3 rounded-lg"
               >
                 Close Player
