@@ -482,6 +482,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     }).format(amount);
   };
 
+  const getStatusColor = (status: string): "default" | "success" | "danger" | "primary" | "secondary" | "warning" => {
+    switch (status) {
+      case 'completed': return 'success';
+      case 'pending': return 'warning';
+      case 'cancelled': return 'danger';
+      case 'failed': return 'danger';
+      default: return 'default';
+    }
+  };
+
   const sidebarItems: SidebarItem[] = [
     {
       id: 'overview',

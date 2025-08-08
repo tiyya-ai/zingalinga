@@ -53,7 +53,7 @@ interface AdminModalsProps {
   handleProcessRefund: () => void;
   handleRetryPaymentProcess: () => void;
   formatCurrency: (amount: number) => string;
-  getStatusColor: (status: string) => string;
+  getStatusColor: (status: string) => "default" | "success" | "danger" | "primary" | "secondary" | "warning" | undefined;
 }
 
 export default function AdminModals({
@@ -90,7 +90,7 @@ export default function AdminModals({
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Status</label>
-                    <Chip color={getStatusColor(selectedOrder.status)} size="sm">
+                    <Chip color={getStatusColor(selectedOrder.status) as "default" | "success" | "danger" | "primary" | "secondary" | "warning"} size="sm">
                       {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
                     </Chip>
                   </div>
