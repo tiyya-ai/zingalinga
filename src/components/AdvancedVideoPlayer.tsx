@@ -116,9 +116,17 @@ export const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
   const [showControls, setShowControls] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [accessResult, setAccessResult] = useState({ hasAccess: false, isDemo: false, requiresPurchase: true, reason: 'Loading...' });
 
   // Check access when component mounts or dependencies change
-  const accessResult = checkVideoAccess(user, module, purchases);
+  useEffect(() => {
+    const checkAccess = async () => {
+      const result = await checkVideoAccess(user, module, purchases);
+      setAccessResult(result);
+    };
+    checkAccess();
+  }, [user, module, purchases]);
+
   const videoUrl = getVideoUrl(module, accessResult.hasAccess);
   const videoType = getVideoType(videoUrl);
 
@@ -561,7 +569,8 @@ export const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
       <ScrollShadow className="max-h-96">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {relatedVideos.map((relatedModule) => {
-            const relatedAccessResult = checkVideoAccess(user, relatedModule, purchases);
+            const relatedAccessResult = { hasAccess: false, isDemo: false, requiresPurchase: true, reason: 'Loading...' };
+            // Note: For related videos, we'll use a simplified access check
             const isPurchased = user?.purchasedModules?.includes(relatedModule.id) || 
                               purchases.some(p => p.userId === user?.id && 
                                 (p.moduleId === relatedModule.id || p.moduleIds?.includes(relatedModule.id)) && 

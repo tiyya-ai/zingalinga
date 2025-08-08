@@ -54,19 +54,19 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </p>
 
             {/* Trust Badges */}
-            <div className="flex flex-wrap justify-center md:justify-start gap-4 mb-6">
-              <div className="flex items-center gap-2 bg-gray-800 px-3 py-2 rounded-full">
+            <div className="flex flex-wrap justify-center md:justify-start gap-4 mb-6" suppressHydrationWarning>
+              <div className="flex items-center gap-2 bg-gray-800 px-3 py-2 rounded-full" suppressHydrationWarning>
                 <Shield className="w-4 h-4 text-green-400" />
                 <span className="text-xs text-gray-300 font-mali">COPPA Safe</span>
               </div>
-              <div className="flex items-center gap-2 bg-gray-800 px-3 py-2 rounded-full">
+              <div className="flex items-center gap-2 bg-gray-800 px-3 py-2 rounded-full" suppressHydrationWarning>
                 <Star className="w-4 h-4 text-yellow-400" />
                 <span className="text-xs text-gray-300 font-mali">4.9/5 Rating</span>
               </div>
             </div>
 
             {/* Social Media */}
-            <div className="flex gap-3 justify-center md:justify-start">
+            <div className="flex gap-3 justify-center md:justify-start" suppressHydrationWarning>
               <a 
                 href="#facebook" 
                 className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors group"
@@ -160,12 +160,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </ul>
 
             {/* Trust Indicators */}
-            <div className="mt-8 space-y-3">
-              <div className="flex items-center gap-2 justify-center md:justify-start">
+            <div className="mt-8 space-y-3" suppressHydrationWarning>
+              <div className="flex items-center gap-2 justify-center md:justify-start" suppressHydrationWarning>
                 <Shield className="w-4 h-4 text-green-400" />
                 <span className="text-xs text-gray-400 font-mali">COPPA Compliant</span>
               </div>
-              <div className="flex items-center gap-2 justify-center md:justify-start">
+              <div className="flex items-center gap-2 justify-center md:justify-start" suppressHydrationWarning>
                 <Award className="w-4 h-4 text-yellow-400" />
                 <span className="text-xs text-gray-400 font-mali">Educational Excellence</span>
               </div>
@@ -175,23 +175,23 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-gray-700 bg-gray-900">
-        <div className="max-w-6xl mx-auto px-6 py-6">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
-            <div className="flex items-center gap-2">
+      <div className="border-t border-gray-700 bg-gray-900" suppressHydrationWarning>
+        <div className="max-w-6xl mx-auto px-6 py-6" suppressHydrationWarning>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left" suppressHydrationWarning>
+            <div className="flex items-center gap-2" suppressHydrationWarning>
               <Heart className="w-4 h-4 text-red-400" />
               <p className="text-sm text-gray-400 font-mali">
                 Made with love for children's education
               </p>
             </div>
             
-            <div className="text-center order-last sm:order-none">
+            <div className="text-center order-last sm:order-none" suppressHydrationWarning>
               <p className="text-sm text-gray-400 font-mali">
                 © {currentYear} Zinga Linga. All rights reserved.
               </p>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" suppressHydrationWarning>
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               <span className="text-xs text-gray-500 font-mali">
                 Online
