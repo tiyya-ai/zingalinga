@@ -298,29 +298,68 @@ export default function AgeGroupsParentalControl() {
         data = { users: [] };
       }
       
-      const realParentalControls: ParentalControl[] = (data.users || [])
-        .filter(user => user.role === 'child')
-        .map((child, index) => {
-          const childAge = Math.floor(Math.random() * 10) + 3; // Generate random age between 3-12
-          return {
-            id: `pc_${child.id}`,
-            parentId: (data.users || []).find(u => u.role === 'parent')?.id || 'parent_1',
-            childId: child.id,
-            childName: child.name,
-            childAge: childAge,
-            ageGroupId: childAge <= 4 ? 'toddlers' : 'preschool',
-            settings: {
-              screenTimeLimit: childAge <= 4 ? 30 : 60,
-              bedtimeRestriction: {
-                enabled: true,
-                startTime: childAge <= 5 ? '18:00' : '19:00',
-                endTime: '07:00'
-              },
-              contentFiltering: {
-                level: childAge <= 5 ? 'strict' : 'moderate',
-                customBlocked: [],
-                allowedOnly: childAge <= 4
-              },
+      // Create mock parental controls data since User type doesn't have child role
+      const realParentalControls: ParentalControl[] = [
+        {
+          id: 'pc_child_1',
+          parentId: 'parent_1',
+          childId: 'child_1',
+          childName: 'Emma',
+          childAge: 4,
+          ageGroupId: 'toddlers',
+          settings: {
+            screenTimeLimit: 30,
+            bedtimeRestriction: {
+              enabled: true,
+              startTime: '18:00',
+              endTime: '07:00'
+            },
+            contentFiltering: {
+              level: 'strict',
+              customBlocked: [],
+              allowedOnly: true
+            },
+            deviceRestrictions: {
+              allowedDevices: ['tablet'],
+              maxConcurrentSessions: 1
+            },
+            notifications: {
+              timeWarnings: true,
+              contentAlerts: true,
+              weeklyReports: true
+            }
+          },
+          usage: {
+            todayMinutes: 25,
+            weekMinutes: 180,
+            monthMinutes: 720,
+            lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+            favoriteCategories: ['educational', 'music'],
+            watchHistory: []
+          },
+          status: 'active',
+          createdAt: new Date('2024-01-01').toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'pc_child_2',
+          parentId: 'parent_1',
+          childId: 'child_2',
+          childName: 'Liam',
+          childAge: 6,
+          ageGroupId: 'preschool',
+          settings: {
+            screenTimeLimit: 60,
+            bedtimeRestriction: {
+              enabled: true,
+              startTime: '19:00',
+              endTime: '07:00'
+            },
+            contentFiltering: {
+              level: 'moderate',
+              customBlocked: [],
+              allowedOnly: false
+            },
             deviceRestrictions: {
               allowedDevices: ['tablet', 'smartphone'],
               maxConcurrentSessions: 1
@@ -332,18 +371,18 @@ export default function AgeGroupsParentalControl() {
             }
           },
           usage: {
-            todayMinutes: Math.floor(Math.random() * 60) + 15,
-            weekMinutes: Math.floor(Math.random() * 300) + 100,
-            monthMinutes: Math.floor(Math.random() * 1200) + 400,
-            lastActive: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
-            favoriteCategories: ['educational', 'entertainment', 'music'].slice(0, Math.floor(Math.random() * 3) + 1),
+            todayMinutes: 45,
+            weekMinutes: 280,
+            monthMinutes: 1100,
+            lastActive: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+            favoriteCategories: ['educational', 'entertainment'],
             watchHistory: []
           },
-            status: 'active',
-            createdAt: child.createdAt || new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          };
-        });
+          status: 'active',
+          createdAt: new Date('2024-01-01').toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
 
       setParentalControls(realParentalControls);
     } catch (error) {

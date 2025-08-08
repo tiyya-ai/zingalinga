@@ -283,13 +283,13 @@ export default function CheckoutDashboard({
   };
 
   // Video player functions
-  const handleVideoPlay = (moduleId: string) => {
+  const handleVideoPlay = async (moduleId: string) => {
     console.log('Attempting to play video for module ID');
     const module = realModules.find(m => m.id === moduleId);
     console.log('Module found:', !!module);
     
     if (module) {
-      const accessResult = checkVideoAccess(user, module, realPurchases);
+      const accessResult = await checkVideoAccess(user, module, realPurchases);
       console.log('Access granted:', accessResult.hasAccess);
       
       setSelectedModule(module);
@@ -395,9 +395,10 @@ export default function CheckoutDashboard({
   });
 
   const renderVideoCard = (module: Module) => {
-    const accessResult = checkVideoAccess(user, module, realPurchases);
+    // Use synchronous check for rendering - async will be handled in play function
     const isPurchased = purchasedModules.some(p => p.id === module.id);
     const isInCart = cart.some(item => item.id === module.id);
+    const hasAccess = isPurchased || (module.price === 0); // Simple access check for UI
     
     return (
       <Card key={module.id} className={`bg-white/5 hover:bg-white/10 transition-all duration-300 group ${viewMode === 'list' ? 'flex-row' : ''}`}>
@@ -432,7 +433,7 @@ export default function CheckoutDashboard({
 
             {/* Status Badges */}
             <div className="absolute top-2 left-2 flex flex-col gap-1">
-              {!accessResult.hasAccess && (
+              {!hasAccess && (
                 <Chip 
                   size="sm" 
                   className="bg-red-500/90 text-white border-red-400/50 backdrop-blur-sm shadow-lg"
@@ -525,14 +526,14 @@ export default function CheckoutDashboard({
                 className="text-white"
                 onClick={() => handleVideoPlay(module.id)}
               >
-                {accessResult.hasAccess ? 'Watch' : 'Preview'}
+                {hasAccess ? 'Watch' : 'Preview'}
               </Button>
             </div>
 
             {/* Access Status */}
             <div className="mt-2 text-xs">
-              <span className={`${accessResult.hasAccess ? 'text-green-400' : 'text-red-400'}`}>
-                {accessResult.reason}
+              <span className={`${hasAccess ? 'text-green-400' : 'text-red-400'}`}>
+                {hasAccess ? 'Access granted' : 'Purchase required'}
               </span>
             </div>
           </div>
@@ -1035,7 +1036,9 @@ export default function CheckoutDashboard({
                     <ShoppingCart className="w-4 h-4" />
                     Cart
                     {cart.length > 0 && (
-                      <Badge content={cart.length} color="danger" size="sm" />
+                      <Badge content={cart.length} color="danger" size="sm">
+                        <span></span>
+                      </Badge>
                     )}
                   </Button>
                 </div>

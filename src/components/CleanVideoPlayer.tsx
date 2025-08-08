@@ -113,9 +113,22 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
   const [showControls, setShowControls] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [accessResult, setAccessResult] = useState({ hasAccess: false, isDemo: false, requiresPurchase: true, reason: 'Loading...' });
 
   // Check access when component mounts or dependencies change
-  const accessResult = checkVideoAccess(user, module, purchases);
+  useEffect(() => {
+    const checkAccess = async () => {
+      const result = await checkVideoAccess(user, module, purchases);
+      setAccessResult({
+        hasAccess: result.hasAccess,
+        isDemo: result.isDemo || false,
+        requiresPurchase: result.requiresPurchase || false,
+        reason: result.reason || 'Unknown'
+      });
+    };
+    checkAccess();
+  }, [user, module, purchases]);
+
   const videoUrl = getVideoUrl(module, accessResult.hasAccess);
   const videoType = getVideoType(videoUrl);
 
@@ -356,7 +369,7 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
           <video
             ref={videoRef}
             className="w-full h-64 md:h-96 object-cover"
-            poster={module.thumbnail || module.imageUrl}
+            poster={module.thumbnail}
             preload="metadata"
             onClick={togglePlay}
             src={videoUrl}
@@ -537,11 +550,12 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
     return (
       <div className="space-y-3 max-h-96 overflow-y-auto">
         {relatedVideos.map((relatedModule) => {
-          const relatedAccessResult = checkVideoAccess(user, relatedModule, purchases);
+          // Use simple check for related videos to avoid async issues
           const isPurchased = user?.purchasedModules?.includes(relatedModule.id) || 
                             purchases.some(p => p.userId === user?.id && 
                               (p.moduleId === relatedModule.id || p.moduleIds?.includes(relatedModule.id)) && 
                               p.status === 'completed');
+          const hasAccess = isPurchased || (relatedModule.price === 0);
 
           return (
             <div 
@@ -575,7 +589,7 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
                   </div>
                 )}
                 
-                {!relatedAccessResult.hasAccess && !isPurchased && (
+                {!hasAccess && !isPurchased && (
                   <div className="absolute top-1 left-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                     <Lock className="w-2.5 h-2.5 text-white" />
                   </div>

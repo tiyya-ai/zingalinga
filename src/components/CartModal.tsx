@@ -23,7 +23,7 @@ interface CartModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPurchase: (items: CartItem[]) => void;
-  initialProduct?: 'kiki' | 'tano' | 'bundle';
+  initialProduct?: 'kiki' | 'tano' | 'bundle' | 'explorer' | 'adventurer' | 'roadtripper' | 'bookie';
 }
 
 export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onPurchase, initialProduct }) => {
@@ -53,6 +53,13 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onPurchas
           addItem(PRODUCTS.TANO_SONGS);
           break;
         case 'bundle':
+          addItem(PRODUCTS.COMPLETE_BUNDLE);
+          break;
+        case 'explorer':
+        case 'adventurer':
+        case 'roadtripper':
+        case 'bookie':
+          // For new products, add the bundle for now
           addItem(PRODUCTS.COMPLETE_BUNDLE);
           break;
       }

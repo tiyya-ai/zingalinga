@@ -12,7 +12,7 @@ interface LandingPageProps {
 export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackagesClick }) => {
   const [animateLetters, setAnimateLetters] = useState(false);
   const [showCart, setShowCart] = useState(false);
-  const [initialProduct, setInitialProduct] = useState<'kiki' | 'tano' | 'bundle' | undefined>();
+  const [initialProduct, setInitialProduct] = useState<'kiki' | 'tano' | 'bundle' | 'explorer' | 'adventurer' | 'roadtripper' | 'bookie' | undefined>();
   const { addItem, clearCart } = useCart();
   
   const handleBuyNow = (product: 'kiki' | 'tano' | 'bundle' | 'explorer' | 'adventurer' | 'roadtripper' | 'bookie') => {

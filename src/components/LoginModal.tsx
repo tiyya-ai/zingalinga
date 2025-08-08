@@ -145,7 +145,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             email: sanitizedEmail,
             password: sanitizedPassword,
             name: sanitizedName,
-            role: 'user',
+            role: 'user' as const,
             createdAt: new Date().toISOString(),
             lastLogin: new Date().toISOString(),
             isActive: true,
@@ -189,7 +189,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             console.log('- All user emails:', data.users?.map(u => u.email) || []);
             console.log('- Looking for email:', sanitizedEmail);
             
-            const dbUser = (data.users || []).find(u => u.email === sanitizedEmail);
+            const dbUser = (data.users || []).find(u => u.email === sanitizedEmail) as any;
             console.log('- User found:', !!dbUser);
             
             if (dbUser) {
@@ -202,7 +202,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                 user = {
                   ...dbUser,
                   lastLogin: new Date().toISOString(),
-                  isActive: true
+                  isActive: true,
+                  purchasedModules: dbUser.purchasedModules || [],
+                  totalSpent: dbUser.totalSpent || 0
                 };
                 console.log('✅ Login successful for VPS user');
               }
@@ -237,7 +239,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             setSuccess('Welcome back! Redirecting...');
             setTimeout(() => {
               const { password: _, ...userWithoutPassword } = user;
-              onLogin(userWithoutPassword);
+              const completeUser = {
+                ...userWithoutPassword,
+                purchasedModules: (userWithoutPassword as any).purchasedModules || [],
+                totalSpent: (userWithoutPassword as any).totalSpent || 0
+              };
+              onLogin(completeUser as UserType);
               onClose();
               resetForm();
               // Clear guest account info after successful login

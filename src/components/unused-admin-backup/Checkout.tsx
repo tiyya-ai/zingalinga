@@ -63,10 +63,12 @@ export const Checkout: React.FC<CheckoutProps> = ({
       const newPurchase: Purchase = {
         id: `purchase_${Date.now()}`,
         userId: user?.id || 'guest',
+        moduleId: moduleIds[0] || '', // First module ID for compatibility
         moduleIds,
         amount: cart.total,
         status: 'completed',
         createdAt: new Date().toISOString(),
+        purchaseDate: new Date().toISOString(),
         paymentMethod: 'credit_card'
       };
 

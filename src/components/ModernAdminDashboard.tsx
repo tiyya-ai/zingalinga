@@ -96,7 +96,7 @@ import {
   Tablet
 } from 'lucide-react';
 import { vpsDataStore } from '../utils/vpsDataStore';
-import { AdminChatManager } from './AdminChatManager';
+
 import { UserManagement } from './UserManagement';
 import { Module } from '../types';
 import { SuccessModal } from './SuccessModal';
@@ -272,7 +272,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           customer: {
             name: user?.name || user?.username || 'Unknown User',
             email: user?.email || 'unknown@email.com',
-            avatar: user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'UN'
+            avatar: user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'UN'
           },
           item: {
             name: video?.title || 'Unknown Product',
@@ -313,7 +313,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       });
 
       // Generate real activity feed
-      const activities = [];
+      const activities: any[] = [];
       
       // Add recent user registrations
       realUsers.slice(-5).forEach(user => {
@@ -322,7 +322,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           type: 'user',
           message: `New user ${user.name || user.username} registered`,
           time: new Date(user.createdAt).toLocaleString(),
-          avatar: user.name ? user.name.split(' ').map(n => n[0]).join('') : 'U'
+          avatar: user.name ? user.name.split(' ').map((n: string) => n[0]).join('') : 'U'
         });
       });
 
@@ -344,7 +344,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           type: 'video',
           message: `Video "${video.title}" was uploaded`,
           time: new Date(video.createdAt).toLocaleString(),
-          avatar: video.title.split(' ').map(w => w[0]).join('').toUpperCase()
+          avatar: video.title.split(' ').map((w: string) => w[0]).join('').toUpperCase()
         });
       });
 
@@ -879,7 +879,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
     // Calculate video performance data
     const videoPerformanceData = videos.map(video => {
-      const realViews = video.views || 0;
+      const realViews = (video as any).views || 0;
       const videoOrders = orders.filter(order => order.item.name === video.title);
       const estimatedRevenue = videoOrders.reduce((sum, order) => sum + order.amount, 0);
       
@@ -1547,7 +1547,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     setVideoForm({
       title: video.title,
       description: video.description || '',
-      price: video.price,
+      price: video.price || 0,
       category: video.category || '',
       rating: video.rating || 0,
       ageGroup: (video as any).ageGroup || '3-8 years',
@@ -1734,14 +1734,14 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           rating: videoForm.rating,
           thumbnail: persistentThumbnail,
           videoUrl: persistentVideoUrl,
-          videoSource: persistentVideoUrl,
+
           duration: videoForm.duration,
           estimatedDuration: videoForm.duration,
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
-          language: videoForm.language,
-          status: videoForm.status,
-          ageGroup: videoForm.ageGroup,
-          videoType: videoForm.videoType,
+
+
+
+
           isActive: videoForm.status === 'active',
           isVisible: videoForm.status === 'active',
           updatedAt: new Date().toISOString()
@@ -1768,14 +1768,14 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           rating: videoForm.rating,
           thumbnail: persistentThumbnail,
           videoUrl: persistentVideoUrl,
-          videoSource: persistentVideoUrl,
+
           duration: videoForm.duration,
           estimatedDuration: videoForm.duration,
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
-          language: videoForm.language,
-          status: videoForm.status,
-          ageGroup: videoForm.ageGroup,
-          videoType: videoForm.videoType,
+
+
+
+
           isActive: videoForm.status === 'active',
           isVisible: videoForm.status === 'active',
           createdAt: new Date().toISOString(),
@@ -2722,7 +2722,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       </Chip>
                     </TableCell>
                     <TableCell className="py-4 px-6 text-center font-semibold text-gray-900">
-                      {formatCurrency(video.price)}
+                      {formatCurrency(video.price || 0)}
                     </TableCell>
                     <TableCell className="py-4 px-6 text-center">
                       <div className="flex items-center justify-center space-x-1">
@@ -3578,10 +3578,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                             let audioUrl = lesson.audioUrl || lesson.videoUrl;
                             
                             // Handle File objects by creating blob URL
-                            if (lesson.audioUrl instanceof File) {
-                              audioUrl = URL.createObjectURL(lesson.audioUrl);
-                            } else if (lesson.videoUrl instanceof File) {
-                              audioUrl = URL.createObjectURL(lesson.videoUrl);
+                            if ((lesson as any).audioUrl instanceof File) {
+                              audioUrl = URL.createObjectURL((lesson as any).audioUrl);
+                            } else if ((lesson as any).videoUrl instanceof File) {
+                              audioUrl = URL.createObjectURL((lesson as any).videoUrl);
                             }
                             
                             if (audioUrl && audioUrl.trim() !== '') {
@@ -4389,12 +4389,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         description: pp1Form.description,
         price: pp1Form.price,
         category: 'PP1 Program',
-        type: 'content',
+        type: 'program',
         thumbnail: pp1Form.coverImage || 'https://via.placeholder.com/300x200?text=PP1+Content',
         videoUrl: pp1Form.contentUrl,
         duration: pp1Form.duration,
         tags: pp1Form.tags ? pp1Form.tags.split(',').map(tag => tag.trim()) : [],
-        contentType: pp1Form.contentType,
+
         isActive: true,
         isVisible: true,
         createdAt: new Date().toISOString()
@@ -4701,7 +4701,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         description: pp2Form.description,
         price: pp2Form.price,
         category: 'PP2 Program',
-        type: 'content',
+        type: 'program',
         thumbnail: pp2Form.coverImage || 'https://via.placeholder.com/300x200?text=PP2+Content',
         videoUrl: pp2Form.contentUrl,
         duration: pp2Form.duration,
