@@ -203,7 +203,7 @@ export default function ProfessionalUserDashboard({
       
       // Handle File objects for video URLs
       if (module.videoUrl && typeof module.videoUrl === 'object' && 'type' in module.videoUrl) {
-        videoUrl = URL.createObjectURL(module.videoUrl as File);
+        videoUrl = URL.createObjectURL(module.videoUrl as File as unknown as File);
       }
       // Handle base64 data URLs (from admin uploads)
       else if (typeof module.videoUrl === 'string' && module.videoUrl.startsWith('data:')) {
@@ -212,7 +212,7 @@ export default function ProfessionalUserDashboard({
       
       // Handle File objects for thumbnails
       if (module.thumbnail && typeof module.thumbnail === 'object' && 'type' in module.thumbnail) {
-        thumbnail = URL.createObjectURL(module.thumbnail as File);
+        thumbnail = URL.createObjectURL(module.thumbnail as File as unknown as File);
       }
       // Handle base64 data URLs for thumbnails
       else if (typeof module.thumbnail === 'string' && module.thumbnail.startsWith('data:')) {
@@ -277,7 +277,7 @@ export default function ProfessionalUserDashboard({
       
       // Priority 1: Handle File objects
       if (module.thumbnail && typeof module.thumbnail === 'object' && 'type' in module.thumbnail) {
-        thumbnail = URL.createObjectURL(module.thumbnail as File);
+        thumbnail = URL.createObjectURL(module.thumbnail as File as unknown as File);
       }
       // Priority 2: Handle base64 data URLs
       else if (typeof module.thumbnail === 'string' && module.thumbnail.startsWith('data:')) {
@@ -308,8 +308,8 @@ export default function ProfessionalUserDashboard({
         description: module.description || '',
         category: module.category || 'Videos',
         inStock: true,
-        rating: module.rating || 5.0,
-        reviews: module.reviews || 0,
+        rating: (module as any).rating || 5.0,
+        reviews: (module as any).reviews || 0,
         discount: 0
       };
       
@@ -375,7 +375,7 @@ export default function ProfessionalUserDashboard({
     
     // Priority 1: File objects
     if (module.thumbnail && typeof module.thumbnail === 'object' && 'type' in module.thumbnail) {
-      thumbnail = URL.createObjectURL(module.thumbnail as File);
+      thumbnail = URL.createObjectURL(module.thumbnail as File as unknown as File);
     }
     // Priority 2: Base64 data URLs
     else if (typeof module.thumbnail === 'string' && module.thumbnail.startsWith('data:')) {
@@ -621,8 +621,8 @@ export default function ProfessionalUserDashboard({
                 <div className="space-y-3">
                   {allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).slice(0, 3).map(module => {
                     let thumbnail = module.thumbnail || '';
-                    if (module.thumbnail instanceof File) {
-                      thumbnail = URL.createObjectURL(module.thumbnail);
+                    if (module.thumbnail && typeof module.thumbnail === 'object' && 'type' in module.thumbnail) {
+                      thumbnail = URL.createObjectURL(module.thumbnail as File as unknown as File);
                     } else if (typeof module.thumbnail === 'string' && module.thumbnail.startsWith('data:')) {
                       thumbnail = module.thumbnail;
                     } else if (module.videoUrl && typeof module.videoUrl === 'string' && (!thumbnail || thumbnail === '/zinga-linga-logo.png')) {
@@ -649,9 +649,9 @@ export default function ProfessionalUserDashboard({
                           category: module.category || 'Videos',
                           isPremium: module.isPremium || false,
                           price: module.price || 0,
-                          rating: module.rating,
-                          views: module.views,
-                          tags: module.tags,
+                          rating: (module as any).rating,
+                          views: (module as any).views,
+                          tags: (module as any).tags,
                           isYouTube: module.videoUrl?.includes('youtube') || module.videoUrl?.includes('youtu.be')
                         };
                         playVideo(video);
@@ -813,9 +813,9 @@ export default function ProfessionalUserDashboard({
                                   category: content.category || 'Videos',
                                   isPremium: content.isPremium || false,
                                   price: content.price || 0,
-                                  rating: content.rating,
-                                  views: content.views,
-                                  tags: content.tags,
+                                  rating: (content as any).rating,
+                                  views: (content as any).views,
+                                  tags: (content as any).tags,
                                   isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
                                 };
                                 playVideo(video);
@@ -951,11 +951,11 @@ export default function ProfessionalUserDashboard({
                                   let audioFile = null;
                                   
                                   // Handle File objects
-                                  if (content.audioUrl instanceof File) {
-                                    audioUrl = URL.createObjectURL(content.audioUrl);
+                                  if (content.audioUrl && typeof content.audioUrl === 'object' && 'type' in content.audioUrl) {
+                                    audioUrl = URL.createObjectURL(content.audioUrl as unknown as File);
                                     audioFile = content.audioUrl;
-                                  } else if (content.videoUrl instanceof File) {
-                                    audioUrl = URL.createObjectURL(content.videoUrl);
+                                  } else if (content.videoUrl && typeof content.videoUrl === 'object' && 'type' in content.videoUrl) {
+                                    audioUrl = URL.createObjectURL(content.videoUrl as unknown as File);
                                     audioFile = content.videoUrl;
                                   }
                                   
@@ -980,9 +980,9 @@ export default function ProfessionalUserDashboard({
                                     category: content.category || 'Videos',
                                     isPremium: content.isPremium || false,
                                     price: content.price || 0,
-                                    rating: content.rating,
-                                    views: content.views,
-                                    tags: content.tags,
+                                    rating: (content as any).rating,
+                                    views: (content as any).views,
+                                    tags: (content as any).tags,
                                     isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
                                   };
                                   playVideo(video);
@@ -1038,9 +1038,9 @@ export default function ProfessionalUserDashboard({
                                   category: content.category || 'Videos',
                                   isPremium: content.isPremium || false,
                                   price: content.price || 0,
-                                  rating: content.rating,
-                                  views: content.views,
-                                  tags: content.tags,
+                                  rating: (content as any).rating,
+                                  views: (content as any).views,
+                                  tags: (content as any).tags,
                                   isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
                                 };
                                 playVideo(video);
@@ -1049,17 +1049,17 @@ export default function ProfessionalUserDashboard({
                                 let audioUrl = content.audioUrl || content.videoUrl;
                                 
                                 // Handle File objects by creating blob URL
-                                if (content.audioUrl instanceof File) {
-                                  audioUrl = URL.createObjectURL(content.audioUrl);
-                                } else if (content.videoUrl instanceof File) {
-                                  audioUrl = URL.createObjectURL(content.videoUrl);
+                                if (content.audioUrl && typeof content.audioUrl === 'object' && 'type' in content.audioUrl) {
+                                  audioUrl = URL.createObjectURL(content.audioUrl as unknown as File);
+                                } else if (content.videoUrl && typeof content.videoUrl === 'object' && 'type' in content.videoUrl) {
+                                  audioUrl = URL.createObjectURL(content.videoUrl as unknown as File);
                                 }
                                 
                                 if (audioUrl) {
                                   setSelectedAudio({
                                     ...content,
                                     audioUrl: audioUrl,
-                                    audioFile: content.audioUrl instanceof File ? content.audioUrl : (content.videoUrl instanceof File ? content.videoUrl : null)
+                                    audioFile: content.audioUrl && typeof content.audioUrl === 'object' && 'type' in content.audioUrl ? content.audioUrl : (content.videoUrl && typeof content.videoUrl === 'object' && 'type' in content.videoUrl ? content.videoUrl : null)
                                   });
                                   setShowAudioModal(true);
                                 } else {
@@ -1201,8 +1201,8 @@ export default function ProfessionalUserDashboard({
                 let thumbnail = module.thumbnail || '';
                 
                 // Handle File objects for thumbnails
-                if (module.thumbnail instanceof File) {
-                  thumbnail = URL.createObjectURL(module.thumbnail);
+                if (module.thumbnail && typeof thumbnail === 'object' && 'type' in thumbnail) {
+                  thumbnail = URL.createObjectURL(module.thumbnail as unknown as File);
                 }
                 // Handle base64 data URLs for thumbnails
                 else if (typeof module.thumbnail === 'string' && module.thumbnail.startsWith('data:')) {
@@ -1260,9 +1260,9 @@ export default function ProfessionalUserDashboard({
                                 category: module.category || 'Videos',
                                 isPremium: module.isPremium || false,
                                 price: module.price || 0,
-                                rating: module.rating,
-                                views: module.views,
-                                tags: module.tags,
+                                rating: (module as any).rating,
+                                views: (module as any).views,
+                                tags: (module as any).tags,
                                 isYouTube: module.videoUrl?.includes('youtube') || module.videoUrl?.includes('youtu.be')
                               };
                               playVideo(video);
@@ -1750,7 +1750,7 @@ export default function ProfessionalUserDashboard({
                             className="w-full h-48 object-cover" 
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling.style.display = 'flex';
+                              const sibling = e.currentTarget.nextElementSibling as HTMLElement; if (sibling) sibling.style.display = 'flex';
                             }}
                           />
                         ) : null}
@@ -2423,11 +2423,12 @@ export default function ProfessionalUserDashboard({
 
                       const updatedUser = {
                         ...user,
+                        id: user?.id || '',
                         name: finalName.trim(),
                         phone: (profileData.phone || user?.phone || '').trim(),
                         address: (profileData.address || user?.address || '').trim(),
                         avatar: profileData.avatar || user?.avatar
-                      };
+                      } as User;
                       
                       const data = await vpsDataStore.loadData();
                       const userIndex = (data.users || []).findIndex(u => u.id === user?.id);
@@ -2885,8 +2886,8 @@ export default function ProfessionalUserDashboard({
                 let audioSrc = selectedAudio.audioUrl;
                 
                 // Create fresh blob URL if we have a File object
-                if (selectedAudio.audioFile instanceof File) {
-                  audioSrc = URL.createObjectURL(selectedAudio.audioFile);
+                if (selectedAudio.audioFile && typeof selectedAudio.audioFile === 'object' && 'type' in selectedAudio.audioFile) {
+                  audioSrc = URL.createObjectURL(selectedAudio.audioFile as unknown as File);
                 }
                 
                 return audioSrc ? (

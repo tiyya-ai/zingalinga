@@ -142,7 +142,7 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
       
       const invoiceData: Invoice[] = userPurchases.map(purchase => ({
         id: purchase.id,
-        date: purchase.createdAt,
+        date: purchase.createdAt || purchase.purchaseDate || new Date().toISOString(),
         amount: purchase.amount,
         status: purchase.status as 'paid' | 'pending' | 'failed',
         items: purchase.moduleIds,

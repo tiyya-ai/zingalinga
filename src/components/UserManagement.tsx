@@ -156,12 +156,20 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers,
           updatedAt: new Date().toISOString()
         };
         
-        const success = await vpsDataStore.updateUser(updatedUser);
-        if (success) {
-          setUsers(users.map(u => u.id === editingUser.id ? updatedUser : u));
-          alert('✅ User updated successfully!');
+        const data = await vpsDataStore.loadData();
+        const userIndex = data.users.findIndex(u => u.id === updatedUser.id);
+        if (userIndex !== -1) {
+          data.users[userIndex] = updatedUser;
+          const success = await vpsDataStore.saveData(data);
+          if (success) {
+            setUsers(users.map(u => u.id === editingUser.id ? updatedUser : u));
+            alert('✅ User updated successfully!');
+          } else {
+            alert('❌ Failed to update user.');
+            return;
+          }
         } else {
-          alert('❌ Failed to update user.');
+          alert('❌ User not found.');
           return;
         }
       } else {

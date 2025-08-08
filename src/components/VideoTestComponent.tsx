@@ -63,7 +63,7 @@ export const VideoTestComponent: React.FC<VideoTestProps> = ({ user, module }) =
   };
 
   const testVideoUrl = () => {
-    const urls = [module.videoUrl, module.videoSource, module.demoVideo].filter(Boolean);
+    const urls = [module.videoUrl, (module as any).videoSource, (module as any).demoVideo].filter(Boolean);
     urls.forEach(url => {
       const isValid = isValidVideoUrl(url);
       addTestResult(`🎥 URL "${url?.substring(0, 50)}...": ${isValid ? '✅ VALID' : '❌ INVALID'}`);

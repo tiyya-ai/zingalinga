@@ -19,8 +19,9 @@ interface Achievement {
   title: string;
   description: string;
   icon: string;
-  unlockedAt: Date;
+  unlockedAt?: Date;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  locked?: boolean;
 }
 
 interface UserAnalyticsProps {
@@ -61,7 +62,7 @@ export default function UserAnalytics({ user, purchases, onClose }: UserAnalytic
         description: 'Watched your first video',
         icon: '🎬',
         unlockedAt: new Date(),
-        rarity: 'common'
+        rarity: 'common' as const
       },
       {
         id: '2',
@@ -69,7 +70,7 @@ export default function UserAnalytics({ user, purchases, onClose }: UserAnalytic
         description: 'Watched 10 videos',
         icon: '📚',
         unlockedAt: new Date(),
-        rarity: 'rare'
+        rarity: 'rare' as const
       },
       {
         id: '3',
@@ -77,7 +78,7 @@ export default function UserAnalytics({ user, purchases, onClose }: UserAnalytic
         description: 'Completed all videos in a category',
         icon: '🏆',
         unlockedAt: new Date(),
-        rarity: 'epic'
+        rarity: 'epic' as const
       }
     ].filter((_, index) => index < Math.max(1, Math.floor(videosPurchased / 2)));
 
@@ -312,7 +313,7 @@ export default function UserAnalytics({ user, purchases, onClose }: UserAnalytic
                     title: 'Math Expert',
                     description: 'Complete all math videos',
                     icon: '🔒',
-                    rarity: 'epic',
+                    rarity: 'epic' as const,
                     locked: true
                   },
                   {
@@ -320,7 +321,7 @@ export default function UserAnalytics({ user, purchases, onClose }: UserAnalytic
                     title: 'Little Scientist',
                     description: 'Complete all science videos',
                     icon: '🔒',
-                    rarity: 'legendary',
+                    rarity: 'legendary' as const,
                     locked: true
                   }
                 ].map((achievement, index) => (
