@@ -1,8 +1,6 @@
 // Enhanced Cloud Data Store with Auto-Save Functionality
 import { User, Module, Purchase, Analytics, ContentFile } from '../types';
 import { modules as defaultModules } from '../data/modules';
-import { db, isFirebaseAvailable, getFirebaseStatus } from '../config/firebase';
-import { doc, setDoc, getDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 
 interface CloudData {
   users: User[];
@@ -56,19 +54,7 @@ class CloudDataStore {
     
     // Auto-save disabled to simplify the application
 
-    // Save on page unload
-    window.addEventListener('beforeunload', () => {
-      if (this.currentUser) {
-        this.saveToCloudSync(); // Synchronous save on exit
-      }
-    });
-
-    // Save on visibility change (tab switch)
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden && this.currentUser) {
-        this.autoSaveToCloud();
-      }
-    });
+    // Local storage only - no cloud sync
   }
 
   // Set current user for cloud sync
@@ -147,41 +133,7 @@ class CloudDataStore {
       // First try to load from localStorage
       const localData = this.loadFromLocalStorage();
       
-      // If user is set, try to sync with cloud
-      if (this.currentUser && db) {
-        try {
-          const cloudData = await this.loadFromCloud(this.currentUser.id);
-          if (cloudData && this.isCloudDataNewer(cloudData, localData)) {
-            console.log('☁️ Cloud data is newer, checking for conflicts');
-            
-            // Check if local data was recently modified (within last 10 minutes)
-            const localTime = new Date(localData.lastUpdated).getTime();
-            const now = Date.now();
-            const isRecentLocalChange = (now - localTime) < (10 * 60 * 1000); // 10 minutes
-            
-            // Check for deletions in modules or users
-            const hasModuleDeletions = (localData.modules || []).length < (cloudData.modules || []).length;
-        const hasUserDeletions = (localData.users || []).length < (cloudData.users || []).length;
-            
-            if (isRecentLocalChange && (hasModuleDeletions || hasUserDeletions)) {
-              console.log('🗑️ Recent local deletions detected, syncing deletions to cloud');
-              console.log(`Modules: local=${(localData.modules || []).length}, cloud=${(cloudData.modules || []).length}`);
-        console.log(`Users: local=${(localData.users || []).length}, cloud=${(cloudData.users || []).length}`);
-              
-              // Force save the local data to cloud to sync deletions
-              await this.autoSaveToCloud(localData);
-              return localData;
-            }
-            
-            // Otherwise, merge cloud and local data
-            const mergedData = this.mergeCloudAndLocalData(cloudData, localData);
-            this.saveToLocalStorage(mergedData);
-            return mergedData;
-          }
-        } catch (error) {
-          console.log('⚠️ Cloud sync failed, using local data:', error);
-        }
-      }
+      // Cloud sync disabled - using local storage only
       
       return localData;
     } catch (error) {
@@ -234,31 +186,7 @@ class CloudDataStore {
     return defaultData;
   }
 
-  // Load from cloud
-  private async loadFromCloud(userId: string): Promise<CloudData | null> {
-    if (!db) {
-      console.warn('⚠️ Firebase not available');
-      return null;
-    }
 
-    try {
-      const userDoc = doc(db, 'userData', userId);
-      const docSnap = await getDoc(userDoc);
-      
-      if (docSnap.exists()) {
-        const cloudData = docSnap.data() as CloudData;
-        console.log('☁️ Loaded data from cloud for user:', userId);
-        this.lastCloudSync = Date.now();
-        return cloudData;
-      } else {
-        console.log('☁️ No cloud data found for user:', userId);
-        return null;
-      }
-    } catch (error) {
-      console.error('❌ Error loading from cloud:', error);
-      return null;
-    }
-  }
 
   // Check if cloud data is newer
   private isCloudDataNewer(cloudData: CloudData, localData: CloudData): boolean {
@@ -357,13 +285,7 @@ class CloudDataStore {
       const localSaved = this.saveToLocalStorage(dataToSave);
       console.log('💾 Data saved locally, modules count:', (dataToSave.modules || []).length);
       
-      // Auto-save to cloud if user is set (secondary backup)
-      if (this.currentUser && this.autoSaveEnabled) {
-        console.log('☁️ Attempting cloud sync for user:', this.currentUser.email);
-        await this.autoSaveToCloud(dataToSave);
-      } else {
-        console.log('⚠️ Cloud sync skipped - User:', !!this.currentUser, 'AutoSave:', this.autoSaveEnabled);
-      }
+      // Cloud sync disabled
       
       return localSaved;
     } catch (error) {
@@ -386,101 +308,11 @@ class CloudDataStore {
     }
   }
 
-  // Auto-save to cloud (async)
-  private async autoSaveToCloud(data?: CloudData) {
-    if (!this.currentUser) {
-      console.log('⚠️ Cloud sync skipped - no current user');
-      return;
-    }
-    
-    if (!db) {
-      console.log('⚠️ Cloud sync skipped - Firebase not available');
-      // Try to reinitialize Firebase
-      try {
-        const { reinitializeFirebase } = await import('../config/firebase');
-        await reinitializeFirebase();
-        console.log('🔄 Firebase reinitialized, retrying cloud sync...');
-      } catch (error) {
-        console.error('❌ Failed to reinitialize Firebase:', error);
-        return;
-      }
-    }
-    
-    if (this.syncInProgress) {
-      console.log('⚠️ Cloud sync skipped - sync already in progress');
-      return;
-    }
 
-    try {
-      this.syncInProgress = true;
-      console.log('🔄 Starting cloud sync for user:', this.currentUser.email);
-      
-      const dataToSave = data || this.loadFromLocalStorage();
-      console.log('📊 Syncing data - modules:', (dataToSave.modules || []).length, 'users:', (dataToSave.users || []).length);
-      
-      await this.saveToCloud(this.currentUser.id, dataToSave);
-      
-      console.log('✅ Cloud sync completed successfully for user:', this.currentUser.email);
-      this.lastCloudSync = Date.now();
-    } catch (error) {
-      console.error('❌ Cloud sync failed:', error);
-      console.log('💾 Data is still saved locally and will retry later');
-    } finally {
-      this.syncInProgress = false;
-    }
-  }
 
-  // Save to cloud (synchronous for page unload)
-  private saveToCloudSync() {
-    if (!this.currentUser || !db) {
-      return;
-    }
 
-    try {
-      const data = this.loadFromLocalStorage();
-      // Use sendBeacon for reliable sync on page unload
-      const payload = JSON.stringify({
-        userId: this.currentUser.id,
-        data: data
-      });
-      
-      // Fallback to immediate save
-      this.saveToCloud(this.currentUser.id, data);
-    } catch (error) {
-      console.warn('⚠️ Sync save failed:', error);
-    }
-  }
 
-  // Save to cloud with retry logic
-  private async saveToCloud(userId: string, data: CloudData, retryCount = 0): Promise<void> {
-    if (!db) {
-      throw new Error('Firebase not available');
-    }
 
-    try {
-      const userDoc = doc(db, 'userData', userId);
-      await setDoc(userDoc, {
-        ...data,
-        lastCloudSync: serverTimestamp(),
-        syncedAt: new Date().toISOString()
-      }, { merge: true });
-      
-      console.log('☁️ Data saved to cloud successfully');
-    } catch (error: unknown) {
-      console.warn(`⚠️ Cloud save attempt ${retryCount + 1} failed:`, error);
-      
-      // Retry up to 3 times with exponential backoff
-      if (retryCount < 3 && ((error as any).code === 'unavailable' || (error as any).code === 'deadline-exceeded')) {
-        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
-        console.log(`🔄 Retrying cloud save in ${delay}ms...`);
-        
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return this.saveToCloud(userId, data, retryCount + 1);
-      }
-      
-      throw error;
-    }
-  }
 
   // Force save (alias for compatibility) - ensures immediate save to both local and cloud
   async forceSave(data: AppData): Promise<boolean> {
@@ -493,18 +325,7 @@ class CloudDataStore {
     // Always save to localStorage first
     this.saveToLocalStorage(data);
     
-    // If cloud sync is enabled, force save to cloud immediately
-    if (this.currentUser && db) {
-      console.log('☁️ Force saving to cloud...');
-      try {
-        await this.saveToCloud(this.currentUser.id, data);
-        console.log('✅ Force save to cloud successful');
-        return true;
-      } catch (error) {
-        console.log('⚠️ Force save to cloud failed, but local save completed');
-        return false;
-      }
-    }
+    // Cloud sync disabled
     
     console.log('✅ Force save to localStorage completed');
     return true;
@@ -523,26 +344,14 @@ class CloudDataStore {
       lastCloudSync: this.lastCloudSync,
       currentUser: this.currentUser?.email || null,
       deviceId: this.deviceId,
-      cloudAvailable: !!db
+      cloudAvailable: false
     };
   }
 
-  // Manual cloud sync
+  // Manual cloud sync disabled
   async manualSync(): Promise<boolean> {
-    if (!this.currentUser) {
-      console.warn('⚠️ No user set for manual sync');
-      return false;
-    }
-
-    try {
-      const localData = this.loadFromLocalStorage();
-      await this.saveToCloud(this.currentUser.id, localData);
-      console.log('✅ Manual sync completed');
-      return true;
-    } catch (error) {
-      console.error('❌ Manual sync failed:', error);
-      return false;
-    }
+    console.log('⚠️ Cloud sync disabled');
+    return false;
   }
 
   // Generate analytics from actual data

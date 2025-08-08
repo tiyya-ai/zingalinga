@@ -54,7 +54,8 @@ import {
   Bell,
   Shield,
   Heart,
-  Send
+  Send,
+  X
 } from 'lucide-react';
 import { User as UserType, Purchase } from '../types';
 import { vpsDataStore } from '../utils/vpsDataStore';
@@ -71,8 +72,8 @@ interface Invoice {
   date: string;
   amount: number;
   status: 'paid' | 'pending' | 'failed';
-  items: string[];
-  paymentMethod: string;
+  items?: string[];
+  paymentMethod?: string;
 }
 
 interface FriendInvite {
@@ -144,9 +145,9 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ user, onBack, onNavig
         id: purchase.id,
         date: purchase.createdAt || purchase.purchaseDate || new Date().toISOString(),
         amount: purchase.amount,
-        status: purchase.status as 'paid' | 'pending' | 'failed',
-        items: purchase.moduleIds,
-        paymentMethod: purchase.paymentMethod
+        status: purchase.status === 'completed' ? 'paid' : purchase.status === 'refunded' ? 'failed' : purchase.status as 'paid' | 'pending' | 'failed',
+        items: purchase.moduleIds || [],
+        paymentMethod: purchase.paymentMethod || 'Credit Card'
       }));
       
       setInvoices(invoiceData);

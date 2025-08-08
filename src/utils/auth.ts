@@ -332,7 +332,6 @@ class AuthManager {
       newUsers.push({
         id: 'admin-demo',
         email: 'admin@zingalinga.com',
-        username: 'admin',
         name: 'Admin User',
         role: 'admin',
         purchasedModules: [],

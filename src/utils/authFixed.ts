@@ -26,26 +26,28 @@ class AuthManager {
   private adminSessionDuration = 2 * 60 * 60 * 1000; // 2 hours for admin
 
   // Demo users for client-side authentication
-  private demoUsers = [
+  private demoUsers: any[] = [
     {
       id: 'admin-1',
       email: 'admin@zinga-linga.com',
       password: 'admin123',
       name: 'Admin User',
-      role: 'admin',
+      role: 'admin' as 'user' | 'admin',
       createdAt: new Date().toISOString(),
       lastLogin: new Date().toISOString(),
-      totalSpent: 0
+      totalSpent: 0,
+      purchasedModules: []
     },
     {
       id: 'user-1',
       email: 'user@example.com',
       password: 'user123',
       name: 'Test User',
-      role: 'user',
+      role: 'user' as 'user' | 'admin',
       createdAt: new Date().toISOString(),
       lastLogin: new Date().toISOString(),
-      totalSpent: 0
+      totalSpent: 0,
+      purchasedModules: []
     }
   ];
 
@@ -291,10 +293,11 @@ class AuthManager {
           email,
           password,
           name: name.trim(),
-          role: 'user',
+          role: 'user' as 'user' | 'admin',
           createdAt: new Date().toISOString(),
-          lastLogin: undefined,
-          totalSpent: 0
+          lastLogin: new Date().toISOString(),
+          totalSpent: 0,
+          purchasedModules: []
         };
 
         // Add to demo users (in memory only)
