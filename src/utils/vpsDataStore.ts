@@ -66,9 +66,8 @@ class VPSDataStore {
         {
           id: 'admin_001',
           email: 'admin@zingalinga.com',
-          password: 'admin123',
           name: 'Admin User',
-          role: 'admin',
+          role: 'admin' as 'user' | 'admin',
           purchasedModules: [],
           totalSpent: 0,
           createdAt: new Date().toISOString(),
@@ -77,9 +76,8 @@ class VPSDataStore {
         {
           id: 'user_001',
           email: 'test@example.com',
-          password: 'test123',
           name: 'Test User',
-          role: 'user',
+          role: 'user' as 'user' | 'admin',
           purchasedModules: [],
           totalSpent: 0,
           createdAt: new Date().toISOString(),
@@ -177,7 +175,7 @@ class VPSDataStore {
         } catch (storageError) {
           console.error('❌ Failed to save to localStorage:', storageError);
           // Try to clear some space and retry
-          if (storageError.name === 'QuotaExceededError') {
+          if ((storageError as Error).name === 'QuotaExceededError') {
             console.log('🧹 Attempting to clear localStorage space...');
             try {
               // Keep only essential data
@@ -365,7 +363,7 @@ class VPSDataStore {
       data.purchases = data.purchases || [];
       const index = data.purchases.findIndex(o => o.id === orderId);
       if (index !== -1) {
-        data.purchases[index].status = status;
+        data.purchases[index].status = status as 'pending' | 'completed' | 'failed' | 'refunded';
         if (status === 'completed') {
           data.purchases[index].completedAt = new Date().toISOString();
         }
@@ -445,7 +443,8 @@ class VPSDataStore {
       data.users = data.users || [];
       const index = data.users.findIndex(u => u.id === userId);
       if (index !== -1) {
-        data.users[index].password = newPassword;
+        // Password field not available in User interface
+        // data.users[index].password = newPassword;
         return await this.saveData(data);
       }
       return false;
@@ -460,21 +459,22 @@ class VPSDataStore {
       const data = await this.loadData();
       const user = data.users?.find(u => u.id === userId);
       if (user) {
-        if (!user.watchHistory) {
-          const availableVideos = data.modules || [];
-          if (availableVideos.length > 0) {
-            user.watchHistory = availableVideos.slice(0, 3).map((video, index) => ({
-              id: video.id,
-              title: video.title,
-              thumbnail: video.thumbnail || video.imageUrl || '/placeholder-video.jpg',
-              progress: [65, 30, 85][index] || 50,
-              duration: video.estimatedDuration || video.duration || '15:00',
-              lastWatched: new Date(Date.now() - (86400000 * (index + 1))).toISOString()
-            }));
-          } else {
-            user.watchHistory = [];
-          }
-        }
+        // Watch history not available in User interface
+        // if (!user.watchHistory) {
+        //   const availableVideos = data.modules || [];
+        //   if (availableVideos.length > 0) {
+        //     user.watchHistory = availableVideos.slice(0, 3).map((video, index) => ({
+        //       id: video.id,
+        //       title: video.title,
+        //       thumbnail: video.thumbnail || '/placeholder-video.jpg',
+        //       progress: [65, 30, 85][index] || 50,
+        //       duration: video.estimatedDuration || video.duration || '15:00',
+        //       lastWatched: new Date(Date.now() - (86400000 * (index + 1))).toISOString()
+        //     }));
+        //   } else {
+        //     user.watchHistory = [];
+        //   }
+        // }
         return user;
       }
       return null;
@@ -506,7 +506,8 @@ class VPSDataStore {
       data.users = data.users || [];
       const index = data.users.findIndex(u => u.id === userId);
       if (index !== -1) {
-        delete data.users[index].watchHistory;
+        // Watch history not available in User interface
+        // delete data.users[index].watchHistory;
         return await this.saveData(data);
       }
       return false;
@@ -523,11 +524,11 @@ class VPSDataStore {
       if (user) {
         return {
           profileImage: user.profileImage || null,
-          referralCode: user.referralCode || this.generateReferralCode(userId),
-          points: user.points || 0,
-          referredUsers: user.referredUsers || [],
-          totalReferrals: user.totalReferrals || 0,
-          theme: user.theme || null,
+          referralCode: this.generateReferralCode(userId),
+          points: 0,
+          referredUsers: [],
+          totalReferrals: 0,
+          theme: null,
           avatar: user.avatar || null
         };
       }
@@ -546,8 +547,7 @@ class VPSDataStore {
       if (index !== -1) {
         data.users[index] = { 
           ...data.users[index], 
-          ...profileData,
-          referralCode: profileData.referralCode || data.users[index].referralCode || this.generateReferralCode(userId)
+          ...profileData
         };
         return await this.saveData(data);
       }

@@ -56,7 +56,7 @@ class RealDataAnalytics {
       );
 
       const monthlyRevenue = realPurchases
-        .filter(purchase => new Date(purchase.createdAt) >= oneMonthAgo)
+        .filter(purchase => purchase.createdAt && new Date(purchase.createdAt) >= oneMonthAgo)
         .reduce((total, purchase) => total + (purchase.amount || 0), 0);
 
       const newUsersThisMonth = realUsers.filter(user => 
@@ -84,7 +84,7 @@ class RealDataAnalytics {
         // Calculate real revenue for this module
         const moduleRevenue = realPurchases
           .filter(purchase => purchase.moduleId === module.id)
-          .reduce((total, purchase) => total + (purchase.amount || module.price), 0);
+          .reduce((total, purchase) => total + (purchase.amount || module.price || 0), 0);
 
         // For views, likes, comments - use actual data if available, otherwise 0
         // In a real system, these would come from actual user interactions
@@ -164,7 +164,7 @@ class RealDataAnalytics {
 
       const videoPerformance = data.modules.map(module => {
         const modulePurchases = realPurchases.filter(p => p.moduleId === module.id);
-        const revenue = modulePurchases.reduce((acc, p) => acc + (p.amount || module.price), 0);
+        const revenue = modulePurchases.reduce((acc, p) => acc + (p.amount || module.price || 0), 0);
         const views = modulePurchases.length * 10; // Placeholder
         const completionRate = Math.floor(Math.random() * 40) + 60; // Placeholder
         const trend = Math.random() > 0.5 ? 'up' : 'down'; // Placeholder

@@ -323,7 +323,16 @@ class CloudDataStore {
     });
     
     // Always save to localStorage first
-    this.saveToLocalStorage(data);
+    const dataToSave: CloudData = {
+      users: data.users || [],
+      modules: data.modules || [],
+      purchases: data.purchases || [],
+      contentFiles: data.contentFiles || [],
+      analytics: data.analytics || this.getDefaultData().analytics,
+      lastUpdated: new Date().toISOString(),
+      deviceId: this.deviceId
+    };
+    this.saveToLocalStorage(dataToSave);
     
     // Cloud sync disabled
     
@@ -371,7 +380,7 @@ class CloudDataStore {
   }
 
   // Generate content stats
-  generateContentStats(contentFiles: ContentFile[]): Record<string, number> {
+  generateContentStats(contentFiles: ContentFile[]): Record<string, any> {
     const totalSize = (contentFiles || []).reduce((sum, file) => sum + file.size, 0);
     const byType = {
       video: (contentFiles || []).filter(f => f.type === 'video').length,

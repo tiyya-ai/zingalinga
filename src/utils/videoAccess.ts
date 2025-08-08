@@ -21,8 +21,7 @@ export async function checkVideoAccess(
     user: user?.name,
     userRole: user?.role,
     module: module.title,
-    modulePrice: module.price,
-    moduleIsDemo: module.isDemo
+    modulePrice: module.price
   });
 
   // Admin users have access to everything
@@ -171,7 +170,6 @@ export function getVideoUrl(module: Module, hasAccess: boolean): string {
     moduleTitle: module.title,
     hasAccess,
     videoUrl: module.videoUrl,
-    videoSource: module.videoSource,
     demoVideo: module.demoVideo
   });
 
@@ -180,13 +178,12 @@ export function getVideoUrl(module: Module, hasAccess: boolean): string {
     // Try multiple possible video URL fields with validation
     const possibleUrls = [
       module.videoUrl,
-      module.videoSource,
       module.demoVideo
     ].filter(Boolean); // Remove empty/null values
 
     // Find the first valid URL
     for (const url of possibleUrls) {
-      if (isValidVideoUrl(url)) {
+      if (url && isValidVideoUrl(url)) {
         console.log('🎬 Returning validated full access URL:', url);
         return url;
       }

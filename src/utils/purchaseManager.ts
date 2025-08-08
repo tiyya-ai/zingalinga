@@ -27,8 +27,8 @@ export class PurchaseManager {
         moduleIds: [moduleId],
         amount: price,
         status: 'completed',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        purchaseDate: new Date().toISOString(),
+        createdAt: new Date().toISOString()
       };
 
       // Save to multiple places for redundancy
