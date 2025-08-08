@@ -305,11 +305,30 @@ export default function ProfessionalUserDashboard({
 
   // Check if item is purchased by current user
   const isItemPurchased = (itemId: string) => {
-    return localPurchases.some(purchase => 
+    if (!user?.id) return false;
+    
+    // Check multiple sources for purchase verification
+    const hasPurchase = localPurchases.some(purchase => 
       purchase.moduleId === itemId && 
-      purchase.userId === user?.id && 
+      purchase.userId === user.id && 
       purchase.status === 'completed'
     );
+    
+    // Also check user's purchased modules list
+    const inUserList = user.purchasedModules?.includes(itemId) || false;
+    
+    // Check localStorage as fallback
+    let hasLocalPurchase = false;
+    try {
+      const localUserPurchases = JSON.parse(localStorage.getItem(`user_purchases_${user.id}`) || '[]');
+      hasLocalPurchase = localUserPurchases.some((p: any) => 
+        p.moduleId === itemId && p.status === 'completed'
+      );
+    } catch (error) {
+      console.error('Error checking localStorage purchases:', error);
+    }
+    
+    return hasPurchase || inUserList || hasLocalPurchase;
   };
 
 
@@ -576,7 +595,7 @@ export default function ProfessionalUserDashboard({
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-white flex items-center">
                     <span className="mr-2">🎬</span>
-                    My Videos ({localPurchases.filter(p => p.userId === user?.id).length})
+                    My Videos ({allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length})
                   </h3>
                   <button 
                     onClick={() => setActiveTab('videos')}
@@ -586,7 +605,7 @@ export default function ProfessionalUserDashboard({
                   </button>
                 </div>
                 <div className="space-y-3">
-                  {allModules.filter(module => module && (module.type === 'video' || !module.type)).slice(0, 3).map(module => {
+                  {allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).slice(0, 3).map(module => {
                     let thumbnail = module.thumbnail || '';
                     if (module.thumbnail instanceof File) {
                       thumbnail = URL.createObjectURL(module.thumbnail);
@@ -645,7 +664,7 @@ export default function ProfessionalUserDashboard({
                       </div>
                     );
                   })}
-                  {allModules.filter(module => module && (module.type === 'video' || !module.type)).length === 0 && (
+                  {allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length === 0 && (
                     <div className="text-center py-4 text-purple-200">
                       <div className="text-2xl mb-2">🎬</div>
                       <div className="text-sm">No videos yet</div>
@@ -1080,13 +1099,7 @@ export default function ProfessionalUserDashboard({
                 <div className="flex items-center space-x-4">
                   <h2 className="text-2xl font-bold text-white">Video Library</h2>
                   <span className="bg-yellow-400 text-purple-900 px-3 py-1 rounded-full text-sm font-bold">
-                    {filteredVideos.filter(video => 
-                      localPurchases.some(purchase => 
-                        purchase.moduleId === video.id && 
-                        purchase.userId === user?.id && 
-                        purchase.status === 'completed'
-                      )
-                    ).length} my videos
+                    {allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length} my videos
                   </span>
                 </div>
                 
@@ -1167,9 +1180,9 @@ export default function ProfessionalUserDashboard({
               )}
             </div>
 
-            {/* Video Cards with All Learning Content Style */}
+            {/* Video Cards - Only Show Purchased Videos */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {allModules.filter(module => module && (module.type === 'video' || !module.type)).map(module => {
+              {allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).map(module => {
                 const isPurchased = isItemPurchased(module.id);
                 let thumbnail = module.thumbnail || '';
                 
@@ -1314,8 +1327,8 @@ export default function ProfessionalUserDashboard({
               })}
             </div>
             
-            {/* Show all videos regardless of purchase status */}
-            {allModules.filter(module => module && (module.type === 'video' || !module.type)).length === 0 && (
+            {/* Show message when no purchased videos */}
+            {allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length === 0 && (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <div className="text-6xl mb-4">🎬</div>
                 <div className="text-white text-xl mb-2">No videos available</div>

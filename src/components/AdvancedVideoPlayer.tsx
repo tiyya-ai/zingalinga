@@ -382,7 +382,7 @@ export const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
           <video
             ref={videoRef}
             className="w-full h-64 md:h-96 object-cover"
-            poster={module.thumbnail || module.imageUrl}
+            poster={module.thumbnail}
             preload="metadata"
             onClick={togglePlay}
             src={videoUrl}
