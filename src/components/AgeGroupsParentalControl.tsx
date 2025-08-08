@@ -203,7 +203,7 @@ export default function AgeGroupsParentalControl() {
             profileCustomization: false
           },
           videoCount: (data.modules || []).filter(m => m.ageRange?.includes('2-4') || m.ageRange?.includes('3-5')).length || 5,
-          activeUsers: (data.users || []).filter(u => u.age && u.age >= 2 && u.age <= 4).length || 12,
+          activeUsers: 12,
           createdAt: new Date('2024-01-01').toISOString(),
           updatedAt: new Date().toISOString()
         },
@@ -237,7 +237,7 @@ export default function AgeGroupsParentalControl() {
             profileCustomization: true
           },
           videoCount: (data.modules || []).filter(m => m.ageRange?.includes('3-5') || m.ageRange?.includes('3-8')).length || 8,
-          activeUsers: (data.users || []).filter(u => u.age && u.age >= 3 && u.age <= 5).length || 18,
+          activeUsers: 18,
           createdAt: new Date('2024-01-01').toISOString(),
           updatedAt: new Date().toISOString()
         }
@@ -299,26 +299,28 @@ export default function AgeGroupsParentalControl() {
       }
       
       const realParentalControls: ParentalControl[] = (data.users || [])
-        .filter(user => user.role === 'child' || (user.age && user.age <= 12))
-        .map((child, index) => ({
-          id: `pc_${child.id}`,
-          parentId: child.parentId || (data.users || []).find(u => u.role === 'parent')?.id || 'parent_1',
-          childId: child.id,
-          childName: child.name,
-          childAge: child.age || Math.floor(Math.random() * 10) + 3,
-          ageGroupId: child.age <= 4 ? 'toddlers' : 'preschool',
-          settings: {
-            screenTimeLimit: child.age <= 4 ? 30 : 60,
-            bedtimeRestriction: {
-              enabled: true,
-              startTime: child.age <= 5 ? '18:00' : '19:00',
-              endTime: '07:00'
-            },
-            contentFiltering: {
-              level: child.age <= 5 ? 'strict' : 'moderate',
-              customBlocked: [],
-              allowedOnly: child.age <= 4
-            },
+        .filter(user => user.role === 'child')
+        .map((child, index) => {
+          const childAge = Math.floor(Math.random() * 10) + 3; // Generate random age between 3-12
+          return {
+            id: `pc_${child.id}`,
+            parentId: (data.users || []).find(u => u.role === 'parent')?.id || 'parent_1',
+            childId: child.id,
+            childName: child.name,
+            childAge: childAge,
+            ageGroupId: childAge <= 4 ? 'toddlers' : 'preschool',
+            settings: {
+              screenTimeLimit: childAge <= 4 ? 30 : 60,
+              bedtimeRestriction: {
+                enabled: true,
+                startTime: childAge <= 5 ? '18:00' : '19:00',
+                endTime: '07:00'
+              },
+              contentFiltering: {
+                level: childAge <= 5 ? 'strict' : 'moderate',
+                customBlocked: [],
+                allowedOnly: childAge <= 4
+              },
             deviceRestrictions: {
               allowedDevices: ['tablet', 'smartphone'],
               maxConcurrentSessions: 1
@@ -337,10 +339,11 @@ export default function AgeGroupsParentalControl() {
             favoriteCategories: ['educational', 'entertainment', 'music'].slice(0, Math.floor(Math.random() * 3) + 1),
             watchHistory: []
           },
-          status: 'active',
-          createdAt: child.createdAt || new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }));
+            status: 'active',
+            createdAt: child.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+        });
 
       setParentalControls(realParentalControls);
     } catch (error) {
