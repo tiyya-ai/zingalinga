@@ -42,7 +42,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   const isValidThumbnail = thumbnail && thumbnail.trim() && !thumbnail.includes('undefined');
 
   return (
-    <div className={`group relative bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl overflow-hidden hover:scale-105 hover:border-yellow-400/50 transition-all duration-300 shadow-xl hover:shadow-2xl ${className}`}>
+    <div className={`group relative bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl overflow-hidden hover:scale-105 hover:border-yellow-400/50 transition-all duration-300 shadow-xl hover:shadow-2xl ${className}`} suppressHydrationWarning>
       
       {/* Thumbnail Container */}
       <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-600">

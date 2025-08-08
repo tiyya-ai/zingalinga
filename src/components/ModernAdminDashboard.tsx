@@ -99,6 +99,7 @@ import { vpsDataStore } from '../utils/vpsDataStore';
 import { AdminChatManager } from './AdminChatManager';
 import { UserManagement } from './UserManagement';
 import { Module } from '../types';
+import { SuccessModal } from './SuccessModal';
 
 interface ModernAdminDashboardProps {
   user: any;
@@ -146,6 +147,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   
 
 
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [notifications, setNotifications] = useState([
     { id: 1, type: 'success', message: 'New video uploaded successfully', time: '2 min ago' },
     { id: 2, type: 'warning', message: '5 comments pending moderation', time: '10 min ago' },
@@ -194,19 +196,27 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     if (mounted) {
       loadRealData();
     }
-    
-    // Cleanup function to revoke object URLs when component unmounts
+  }, [mounted]);
+  
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
     return () => {
       if (videoForm.videoUrl && videoForm.videoUrl.startsWith('blob:')) {
         URL.revokeObjectURL(videoForm.videoUrl);
       }
+      if (videoForm.thumbnail && videoForm.thumbnail.startsWith('blob:')) {
+        URL.revokeObjectURL(videoForm.thumbnail);
+      }
     };
-  }, [mounted]);
+  }, [videoForm.videoUrl, videoForm.thumbnail]);
 
   const loadRealData = async () => {
     if (!mounted) return;
     
     try {
+      // Clear memory cache to force fresh data load
+      vpsDataStore.clearMemoryCache();
+      
       // Load real data from vpsDataStore
       const realUsers = await vpsDataStore.getUsers();
       const realVideos = await vpsDataStore.getProducts();
@@ -214,8 +224,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       const realUploadQueue = await vpsDataStore.getUploadQueue();
 
       // Set real users data
-
-      
       setUsers(realUsers.map(user => ({
         id: user.id,
         name: user.name || user.username || 'Unknown User',
@@ -225,8 +233,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         totalSpent: user.totalSpent || 0
       })));
 
-      // Set real videos data
-      setVideos(realVideos);
+      // Set real videos data with proper URL handling
+      setVideos(realVideos.map(video => ({
+        ...video,
+        // Ensure URLs are properly handled for display
+        videoUrl: video.videoUrl || video.videoSource || '',
+        thumbnail: video.thumbnail || video.imageUrl || ''
+      })));
 
       // Convert real purchases to orders format
       const convertedOrders = realOrders.map(purchase => {
@@ -339,8 +352,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
 
       
-      // Force re-render
-      setMounted(true);
+      console.log('✅ Real data loaded successfully:', {
+        users: realUsers.length,
+        videos: realVideos.length,
+        orders: realOrders.length
+      });
 
     } catch (error) {
       console.error('❌ Failed to load real data:', error);
@@ -359,6 +375,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         { id: 3, type: 'purchase', message: 'Premium subscription purchased', time: '32 min ago', avatar: 'PS' },
         { id: 4, type: 'comment', message: 'New comment on "ABC Learning"', time: '1 hour ago', avatar: 'AC' }
       ]);
+    } finally {
+      // Force component re-render to show updated data
+      setMounted(prev => !prev);
     }
   };
 
@@ -884,7 +903,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               <Button 
                 variant="flat" 
                 startContent={<RotateCcw className="h-4 w-4" />}
-                onPress={loadRealData}
+                onPress={() => {
+                  console.log('🔄 Refreshing data...');
+                  loadRealData();
+                }}
                 className="bg-green-50 text-green-600 hover:bg-green-100"
               >
                 Refresh Data
@@ -1541,9 +1563,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         return;
       }
       
-      const maxSize = 500 * 1024 * 1024;
+      const maxSize = 10 * 1024 * 1024; // 10MB limit
       if (file.size > maxSize) {
-        alert('File size must be less than 500MB');
+        alert('❌ File size must be less than 10MB. For larger videos, please use YouTube or external hosting.');
         return;
       }
       
@@ -1642,6 +1664,38 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         return;
       }
       
+      // Convert blob URLs to base64 for persistence
+      let persistentVideoUrl = videoForm.videoUrl;
+      let persistentThumbnail = videoForm.thumbnail;
+      
+      if (videoForm.videoUrl.startsWith('blob:')) {
+        try {
+          const response = await fetch(videoForm.videoUrl);
+          const blob = await response.blob();
+          const reader = new FileReader();
+          persistentVideoUrl = await new Promise((resolve) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        } catch (error) {
+          console.error('Failed to convert video blob to base64:', error);
+        }
+      }
+      
+      if (videoForm.thumbnail && videoForm.thumbnail.startsWith('blob:')) {
+        try {
+          const response = await fetch(videoForm.thumbnail);
+          const blob = await response.blob();
+          const reader = new FileReader();
+          persistentThumbnail = await new Promise((resolve) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        } catch (error) {
+          console.error('Failed to convert thumbnail blob to base64:', error);
+        }
+      }
+      
       if (editingVideo) {
         const updatedVideo = { 
           ...editingVideo, 
@@ -1650,11 +1704,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           price: videoForm.price,
           category: videoForm.category,
           rating: videoForm.rating,
-          thumbnail: videoForm.thumbnail,
-          videoUrl: videoForm.videoUrl,
-          videoSource: videoForm.videoUrl, // Add videoSource for compatibility
+          thumbnail: persistentThumbnail,
+          videoUrl: persistentVideoUrl,
+          videoSource: persistentVideoUrl,
           duration: videoForm.duration,
-          estimatedDuration: videoForm.duration, // Add estimatedDuration for compatibility
+          estimatedDuration: videoForm.duration,
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
           language: videoForm.language,
           status: videoForm.status,
@@ -1665,20 +1719,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           updatedAt: new Date().toISOString()
         };
         
-        try {
-          // Update local state immediately
-          const updatedVideos = videos.map(v => 
-            v.id === editingVideo.id ? updatedVideo : v
-          );
-          setVideos(updatedVideos);
-          console.log('✅ Video updated in local state');
-          
-          // Save to data store
-          await vpsDataStore.updateProduct(updatedVideo);
-          alert('✅ Video updated successfully!');
-        } catch (error) {
-          console.error('Update error:', error);
-          alert('✅ Video updated successfully (local only)');
+        // Save to data store first
+        const success = await vpsDataStore.updateProduct(updatedVideo);
+        if (success) {
+          // Update local state after successful save
+          setVideos(prev => prev.map(v => v.id === editingVideo.id ? updatedVideo : v));
+          setShowSuccessModal(true);
+          setTimeout(() => setShowSuccessModal(false), 3000);
+        } else {
+          alert('❌ Failed to update video. Please try again.');
+          return;
         }
       } else {
         const newVideo: Module = {
@@ -1688,9 +1738,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           price: videoForm.price,
           category: videoForm.category,
           rating: videoForm.rating,
-          thumbnail: videoForm.thumbnail && videoForm.thumbnail.startsWith('blob:') ? 'local-thumbnail' : videoForm.thumbnail,
-          videoUrl: videoForm.videoUrl && videoForm.videoUrl.startsWith('blob:') ? 'local-video-file' : videoForm.videoUrl,
-          videoSource: videoForm.videoUrl && videoForm.videoUrl.startsWith('blob:') ? 'local-video-file' : videoForm.videoUrl,
+          thumbnail: persistentThumbnail,
+          videoUrl: persistentVideoUrl,
+          videoSource: persistentVideoUrl,
           duration: videoForm.duration,
           estimatedDuration: videoForm.duration,
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
@@ -1704,23 +1754,25 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           updatedAt: new Date().toISOString()
         };
         
-        try {
-          console.log('💾 Saving new video:', newVideo);
-          
-          // Add to local state immediately
-          const updatedVideos = [...videos, newVideo];
-          setVideos(updatedVideos);
-          console.log('✅ Video added to local state immediately');
-          
-          // Save to data store
-          const success = await vpsDataStore.addProduct(newVideo);
-          console.log('💾 Save result:', success);
-          
-          alert('✅ Video created successfully!');
-        } catch (error) {
-          console.error('❌ Create error:', error);
-          alert('✅ Video created successfully (local only)');
+        // Save to data store first
+        const success = await vpsDataStore.addProduct(newVideo);
+        if (success) {
+          // Add to local state after successful save
+          setVideos(prev => [...prev, newVideo]);
+          setShowSuccessModal(true);
+          setTimeout(() => setShowSuccessModal(false), 3000);
+        } else {
+          alert('❌ Failed to create video. Please try again.');
+          return;
         }
+      }
+      
+      // Clean up blob URLs
+      if (videoForm.videoUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(videoForm.videoUrl);
+      }
+      if (videoForm.thumbnail && videoForm.thumbnail.startsWith('blob:')) {
+        URL.revokeObjectURL(videoForm.thumbnail);
       }
       
       setActiveSection('all-videos');
@@ -2683,102 +2735,239 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   );
 
   // Continue with all other render functions using the same consistent styling pattern...
-  const renderGenericPage = (title: string, description: string, icon: React.ReactNode, data: any[], columns: string[]) => (
-    <div className="space-y-8">
-      <PageHeader title={title} />
-      
-      <StatsGrid stats={[
-        { 
-          label: 'Total Items', 
-          value: data.length, 
-          color: 'from-blue-50 to-blue-100 border-blue-200 text-blue-600',
-          icon: <PackageIcon className="h-6 w-6 text-blue-600" />
-        },
-        { 
-          label: 'Active', 
-          value: Math.floor(data.length * 0.8), 
-          color: 'from-green-50 to-green-100 border-green-200 text-green-600',
-          icon: <CheckCircle className="h-6 w-6 text-green-600" />
-        },
-        { 
-          label: 'Pending', 
-          value: Math.floor(data.length * 0.15), 
-          color: 'from-orange-50 to-orange-100 border-orange-200 text-orange-600',
-          icon: <Clock className="h-6 w-6 text-orange-600" />
-        },
-        { 
-          label: 'Issues', 
-          value: Math.floor(data.length * 0.05), 
-          color: 'from-red-50 to-red-100 border-red-200 text-red-600',
-          icon: <AlertTriangle className="h-6 w-6 text-red-600" />
+  const renderAllUsers = () => (
+    <div className="space-y-6">
+      <PageHeader 
+        title="All Users" 
+        actions={
+          <Button 
+            className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
+            startContent={<Plus className="h-4 w-4" />}
+            onPress={() => {
+              setUserForm({
+                name: '',
+                email: '',
+                password: '',
+                role: 'user',
+                status: 'active',
+                avatar: '',
+                phone: '',
+                dateOfBirth: '',
+                subscription: 'free'
+              });
+              setEditingUser(null);
+              onUserModalOpen();
+            }}
+          >
+            Add New User
+          </Button>
         }
-      ]} />
-
-      <Card className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
-        <CardHeader className="border-b border-slate-100">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 w-full">
-            <h3 className="text-xl font-semibold text-slate-900">{title} Management</h3>
-            <Input
-              placeholder={`Search ${title.toLowerCase()}...`}
-              startContent={<Search className="h-4 w-4" />}
-              className="w-full sm:w-64"
-              classNames={{
-                input: "bg-slate-50/50",
-                inputWrapper: "bg-slate-50/50 hover:bg-slate-100/50 border-slate-200/50"
-              }}
-            />
+      />
+      
+      <Card className="bg-white border border-gray-200">
+        <CardHeader className="border-b border-gray-200">
+          <div className="flex justify-between items-center w-full">
+            <h3 className="text-lg font-semibold text-gray-900">All Users ({users.length})</h3>
+            <div className="flex space-x-2">
+              <Input
+                placeholder="Search users..."
+                startContent={<Search className="h-4 w-4" />}
+                className="w-64"
+              />
+              <Select
+                selectedKeys={[userFilter]}
+                onSelectionChange={(keys) => setUserFilter(Array.from(keys)[0] as string)}
+                className="w-32"
+              >
+                <SelectItem key="all">All Users</SelectItem>
+                <SelectItem key="active">Active</SelectItem>
+                <SelectItem key="inactive">Inactive</SelectItem>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardBody className="p-0">
-          <div className="overflow-x-auto">
-            <Table removeWrapper aria-label="Data management table" classNames={{
-              table: "min-w-full",
-              thead: "bg-slate-50",
-              tbody: "divide-y divide-slate-100"
-            }}>
-              <TableHeader>
-                {columns.map((column, index) => (
-                  <TableColumn key={index} className={`bg-slate-50 text-slate-700 font-semibold py-4 px-6 ${index === 0 ? 'text-left' : index === columns.length - 1 ? 'text-center' : 'text-center'}`}>
-                    {column}
-                  </TableColumn>
-                ))}
-              </TableHeader>
-              <TableBody emptyContent={`No ${title.toLowerCase()} found`}>
-                {data.slice(0, 10).map((item, index) => (
-                  <TableRow key={index} className="hover:bg-slate-50/50 transition-colors">
-                    {columns.map((column, colIndex) => (
-                      <TableCell key={colIndex} className={`py-4 px-6 ${colIndex === 0 ? 'text-left' : colIndex === columns.length - 1 ? 'text-center' : 'text-center'}`}>
-                        {colIndex === 0 ? (
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
-                              <span className="text-white text-sm font-medium">{(item.name || item.user || item.title || 'Item').charAt(0).toUpperCase()}</span>
-                            </div>
-                            <span className="font-semibold text-slate-900">{item.name || item.user || item.title || `Item ${index + 1}`}</span>
-                          </div>
-                        ) : colIndex === columns.length - 1 ? (
-                          <div className="flex justify-center space-x-2">
-                            <Button size="sm" variant="light" className="hover:bg-blue-50 rounded-lg">
-                              <Eye className="h-4 w-4 text-blue-600" />
-                            </Button>
-                            <Button size="sm" variant="light" className="hover:bg-emerald-50 rounded-lg">
-                              <Edit className="h-4 w-4 text-emerald-600" />
-                            </Button>
-                            <Button size="sm" variant="light" className="hover:bg-red-50 rounded-lg">
-                              <Trash2 className="h-4 w-4 text-red-600" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className="font-medium text-slate-900">{Object.values(item)[colIndex] || 'N/A'}</span>
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <Table removeWrapper aria-label="Users table">
+            <TableHeader>
+              <TableColumn>USER</TableColumn>
+              <TableColumn>EMAIL</TableColumn>
+              <TableColumn>ROLE</TableColumn>
+              <TableColumn>STATUS</TableColumn>
+              <TableColumn>JOINED</TableColumn>
+              <TableColumn>ACTIONS</TableColumn>
+            </TableHeader>
+            <TableBody emptyContent="No users found">
+              {users.filter(user => userFilter === 'all' || user.status === userFilter).map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm font-medium">{user.name.charAt(0).toUpperCase()}</span>
+                      </div>
+                      <div>
+                        <p className="font-medium">{user.name}</p>
+                        <p className="text-sm text-gray-500">ID: {user.id.slice(-8)}</p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Chip size="sm" color="primary" variant="flat">
+                      {user.role}
+                    </Chip>
+                  </TableCell>
+                  <TableCell>
+                    <Chip 
+                      size="sm" 
+                      color={user.status === 'active' ? 'success' : 'danger'} 
+                      variant="flat"
+                    >
+                      {user.status}
+                    </Chip>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-gray-600">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-1">
+                      <Button 
+                        size="sm" 
+                        variant="light"
+                        onPress={() => {
+                          setEditingUser(user);
+                          setUserForm({
+                            name: user.name,
+                            email: user.email,
+                            password: '',
+                            role: user.role,
+                            status: user.status || 'active',
+                            avatar: user.avatar || '',
+                            phone: user.phone || '',
+                            dateOfBirth: user.dateOfBirth || '',
+                            subscription: user.subscription || 'free'
+                          });
+                          onUserModalOpen();
+                        }}
+                      >
+                        <Edit className="h-4 w-4 text-blue-600" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="light" 
+                        className="hover:bg-red-50"
+                        onPress={() => {
+                          if (confirm(`Delete user ${user.name}?`)) {
+                            setUsers(prev => prev.filter(u => u.id !== user.id));
+                            alert('User deleted successfully!');
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardBody>
       </Card>
+      
+      {/* User Modal */}
+      <Modal isOpen={isUserModalOpen} onClose={onUserModalClose} size="lg">
+        <ModalContent>
+          <ModalHeader>
+            {editingUser ? 'Edit User' : 'Add New User'}
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <Input
+                label="Full Name"
+                value={userForm.name}
+                onChange={(e) => setUserForm({...userForm, name: e.target.value})}
+                required
+              />
+              <Input
+                label="Email Address"
+                type="email"
+                value={userForm.email}
+                onChange={(e) => setUserForm({...userForm, email: e.target.value})}
+                required
+              />
+              {!editingUser && (
+                <Input
+                  label="Password"
+                  type="password"
+                  value={userForm.password}
+                  onChange={(e) => setUserForm({...userForm, password: e.target.value})}
+                  required
+                />
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <Select
+                  label="Role"
+                  selectedKeys={userForm.role ? [userForm.role] : []}
+                  onSelectionChange={(keys) => setUserForm({...userForm, role: Array.from(keys)[0] as any})}
+                >
+                  <SelectItem key="user">User</SelectItem>
+                  <SelectItem key="admin">Admin</SelectItem>
+                  <SelectItem key="moderator">Moderator</SelectItem>
+                </Select>
+                <Select
+                  label="Status"
+                  selectedKeys={userForm.status ? [userForm.status] : []}
+                  onSelectionChange={(keys) => setUserForm({...userForm, status: Array.from(keys)[0] as any})}
+                >
+                  <SelectItem key="active">Active</SelectItem>
+                  <SelectItem key="inactive">Inactive</SelectItem>
+                  <SelectItem key="suspended">Suspended</SelectItem>
+                </Select>
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="light" onPress={onUserModalClose}>
+              Cancel
+            </Button>
+            <Button 
+              color="primary" 
+              onPress={async () => {
+                if (!userForm.name.trim() || !userForm.email.trim()) {
+                  alert('Please fill in required fields');
+                  return;
+                }
+                
+                if (editingUser) {
+                  // Update user
+                  const updatedUser = { ...editingUser, ...userForm };
+                  setUsers(prev => prev.map(u => u.id === editingUser.id ? updatedUser : u));
+                  alert('User updated successfully!');
+                } else {
+                  // Add new user
+                  if (!userForm.password.trim()) {
+                    alert('Password is required for new users');
+                    return;
+                  }
+                  const newUser = {
+                    id: `user_${Date.now()}`,
+                    ...userForm,
+                    createdAt: new Date().toISOString(),
+                    totalSpent: 0
+                  };
+                  setUsers(prev => [...prev, newUser]);
+                  alert('User created successfully!');
+                }
+                
+                onUserModalClose();
+              }}
+            >
+              {editingUser ? 'Update User' : 'Create User'}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 
@@ -6332,6 +6521,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           </div>
         </div>
       </div>
+      {/* Success Modal */}
+      <SuccessModal 
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="Success!"
+        message="Video created successfully!"
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import acceptIcon from '../assets/accept-icon.svg';
 import {
   Card,
   CardBody,
@@ -226,39 +227,39 @@ export default function NextUIVideoAdmin({ user, onLogout }: NextUIVideoAdminPro
   const handleProductSubmit = async () => {
     // Basic form validation
     if (!productForm.title.trim()) {
-      alert('Please enter a product title');
+      showErrorMessage('Please enter a product title');
       return;
     }
     
     if (!productForm.description.trim()) {
-      alert('Please enter a product description');
+      showErrorMessage('Please enter a product description');
       return;
     }
     
     if (productForm.price <= 0) {
-      alert('Please enter a valid price');
+      showErrorMessage('Please enter a valid price');
       return;
     }
     
     // Validate video source
     if (productForm.videoSource === 'file' && !productForm.videoFile) {
-      alert('Please select a video file to upload');
+      showErrorMessage('Please select a video file to upload');
       return;
     }
     
     if ((productForm.videoSource === 'youtube' || productForm.videoSource === 'url') && !productForm.videoUrl.trim()) {
-      alert('Please enter a valid video URL');
+      showErrorMessage('Please enter a valid video URL');
       return;
     }
     
     // Validate cover image
     if (productForm.coverSource === 'file' && !productForm.coverFile) {
-      alert('Please select a cover image to upload');
+      showErrorMessage('Please select a cover image to upload');
       return;
     }
     
     if (productForm.coverSource === 'url' && !productForm.coverUrl.trim()) {
-      alert('Please enter a valid cover image URL');
+      showErrorMessage('Please enter a valid cover image URL');
       return;
     }
     
@@ -304,11 +305,11 @@ export default function NextUIVideoAdmin({ user, onLogout }: NextUIVideoAdminPro
       resetForm();
       onClose();
       
-      // Show success message
-      alert('Product saved successfully!');
+      // Show success message with accept icon
+      showSuccessMessage(isEditing ? 'Product updated successfully!' : 'Product added successfully!');
     } catch (error) {
       console.error('Error saving product:', error);
-      alert('Error saving product. Please try again.');
+      showErrorMessage('Error saving product. Please try again.');
     }
   };
 
@@ -434,6 +435,69 @@ export default function NextUIVideoAdmin({ user, onLogout }: NextUIVideoAdminPro
       style: 'currency',
       currency: 'USD'
     }).format(amount);
+  };
+
+  const showSuccessMessage = (message: string) => {
+    // Create success notification element
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center gap-3 animate-fade-in';
+    
+    // Create icon element
+    const icon = document.createElement('img');
+    icon.src = acceptIcon;
+    icon.alt = 'Success';
+    icon.className = 'w-5 h-5';
+    
+    // Create text element
+    const text = document.createElement('span');
+    text.className = 'font-medium';
+    text.textContent = message;
+    
+    notification.appendChild(icon);
+    notification.appendChild(text);
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transform = 'translateY(-20px)';
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 300);
+    }, 3000);
+  };
+
+  const showErrorMessage = (message: string) => {
+    // Create error notification element
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center gap-3 animate-fade-in';
+    
+    // Create icon element
+    const icon = document.createElement('span');
+    icon.textContent = '⚠️';
+    icon.className = 'text-lg';
+    
+    // Create text element
+    const text = document.createElement('span');
+    text.className = 'font-medium';
+    text.textContent = message;
+    
+    notification.appendChild(icon);
+    notification.appendChild(text);
+    document.body.appendChild(notification);
+    
+    // Remove after 4 seconds (longer for errors)
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transform = 'translateY(-20px)';
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 300);
+    }, 4000);
   };
 
   if (loading) {
@@ -618,7 +682,12 @@ export default function NextUIVideoAdmin({ user, onLogout }: NextUIVideoAdminPro
                 <Button 
                   color="primary" 
                   startContent={<Plus className="h-4 w-4" />}
-                  onClick={() => { resetForm(); onOpen(); }}
+                  onClick={() => { 
+                    resetForm(); 
+                    setIsEditing(false);
+                    setSelectedProduct(null);
+                    onOpen(); 
+                  }}
                 >
                   Add New Product
                 </Button>

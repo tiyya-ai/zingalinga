@@ -167,10 +167,35 @@ class VPSDataStore {
       // Always save to localStorage for persistence
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem(this.storageKey, JSON.stringify(this.memoryData));
-          console.log('✅ Data saved to localStorage successfully');
+          const dataToSave = JSON.stringify(this.memoryData);
+          localStorage.setItem(this.storageKey, dataToSave);
+          console.log('✅ Data saved to localStorage successfully', {
+            modules: this.memoryData.modules?.length || 0,
+            users: this.memoryData.users?.length || 0,
+            size: `${(dataToSave.length / 1024).toFixed(1)}KB`
+          });
         } catch (storageError) {
           console.error('❌ Failed to save to localStorage:', storageError);
+          // Try to clear some space and retry
+          if (storageError.name === 'QuotaExceededError') {
+            console.log('🧹 Attempting to clear localStorage space...');
+            try {
+              // Keep only essential data
+              const essentialData = {
+                ...this.memoryData,
+                modules: this.memoryData.modules?.map(m => ({
+                  ...m,
+                  // Convert large base64 data to placeholder for storage efficiency
+                  videoUrl: m.videoUrl?.startsWith('data:') ? 'local-video-data' : m.videoUrl,
+                  thumbnail: m.thumbnail?.startsWith('data:') ? 'local-thumbnail-data' : m.thumbnail
+                }))
+              };
+              localStorage.setItem(this.storageKey, JSON.stringify(essentialData));
+              console.log('✅ Data saved with compression');
+            } catch (retryError) {
+              console.error('❌ Failed to save even with compression:', retryError);
+            }
+          }
         }
       }
       
@@ -233,19 +258,30 @@ class VPSDataStore {
 
   async addProduct(product: any): Promise<boolean> {
     try {
-
+      console.log('💾 Adding product to data store:', product.title);
+      
       const data = await this.loadData();
       
       const newProduct = {
         ...product,
         id: product.id || Date.now().toString(),
-        createdAt: product.createdAt || new Date().toISOString()
+        createdAt: product.createdAt || new Date().toISOString(),
+        // Ensure all required fields are present
+        isActive: product.isActive !== undefined ? product.isActive : true,
+        isVisible: product.isVisible !== undefined ? product.isVisible : true,
+        rating: product.rating || 0,
+        totalRatings: product.totalRatings || 0,
+        features: product.features || [],
+        fullContent: product.fullContent || [],
+        difficulty: product.difficulty || 'beginner',
+        tags: product.tags || []
       };
       
       data.modules = data.modules || [];
       data.modules.push(newProduct);
       
       const success = await this.saveData(data);
+      console.log(success ? '✅ Product added successfully' : '❌ Failed to add product');
       
       return success;
     } catch (error) {
@@ -256,6 +292,8 @@ class VPSDataStore {
 
   async updateProduct(updatedProduct: any): Promise<boolean> {
     try {
+      console.log('💾 Updating product in data store:', updatedProduct.title);
+      
       const data = await this.loadData();
       data.modules = data.modules || [];
       const index = data.modules.findIndex(p => p.id === updatedProduct.id);
@@ -265,8 +303,11 @@ class VPSDataStore {
           ...updatedProduct,
           updatedAt: new Date().toISOString()
         };
-        return await this.saveData(data);
+        const success = await this.saveData(data);
+        console.log(success ? '✅ Product updated successfully' : '❌ Failed to update product');
+        return success;
       }
+      console.log('❌ Product not found for update:', updatedProduct.id);
       return false;
     } catch (error) {
       console.error('Error updating product:', error);
@@ -276,10 +317,21 @@ class VPSDataStore {
 
   async deleteProduct(productId: string): Promise<boolean> {
     try {
+      console.log('💾 Deleting product from data store:', productId);
+      
       const data = await this.loadData();
       data.modules = data.modules || [];
+      const originalLength = data.modules.length;
       data.modules = data.modules.filter(p => p.id !== productId);
-      return await this.saveData(data);
+      
+      if (data.modules.length < originalLength) {
+        const success = await this.saveData(data);
+        console.log(success ? '✅ Product deleted successfully' : '❌ Failed to delete product');
+        return success;
+      } else {
+        console.log('❌ Product not found for deletion:', productId);
+        return false;
+      }
     } catch (error) {
       console.error('Error deleting product:', error);
       return false;

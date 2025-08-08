@@ -2433,6 +2433,7 @@ export default function ProfessionalUserDashboard({
                         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
                       }
                     } catch (error) {
+                      console.error('❌ Profile update error:', error);
                       alert('❌ Failed to update profile. Please try again.');
                     }
                   }}

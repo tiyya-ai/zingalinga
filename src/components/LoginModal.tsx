@@ -195,25 +195,38 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
         // Check static users first
         let user = staticUsers.find(u => u.email === sanitizedEmail && u.password === sanitizedPassword);
+        console.log('Static user check:', { email: sanitizedEmail, found: !!user });
         
-        // If not found in static users, check database for guest accounts
+        // If not found in static users, check database users
         if (!user) {
           try {
             const { vpsDataStore } = await import('../utils/vpsDataStore');
             const data = await vpsDataStore.loadData();
+            
+            console.log('📊 VPS DATA CHECK:');
+            console.log('- Total users in VPS:', data.users?.length || 0);
+            console.log('- All user emails:', data.users?.map(u => u.email) || []);
+            console.log('- Looking for email:', sanitizedEmail);
+            
             const dbUser = (data.users || []).find(u => u.email === sanitizedEmail);
+            console.log('- User found:', !!dbUser);
             
             if (dbUser) {
-              // For guest accounts, we'll use a simple password (email without @domain)
-              const simplePassword = sanitizedEmail.split('@')[0];
-              if (sanitizedPassword === simplePassword || sanitizedPassword === 'guest123') {
+              // Check if password matches exactly
+              console.log('- Stored password:', dbUser.password);
+              console.log('- Provided password:', sanitizedPassword);
+              console.log('- Passwords match:', dbUser.password === sanitizedPassword);
+              
+              if (dbUser.password === sanitizedPassword) {
                 user = {
                   ...dbUser,
-                  password: sanitizedPassword,
                   lastLogin: new Date().toISOString(),
                   isActive: true
                 };
+                console.log('✅ Login successful for VPS user');
               }
+            } else {
+              console.log('❌ User not found in VPS database');
             }
           } catch (error) {
             console.warn('Error checking database users:', error);
