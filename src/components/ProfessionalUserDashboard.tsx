@@ -6,7 +6,7 @@ import { checkVideoAccess, getVideoUrl } from '../utils/videoAccess';
 import { vpsDataStore } from '../utils/vpsDataStore';
 import { getVideoThumbnail } from '../utils/videoUtils';
 import { ChatModal } from './ChatModal';
-import ClientOnly from './ClientOnly';
+import { ClientOnly } from './ClientOnly';
 import dynamic from 'next/dynamic';
 
 import { VideoCard } from './VideoCard';
@@ -202,8 +202,8 @@ export default function ProfessionalUserDashboard({
       let thumbnail = module.thumbnail || '';
       
       // Handle File objects for video URLs
-      if (module.videoUrl instanceof File) {
-        videoUrl = URL.createObjectURL(module.videoUrl);
+      if (module.videoUrl && typeof module.videoUrl === 'object' && 'type' in module.videoUrl) {
+        videoUrl = URL.createObjectURL(module.videoUrl as File);
       }
       // Handle base64 data URLs (from admin uploads)
       else if (typeof module.videoUrl === 'string' && module.videoUrl.startsWith('data:')) {
@@ -211,8 +211,8 @@ export default function ProfessionalUserDashboard({
       }
       
       // Handle File objects for thumbnails
-      if (module.thumbnail instanceof File) {
-        thumbnail = URL.createObjectURL(module.thumbnail);
+      if (module.thumbnail && typeof module.thumbnail === 'object' && 'type' in module.thumbnail) {
+        thumbnail = URL.createObjectURL(module.thumbnail as File);
       }
       // Handle base64 data URLs for thumbnails
       else if (typeof module.thumbnail === 'string' && module.thumbnail.startsWith('data:')) {
@@ -249,10 +249,24 @@ export default function ProfessionalUserDashboard({
         }
       }
       
-
+      return {
+        id: module.id,
+        title: module.title || 'Untitled Video',
+        thumbnail: thumbnail,
+        duration: module.duration || '5:00',
+        description: module.description || '',
+        videoUrl: videoUrl,
+        category: module.category || 'Videos',
+        isPremium: module.isPremium || false,
+        price: module.price || 0,
+        rating: (module as any).rating,
+        views: (module as any).views,
+        tags: (module as any).tags,
+        isYouTube: isYouTube
+      };
     });
 
-  const displayVideos = adminVideos;
+  const displayVideos = adminVideos.filter(video => video && video.id);
 
 
 
@@ -262,8 +276,8 @@ export default function ProfessionalUserDashboard({
       let thumbnail = '';
       
       // Priority 1: Handle File objects
-      if (module.thumbnail instanceof File) {
-        thumbnail = URL.createObjectURL(module.thumbnail);
+      if (module.thumbnail && typeof module.thumbnail === 'object' && 'type' in module.thumbnail) {
+        thumbnail = URL.createObjectURL(module.thumbnail as File);
       }
       // Priority 2: Handle base64 data URLs
       else if (typeof module.thumbnail === 'string' && module.thumbnail.startsWith('data:')) {
@@ -360,8 +374,8 @@ export default function ProfessionalUserDashboard({
     let thumbnail = '';
     
     // Priority 1: File objects
-    if (module.thumbnail instanceof File) {
-      thumbnail = URL.createObjectURL(module.thumbnail);
+    if (module.thumbnail && typeof module.thumbnail === 'object' && 'type' in module.thumbnail) {
+      thumbnail = URL.createObjectURL(module.thumbnail as File);
     }
     // Priority 2: Base64 data URLs
     else if (typeof module.thumbnail === 'string' && module.thumbnail.startsWith('data:')) {

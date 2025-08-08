@@ -269,7 +269,11 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
       case 'coppa':
         return <COPPACompliancePage onBack={() => handleNavigation('home')} onNavigate={handleNavigation} onLoginClick={() => setShowLoginModal(true)} />;
       case 'profile':
-        return <UserProfilePage onBack={() => handleNavigation('home')} onNavigate={handleNavigation} />;
+        if (!user) {
+          setShowLoginModal(true);
+          return <div>Please login to view profile</div>;
+        }
+        return <UserProfilePage user={user} onBack={() => handleNavigation('home')} onNavigate={handleNavigation} />;
       case 'packages':
         return <PackagesPage onBack={() => handleNavigation('home')} />;
 
