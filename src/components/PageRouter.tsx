@@ -49,11 +49,25 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session on page load
-    const initializeAuth = async () => {
+    const initializeApp = async () => {
+      if (typeof window === 'undefined') return;
+      
+      // Set page based on current URL first
+      const path = window.location.pathname;
+      if (path === '/packages') {
+        setCurrentPage('packages');
+      } else if (path === '/about') {
+        setCurrentPage('about');
+      } else if (path === '/contact') {
+        setCurrentPage('contact');
+      } else if (path === '/help') {
+        setCurrentPage('help');
+      } else {
+        setCurrentPage('home');
+      }
+      
+      // Check for existing session
       try {
-        if (typeof window === 'undefined') return;
-        
         const session = authManager.getCurrentSession();
         if (session && authManager.isSessionValid(session)) {
           console.log('✅ Valid session found:', session.user.email, session.user.role);
@@ -62,7 +76,6 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
           vpsDataStore.setCurrentUser(session.user);
         } else {
           console.log('❌ No valid session found');
-          // Clear any invalid session data
           authManager.logout();
         }
       } catch (error) {
@@ -73,25 +86,11 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
           console.error('Error during logout:', logoutError);
         }
       }
+      
+      setIsLoading(false);
     };
     
-    if (typeof window !== 'undefined') {
-      initializeAuth();
-    }
-    
-    // Set page based on current URL
-    const path = window.location.pathname;
-    if (path === '/packages') {
-      setCurrentPage('packages');
-    } else if (path === '/about') {
-      setCurrentPage('about');
-    } else if (path === '/contact') {
-      setCurrentPage('contact');
-    } else if (path === '/help') {
-      setCurrentPage('help');
-    } else {
-      setCurrentPage('home');
-    }
+    initializeApp();
     
     // Handle browser back/forward buttons
     const handlePopState = () => {
@@ -200,6 +199,8 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
   useEffect(() => {
     loadInitialData();
   }, []);
+  
+
 
 
 
@@ -303,7 +304,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
         />
         <CartProvider>
           <ClientOnly>
-            <div>
+            <div suppressHydrationWarning>
               {content}
             </div>
           </ClientOnly>

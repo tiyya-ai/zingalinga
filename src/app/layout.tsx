@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react'
 import './globals.css'
+import { NextUIProvider } from '@nextui-org/react'
 
 export default function RootLayout({
   children,
@@ -7,7 +10,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="font-inter">
+    <html lang="en" className="font-inter" suppressHydrationWarning>
       <head>
         <title>Zinga Linga - Educational Entertainment for Kids</title>
         <meta name="description" content="Educational videos and content for children aged 3-12" />
@@ -20,7 +23,11 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning className="font-inter antialiased">
-        {children}
+        <NextUIProvider>
+          <div suppressHydrationWarning>
+            {children}
+          </div>
+        </NextUIProvider>
       </body>
     </html>
   )

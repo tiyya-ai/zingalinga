@@ -698,20 +698,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   // Render functions for each section
   const renderOverview = () => {
-    if (!dataLoaded) {
-      return (
-        <div className="space-y-8">
-          <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading your dashboard data...</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
     
     return (
       <div className="space-y-8">
@@ -1882,7 +1868,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
                     classNames={{
                       input: "bg-white text-gray-900 placeholder:text-gray-400",
-                      inputWrapper: "bg-white border-2 border-gray-200 hover:border-blue-400 focus-within:border-blue-500 shadow-sm hover:shadow-md transition-all duration-200"
+                      inputWrapper: "bg-white border-2 border-gray-200 hover:border-blue-400 focus-within:border-blue-500 shadow-sm hover:shadow-md transition-all duration-200 flex items-center"
                     }}
                   />
                 </div>
@@ -1898,8 +1884,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     size="lg"
                     radius="lg"
                     classNames={{
-                      trigger: "bg-white border-2 border-gray-200 hover:border-blue-400 focus:border-blue-500 shadow-sm hover:shadow-md transition-all duration-200",
-                      value: "text-gray-900",
+                      trigger: "bg-white border-2 border-gray-200 hover:border-blue-400 focus:border-blue-500 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-3",
+                      value: "text-gray-900 flex items-center gap-3 flex-1",
                       popoverContent: "bg-white border border-gray-200 shadow-lg",
                       listbox: "bg-white"
                     }}
@@ -2318,7 +2304,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   }}
                   aria-label="Video language"
                   classNames={{
-                    trigger: "bg-white border-gray-300 hover:border-blue-400 focus:border-blue-500"
+                    trigger: "bg-white border-gray-300 hover:border-blue-400 focus:border-blue-500",
+                    value: "text-gray-900",
+                    popoverContent: "bg-white border border-gray-200 shadow-lg",
+                    listbox: "bg-white"
                   }}
                 >
                   <SelectItem key="English" value="English">English</SelectItem>
@@ -2337,7 +2326,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   }}
                   aria-label="Video status"
                   classNames={{
-                    trigger: "bg-white border-gray-300 hover:border-blue-400 focus:border-blue-500"
+                    trigger: "bg-white border-gray-300 hover:border-blue-400 focus:border-blue-500",
+                    value: "text-gray-900",
+                    popoverContent: "bg-white border border-gray-200 shadow-lg",
+                    listbox: "bg-white"
                   }}
                 >
                   <SelectItem key="active" value="active">Active</SelectItem>
@@ -2465,7 +2457,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   size="lg"
                   classNames={{
                     input: "bg-white focus:ring-0 focus:ring-offset-0 shadow-none",
-                    inputWrapper: "bg-white border-gray-300 hover:border-orange-400 focus-within:border-orange-500 shadow-sm"
+                    inputWrapper: "bg-white border-gray-300 hover:border-orange-400 focus-within:border-orange-500 shadow-sm flex items-center",
+                    innerWrapper: "flex items-center"
                   }}
                 />
               </div>
@@ -2910,30 +2903,37 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             {editingUser ? 'Edit User' : 'Add New User'}
           </ModalHeader>
           <ModalBody>
-            <div className="space-y-4">
-              <Input
-                label="Full Name"
-                value={userForm.name}
-                onChange={(e) => setUserForm({...userForm, name: e.target.value})}
-                required
-              />
-              <Input
-                label="Email Address"
-                type="email"
-                value={userForm.email}
-                onChange={(e) => setUserForm({...userForm, email: e.target.value})}
-                required
-              />
-              {!editingUser && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <Input
-                  label="Password"
-                  type="password"
-                  value={userForm.password}
-                  onChange={(e) => setUserForm({...userForm, password: e.target.value})}
+                  label="Full Name"
+                  value={userForm.name}
+                  onChange={(e) => setUserForm({...userForm, name: e.target.value})}
                   required
                 />
-              )}
-              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Email Address"
+                  type="email"
+                  value={userForm.email}
+                  onChange={(e) => setUserForm({...userForm, email: e.target.value})}
+                  required
+                />
+                {!editingUser && (
+                  <Input
+                    label="Password"
+                    type="password"
+                    value={userForm.password}
+                    onChange={(e) => setUserForm({...userForm, password: e.target.value})}
+                    required
+                  />
+                )}
+                <Input
+                  label="Phone"
+                  value={userForm.phone}
+                  onChange={(e) => setUserForm({...userForm, phone: e.target.value})}
+                />
+              </div>
+              <div className="space-y-4">
                 <Select
                   label="Role"
                   selectedKeys={userForm.role ? [userForm.role] : []}
@@ -2952,6 +2952,22 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   <SelectItem key="inactive">Inactive</SelectItem>
                   <SelectItem key="suspended">Suspended</SelectItem>
                 </Select>
+                <Select
+                  label="Subscription"
+                  selectedKeys={userForm.subscription ? [userForm.subscription] : []}
+                  onSelectionChange={(keys) => setUserForm({...userForm, subscription: Array.from(keys)[0] as any})}
+                >
+                  <SelectItem key="free">Free</SelectItem>
+                  <SelectItem key="basic">Basic</SelectItem>
+                  <SelectItem key="premium">Premium</SelectItem>
+                  <SelectItem key="family">Family</SelectItem>
+                </Select>
+                <Input
+                  label="Date of Birth"
+                  type="date"
+                  value={userForm.dateOfBirth}
+                  onChange={(e) => setUserForm({...userForm, dateOfBirth: e.target.value})}
+                />
               </div>
             </div>
           </ModalBody>
@@ -6396,13 +6412,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               {/* User Menu */}
               <Dropdown>
                 <DropdownTrigger>
-                  <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-800 rounded-lg p-2 transition-colors">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <div className="flex items-center space-x-2 cursor-pointer hover:bg-gray-800 rounded-lg p-2 transition-colors admin-header-profile">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center profile-icon">
                       <span className="text-white text-sm font-medium">{(user?.name || 'Admin').charAt(0).toUpperCase()}</span>
                     </div>
-                    <div className="hidden md:block text-left">
+                    <div className="hidden md:block text-left profile-text ml-1">
                       <p className="text-sm font-semibold text-white">{user?.name || 'Admin'}</p>
-                      <p className="text-xs text-gray-400">Administrator</p>
                     </div>
                   </div>
                 </DropdownTrigger>
