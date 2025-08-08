@@ -1,7 +1,6 @@
-// Simplified Data Store
+// File-based Data Store
 import { User, Module, Purchase, ContentFile } from '../types';
 import { modules as defaultModules } from '../data/modules';
-import { realTimeSync } from './realTimeSync';
 
 interface UploadQueueItem {
   id: string;
@@ -38,19 +37,26 @@ interface AppData {
   contentFiles: ContentFile[];
   uploadQueue: UploadQueueItem[];
   settings?: AppSettings;
+  lastUpdated?: string;
+  lastLoaded?: string;
 }
 
 class VPSDataStore {
   private currentUser: User | null = null;
   private storageKey = 'zinga-linga-app-data';
-  private apiEndpoint = '/api/data'; // Global data API endpoint
+  private memoryData: AppData | null = null;
 
   constructor() {
-    // Simple data store initialized
+    // File-based data store initialized
   }
 
   setCurrentUser(user: User | null) {
     this.currentUser = user;
+  }
+
+  clearMemoryCache() {
+    this.memoryData = null;
+
   }
 
   // Get default data structure
@@ -80,84 +86,13 @@ class VPSDataStore {
           lastLogin: new Date().toISOString()
         }
       ],
-      modules: [
-        ...defaultModules,
-        {
-          id: 'sample_video_001',
-          title: 'Sample Educational Video',
-          description: 'A sample video for testing the admin dashboard',
-          price: 9.99,
-          category: 'education',
-          thumbnail: '/placeholder-video.jpg',
-          videoUrl: '/sample-video.mp4',
-          duration: '15:30',
-          estimatedDuration: '15:30',
-          createdAt: new Date().toISOString(),
-          isActive: true,
-          rating: 4.5,
-          ageRange: '3-8 years'
-        },
-        {
-          id: 'sample_video_002',
-          title: 'Interactive Learning Module',
-          description: 'An interactive module for children',
-          price: 14.99,
-          category: 'interactive',
-          thumbnail: '/placeholder-video.jpg',
-          videoUrl: '/interactive-module.mp4',
-          duration: '22:45',
-          estimatedDuration: '22:45',
-          createdAt: new Date().toISOString(),
-          isActive: true,
-          rating: 4.8,
-          ageRange: '5-10 years'
-        }
-      ],
+      modules: [...defaultModules],
       purchases: [],
       contentFiles: [],
-      uploadQueue: [
-        {
-          id: 'upload_001',
-          fileName: 'educational-math-basics.mp4',
-          title: 'Math Basics for Kids',
-          size: '125 MB',
-          status: 'processing',
-          progress: 75,
-          uploadedAt: new Date(Date.now() - 1800000).toISOString(), // 30 min ago
-          duration: '15:30'
-        },
-        {
-          id: 'upload_002',
-          fileName: 'science-experiments.mp4',
-          title: 'Fun Science Experiments',
-          size: '89 MB',
-          status: 'encoding',
-          progress: 45,
-          uploadedAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-          duration: '12:15'
-        },
-        {
-          id: 'upload_003',
-          fileName: 'story-time-adventure.mp4',
-          title: 'Adventure Story Time',
-          size: '156 MB',
-          status: 'completed',
-          progress: 100,
-          uploadedAt: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-          duration: '18:45'
-        },
-        {
-          id: 'upload_004',
-          fileName: 'alphabet-learning.mp4',
-          title: 'Learning the Alphabet',
-          size: '67 MB',
-          status: 'failed',
-          progress: 0,
-          uploadedAt: new Date(Date.now() - 10800000).toISOString(), // 3 hours ago
-          errorMessage: 'File format not supported'
-        }
-      ],
-      settings: this.getDefaultSettings()
+      uploadQueue: [],
+      settings: this.getDefaultSettings(),
+      lastUpdated: new Date().toISOString(),
+      lastLoaded: new Date().toISOString()
     };
   }
 
@@ -179,82 +114,92 @@ class VPSDataStore {
     };
   }
 
-  // Load data with global synchronization
+  // Load data from API
   async loadData(): Promise<AppData> {
     try {
-      // Try to load from VPS API first
-      const response = await fetch(this.apiEndpoint);
+      // Return memory data if available and recent
+      if (this.memoryData) {
+
+        return this.memoryData;
+      }
+      
+      // Load from API
+      const response = await fetch('/api/data');
       if (response.ok) {
         const data = await response.json();
+        this.memoryData = data;
+
         return data;
       }
     } catch (error) {
-      console.warn('Failed to load data from VPS, trying localStorage:', error);
+
     }
     
     try {
-      // Fallback to localStorage if API fails
+      // Fallback to localStorage
       if (typeof window !== 'undefined') {
         const savedData = localStorage.getItem(this.storageKey);
         if (savedData) {
           const parsedData = JSON.parse(savedData);
-          const defaultData = this.getDefaultData();
-          return {
-            ...defaultData,
-            ...parsedData,
-            users: parsedData.users || defaultData.users,
-            modules: parsedData.modules || defaultData.modules,
-            purchases: parsedData.purchases || defaultData.purchases,
-            contentFiles: parsedData.contentFiles || defaultData.contentFiles,
-            uploadQueue: parsedData.uploadQueue || defaultData.uploadQueue,
-            settings: parsedData.settings || defaultData.settings
-          };
+          this.memoryData = parsedData;
+
+          return parsedData;
         }
       }
     } catch (error) {
-      console.warn('Failed to load saved data, using defaults:', error);
+
     }
     
-    return this.getDefaultData();
+    const defaultData = this.getDefaultData();
+    this.memoryData = defaultData;
+    return defaultData;
   }
 
-  // Save data with global synchronization
+  // Save data to API
   async saveData(data: AppData): Promise<boolean> {
     try {
-      if (typeof window !== 'undefined') {
-        // Save only essential data
-        const essentialData = {
-          users: data.users?.map(u => ({
-            id: u.id,
-            name: u.name,
-            email: u.email,
-            role: u.role,
-            phone: u.phone,
-            address: u.address,
-            totalSpent: u.totalSpent,
-            createdAt: u.createdAt
-          })) || [],
-          modules: data.modules?.map(m => ({
-            id: m.id,
-            title: m.title,
-            price: m.price,
-            category: m.category,
-            duration: m.duration,
-            views: m.views,
-            isActive: m.isActive
-          })) || [],
-          purchases: data.purchases || []
-        };
+      // Always save to memory first
+      this.memoryData = {
+        ...data,
+        lastUpdated: new Date().toISOString()
+      };
+
+      
+      // Save to API
+      const response = await fetch('/api/data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(this.memoryData)
+      });
+      
+      if (response.ok) {
+
         
-        localStorage.setItem(this.storageKey, JSON.stringify(essentialData));
+        // Also save to localStorage as backup
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(this.storageKey, JSON.stringify(this.memoryData));
+        }
         return true;
+      } else {
+
+        return false;
+      }
+    } catch (error) {
+
+      
+      // Fallback to localStorage if API fails
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(this.storageKey, JSON.stringify(this.memoryData));
+
+          return true;
+        } catch (storageError) {
+
+        }
       }
       return false;
-    } catch (error) {
-      if (error.name === 'QuotaExceededError') {
-        localStorage.clear();
-      }
-      return true; // Return true to prevent blocking
     }
   }
 
@@ -264,7 +209,7 @@ class VPSDataStore {
       const data = await this.loadData();
       return data.settings || this.getDefaultSettings();
     } catch (error) {
-      console.error('Error getting settings:', error);
+
       return this.getDefaultSettings();
     }
   }
@@ -293,17 +238,23 @@ class VPSDataStore {
 
   async addProduct(product: any): Promise<boolean> {
     try {
+
       const data = await this.loadData();
+      
       const newProduct = {
         ...product,
         id: product.id || Date.now().toString(),
         createdAt: product.createdAt || new Date().toISOString()
       };
+      
       data.modules = data.modules || [];
       data.modules.push(newProduct);
-      return await this.saveData(data);
+      
+      const success = await this.saveData(data);
+      
+      return success;
     } catch (error) {
-      console.error('Error adding product:', error);
+      console.error('❌ Error adding product:', error);
       return false;
     }
   }
@@ -319,11 +270,8 @@ class VPSDataStore {
           ...updatedProduct,
           updatedAt: new Date().toISOString()
         };
-        const success = await this.saveData(data);
-        console.log('Product update result:', success);
-        return success;
+        return await this.saveData(data);
       }
-      console.log('Product not found for update:', updatedProduct.id);
       return false;
     } catch (error) {
       console.error('Error updating product:', error);
@@ -410,11 +358,8 @@ class VPSDataStore {
       const index = data.users.findIndex(u => u.id === userId);
       if (index !== -1) {
         data.users[index] = { ...data.users[index], ...updatedUser };
-        const success = await this.saveData(data);
-        console.log('User update result:', success, 'Updated user:', data.users[index]);
-        return success;
+        return await this.saveData(data);
       }
-      console.log('User not found for update:', userId);
       return false;
     } catch (error) {
       console.error('Error updating user:', error);
@@ -440,7 +385,6 @@ class VPSDataStore {
       data.users = data.users || [];
       const index = data.users.findIndex(u => u.id === userId);
       if (index !== -1) {
-        // In a real app, you'd verify the current password first
         data.users[index].password = newPassword;
         return await this.saveData(data);
       }
@@ -456,21 +400,18 @@ class VPSDataStore {
       const data = await this.loadData();
       const user = data.users?.find(u => u.id === userId);
       if (user) {
-        // Generate watch history from actual admin videos if user doesn't have any
         if (!user.watchHistory) {
           const availableVideos = data.modules || [];
           if (availableVideos.length > 0) {
-            // Create watch history from first 3 available videos
             user.watchHistory = availableVideos.slice(0, 3).map((video, index) => ({
               id: video.id,
               title: video.title,
               thumbnail: video.thumbnail || video.imageUrl || '/placeholder-video.jpg',
-              progress: [65, 30, 85][index] || 50, // Different progress levels
+              progress: [65, 30, 85][index] || 50,
               duration: video.estimatedDuration || video.duration || '15:00',
-              lastWatched: new Date(Date.now() - (86400000 * (index + 1))).toISOString() // Different days ago
+              lastWatched: new Date(Date.now() - (86400000 * (index + 1))).toISOString()
             }));
           } else {
-            // Fallback to empty array if no videos available
             user.watchHistory = [];
           }
         }
@@ -520,7 +461,6 @@ class VPSDataStore {
       const data = await this.loadData();
       const user = data.users?.find(u => u.id === userId);
       if (user) {
-        // Return user profile data including referral information
         return {
           profileImage: user.profileImage || null,
           referralCode: user.referralCode || this.generateReferralCode(userId),
@@ -544,11 +484,9 @@ class VPSDataStore {
       data.users = data.users || [];
       const index = data.users.findIndex(u => u.id === userId);
       if (index !== -1) {
-        // Update user with profile data
         data.users[index] = { 
           ...data.users[index], 
           ...profileData,
-          // Ensure referral code is generated if not provided
           referralCode: profileData.referralCode || data.users[index].referralCode || this.generateReferralCode(userId)
         };
         return await this.saveData(data);
@@ -579,7 +517,7 @@ class VPSDataStore {
     try {
       const data = await this.loadData();
       data.uploadQueue = data.uploadQueue || [];
-      data.uploadQueue.unshift(uploadItem); // Add to beginning of queue
+      data.uploadQueue.unshift(uploadItem);
       return await this.saveData(data);
     } catch (error) {
       console.error('Error adding to upload queue:', error);

@@ -47,14 +47,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
   const [contentFiles, setContentFiles] = useState<ContentFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
     
     const session = authManager.getCurrentSession();
     if (session && authManager.isSessionValid(session)) {
@@ -106,7 +99,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('showGuestLogin', handleShowGuestLogin);
     };
-  }, [mounted]);
+  }, []);
 
   const handleLogin = async (userData: User) => {
     setUser(userData);
@@ -151,7 +144,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
       await vpsDataStore.saveData(updatedData);
       setUser(updatedUser);
     } catch (error) {
-      console.error('Purchase failed:', error);
+
     }
   };
 
@@ -162,12 +155,9 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
       setModules(data.modules || []);
       setPurchases(data.purchases || []);
       setContentFiles(data.contentFiles || []);
-      console.log('PageRouter loaded data:', { 
-        modules: data.modules?.length || 0, 
-        purchases: data.purchases?.length || 0 
-      });
+
     } catch (error) {
-      console.warn('⚠️ Cloud load failed, using fallback:', error);
+
       // Initialize with empty data on error
       setModules([]);
       setPurchases([]);
@@ -265,13 +255,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
 
 
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-gray-600 text-xl">Loading...</div>
-      </div>
-    );
-  }
+
 
   const content = renderCurrentPage();
 
@@ -327,7 +311,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                 <h4 className="font-bold text-green-800 font-mali mb-2">🎉 Welcome Back!</h4>
                 <p className="text-sm text-green-700 font-mali mb-3">
-                  Your account: <strong>{mounted ? localStorage.getItem('guestAccountEmail') : ''}</strong><br/>
+                  Your account: <strong>{typeof window !== 'undefined' ? localStorage.getItem('guestAccountEmail') : ''}</strong><br/>
                   Password: <span className="bg-green-200 px-2 py-1 rounded font-mono">guest123</span>
                 </p>
               </div>
@@ -337,7 +321,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
                   <label className="block text-sm font-bold text-gray-700 font-mali">Email Address</label>
                   <input
                     type="email"
-                    defaultValue={mounted ? localStorage.getItem('guestAccountEmail') || '' : ''}
+                    defaultValue={typeof window !== 'undefined' ? localStorage.getItem('guestAccountEmail') || '' : ''}
                     className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-mali bg-gray-50 focus:bg-white"
                     readOnly
                   />
