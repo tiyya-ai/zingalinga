@@ -164,41 +164,36 @@ class VPSDataStore {
         lastUpdated: new Date().toISOString()
       };
 
-      
-      // Save to API
-      const response = await fetch('/api/data', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(this.memoryData)
-      });
-      
-      if (response.ok) {
-
-        
-        // Also save to localStorage as backup
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(this.storageKey, JSON.stringify(this.memoryData));
-        }
-        return true;
-      } else {
-
-        return false;
-      }
-    } catch (error) {
-
-      
-      // Fallback to localStorage if API fails
+      // Always save to localStorage for persistence
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem(this.storageKey, JSON.stringify(this.memoryData));
-
-          return true;
+          console.log('✅ Data saved to localStorage successfully');
         } catch (storageError) {
-
+          console.error('❌ Failed to save to localStorage:', storageError);
         }
       }
+      
+      // Try to save to API (optional)
+      try {
+        const response = await fetch('/api/data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(this.memoryData)
+        });
+        
+        if (response.ok) {
+          console.log('✅ Data saved to API successfully');
+        }
+      } catch (apiError) {
+        console.log('⚠️ API save failed, using localStorage only');
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to save data:', error);
       return false;
     }
   }
@@ -335,16 +330,29 @@ class VPSDataStore {
   async addUser(user: any): Promise<boolean> {
     try {
       const data = await this.loadData();
+      
+      // Check if user already exists
+      const existingUser = data.users?.find(u => u.email === user.email);
+      if (existingUser) {
+        console.log('User already exists:', user.email);
+        return false;
+      }
+      
       const newUser = {
         ...user,
-        id: user.id || Date.now().toString(),
+        id: user.id || `user_${Date.now()}`,
         createdAt: user.createdAt || new Date().toISOString(),
         purchasedModules: user.purchasedModules || [],
-        totalSpent: user.totalSpent || 0
+        totalSpent: user.totalSpent || 0,
+        isActive: true
       };
+      
       data.users = data.users || [];
       data.users.push(newUser);
-      return await this.saveData(data);
+      
+      const success = await this.saveData(data);
+      console.log('User added successfully:', success, newUser.email);
+      return success;
     } catch (error) {
       console.error('Error adding user:', error);
       return false;

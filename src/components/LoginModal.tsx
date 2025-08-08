@@ -21,14 +21,51 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [csrfToken, setCsrfToken] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, text: '', color: '' });
 
   useEffect(() => {
     if (isOpen) {
       setCsrfToken(Math.random().toString(36).substring(2, 15));
-      
-
     }
   }, [isOpen]);
+
+  const checkPasswordStrength = (password: string) => {
+    let score = 0;
+    let text = '';
+    let color = '';
+    
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    
+    switch (score) {
+      case 0:
+      case 1:
+        text = 'Very Weak';
+        color = 'text-red-500';
+        break;
+      case 2:
+        text = 'Weak';
+        color = 'text-orange-500';
+        break;
+      case 3:
+        text = 'Fair';
+        color = 'text-yellow-500';
+        break;
+      case 4:
+        text = 'Good';
+        color = 'text-blue-500';
+        break;
+      case 5:
+        text = 'Strong';
+        color = 'text-green-500';
+        break;
+    }
+    
+    return { score, text, color };
+  };
 
   const resetForm = () => {
     setEmail('');
@@ -171,7 +208,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             localStorage.removeItem('purchasedItems');
           }, 1000);
         } else {
-          setError('Invalid email or password. For guest accounts, try password "guest123"');
+          setError('Invalid email or password.');
         }
       }
     } catch (error) {
@@ -308,7 +345,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(sanitizeInput(e.target.value))}
+                  onChange={(e) => {
+                    const newPassword = sanitizeInput(e.target.value);
+                    setPassword(newPassword);
+                    if (isRegisterMode && newPassword) {
+                      setPasswordStrength(checkPasswordStrength(newPassword));
+                    }
+                  }}
                   className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 font-mali bg-gray-50 focus:bg-white"
                   placeholder="Enter your password"
                   required
@@ -325,6 +368,38 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                   )}
                 </button>
               </div>
+              {isRegisterMode && password && passwordStrength.text && (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mali text-gray-600">Password strength:</span>
+                    <span className={`text-xs font-mali font-bold ${passwordStrength.color}`}>
+                      {passwordStrength.text}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                    <div 
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        passwordStrength.score <= 1 ? 'bg-red-500' :
+                        passwordStrength.score === 2 ? 'bg-orange-500' :
+                        passwordStrength.score === 3 ? 'bg-yellow-500' :
+                        passwordStrength.score === 4 ? 'bg-blue-500' : 'bg-green-500'
+                      }`}
+                      style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+              {!isRegisterMode && (
+                <div className="mt-2 text-right">
+                  <button
+                    type="button"
+                    onClick={() => alert('Please contact support for password reset.')}
+                    className="text-xs text-amber-700 hover:text-orange-800 font-mali transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Confirm Password Field (Register only) */}
@@ -359,6 +434,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                 </div>
               </div>
             )}
+
+
 
             {/* Submit Button */}
             <button

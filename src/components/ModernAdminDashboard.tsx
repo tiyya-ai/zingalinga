@@ -3376,16 +3376,37 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                                 audio = document.createElement('audio');
                                 audio.id = audioId;
                                 audio.preload = 'metadata';
-                                audio.src = audioUrl;
+                                audio.controls = false;
                                 document.body.appendChild(audio);
-                              } else if (audio.src !== audioUrl) {
-                                audio.src = audioUrl;
+                              }
+                              
+                              // Set source with multiple format support
+                              if (audio.src !== audioUrl) {
+                                audio.innerHTML = '';
+                                
+                                // Add multiple source elements for better compatibility
+                                const source1 = document.createElement('source');
+                                source1.src = audioUrl;
+                                source1.type = 'audio/mpeg';
+                                audio.appendChild(source1);
+                                
+                                const source2 = document.createElement('source');
+                                source2.src = audioUrl;
+                                source2.type = 'audio/wav';
+                                audio.appendChild(source2);
+                                
+                                const source3 = document.createElement('source');
+                                source3.src = audioUrl;
+                                source3.type = 'audio/ogg';
+                                audio.appendChild(source3);
+                                
+                                audio.load();
                               }
                               
                               if (audio.paused) {
                                 audio.play().catch((error) => {
                                   console.error('Audio play failed:', error);
-                                  alert('Unable to play audio. Please check the audio file.');
+                                  alert('Audio format not supported or file corrupted.');
                                 });
                               } else {
                                 audio.pause();

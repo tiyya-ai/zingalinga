@@ -2864,7 +2864,6 @@ export default function ProfessionalUserDashboard({
                     controls 
                     autoPlay
                     className="w-full mb-4"
-                    src={audioSrc}
                     onError={(e) => {
                       console.error('Audio failed to load:', audioSrc);
                       console.log('Audio file type:', selectedAudio.audioFile?.type);
@@ -2878,9 +2877,11 @@ export default function ProfessionalUserDashboard({
                     }}
                   >
                     <source src={audioSrc} type="audio/mpeg" />
+                    <source src={audioSrc} type="audio/mp3" />
                     <source src={audioSrc} type="audio/wav" />
                     <source src={audioSrc} type="audio/ogg" />
-                    <source src={audioSrc} type="audio/mp3" />
+                    <source src={audioSrc} type="audio/m4a" />
+                    <source src={audioSrc} type="audio/aac" />
                     Your browser does not support the audio element.
                   </audio>
                 ) : (
@@ -2894,10 +2895,6 @@ export default function ProfessionalUserDashboard({
               })()}
               <button
                 onClick={() => {
-                  // Cleanup blob URL if it was created from a File
-                  if (selectedAudio.audioFile instanceof File && selectedAudio.audioUrl?.startsWith('blob:')) {
-                    URL.revokeObjectURL(selectedAudio.audioUrl);
-                  }
                   setShowAudioModal(false);
                   setSelectedAudio(null);
                 }}
