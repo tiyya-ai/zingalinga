@@ -4706,7 +4706,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         videoUrl: pp2Form.contentUrl,
         duration: pp2Form.duration,
         tags: pp2Form.tags ? pp2Form.tags.split(',').map(tag => tag.trim()) : [],
-        contentType: pp2Form.contentType,
+
         isActive: true,
         isVisible: true,
         createdAt: new Date().toISOString()
@@ -5656,7 +5656,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           updatedAt: new Date().toISOString()
         };
         
-        const success = await vpsDataStore.updateUser(updatedUser);
+        const success = await vpsDataStore.updateUser(updatedUser.id, updatedUser);
         if (success) {
           setUsers(prev => prev.map(u => u.id === editingUser.id ? updatedUser : u));
           alert('✅ User updated successfully!');
@@ -5766,7 +5766,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               <div className="mb-4">
                 <h4 className="font-medium text-gray-900 mb-2">Features:</h4>
                 <ul className="text-sm text-gray-600 space-y-1">
-                  {pkg.features.slice(0, 3).map((feature, index) => (
+                  {pkg.features.slice(0, 3).map((feature: string, index: number) => (
                     <li key={index} className="flex items-start gap-2">
                       <CheckCircle className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
                       <span className="line-clamp-1">{feature}</span>
@@ -6309,12 +6309,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       case 'add-user': return renderAddUser();
       case 'user-roles': return renderUserRoles();
       case 'children-profiles': return renderChildrenProfilesPage();
-      case 'access-logs': return renderGenericPage('Access Logs', 'Monitor user access', <Activity className="h-8 w-8 text-white" />, accessLogs, ['User', 'IP Address', 'Location', 'Device', 'Actions']);
+      case 'access-logs': return <div>Access Logs - Feature coming soon</div>;
       case 'orders': return renderOrdersPage();
-      case 'subscriptions': return renderGenericPage('Subscriptions', 'Manage subscriptions', <CreditCard className="h-8 w-8 text-white" />, subscriptions, ['User', 'Plan', 'Status', 'Next Billing', 'Actions']);
-      case 'transactions': return renderGenericPage('Transactions', 'View transaction history', <Receipt className="h-8 w-8 text-white" />, transactions, ['Transaction ID', 'User', 'Amount', 'Status', 'Actions']);
-      case 'comments': return renderGenericPage('Comments', 'Moderate user comments', <MessageSquare className="h-8 w-8 text-white" />, comments, ['User', 'Video', 'Comment', 'Status', 'Actions']);
-      case 'flagged-content': return renderGenericPage('Flagged Content', 'Review flagged content', <Flag className="h-8 w-8 text-white" />, flaggedContent, ['Type', 'Content', 'Reporter', 'Status', 'Actions']);
+      case 'subscriptions': return <div>Subscriptions - Feature coming soon</div>;
+      case 'transactions': return <div>Transactions - Feature coming soon</div>;
+      case 'comments': return <div>Comments - Feature coming soon</div>;
+      case 'flagged-content': return <div>Flagged Content - Feature coming soon</div>;
       case 'all-packages': return renderAllPackages();
       case 'add-package': return renderAddPackage();
       case 'admin-profile': return renderAdminProfile();
