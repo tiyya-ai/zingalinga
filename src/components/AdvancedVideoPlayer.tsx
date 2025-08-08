@@ -122,7 +122,12 @@ export const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
   useEffect(() => {
     const checkAccess = async () => {
       const result = await checkVideoAccess(user, module, purchases);
-      setAccessResult(result);
+      setAccessResult({
+        hasAccess: result.hasAccess,
+        isDemo: result.isDemo || false,
+        requiresPurchase: result.requiresPurchase || false,
+        reason: result.reason || 'Unknown'
+      });
     };
     checkAccess();
   }, [user, module, purchases]);
