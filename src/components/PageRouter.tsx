@@ -27,6 +27,7 @@ import AdminProfilePage from '../page-components/AdminProfilePage';
 import { authManager, AuthSession } from '../utils/auth';
 import { vpsDataStore } from '../utils/vpsDataStore';
 import { CartProvider } from '../hooks/useCart';
+import { ClientOnly } from './ClientOnly';
 
 // Import the main landing page content
 import { LandingPage } from './LandingPage';
@@ -48,12 +49,34 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Check for existing session on page load
+    const initializeAuth = async () => {
+      try {
+        if (typeof window === 'undefined') return;
+        
+        const session = authManager.getCurrentSession();
+        if (session && authManager.isSessionValid(session)) {
+          console.log('✅ Valid session found:', session.user.email, session.user.role);
+          setUser(session.user);
+          setCurrentSession(session);
+          vpsDataStore.setCurrentUser(session.user);
+        } else {
+          console.log('❌ No valid session found');
+          // Clear any invalid session data
+          authManager.logout();
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        try {
+          authManager.logout();
+        } catch (logoutError) {
+          console.error('Error during logout:', logoutError);
+        }
+      }
+    };
     
-    const session = authManager.getCurrentSession();
-    if (session && authManager.isSessionValid(session)) {
-      setUser(session.user);
-      setCurrentSession(session);
-      vpsDataStore.setCurrentUser(session.user);
+    if (typeof window !== 'undefined') {
+      initializeAuth();
     }
     
     // Set page based on current URL
@@ -102,10 +125,16 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
   }, []);
 
   const handleLogin = async (userData: User) => {
+    console.log('🔐 User logged in:', userData.email, userData.role);
     setUser(userData);
     vpsDataStore.setCurrentUser(userData);
     const session = authManager.getCurrentSession();
     setCurrentSession(session);
+    
+    // Ensure session is properly saved
+    if (session) {
+      console.log('💾 Session saved for:', userData.email);
+    }
   };
 
   const handleLogout = () => {
@@ -269,9 +298,11 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
           onNavigate={handleNavigation}
         />
         <CartProvider>
-          <div>
-            {content}
-          </div>
+          <ClientOnly>
+            <div>
+              {content}
+            </div>
+          </ClientOnly>
         </CartProvider>
         {/* Only show footer for non-dashboard pages */}
         {!user && <Footer onNavigate={handleNavigation} />}

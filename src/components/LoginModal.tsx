@@ -127,7 +127,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
         // Save new user to database
         try {
-          const { vpsDataStore } = await import('../utils/vpsDataStore');
+          const vpsModule = await import('../utils/vpsDataStore');
+          const { vpsDataStore } = vpsModule;
           
           // Check if user already exists
           const existingUsers = await vpsDataStore.getUsers();
@@ -170,28 +171,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
         }
       } else {
         // Login logic - check both static users and database users
-        const staticUsers = [
-          {
-            id: 'admin-1',
-            email: 'admin@zingalinga.com',
-            password: 'admin123',
-            name: 'Admin User',
-            role: 'admin',
-            createdAt: new Date().toISOString(),
-            lastLogin: new Date().toISOString(),
-            isActive: true
-          },
-          {
-            id: 'user-1',
-            email: 'test@example.com',
-            password: 'test123',
-            name: 'Test User',
-            role: 'user',
-            createdAt: new Date().toISOString(),
-            lastLogin: new Date().toISOString(),
-            isActive: true
-          }
-        ];
+        const { getStaticUsers } = await import('../utils/staticUsers');
+        const staticUsers = getStaticUsers();
 
         // Check static users first
         let user = staticUsers.find(u => u.email === sanitizedEmail && u.password === sanitizedPassword);
@@ -234,17 +215,40 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
         }
         
         if (user) {
-          setSuccess('Welcome back! Redirecting...');
-          setTimeout(() => {
-            const { password: _, ...userWithoutPassword } = user;
-            onLogin(userWithoutPassword);
-            onClose();
-            resetForm();
-            // Clear guest account info after successful login
-            localStorage.removeItem('guestAccountEmail');
-            localStorage.removeItem('guestAccountName');
-            localStorage.removeItem('purchasedItems');
-          }, 1000);
+          // Create proper session using auth manager
+          try {
+            const { authManager } = await import('../utils/auth');
+            
+            // Create session manually since we bypassed the auth manager login
+            const sessionDuration = user.role === 'admin' ? 2 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000; // 2h for admin, 8h for user
+            const session = {
+              user,
+              token: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+              expiresAt: Date.now() + sessionDuration,
+              loginTime: Date.now(),
+              lastActivity: Date.now(),
+              userAgent: navigator.userAgent,
+            };
+            
+            // Save session to localStorage
+            localStorage.setItem('zinga-linga-session', JSON.stringify(session));
+            console.log('💾 Session created for:', user.email, 'Role:', user.role);
+            
+            setSuccess('Welcome back! Redirecting...');
+            setTimeout(() => {
+              const { password: _, ...userWithoutPassword } = user;
+              onLogin(userWithoutPassword);
+              onClose();
+              resetForm();
+              // Clear guest account info after successful login
+              localStorage.removeItem('guestAccountEmail');
+              localStorage.removeItem('guestAccountName');
+              localStorage.removeItem('purchasedItems');
+            }, 1000);
+          } catch (error) {
+            console.error('Error creating session:', error);
+            setError('Login failed. Please try again.');
+          }
         } else {
           setError('Invalid email or password.');
         }

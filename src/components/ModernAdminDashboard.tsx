@@ -160,6 +160,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     hasRealUsers: false,
     hasRealOrders: false
   });
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const [dashboardStats, setDashboardStats] = useState({
     totalUsers: 0,
@@ -198,6 +199,24 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     }
   }, [mounted]);
   
+  // Video form state - moved before useEffect
+  const [editingVideo, setEditingVideo] = useState<Module | null>(null);
+  const [videoForm, setVideoForm] = useState({
+    title: '',
+    description: '',
+    price: 0,
+    category: '',
+    rating: 0,
+    ageGroup: '3-8 years',
+    duration: '',
+    thumbnail: '',
+    videoUrl: '',
+    videoType: 'youtube',
+    tags: '',
+    language: 'English',
+    status: 'active'
+  });
+
   // Cleanup blob URLs on unmount
   useEffect(() => {
     return () => {
@@ -214,6 +233,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     if (!mounted) return;
     
     try {
+      setDataLoaded(false);
+      
       // Clear memory cache to force fresh data load
       vpsDataStore.clearMemoryCache();
       
@@ -357,6 +378,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         videos: realVideos.length,
         orders: realOrders.length
       });
+      
+      setDataLoaded(true);
 
     } catch (error) {
       console.error('❌ Failed to load real data:', error);
@@ -368,16 +391,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         hasRealOrders: false
       });
 
-      // Set fallback activities
+      // Set minimal fallback activities
       setRecentActivities([
-        { id: 1, type: 'user', message: 'New user Sarah Johnson registered', time: '5 min ago', avatar: 'SJ' },
-        { id: 2, type: 'video', message: 'Video "Math Adventures" uploaded', time: '15 min ago', avatar: 'MA' },
-        { id: 3, type: 'purchase', message: 'Premium subscription purchased', time: '32 min ago', avatar: 'PS' },
-        { id: 4, type: 'comment', message: 'New comment on "ABC Learning"', time: '1 hour ago', avatar: 'AC' }
+        { id: 1, type: 'system', message: 'Admin dashboard initialized', time: 'Just now', avatar: 'AD' }
       ]);
     } finally {
-      // Force component re-render to show updated data
-      setMounted(prev => !prev);
+      setDataLoaded(true);
     }
   };
 
@@ -668,26 +687,42 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   );
 
   // Render functions for each section
-  const renderOverview = () => (
-    <div className="space-y-8">
-      {/* Professional Welcome Section */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-              Welcome back, {user?.name || 'Admin'}
-            </h1>
-            <p className="text-gray-600">
-              Here's an overview of your platform's performance today.
-            </p>
-          </div>
-          <div className="hidden lg:block">
-            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-              <BarChart3 className="h-8 w-8 text-gray-600" />
+  const renderOverview = () => {
+    if (!dataLoaded) {
+      return (
+        <div className="space-y-8">
+          <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading your dashboard data...</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      );
+    }
+    
+    return (
+      <div className="space-y-8">
+        {/* Professional Welcome Section */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+                Welcome back, {user?.name || 'Admin'}
+              </h1>
+              <p className="text-gray-600">
+                Here's an overview of your platform's performance today.
+              </p>
+            </div>
+            <div className="hidden lg:block">
+              <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                <BarChart3 className="h-8 w-8 text-gray-600" />
+              </div>
+            </div>
+          </div>
+        </div>
 
       <StatsGrid stats={[
         { 
@@ -812,11 +847,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             </div>
           </CardBody>
         </Card>
+        </div>
       </div>
-
-
-    </div>
-  );
+    );
+  };
 
   const renderAnalytics = () => {
     // Calculate real analytics data
@@ -1356,23 +1390,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     );
   };
 
-  // Video form state
-  const [editingVideo, setEditingVideo] = useState<Module | null>(null);
-  const [videoForm, setVideoForm] = useState({
-    title: '',
-    description: '',
-    price: 0,
-    category: '',
-    rating: 0,
-    ageGroup: '3-8 years',
-    duration: '',
-    thumbnail: '',
-    videoUrl: '',
-    videoType: 'youtube',
-    tags: '',
-    language: 'English',
-    status: 'active'
-  });
+  // Video form state moved above
 
   
   // Audio lesson form state

@@ -36,13 +36,19 @@ class AuthManager {
   // Get current session
   getCurrentSession(): AuthSession | null {
     try {
+      if (typeof window === 'undefined') return null;
+      
       const sessionData = localStorage.getItem(this.sessionKey);
-      if (!sessionData) return null;
+      if (!sessionData) {
+        console.log('🔍 No session data found');
+        return null;
+      }
 
       const session: AuthSession = JSON.parse(sessionData);
       
       // Check if session is expired
       if (Date.now() > session.expiresAt) {
+        console.log('⏰ Session expired for:', session.user.email);
         this.logout();
         return null;
       }
@@ -50,10 +56,12 @@ class AuthManager {
       // Update last activity
       session.lastActivity = Date.now();
       localStorage.setItem(this.sessionKey, JSON.stringify(session));
-
+      
+      console.log('✅ Valid session found for:', session.user.email, 'Role:', session.user.role);
       return session;
     } catch (error) {
       console.error('Error getting session:', error);
+      this.logout();
       return null;
     }
   }
@@ -229,7 +237,13 @@ class AuthManager {
       };
 
       // Save session
-      localStorage.setItem(this.sessionKey, JSON.stringify(session));
+      try {
+        localStorage.setItem(this.sessionKey, JSON.stringify(session));
+        console.log('💾 Session saved successfully for:', user.email, 'Role:', user.role);
+      } catch (error) {
+        console.error('Failed to save session:', error);
+        return { success: false, message: 'Failed to save session' };
+      }
 
       // Record successful login
       this.recordLoginAttempt(email, true);
@@ -243,7 +257,14 @@ class AuthManager {
 
   // Logout
   logout(): void {
-    localStorage.removeItem(this.sessionKey);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(this.sessionKey);
+        console.log('🚪 Session cleared');
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   }
 
   // Check admin privileges
