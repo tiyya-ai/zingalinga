@@ -1684,7 +1684,7 @@ export default function ProfessionalUserDashboard({
                         <div className="flex items-center justify-between">
                           <div className="text-purple-200 text-xs">{video.duration}</div>
                           <button 
-                            onClick={() => removeFromPlaylist(videoId)}
+                            onClick={() => setPlaylist(prev => prev.filter(id => id !== videoId))}
                             className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
                           >
                             Remove

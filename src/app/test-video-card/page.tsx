@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import VideoCard from '../../components/VideoCard';
+import { VideoCard } from '../../components/VideoCard';
 import { Module, User, Purchase } from '../../types';
 
 export default function TestVideoCardPage() {
@@ -48,14 +48,16 @@ export default function TestVideoCardPage() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <VideoCard
-            content={sampleModule}
-            user={sampleUser}
-            purchases={[]}
-            onPlay={handlePlay}
-            onAddToCart={handleAddToCart}
-            variant="store"
-            showPrice={true}
-            showPurchaseStatus={true}
+            id={sampleModule.id}
+            title={sampleModule.title}
+            thumbnail={sampleModule.thumbnail || ''}
+            duration={sampleModule.duration || '0:00'}
+            description={sampleModule.description || ''}
+            price={sampleModule.price || 0}
+            category={sampleModule.category || 'General'}
+            isPurchased={false}
+            onPlay={() => handlePlay(sampleModule)}
+            onAddToCart={() => handleAddToCart(sampleModule.id)}
           />
         </div>
         

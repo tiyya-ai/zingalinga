@@ -98,7 +98,7 @@ import {
 import { vpsDataStore } from '../utils/vpsDataStore';
 import { AdminChatManager } from './AdminChatManager';
 import { UserManagement } from './UserManagement';
-import { Module, Package } from '../types';
+import { Module } from '../types';
 
 interface ModernAdminDashboardProps {
   user: any;
@@ -134,7 +134,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [uploadQueue, setUploadQueue] = useState<any[]>([]);
   const [accessLogs, setAccessLogs] = useState<any[]>([]);
   const [childrenProfiles, setChildrenProfiles] = useState<any[]>([]);
-  const [categories, setCategories] = useState<string[]>(['Audio Lessons', 'Video Lessons', 'PP1 Program', 'PP2 Program']);
+  const [categories, setCategories] = useState<string[]>(['Audio Lessons', 'PP1 Program', 'PP2 Program']);
   const [contentBundles, setContentBundles] = useState<any[]>([]);
   const [userProgress, setUserProgress] = useState<any[]>([]);
   const [newCategory, setNewCategory] = useState('');
@@ -487,7 +487,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       color: 'text-purple-600',
       children: [
         { id: 'audio-lessons', label: 'Audio Lessons', icon: <Headphones className="h-4 w-4" /> },
-        { id: 'video-lessons', label: 'Video Lessons', icon: <Video className="h-4 w-4" /> },
         { id: 'pp1-program', label: 'PP1 Program', icon: <BookOpen className="h-4 w-4" /> },
         { id: 'pp2-program', label: 'PP2 Program', icon: <BookOpen className="h-4 w-4" /> },
         { id: 'content-bundles', label: 'Content Bundles', icon: <Layers className="h-4 w-4" /> }
