@@ -2406,12 +2406,14 @@ export default function ProfessionalUserDashboard({
                       const userIndex = (data.users || []).findIndex(u => u.id === user?.id);
                       
                       if (userIndex !== -1) {
-                        data.users[userIndex] = updatedUser;
+                        data.users[userIndex] = { ...data.users[userIndex], ...updatedUser };
+                        const saveSuccess = await vpsDataStore.saveData(data);
+                        if (!saveSuccess) {
+                          throw new Error('Failed to save profile data');
+                        }
                       } else {
-                        data.users = [...(data.users || []), updatedUser];
+                        throw new Error('User not found in database');
                       }
-                      
-                      await vpsDataStore.saveData(data);
                       
                       alert('✅ Profile updated successfully!');
                       setShowEditProfile(false);

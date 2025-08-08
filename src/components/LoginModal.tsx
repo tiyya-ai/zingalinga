@@ -110,10 +110,35 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
           setIsLoading(false);
           return;
         }
+        
+        // Password strength validation
+        if (sanitizedPassword.length < 6) {
+          setError('Password must be at least 6 characters long');
+          setIsLoading(false);
+          return;
+        }
+        
+        // Name validation
+        if (!sanitizedName.trim()) {
+          setError('Full name is required');
+          setIsLoading(false);
+          return;
+        }
 
         // Save new user to database
         try {
           const { vpsDataStore } = await import('../utils/vpsDataStore');
+          
+          // Check if user already exists
+          const existingUsers = await vpsDataStore.getUsers();
+          const userExists = existingUsers.some(u => u.email === sanitizedEmail);
+          
+          if (userExists) {
+            setError('An account with this email already exists.');
+            setIsLoading(false);
+            return;
+          }
+          
           const newUser = {
             id: `user_${Date.now()}`,
             email: sanitizedEmail,
@@ -137,11 +162,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
               resetForm();
             }, 1500);
           } else {
-            setError('Failed to create account. Please try again.');
+            setError('Account creation failed. Please try a different email.');
           }
         } catch (error) {
           console.error('Registration error:', error);
-          setError('Failed to create account. Please try again.');
+          setError('Network error. Please check your connection and try again.');
         }
       } else {
         // Login logic - check both static users and database users
