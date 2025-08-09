@@ -274,11 +274,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-purple-900/90 via-blue-900/90 to-indigo-900/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto relative transform hover:scale-105 transition-all duration-300">
+    <div className="fixed inset-0 bg-gradient-to-br from-purple-900/90 via-blue-900/90 to-indigo-900/90 backdrop-blur-md flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[95vh] sm:max-h-[90vh] overflow-y-auto relative">
         {/* Magical Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 opacity-70 rounded-3xl"></div>
-        <div className="absolute inset-0 opacity-30 rounded-3xl bg-pink-100" style={{backgroundImage: 'radial-gradient(circle at 20px 20px, rgba(244, 114, 182, 0.1) 2px, transparent 2px)', backgroundSize: '40px 40px'}}></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 opacity-70 rounded-2xl sm:rounded-3xl"></div>
+        <div className="absolute inset-0 opacity-30 rounded-2xl sm:rounded-3xl bg-pink-100" style={{backgroundImage: 'radial-gradient(circle at 20px 20px, rgba(244, 114, 182, 0.1) 2px, transparent 2px)', backgroundSize: '40px 40px'}}></div>
 
         {/* Close Button */}
         <button
@@ -289,29 +289,29 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
         </button>
 
         {/* Header */}
-        <div className="relative bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 backdrop-blur-sm p-6 rounded-t-3xl border-b border-white/20">
+        <div className="relative bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 backdrop-blur-sm p-4 sm:p-6 rounded-t-2xl sm:rounded-t-3xl border-b border-white/20">
           <div className="text-center">
-            <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full p-4 w-fit mx-auto mb-4 animate-bounce">
+            <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-full p-3 sm:p-4 w-fit mx-auto mb-3 sm:mb-4">
               {isRegisterMode ? (
-                <Sparkles className="w-8 h-8 text-white animate-pulse" />
+                <User className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               ) : (
-                <Heart className="w-8 h-8 text-white animate-pulse" />
+                <Lock className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               )}
             </div>
-            <h2 className="text-2xl font-mali font-bold text-white mb-2 animate-fade-in">
-              {isRegisterMode ? '🌟 Join Our Family!' : '🎉 Welcome Back!'}
+            <h2 className="text-xl sm:text-2xl font-mali font-bold text-white mb-2">
+              {isRegisterMode ? 'Create Account' : 'Welcome Back'}
             </h2>
-            <p className="text-pink-100 font-mali text-sm">
+            <p className="text-pink-100 font-mali text-xs sm:text-sm">
               {isRegisterMode 
-                ? 'Let\'s start your magical learning journey!' 
-                : 'Ready for more fun adventures?'
+                ? 'Join the Zinga Linga learning platform' 
+                : 'Sign in to continue your child\'s learning journey'
               }
             </p>
           </div>
         </div>
 
         {/* Form Content */}
-        <div className="relative p-6">
+        <div className="relative p-4 sm:p-6">
           {/* Status Messages */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-2xl animate-shake">
@@ -339,13 +339,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <input type="hidden" name="csrf_token" value={csrfToken} />
             {/* Name Field (Register only) */}
             {isRegisterMode && (
               <div className="space-y-2">
-                <label className="block text-sm font-bold text-purple-700 font-mali flex items-center gap-2">
-                  <span>👤</span> What's your name, superstar?
+                <label className="block text-sm font-bold text-purple-700 font-mali">
+                  Full Name
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -355,8 +355,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                     type="text"
                     value={name}
                     onChange={(e) => setName(sanitizeInput(e.target.value))}
-                    className="block w-full pl-10 pr-3 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all duration-200 font-mali bg-purple-50 focus:bg-white hover:border-purple-300"
-                    placeholder="Tell us your awesome name! 🌟"
+                    className="block w-full pl-10 pr-3 py-2 sm:py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all duration-200 font-mali bg-purple-50 focus:bg-white hover:border-purple-300 text-sm sm:text-base"
+                    placeholder="Enter your full name"
                     required
                   />
                 </div>
@@ -365,8 +365,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
             {/* Email Field */}
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-blue-700 font-mali flex items-center gap-2">
-                <span>📧</span> {isRegisterMode ? 'Parent\'s email address' : 'Your email address'}
+              <label className="block text-sm font-bold text-blue-700 font-mali">
+                Email Address
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -376,7 +376,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(sanitizeInput(e.target.value))}
-                  className="block w-full pl-10 pr-3 py-3 border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-200 font-mali bg-blue-50 focus:bg-white hover:border-blue-300"
+                  className="block w-full pl-10 pr-3 py-2 sm:py-3 border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-200 font-mali bg-blue-50 focus:bg-white hover:border-blue-300 text-sm sm:text-base"
                   placeholder={isRegisterMode ? "mom@example.com or dad@example.com 👨‍👩‍👧‍👦" : "your@email.com 💌"}
                   required
                 />
@@ -385,8 +385,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
             {/* Password Field */}
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-green-700 font-mali flex items-center gap-2">
-                <span>🔐</span> Secret password
+              <label className="block text-sm font-bold text-green-700 font-mali">
+                Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -402,14 +402,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                       setPasswordStrength(checkPasswordStrength(newPassword));
                     }
                   }}
-                  className="block w-full pl-10 pr-12 py-3 border-2 border-green-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all duration-200 font-mali bg-green-50 focus:bg-white hover:border-green-300"
-                  placeholder={isRegisterMode ? "Create a super strong password! 💪" : "Your secret password 🤫"}
+                  className="block w-full pl-10 pr-12 py-2 sm:py-3 border-2 border-green-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all duration-200 font-mali bg-green-50 focus:bg-white hover:border-green-300 text-sm sm:text-base"
+                  placeholder={isRegisterMode ? "Create a secure password" : "Enter your password"}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center hover:scale-110 transition-transform"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5 text-green-400 hover:text-green-600 transition-colors" />
@@ -452,7 +452,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                     onClick={() => alert('Ask a grown-up to help you reset your password! 👨‍👩‍👧‍👦')}
                     className="text-xs text-purple-600 hover:text-purple-800 font-mali transition-colors hover:underline"
                   >
-                    🤔 Forgot password?
+                    Forgot password?
                   </button>
                 </div>
               )}
@@ -461,8 +461,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             {/* Confirm Password Field (Register only) */}
             {isRegisterMode && (
               <div className="space-y-2">
-                <label className="block text-sm font-bold text-pink-700 font-mali flex items-center gap-2">
-                  <span>🔒</span> Type your password again
+                <label className="block text-sm font-bold text-pink-700 font-mali">
+                  Confirm Password
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -472,14 +472,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(sanitizeInput(e.target.value))}
-                    className="block w-full pl-10 pr-12 py-3 border-2 border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 transition-all duration-200 font-mali bg-pink-50 focus:bg-white hover:border-pink-300"
-                    placeholder="Same password as above! ✨"
+                    className="block w-full pl-10 pr-12 py-2 sm:py-3 border-2 border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 transition-all duration-200 font-mali bg-pink-50 focus:bg-white hover:border-pink-300 text-sm sm:text-base"
+                    placeholder="Confirm your password"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center hover:scale-110 transition-transform"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   >
                     {showConfirmPassword ? (
                       <EyeOff className="h-5 w-5 text-pink-400 hover:text-pink-600 transition-colors" />
@@ -497,7 +497,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 text-white font-bold py-4 px-6 rounded-2xl hover:from-purple-600 hover:via-pink-600 hover:to-blue-600 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none font-mali text-lg shadow-xl hover:shadow-2xl animate-pulse hover:animate-none"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-xl hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none font-mali text-sm sm:text-base shadow-lg"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center gap-3">
@@ -507,8 +507,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                   </span>
                 </div>
               ) : (
-                <span className="flex items-center justify-center gap-2">
-                  {isRegisterMode ? '🚀 Start My Adventure!' : '🎮 Let\'s Play!'}
+                <span>
+                  {isRegisterMode ? 'Create Account' : 'Sign In'}
                 </span>
               )}
             </button>
@@ -523,8 +523,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
               className="text-purple-700 hover:text-purple-900 font-bold text-sm transition-all duration-200 font-mali hover:scale-105 transform flex items-center justify-center gap-2 mx-auto"
             >
               {isRegisterMode 
-                ? '👋 Already part of our family? Welcome back!' 
-                : "🌟 New here? Join the fun!"
+                ? 'Already have an account? Sign in here' 
+                : "Don't have an account? Create one"
               }
             </button>
           </div>
