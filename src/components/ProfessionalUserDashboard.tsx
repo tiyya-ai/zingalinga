@@ -75,6 +75,7 @@ export default function ProfessionalUserDashboard({
   const [localPurchases, setLocalPurchases] = useState<Purchase[]>(purchases);
   const [liveModules, setLiveModules] = useState<Module[]>(modules);
   const [savedCategories, setSavedCategories] = useState<string[]>([]);
+  const [savedVideosList, setSavedVideosList] = useState<any[]>([]);
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [cartItems, setCartItems] = useState<string[]>([]);
@@ -96,6 +97,7 @@ export default function ProfessionalUserDashboard({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [userStats, setUserStats] = useState<UserStats>({
     watchTime: 0,
     videosWatched: 0,
@@ -117,6 +119,16 @@ export default function ProfessionalUserDashboard({
 
   useEffect(() => {
     setMounted(true);
+    
+    // Mobile detection
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   // Update local purchases when prop changes
@@ -145,6 +157,16 @@ export default function ProfessionalUserDashboard({
 
           
           setLiveModules(vpsData.modules);
+        }
+        
+        // Load saved videos from VPS
+        if (vpsData.savedVideos && vpsData.savedVideos.length > 0) {
+          setSavedVideosList(vpsData.savedVideos);
+          localStorage.setItem('savedVideos', JSON.stringify(vpsData.savedVideos));
+        } else {
+          // Fallback to localStorage
+          const localSaved = JSON.parse(localStorage.getItem('savedVideos') || '[]');
+          setSavedVideosList(localSaved);
         }
       } catch (error) {
       }
@@ -543,44 +565,66 @@ export default function ProfessionalUserDashboard({
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-        {/* Navigation Tabs */}
-        <div className="flex flex-wrap gap-2 mb-6 bg-white/10 backdrop-blur-sm rounded-xl p-2 border border-white/20">
-          {[
-            { id: 'dashboard', label: '🏠 Home', count: null },
-            { id: 'all-content', label: '📚 Content', count: allContent.length },
-            { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons').length },
-            { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type)).length },
-            { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => 
-              !localPurchases.some(purchase => 
-                purchase.moduleId === item.id && 
-                purchase.userId === user?.id && 
-                purchase.status === 'completed'
-              )
-            ).length },
-            { id: 'packages', label: '📦 Packages', count: null },
-            { id: 'playlist', label: '📋 Playlist', count: playlist.length },
-            { id: 'orders', label: '📋 Orders', count: localPurchases.filter(p => p.userId === user?.id).length },
-            { id: 'profile', label: '👤 Profile', count: null }
-          ].map(tab => (
+        {/* Navigation Tabs - Mobile Responsive */}
+        <div className="mb-6">
+          {/* Mobile Menu Button */}
+          <div className="md:hidden mb-4">
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center space-x-2 text-sm ${
-                activeTab === tab.id
-                  ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-purple-900 shadow-lg'
-                  : 'text-white hover:bg-white/20'
-              }`}
+              onClick={() => setShowFilters(!showFilters)}
+              className="w-full bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 flex items-center justify-between text-white"
             >
-              <span>{tab.label}</span>
-              {tab.count !== null && (
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  activeTab === tab.id ? 'bg-purple-900 text-yellow-400' : 'bg-white/20 text-white'
-                }`}>
-                  {tab.count}
-                </span>
-              )}
+              <span className="font-semibold">Menu</span>
+              <svg className={`w-5 h-5 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
-          ))}
+          </div>
+          
+          {/* Desktop Tabs / Mobile Dropdown */}
+          <div className={`${showFilters || !isMobile ? 'block' : 'hidden'} md:block`}>
+            <div className="flex flex-col md:flex-row md:flex-wrap gap-2 bg-white/10 backdrop-blur-sm rounded-xl p-2 border border-white/20">
+              {[
+                { id: 'dashboard', label: '🏠 Home', count: null },
+                { id: 'all-content', label: '📚 Content', count: allContent.length },
+                { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons').length },
+                { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type)).length },
+                { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => 
+                  !localPurchases.some(purchase => 
+                    purchase.moduleId === item.id && 
+                    purchase.userId === user?.id && 
+                    purchase.status === 'completed'
+                  )
+                ).length },
+                { id: 'packages', label: '📦 Packages', count: null },
+                { id: 'playlist', label: '📋 Playlist', count: playlist.length },
+            { id: 'saved-list', label: '💾 Saved', count: savedVideosList.length },
+                { id: 'orders', label: '📋 Orders', count: localPurchases.filter(p => p.userId === user?.id).length },
+                { id: 'profile', label: '👤 Profile', count: null }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    if (isMobile) setShowFilters(false);
+                  }}
+                  className={`w-full md:w-auto px-4 py-3 md:py-2 rounded-lg font-semibold transition-all duration-200 flex items-center justify-between md:justify-center space-x-2 text-sm md:text-xs lg:text-sm ${
+                    activeTab === tab.id
+                      ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-purple-900 shadow-lg'
+                      : 'text-white hover:bg-white/20'
+                  }`}
+                >
+                  <span>{tab.label}</span>
+                  {tab.count !== null && (
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      activeTab === tab.id ? 'bg-purple-900 text-yellow-400' : 'bg-white/20 text-white'
+                    }`}>
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Dashboard Tab */}
@@ -1712,6 +1756,101 @@ export default function ProfessionalUserDashboard({
           </section>
         )}
 
+        {/* Saved List Tab */}
+        {activeTab === 'saved-list' && (
+          <section className="space-y-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="mr-2">💾</span>
+                My Saved Videos ({savedVideosList.length})
+              </h2>
+              <p className="text-purple-200">Videos you've saved for later viewing</p>
+            </div>
+            
+            {savedVideosList.length === 0 ? (
+              <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+                <div className="text-6xl mb-4">💾</div>
+                <div className="text-white text-xl mb-2">No saved videos</div>
+                <div className="text-purple-200 text-sm mb-6">Save videos to watch them later</div>
+                <button 
+                  onClick={() => setActiveTab('store')}
+                  className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold px-6 py-3 rounded-lg transition-all duration-200"
+                >
+                  Browse Videos
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {savedVideosList.map(video => (
+                  <div key={video.id} className="bg-black/30 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden hover:scale-105 hover:border-yellow-400 transition-all duration-300 group">
+                    <div className="relative">
+                      <div className="w-full h-48 bg-gradient-to-br from-purple-600 to-blue-600 relative overflow-hidden">
+                        {video.thumbnail && video.thumbnail.trim() ? (
+                          <img 
+                            src={video.thumbnail} 
+                            alt={video.title} 
+                            className="w-full h-full object-cover" 
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-white text-4xl">
+                            🎬
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="absolute top-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-sm font-medium">
+                        ${video.price || 0}
+                      </div>
+                      
+                      <div className="absolute bottom-2 right-2 bg-purple-600/90 text-white px-2 py-1 rounded-md text-xs font-medium backdrop-blur-sm">
+                        {video.duration || '5:00'}
+                      </div>
+                    </div>
+                    
+                    <div className="p-4">
+                      <h3 className="text-lg font-bold text-white mb-2 line-clamp-2">{video.title}</h3>
+                      <p className="text-purple-200 text-sm mb-3 line-clamp-2">{video.description || 'No description available'}</p>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="text-purple-200 text-xs">
+                          Saved: {new Date(video.savedAt).toLocaleDateString()}
+                        </div>
+                        <button 
+                          onClick={async () => {
+                            try {
+                              const updatedList = savedVideosList.filter(v => v.id !== video.id);
+                              setSavedVideosList(updatedList);
+                              localStorage.setItem('savedVideos', JSON.stringify(updatedList));
+                              
+                              // Update VPS
+                              const data = await vpsDataStore.loadData();
+                              const updatedData = {
+                                ...data,
+                                savedVideos: updatedList
+                              };
+                              await vpsDataStore.saveData(updatedData);
+                              
+                              console.log('✅ Video removed from saved list');
+                            } catch (error) {
+                              console.error('❌ Failed to remove video:', error);
+                            }
+                          }}
+                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
         {/* Playlist Tab */}
         {activeTab === 'playlist' && (
           <section className="space-y-6">
@@ -2716,22 +2855,23 @@ export default function ProfessionalUserDashboard({
         user={user}
       />
 
-      {/* Universal Video Modal */}
+      {/* Universal Video Modal - Mobile Responsive */}
       {showVideoModal && selectedVideo && (
-        <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-2">
-          <div className="bg-gray-900 rounded-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden shadow-2xl">
-            {/* Header */}
-            <div className="flex justify-end items-center p-4 border-b border-gray-700">
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-0 sm:p-2">
+          <div className="bg-gray-900 rounded-none sm:rounded-2xl w-full h-full sm:max-w-6xl sm:w-full sm:max-h-[95vh] sm:h-auto overflow-hidden shadow-2xl">
+            {/* Header - Mobile Responsive */}
+            <div className="flex justify-between items-center p-3 sm:p-4 border-b border-gray-700">
+              <h2 className="text-white font-bold text-lg sm:text-xl truncate pr-4">{selectedVideo.title}</h2>
               <button
                 onClick={closeVideoModal}
-                className="text-gray-400 hover:text-white text-2xl w-8 h-8 rounded-full hover:bg-gray-700 flex items-center justify-center transition-all"
+                className="text-gray-400 hover:text-white text-2xl w-10 h-10 sm:w-8 sm:h-8 rounded-full hover:bg-gray-700 flex items-center justify-center transition-all flex-shrink-0"
               >
                 ×
               </button>
             </div>
             
-            {/* Video Player */}
-            <div className="p-4">
+            {/* Video Player - Mobile Responsive */}
+            <div className="p-2 sm:p-4">
               {selectedVideo.videoUrl && selectedVideo.videoUrl.trim() ? (
                 (() => {
                   const videoUrl = selectedVideo.videoUrl;
@@ -2754,7 +2894,7 @@ export default function ProfessionalUserDashboard({
                     return (
                       <iframe
                         src={embedUrl}
-                        className="w-full aspect-video rounded-lg"
+                        className="w-full aspect-video rounded-none sm:rounded-lg"
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
@@ -2774,7 +2914,7 @@ export default function ProfessionalUserDashboard({
                     return (
                       <iframe
                         src={embedUrl}
-                        className="w-full aspect-video rounded-lg"
+                        className="w-full aspect-video rounded-none sm:rounded-lg"
                         frameBorder="0"
                         allow="autoplay; fullscreen; picture-in-picture"
                         allowFullScreen
@@ -2788,7 +2928,7 @@ export default function ProfessionalUserDashboard({
                     <video 
                       controls
                       autoPlay
-                      className="w-full aspect-video rounded-lg bg-black"
+                      className="w-full aspect-video rounded-none sm:rounded-lg bg-black"
                       poster={selectedVideo.thumbnail}
                       controlsList="nodownload"
                       onContextMenu={(e) => e.preventDefault()}
@@ -2809,13 +2949,12 @@ export default function ProfessionalUserDashboard({
                 </div>
               )}
               
-              {/* Video Info & Actions */}
-              <div className="mt-4">
-                <h2 className="text-white text-xl font-bold mb-3">{selectedVideo.title}</h2>
-                <div className="flex items-start justify-between mb-3">
+              {/* Video Info & Actions - Mobile Responsive */}
+              <div className="mt-3 sm:mt-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0 mb-3">
                   <div className="flex-1">
-                    <p className="text-gray-300 text-sm mb-2">{selectedVideo.description}</p>
-                    <div className="flex items-center space-x-4 text-sm text-gray-400">
+                    <p className="text-gray-300 text-sm mb-2 line-clamp-3 sm:line-clamp-none">{selectedVideo.description}</p>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400">
                       <span>⏱️ {selectedVideo.duration}</span>
                       <span>•</span>
                       <span>📂 {selectedVideo.category}</span>
@@ -2828,7 +2967,7 @@ export default function ProfessionalUserDashboard({
                     </div>
                   </div>
                   
-                  {/* Playlist Button */}
+                  {/* Playlist Button - Mobile Responsive */}
                   <button
                     onClick={() => {
                       if (playlist.includes(selectedVideo.id)) {
@@ -2837,21 +2976,21 @@ export default function ProfessionalUserDashboard({
                         setPlaylist(prev => [...prev, selectedVideo.id]);
                       }
                     }}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    className={`flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm sm:text-base w-full sm:w-auto ${
                       playlist.includes(selectedVideo.id)
                         ? 'bg-blue-600 hover:bg-blue-700 text-white'
                         : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
                     }`}
                   >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
                       <polyline points="14,2 14,8 20,8"/>
                       <line x1="16" y1="13" x2="8" y2="13"/>
                       <line x1="16" y1="17" x2="8" y2="17"/>
                       <polyline points="10,9 9,9 8,9"/>
                     </svg>
-                    <span className="text-sm">
-                      {playlist.includes(selectedVideo.id) ? 'Remove from Playlist' : 'Add to Playlist'}
+                    <span className="text-xs sm:text-sm">
+                      {playlist.includes(selectedVideo.id) ? 'Remove' : 'Add to Playlist'}
                     </span>
                   </button>
                 </div>
@@ -2861,26 +3000,26 @@ export default function ProfessionalUserDashboard({
         </div>
       )}
 
-      {/* Audio Player Modal */}
+      {/* Audio Player Modal - Mobile Responsive */}
       {showAudioModal && selectedAudio && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-2xl max-w-md w-full shadow-2xl">
-            <div className="flex justify-between items-center p-4 border-b border-gray-700">
-              <h3 className="text-white font-bold text-lg">🎧 Audio Player</h3>
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-gray-900 rounded-xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl">
+            <div className="flex justify-between items-center p-3 sm:p-4 border-b border-gray-700">
+              <h3 className="text-white font-bold text-base sm:text-lg">🎧 Audio Player</h3>
               <button
                 onClick={() => setShowAudioModal(false)}
-                className="text-gray-400 hover:text-white text-2xl"
+                className="text-gray-400 hover:text-white text-2xl w-8 h-8 rounded-full hover:bg-gray-700 flex items-center justify-center transition-all"
               >
                 ×
               </button>
             </div>
-            <div className="p-6">
-              <div className="text-center mb-6">
-                <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-3xl">🎧</span>
+            <div className="p-4 sm:p-6">
+              <div className="text-center mb-4 sm:mb-6">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <span className="text-2xl sm:text-3xl">🎧</span>
                 </div>
-                <h4 className="text-white font-bold text-xl mb-2">{selectedAudio.title}</h4>
-                <p className="text-gray-400 text-sm">{selectedAudio.description}</p>
+                <h4 className="text-white font-bold text-lg sm:text-xl mb-2">{selectedAudio.title}</h4>
+                <p className="text-gray-400 text-sm line-clamp-2">{selectedAudio.description}</p>
               </div>
               {(() => {
                 let audioSrc = selectedAudio.audioUrl;

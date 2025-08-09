@@ -6961,8 +6961,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       <div className="flex h-[calc(100vh-4rem)]">
         {/* Responsive Sidebar */}
         <div className={`
-          ${sidebarOpen ? (isMobile ? 'w-80' : 'w-80') : (isMobile ? 'w-0' : 'w-16')} 
-          ${isMobile ? 'fixed inset-y-0 left-0 z-50 top-16' : 'relative'}
+          ${sidebarOpen ? (isMobile ? 'w-full' : 'w-80') : (isMobile ? 'w-0' : 'w-16')} 
+          ${isMobile ? 'fixed inset-0 z-50 top-16' : 'relative'}
           transition-all duration-300 ease-in-out
           bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 border-r border-slate-700/50 overflow-hidden shadow-2xl backdrop-blur-sm
         `}>
@@ -7070,6 +7070,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 top-16"
             onClick={() => setSidebarOpen(false)}
           />
+        )}
+
+        {/* Mobile Close Button */}
+        {isMobile && sidebarOpen && (
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="fixed top-20 right-4 z-60 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg"
+          >
+            <X className="h-5 w-5 text-gray-600" />
+          </button>
         )}
 
         {/* Main Content */}

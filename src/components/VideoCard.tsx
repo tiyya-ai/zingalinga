@@ -117,12 +117,82 @@ export const VideoCard: React.FC<VideoCardProps> = ({
 
         {/* Actions */}
         {!isPurchased && (
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center">
+            <button
+              onClick={async () => {
+                try {
+                  const { vpsDataStore } = await import('../utils/vpsDataStore');
+                  const savedList = JSON.parse(localStorage.getItem('savedVideos') || '[]');
+                  if (!savedList.find((v: any) => v.id === id)) {
+                    const videoData = { id, title, thumbnail, duration, description, price, category, savedAt: new Date().toISOString() };
+                    savedList.push(videoData);
+                    localStorage.setItem('savedVideos', JSON.stringify(savedList));
+                    
+                    // Save to VPS
+                    const data = await vpsDataStore.loadData();
+                    const updatedData = {
+                      ...data,
+                      savedVideos: [...(data.savedVideos || []), videoData]
+                    };
+                    await vpsDataStore.saveData(updatedData);
+                    
+                    console.log('✅ Video saved to list and VPS:', title);
+                    alert('Video saved to your list!');
+                  } else {
+                    alert('Video already in your saved list!');
+                  }
+                } catch (error) {
+                  console.error('❌ Failed to save video:', error);
+                  alert('Failed to save video.');
+                }
+              }}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg font-semibold transition-all duration-300 text-xs sm:text-sm shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-100"
+            >
+              💾 Save
+            </button>
             <button
               onClick={onAddToCart}
-              className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 px-4 py-2 rounded-lg font-semibold transition-all duration-300 text-sm shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-100"
+              className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 px-3 py-2 sm:px-4 rounded-lg font-semibold transition-all duration-300 text-xs sm:text-sm shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-100"
             >
               🛒 Buy Now
+            </button>
+          </div>
+        )}
+        
+        {/* Save button for purchased videos */}
+        {isPurchased && (
+          <div className="flex justify-center">
+            <button
+              onClick={async () => {
+                try {
+                  const { vpsDataStore } = await import('../utils/vpsDataStore');
+                  const savedList = JSON.parse(localStorage.getItem('savedVideos') || '[]');
+                  if (!savedList.find((v: any) => v.id === id)) {
+                    const videoData = { id, title, thumbnail, duration, description, price, category, savedAt: new Date().toISOString() };
+                    savedList.push(videoData);
+                    localStorage.setItem('savedVideos', JSON.stringify(savedList));
+                    
+                    // Save to VPS
+                    const data = await vpsDataStore.loadData();
+                    const updatedData = {
+                      ...data,
+                      savedVideos: [...(data.savedVideos || []), videoData]
+                    };
+                    await vpsDataStore.saveData(updatedData);
+                    
+                    console.log('✅ Video saved to list and VPS:', title);
+                    alert('Video saved to your list!');
+                  } else {
+                    alert('Video already in your saved list!');
+                  }
+                } catch (error) {
+                  console.error('❌ Failed to save video:', error);
+                  alert('Failed to save video.');
+                }
+              }}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 text-sm shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-100"
+            >
+              💾 Save to List
             </button>
           </div>
         )}
