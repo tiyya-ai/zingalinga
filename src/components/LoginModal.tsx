@@ -274,36 +274,37 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto relative">
-        {/* Clean Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-white opacity-50 rounded-2xl"></div>
+    <div className="fixed inset-0 bg-gradient-to-br from-purple-900/90 via-blue-900/90 to-indigo-900/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto relative transform hover:scale-105 transition-all duration-300">
+        {/* Magical Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 opacity-70 rounded-3xl"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23f472b6" fill-opacity="0.1"%3E%3Ccircle cx="30" cy="30" r="4"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30 rounded-3xl"></div>
 
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 hover:bg-white/20 rounded-full transition-all duration-200 group"
+          className="absolute top-4 right-4 z-10 p-2 hover:bg-pink-100 rounded-full transition-all duration-200 group hover:rotate-90"
         >
-          <X className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors" />
+          <X className="w-5 h-5 text-gray-600 group-hover:text-pink-600 transition-colors" />
         </button>
 
         {/* Header */}
-        <div className="relative bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 backdrop-blur-sm p-6 rounded-t-2xl border-b border-white/20">
+        <div className="relative bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 backdrop-blur-sm p-6 rounded-t-3xl border-b border-white/20">
           <div className="text-center">
-            <div className="bg-gradient-to-r from-amber-700 to-orange-700 rounded-full p-3 w-fit mx-auto mb-4">
+            <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full p-4 w-fit mx-auto mb-4 animate-bounce">
               {isRegisterMode ? (
-                <User className="w-6 h-6 text-white" />
+                <Sparkles className="w-8 h-8 text-white animate-pulse" />
               ) : (
-                <Lock className="w-6 h-6 text-white" />
+                <Heart className="w-8 h-8 text-white animate-pulse" />
               )}
             </div>
-            <h2 className="text-xl font-mali font-bold text-white mb-2">
-              {isRegisterMode ? 'Create Account' : 'Sign In'}
+            <h2 className="text-2xl font-mali font-bold text-white mb-2 animate-fade-in">
+              {isRegisterMode ? '🌟 Join Our Family!' : '🎉 Welcome Back!'}
             </h2>
-            <p className="text-gray-300 font-mali text-sm">
+            <p className="text-pink-100 font-mali text-sm">
               {isRegisterMode 
-                ? 'Join the Zinga Linga family' 
-                : 'Welcome back to your adventure'
+                ? 'Let\'s start your magical learning journey!' 
+                : 'Ready for more fun adventures?'
               }
             </p>
           </div>
@@ -313,26 +314,26 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
         <div className="relative p-6">
           {/* Status Messages */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 rounded-lg">
+            <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-2xl animate-shake">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <X className="h-5 w-5 text-red-400" />
+                  <span className="text-2xl">😅</span>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm text-red-700 font-mali">{error}</p>
+                  <p className="text-sm text-red-700 font-mali font-bold">Oops! {error}</p>
                 </div>
               </div>
             </div>
           )}
 
           {success && (
-            <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-400 rounded-lg">
+            <div className="mb-6 p-4 bg-green-50 border-2 border-green-200 rounded-2xl animate-bounce">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <Heart className="h-5 w-5 text-green-400" />
+                  <span className="text-2xl animate-spin">🎉</span>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm text-green-700 font-mali">{success}</p>
+                  <p className="text-sm text-green-700 font-mali font-bold">Yay! {success}</p>
                 </div>
               </div>
             </div>
@@ -343,19 +344,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             {/* Name Field (Register only) */}
             {isRegisterMode && (
               <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-700 font-mali">
-                  Full Name
+                <label className="block text-sm font-bold text-purple-700 font-mali flex items-center gap-2">
+                  <span>👤</span> What's your name, superstar?
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
+                    <User className="h-5 w-5 text-purple-400" />
                   </div>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(sanitizeInput(e.target.value))}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 font-mali bg-gray-50 focus:bg-white"
-                    placeholder="Enter your full name"
+                    className="block w-full pl-10 pr-3 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all duration-200 font-mali bg-purple-50 focus:bg-white hover:border-purple-300"
+                    placeholder="Tell us your awesome name! 🌟"
                     required
                   />
                 </div>
@@ -364,19 +365,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
             {/* Email Field */}
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-gray-700 font-mali">
-                Email Address
+              <label className="block text-sm font-bold text-blue-700 font-mali flex items-center gap-2">
+                <span>📧</span> {isRegisterMode ? 'Parent\'s email address' : 'Your email address'}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Mail className="h-5 w-5 text-blue-400" />
                 </div>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(sanitizeInput(e.target.value))}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 font-mali bg-gray-50 focus:bg-white"
-                  placeholder="Enter your email"
+                  className="block w-full pl-10 pr-3 py-3 border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-200 font-mali bg-blue-50 focus:bg-white hover:border-blue-300"
+                  placeholder={isRegisterMode ? "mom@example.com or dad@example.com 👨‍👩‍👧‍👦" : "your@email.com 💌"}
                   required
                 />
               </div>
@@ -384,12 +385,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
             {/* Password Field */}
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-gray-700 font-mali">
-                Password
+              <label className="block text-sm font-bold text-green-700 font-mali flex items-center gap-2">
+                <span>🔐</span> Secret password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                  <Lock className="h-5 w-5 text-green-400" />
                 </div>
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -401,37 +402,43 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                       setPasswordStrength(checkPasswordStrength(newPassword));
                     }
                   }}
-                  className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 font-mali bg-gray-50 focus:bg-white"
-                  placeholder="Enter your password"
+                  className="block w-full pl-10 pr-12 py-3 border-2 border-green-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all duration-200 font-mali bg-green-50 focus:bg-white hover:border-green-300"
+                  placeholder={isRegisterMode ? "Create a super strong password! 💪" : "Your secret password 🤫"}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center hover:scale-110 transition-transform"
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                    <EyeOff className="h-5 w-5 text-green-400 hover:text-green-600 transition-colors" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                    <Eye className="h-5 w-5 text-green-400 hover:text-green-600 transition-colors" />
                   )}
                 </button>
               </div>
               {isRegisterMode && password && passwordStrength.text && (
-                <div className="mt-2">
+                <div className="mt-2 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-mali text-gray-600">Password strength:</span>
-                    <span className={`text-xs font-mali font-bold ${passwordStrength.color}`}>
+                    <span className="text-xs font-mali text-purple-600 flex items-center gap-1">
+                      <span>💪</span> Password power:
+                    </span>
+                    <span className={`text-xs font-mali font-bold ${passwordStrength.color} flex items-center gap-1`}>
+                      {passwordStrength.score <= 1 ? '😟' : 
+                       passwordStrength.score === 2 ? '😐' :
+                       passwordStrength.score === 3 ? '🙂' :
+                       passwordStrength.score === 4 ? '😊' : '🤩'}
                       {passwordStrength.text}
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                     <div 
-                      className={`h-1.5 rounded-full transition-all duration-300 ${
-                        passwordStrength.score <= 1 ? 'bg-red-500' :
-                        passwordStrength.score === 2 ? 'bg-orange-500' :
-                        passwordStrength.score === 3 ? 'bg-yellow-500' :
-                        passwordStrength.score === 4 ? 'bg-blue-500' : 'bg-green-500'
+                      className={`h-2 rounded-full transition-all duration-500 ${
+                        passwordStrength.score <= 1 ? 'bg-gradient-to-r from-red-400 to-red-500' :
+                        passwordStrength.score === 2 ? 'bg-gradient-to-r from-orange-400 to-orange-500' :
+                        passwordStrength.score === 3 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' :
+                        passwordStrength.score === 4 ? 'bg-gradient-to-r from-blue-400 to-blue-500' : 'bg-gradient-to-r from-green-400 to-green-500'
                       }`}
                       style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
                     ></div>
@@ -442,10 +449,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                 <div className="mt-2 text-right">
                   <button
                     type="button"
-                    onClick={() => alert('Please contact support for password reset.')}
-                    className="text-xs text-amber-700 hover:text-orange-800 font-mali transition-colors"
+                    onClick={() => alert('Ask a grown-up to help you reset your password! 👨‍👩‍👧‍👦')}
+                    className="text-xs text-purple-600 hover:text-purple-800 font-mali transition-colors hover:underline"
                   >
-                    Forgot password?
+                    🤔 Forgot password?
                   </button>
                 </div>
               )}
@@ -454,30 +461,30 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             {/* Confirm Password Field (Register only) */}
             {isRegisterMode && (
               <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-700 font-mali">
-                  Confirm Password
+                <label className="block text-sm font-bold text-pink-700 font-mali flex items-center gap-2">
+                  <span>🔒</span> Type your password again
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
+                    <Lock className="h-5 w-5 text-pink-400" />
                   </div>
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(sanitizeInput(e.target.value))}
-                    className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 font-mali bg-gray-50 focus:bg-white"
-                    placeholder="Confirm your password"
+                    className="block w-full pl-10 pr-12 py-3 border-2 border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 transition-all duration-200 font-mali bg-pink-50 focus:bg-white hover:border-pink-300"
+                    placeholder="Same password as above! ✨"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center hover:scale-110 transition-transform"
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                      <EyeOff className="h-5 w-5 text-pink-400 hover:text-pink-600 transition-colors" />
                     ) : (
-                      <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                      <Eye className="h-5 w-5 text-pink-400 hover:text-pink-600 transition-colors" />
                     )}
                   </button>
                 </div>
@@ -490,15 +497,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white font-bold py-3 px-6 rounded-xl hover:from-orange-700 hover:to-amber-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none font-mali text-sm shadow-lg"
+              className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 text-white font-bold py-4 px-6 rounded-2xl hover:from-purple-600 hover:via-pink-600 hover:to-blue-600 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none font-mali text-lg shadow-xl hover:shadow-2xl animate-pulse hover:animate-none"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center gap-3">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  {isRegisterMode ? 'Creating Account...' : 'Signing In...'}
+                  <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span className="animate-bounce">
+                    {isRegisterMode ? '🌟 Creating your account...' : '🎉 Signing you in...'}
+                  </span>
                 </div>
               ) : (
-                isRegisterMode ? 'Create Account' : 'Sign In'
+                <span className="flex items-center justify-center gap-2">
+                  {isRegisterMode ? '🚀 Start My Adventure!' : '🎮 Let\'s Play!'}
+                </span>
               )}
             </button>
           </form>
@@ -506,14 +517,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
 
           {/* Mode Switch */}
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl border border-yellow-200">
             <button
               onClick={switchMode}
-              className="text-amber-700 hover:text-orange-800 font-bold text-sm transition-colors font-mali"
+              className="text-purple-700 hover:text-purple-900 font-bold text-sm transition-all duration-200 font-mali hover:scale-105 transform flex items-center justify-center gap-2 mx-auto"
             >
               {isRegisterMode 
-                ? 'Already have an account? Sign In' 
-                : "Don't have an account? Create One"
+                ? '👋 Already part of our family? Welcome back!' 
+                : "🌟 New here? Join the fun!"
               }
             </button>
           </div>
