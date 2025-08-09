@@ -6099,6 +6099,324 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     </div>
   );
 
+  const renderPackages = () => (
+    <div className="space-y-6">
+      <PageHeader title="Learning Packages" />
+      
+      <Card className="bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardBody className="p-12">
+          <div className="text-center">
+            <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <PackageIcon className="h-10 w-10 text-white" />
+            </div>
+            <h3 className="text-2xl font-semibold text-gray-900 mb-3">Learning Packages</h3>
+            <p className="text-gray-600 text-lg mb-8">Create and manage learning packages.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+              <Button 
+                className="h-24 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('all-packages')}
+              >
+                <div className="text-center">
+                  <PackageIcon className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">All Packages</span>
+                  <span className="text-xs opacity-80 block">View & manage packages</span>
+                </div>
+              </Button>
+              
+              <Button 
+                className="h-24 bg-gradient-to-r from-pink-500 to-pink-600 text-white hover:from-pink-600 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('add-package')}
+              >
+                <div className="text-center">
+                  <Plus className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">Add Package</span>
+                  <span className="text-xs opacity-80 block">Create new package</span>
+                </div>
+              </Button>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+    </div>
+  );
+
+  const renderCommerce = () => (
+    <div className="space-y-6">
+      <PageHeader title="Commerce" />
+      
+      <Card className="bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardBody className="p-12">
+          <div className="text-center">
+            <div className="w-20 h-20 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <ShoppingCart className="h-10 w-10 text-white" />
+            </div>
+            <h3 className="text-2xl font-semibold text-gray-900 mb-3">Commerce</h3>
+            <p className="text-gray-600 text-lg mb-8">Manage orders, subscriptions, and transactions.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              <Button 
+                className="h-24 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('orders')}
+              >
+                <div className="text-center">
+                  <PackageIcon className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">Orders</span>
+                  <span className="text-xs opacity-80 block">Manage orders</span>
+                </div>
+              </Button>
+              
+              <Button 
+                className="h-24 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('subscriptions')}
+              >
+                <div className="text-center">
+                  <CreditCard className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">Subscriptions</span>
+                  <span className="text-xs opacity-80 block">Manage subscriptions</span>
+                </div>
+              </Button>
+              
+              <Button 
+                className="h-24 bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-600 hover:to-teal-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('transactions')}
+              >
+                <div className="text-center">
+                  <Receipt className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">Transactions</span>
+                  <span className="text-xs opacity-80 block">View transactions</span>
+                </div>
+              </Button>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+    </div>
+  );
+
+  const renderModeration = () => (
+    <div className="space-y-6">
+      <PageHeader title="Moderation" />
+      
+      <Card className="bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardBody className="p-12">
+          <div className="text-center">
+            <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <Shield className="h-10 w-10 text-white" />
+            </div>
+            <h3 className="text-2xl font-semibold text-gray-900 mb-3">Moderation</h3>
+            <p className="text-gray-600 text-lg mb-8">Moderate comments and flagged content.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+              <Button 
+                className="h-24 bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('comments')}
+              >
+                <div className="text-center">
+                  <MessageSquare className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">Comments</span>
+                  <span className="text-xs opacity-80 block">Moderate comments</span>
+                </div>
+              </Button>
+              
+              <Button 
+                className="h-24 bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('flagged-content')}
+              >
+                <div className="text-center">
+                  <Flag className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">Flagged Content</span>
+                  <span className="text-xs opacity-80 block">Review flagged items</span>
+                </div>
+              </Button>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+    </div>
+  );
+
+  const renderContentCategories = () => (
+    <div className="space-y-6">
+      <PageHeader title="Content Categories" />
+      
+      <Card className="bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardBody className="p-12">
+          <div className="text-center">
+            <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <BookOpen className="h-10 w-10 text-white" />
+            </div>
+            <h3 className="text-2xl font-semibold text-gray-900 mb-3">Content Categories</h3>
+            <p className="text-gray-600 text-lg mb-8">Manage educational content by category.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
+              <Button 
+                className="h-24 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('audio-lessons')}
+              >
+                <div className="text-center">
+                  <Headphones className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">Audio Lessons</span>
+                  <span className="text-xs opacity-80 block">Manage audio content</span>
+                </div>
+              </Button>
+              
+              <Button 
+                className="h-24 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('pp1-program')}
+              >
+                <div className="text-center">
+                  <BookOpen className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">PP1 Program</span>
+                  <span className="text-xs opacity-80 block">Beginner level</span>
+                </div>
+              </Button>
+              
+              <Button 
+                className="h-24 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('pp2-program')}
+              >
+                <div className="text-center">
+                  <BookOpen className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">PP2 Program</span>
+                  <span className="text-xs opacity-80 block">Advanced level</span>
+                </div>
+              </Button>
+              
+              <Button 
+                className="h-24 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('content-bundles')}
+              >
+                <div className="text-center">
+                  <Layers className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">Content Bundles</span>
+                  <span className="text-xs opacity-80 block">Package content</span>
+                </div>
+              </Button>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+    </div>
+  );
+
+  const renderVideos = () => (
+    <div className="space-y-6">
+      <PageHeader title="Video Management" />
+      
+      <Card className="bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardBody className="p-12">
+          <div className="text-center">
+            <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <Video className="h-10 w-10 text-white" />
+            </div>
+            <h3 className="text-2xl font-semibold text-gray-900 mb-3">Video Management</h3>
+            <p className="text-gray-600 text-lg mb-8">Manage videos, categories, and uploads from here.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
+              <Button 
+                className="h-24 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('all-videos')}
+              >
+                <div className="text-center">
+                  <Video className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">All Videos</span>
+                  <span className="text-xs opacity-80 block">View & manage videos</span>
+                </div>
+              </Button>
+              
+              <Button 
+                className="h-24 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('add-video')}
+              >
+                <div className="text-center">
+                  <Plus className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">Add Video</span>
+                  <span className="text-xs opacity-80 block">Upload new video</span>
+                </div>
+              </Button>
+              
+              <Button 
+                className="h-24 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('categories')}
+              >
+                <div className="text-center">
+                  <Tag className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">Categories</span>
+                  <span className="text-xs opacity-80 block">Manage categories</span>
+                </div>
+              </Button>
+              
+              <Button 
+                className="h-24 bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('upload-queue')}
+              >
+                <div className="text-center">
+                  <Upload className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">Upload Queue</span>
+                  <span className="text-xs opacity-80 block">View uploads</span>
+                </div>
+              </Button>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+    </div>
+  );
+
+  const renderUsers = () => (
+    <div className="space-y-6">
+      <PageHeader title="User Management" />
+      
+      <Card className="bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardBody className="p-12">
+          <div className="text-center">
+            <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <Users className="h-10 w-10 text-white" />
+            </div>
+            <h3 className="text-2xl font-semibold text-gray-900 mb-3">User Management</h3>
+            <p className="text-gray-600 text-lg mb-8">Manage users, roles, and permissions from here.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              <Button 
+                className="h-24 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('all-users')}
+              >
+                <div className="text-center">
+                  <Users className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">All Users</span>
+                  <span className="text-xs opacity-80 block">View & manage users</span>
+                </div>
+              </Button>
+              
+              <Button 
+                className="h-24 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('add-user')}
+              >
+                <div className="text-center">
+                  <Plus className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">Add User</span>
+                  <span className="text-xs opacity-80 block">Create new user</span>
+                </div>
+              </Button>
+              
+              <Button 
+                className="h-24 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onPress={() => setActiveSection('user-roles')}
+              >
+                <div className="text-center">
+                  <Shield className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">User Roles</span>
+                  <span className="text-xs opacity-80 block">Manage permissions</span>
+                </div>
+              </Button>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+    </div>
+  );
+
   const renderSettings = () => (
     <div className="space-y-6">
       <PageHeader title="Settings" />
@@ -6350,6 +6668,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       case 'create-bundle': return renderCreateBundle();
       case 'categories': return renderCategoriesPage();
       case 'upload-queue': return renderUploadQueuePage();
+      case 'packages': return renderPackages();
+      case 'commerce': return renderCommerce();
+      case 'moderation': return renderModeration();
+      case 'content': return renderContentCategories();
+      case 'videos': return renderVideos();
+      case 'users': return renderUsers();
       case 'all-users': return renderAllUsersPage();
       case 'add-user': return renderAddUser();
       case 'user-roles': return renderUserRoles();
