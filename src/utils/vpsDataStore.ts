@@ -37,6 +37,7 @@ interface AppData {
   contentFiles: ContentFile[];
   uploadQueue: UploadQueueItem[];
   settings?: AppSettings;
+  savedVideos?: any[];
   lastUpdated?: string;
   lastLoaded?: string;
 }
@@ -88,6 +89,7 @@ class VPSDataStore {
       purchases: [],
       contentFiles: [],
       uploadQueue: [],
+      savedVideos: [],
       settings: this.getDefaultSettings(),
       lastUpdated: new Date().toISOString(),
       lastLoaded: new Date().toISOString()
