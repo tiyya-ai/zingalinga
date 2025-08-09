@@ -377,7 +377,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                   value={email}
                   onChange={(e) => setEmail(sanitizeInput(e.target.value))}
                   className="block w-full pl-10 pr-3 py-2 sm:py-3 border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-200 font-mali bg-blue-50 focus:bg-white hover:border-blue-300 text-sm sm:text-base"
-                  placeholder={isRegisterMode ? "mom@example.com or dad@example.com 👨‍👩‍👧‍👦" : "your@email.com 💌"}
+                  placeholder={isRegisterMode ? "mom@example.com or dad@example.com" : "your@email.com"}
                   required
                 />
               </div>
