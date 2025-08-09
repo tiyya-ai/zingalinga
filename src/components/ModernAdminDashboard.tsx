@@ -361,13 +361,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         hasRealOrders: convertedOrders.length > 0
       });
 
-      // Set initial activities if none exist
-      if (recentActivities.length === 0) {
+      // Only show real activities - no fake sample data
+      if (activities.length === 0) {
         setRecentActivities([
-          { id: 1, type: 'user', message: 'New user Sarah Johnson registered', time: '5 min ago', avatar: 'SJ' },
-          { id: 2, type: 'video', message: 'Video "Math Adventures" uploaded', time: '15 min ago', avatar: 'MA' },
-          { id: 3, type: 'purchase', message: 'Premium subscription purchased', time: '32 min ago', avatar: 'PS' },
-          { id: 4, type: 'comment', message: 'New comment on "ABC Learning"', time: '1 hour ago', avatar: 'AC' }
+          { 
+            id: 'system_init', 
+            type: 'system', 
+            message: 'Admin dashboard initialized', 
+            time: 'Just now', 
+            avatar: 'AD' 
+          }
         ]);
       }
 
