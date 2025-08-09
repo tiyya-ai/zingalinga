@@ -698,6 +698,20 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   // Render functions for each section
   const renderOverview = () => {
+    if (!dataLoaded) {
+      return (
+        <div className="space-y-8">
+          <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading your dashboard data...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
     
     return (
       <div className="space-y-8">
@@ -2468,10 +2482,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           {/* Action Buttons */}
           <div className="space-y-3">
             <Button 
-              className="w-full bg-gray-900 text-white hover:bg-gray-800 h-12 text-lg font-semibold"
+              className="w-full bg-blue-600 text-white hover:bg-blue-700 h-12 text-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               onPress={handleSaveVideo}
               startContent={editingVideo ? <Edit className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
               isDisabled={editingVideo ? false : (!videoForm.title.trim() || !videoForm.category || !videoForm.videoUrl)}
+              aria-label={editingVideo ? 'Update video' : 'Create new video'}
             >
               {editingVideo ? 'Update Video' : 'Create Video'}
             </Button>
@@ -2479,12 +2494,15 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             {editingVideo && (
               <Button 
                 variant="flat"
-                className="w-full bg-red-50 text-red-600 hover:bg-red-100 h-10"
+                className="w-full bg-red-50 text-red-600 hover:bg-red-100 h-10 transition-colors"
                 startContent={<Trash2 className="h-4 w-4" />}
                 onPress={() => {
-                  handleDeleteVideo(editingVideo.id);
-                  setActiveSection('all-videos');
+                  if (confirm(`Are you sure you want to delete "${editingVideo.title}"? This action cannot be undone.`)) {
+                    handleDeleteVideo(editingVideo.id);
+                    setActiveSection('all-videos');
+                  }
                 }}
+                aria-label="Delete video"
               >
                 Delete Video
               </Button>
@@ -2592,32 +2610,40 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             {selectedVideos.length > 0 && (
               <div className="flex gap-2">
                 <Button 
-                  className="bg-blue-600 text-white hover:bg-blue-700"
+                  className="bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
                   startContent={<DollarSign className="h-4 w-4" />}
                   onPress={handleBulkPriceUpdate}
+                  aria-label={`Update price for ${selectedVideos.length} selected videos`}
                 >
                   Update Price ({selectedVideos.length})
                 </Button>
                 <Button 
-                  className="bg-purple-600 text-white hover:bg-purple-700"
+                  className="bg-purple-600 text-white hover:bg-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
                   startContent={<Tag className="h-4 w-4" />}
                   onPress={handleBulkCategoryUpdate}
+                  aria-label={`Update category for ${selectedVideos.length} selected videos`}
                 >
                   Update Category ({selectedVideos.length})
                 </Button>
                 <Button 
-                  className="bg-red-600 text-white hover:bg-red-700"
+                  className="bg-red-600 text-white hover:bg-red-700 transition-all duration-200 shadow-md hover:shadow-lg"
                   startContent={<Trash2 className="h-4 w-4" />}
-                  onPress={handleBulkDelete}
+                  onPress={() => {
+                    if (confirm(`Are you sure you want to delete ${selectedVideos.length} selected videos? This action cannot be undone.`)) {
+                      handleBulkDelete();
+                    }
+                  }}
+                  aria-label={`Delete ${selectedVideos.length} selected videos`}
                 >
                   Delete ({selectedVideos.length})
                 </Button>
               </div>
             )}
             <Button 
-              className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
+              className="bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
               startContent={<Plus className="h-4 w-4" />}
               onPress={handleAddVideo}
+              aria-label="Add new video"
             >
               Add New Video
             </Button>
@@ -2728,16 +2754,22 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         <Button 
                           size="sm" 
                           variant="light" 
-                          className="hover:bg-gray-100 min-w-8 h-8"
+                          className="hover:bg-blue-50 min-w-8 h-8 transition-colors"
                           onPress={() => handleEditVideo(video)}
+                          aria-label={`Edit video ${video.title}`}
                         >
-                          <Edit className="h-4 w-4 text-gray-600" />
+                          <Edit className="h-4 w-4 text-blue-600" />
                         </Button>
                         <Button 
                           size="sm" 
                           variant="light" 
-                          className="hover:bg-red-50 min-w-8 h-8"
-                          onPress={() => handleDeleteVideo(video.id)}
+                          className="hover:bg-red-50 min-w-8 h-8 transition-colors"
+                          onPress={() => {
+                            if (confirm(`Are you sure you want to delete "${video.title}"? This action cannot be undone.`)) {
+                              handleDeleteVideo(video.id);
+                            }
+                          }}
+                          aria-label={`Delete video ${video.title}`}
                         >
                           <Trash2 className="h-4 w-4 text-red-600" />
                         </Button>
@@ -2762,7 +2794,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         title="All Users" 
         actions={
           <Button 
-            className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
+            className="bg-green-600 text-white hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg"
             startContent={<Plus className="h-4 w-4" />}
             onPress={() => {
               setUserForm({
@@ -2779,6 +2811,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               setEditingUser(null);
               onUserModalOpen();
             }}
+            aria-label="Add new user"
           >
             Add New User
           </Button>
@@ -2856,6 +2889,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       <Button 
                         size="sm" 
                         variant="light"
+                        className="hover:bg-blue-50 transition-colors"
                         onPress={() => {
                           setEditingUser(user);
                           setUserForm({
@@ -2871,19 +2905,21 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                           });
                           onUserModalOpen();
                         }}
+                        aria-label={`Edit user ${user.name}`}
                       >
                         <Edit className="h-4 w-4 text-blue-600" />
                       </Button>
                       <Button 
                         size="sm" 
                         variant="light" 
-                        className="hover:bg-red-50"
+                        className="hover:bg-red-50 transition-colors"
                         onPress={() => {
-                          if (confirm(`Delete user ${user.name}?`)) {
+                          if (confirm(`Are you sure you want to delete user "${user.name}"? This action cannot be undone.`)) {
                             setUsers(prev => prev.filter(u => u.id !== user.id));
-                            alert('User deleted successfully!');
+                            alert('✅ User deleted successfully!');
                           }
                         }}
+                        aria-label={`Delete user ${user.name}`}
                       >
                         <Trash2 className="h-4 w-4 text-red-600" />
                       </Button>
@@ -2903,37 +2939,30 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             {editingUser ? 'Edit User' : 'Add New User'}
           </ModalHeader>
           <ModalBody>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-4">
+            <div className="space-y-4">
+              <Input
+                label="Full Name"
+                value={userForm.name}
+                onChange={(e) => setUserForm({...userForm, name: e.target.value})}
+                required
+              />
+              <Input
+                label="Email Address"
+                type="email"
+                value={userForm.email}
+                onChange={(e) => setUserForm({...userForm, email: e.target.value})}
+                required
+              />
+              {!editingUser && (
                 <Input
-                  label="Full Name"
-                  value={userForm.name}
-                  onChange={(e) => setUserForm({...userForm, name: e.target.value})}
+                  label="Password"
+                  type="password"
+                  value={userForm.password}
+                  onChange={(e) => setUserForm({...userForm, password: e.target.value})}
                   required
                 />
-                <Input
-                  label="Email Address"
-                  type="email"
-                  value={userForm.email}
-                  onChange={(e) => setUserForm({...userForm, email: e.target.value})}
-                  required
-                />
-                {!editingUser && (
-                  <Input
-                    label="Password"
-                    type="password"
-                    value={userForm.password}
-                    onChange={(e) => setUserForm({...userForm, password: e.target.value})}
-                    required
-                  />
-                )}
-                <Input
-                  label="Phone"
-                  value={userForm.phone}
-                  onChange={(e) => setUserForm({...userForm, phone: e.target.value})}
-                />
-              </div>
-              <div className="space-y-4">
+              )}
+              <div className="grid grid-cols-2 gap-4">
                 <Select
                   label="Role"
                   selectedKeys={userForm.role ? [userForm.role] : []}
@@ -2952,22 +2981,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   <SelectItem key="inactive">Inactive</SelectItem>
                   <SelectItem key="suspended">Suspended</SelectItem>
                 </Select>
-                <Select
-                  label="Subscription"
-                  selectedKeys={userForm.subscription ? [userForm.subscription] : []}
-                  onSelectionChange={(keys) => setUserForm({...userForm, subscription: Array.from(keys)[0] as any})}
-                >
-                  <SelectItem key="free">Free</SelectItem>
-                  <SelectItem key="basic">Basic</SelectItem>
-                  <SelectItem key="premium">Premium</SelectItem>
-                  <SelectItem key="family">Family</SelectItem>
-                </Select>
-                <Input
-                  label="Date of Birth"
-                  type="date"
-                  value={userForm.dateOfBirth}
-                  onChange={(e) => setUserForm({...userForm, dateOfBirth: e.target.value})}
-                />
               </div>
             </div>
           </ModalBody>
@@ -3588,9 +3601,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <button 
-                          className="w-8 h-8 bg-black rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors"
-                          onClick={() => {
+                        <Button 
+                          size="sm"
+                          className="w-8 h-8 bg-black rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors min-w-8"
+                          onPress={() => {
                             let audioUrl = lesson.audioUrl || lesson.videoUrl;
                             
                             // Handle File objects by creating blob URL
@@ -3648,15 +3662,18 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                               alert('No audio file available for this lesson.');
                             }
                           }}
+                          aria-label={`Play audio lesson ${lesson.title}`}
                         >
                           <span className="text-white text-sm">▶</span>
-                        </button>
+                        </Button>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-1">
-                          <button 
-                            className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center"
-                            onClick={() => {
+                          <Button 
+                            size="sm"
+                            variant="light"
+                            className="w-8 h-8 bg-blue-50 hover:bg-blue-100 rounded flex items-center justify-center transition-colors"
+                            onPress={() => {
                               setEditingVideo(lesson);
                               setAudioForm({
                                 title: lesson.title,
@@ -3674,15 +3691,23 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                               });
                               setActiveSection('add-audio-lesson');
                             }}
+                            aria-label={`Edit audio lesson ${lesson.title}`}
                           >
-                            <Edit className="h-4 w-4 text-gray-600" />
-                          </button>
-                          <button 
-                            className="w-8 h-8 bg-red-50 hover:bg-red-100 rounded flex items-center justify-center"
-                            onClick={() => handleDeleteVideo(lesson.id)}
+                            <Edit className="h-4 w-4 text-blue-600" />
+                          </Button>
+                          <Button 
+                            size="sm"
+                            variant="light"
+                            className="w-8 h-8 bg-red-50 hover:bg-red-100 rounded flex items-center justify-center transition-colors"
+                            onPress={() => {
+                              if (confirm(`Are you sure you want to delete "${lesson.title}"? This action cannot be undone.`)) {
+                                handleDeleteVideo(lesson.id);
+                              }
+                            }}
+                            aria-label={`Delete audio lesson ${lesson.title}`}
                           >
                             <Trash2 className="h-4 w-4 text-red-600" />
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -4325,14 +4350,15 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <button 
-              className="w-full bg-gray-900 text-white hover:bg-gray-800 h-12 text-lg font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleSaveAudioLesson}
-              disabled={!audioForm.title.trim() || !audioForm.audioUrl}
+            <Button 
+              className="w-full bg-green-600 text-white hover:bg-green-700 h-12 text-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              onPress={handleSaveAudioLesson}
+              startContent={<Plus className="h-5 w-5" />}
+              isDisabled={!audioForm.title.trim() || !audioForm.audioUrl}
+              aria-label="Create audio lesson"
             >
-              <Plus className="h-5 w-5" />
-              Create Audio Lesson
-            </button>
+              {editingVideo ? 'Update Audio Lesson' : 'Create Audio Lesson'}
+            </Button>
           </div>
 
           {/* Quick Tips */}
@@ -6395,17 +6421,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               </div>
             </div>
 
-            {/* Center Section - Search */}
-            <div className="hidden lg:flex flex-1 max-w-md mx-8">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 z-10" />
-                <input
-                  type="text"
-                  placeholder="Search anything..."
-                  className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent relative z-0"
-                />
-              </div>
-            </div>
+
 
             {/* Right Section */}
             <div className="flex items-center space-x-2">

@@ -41,10 +41,6 @@ export interface Module {
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
   estimatedDuration?: string;
   duration?: string;
-  ageGroup?: string;
-  language?: string;
-  status?: 'active' | 'inactive' | 'draft';
-  videoType?: 'upload' | 'youtube' | 'vimeo' | string;
   tags?: string[];
   aiTags?: string[];
   createdAt?: string;

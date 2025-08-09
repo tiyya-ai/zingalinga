@@ -62,8 +62,13 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
         setCurrentPage('contact');
       } else if (path === '/help') {
         setCurrentPage('help');
+      } else if (path === '/admin') {
+        setCurrentPage('admin');
+      } else if (path === '/dashboard') {
+        setCurrentPage('dashboard');
       } else {
-        setCurrentPage('home');
+        // Don't set page to 'home' immediately - let auth check determine the correct page
+        setCurrentPage('');
       }
       
       // Check for existing session
@@ -74,9 +79,39 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
           setUser(session.user);
           setCurrentSession(session);
           vpsDataStore.setCurrentUser(session.user);
+          
+          // Handle URL-based routing for authenticated users
+          if (path === '/admin' && session.user.role !== 'admin') {
+            // Non-admin trying to access admin page - redirect to dashboard
+            window.history.replaceState({}, '', '/dashboard');
+            setCurrentPage('dashboard');
+          } else if (path === '/dashboard' && session.user.role === 'admin') {
+            // Admin trying to access user dashboard - redirect to admin
+            window.history.replaceState({}, '', '/admin');
+            setCurrentPage('admin');
+          } else if (path === '/admin' || path === '/dashboard') {
+            // Correct role for the URL - keep the current page
+            // currentPage is already set above
+          } else if (currentPage === '') {
+            // No specific page set, redirect based on role
+            if (session.user.role === 'admin') {
+              window.history.replaceState({}, '', '/admin');
+              setCurrentPage('admin');
+            } else {
+              window.history.replaceState({}, '', '/dashboard');
+              setCurrentPage('dashboard');
+            }
+          }
         } else {
           console.log('❌ No valid session found');
           authManager.logout();
+          // Redirect to home if trying to access protected routes without session
+          if (path === '/admin' || path === '/dashboard') {
+            window.history.replaceState({}, '', '/');
+            setCurrentPage('home');
+          } else if (currentPage === '') {
+            setCurrentPage('home');
+          }
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -84,6 +119,13 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
           authManager.logout();
         } catch (logoutError) {
           console.error('Error during logout:', logoutError);
+        }
+        // Redirect to home on error
+        if (path === '/admin' || path === '/dashboard') {
+          window.history.replaceState({}, '', '/');
+          setCurrentPage('home');
+        } else if (currentPage === '') {
+          setCurrentPage('home');
         }
       }
       
@@ -103,8 +145,25 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
         setCurrentPage('contact');
       } else if (currentPath === '/help') {
         setCurrentPage('help');
+      } else if (currentPath === '/admin') {
+        if (user?.role === 'admin') {
+          setCurrentPage('admin');
+        } else {
+          window.history.replaceState({}, '', '/');
+          setCurrentPage('home');
+        }
+      } else if (currentPath === '/dashboard') {
+        if (user && user.role !== 'admin') {
+          setCurrentPage('dashboard');
+        } else {
+          window.history.replaceState({}, '', '/');
+          setCurrentPage('home');
+        }
       } else {
-        setCurrentPage('home');
+        // Only set to home if user is not logged in
+        if (!user) {
+          setCurrentPage('home');
+        }
       }
     };
     
@@ -130,6 +189,15 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
     const session = authManager.getCurrentSession();
     setCurrentSession(session);
     
+    // Redirect to appropriate dashboard after login
+    if (userData.role === 'admin') {
+      window.history.pushState({}, '', '/admin');
+      setCurrentPage('admin');
+    } else {
+      window.history.pushState({}, '', '/dashboard');
+      setCurrentPage('dashboard');
+    }
+    
     // Ensure session is properly saved
     if (session) {
       console.log('💾 Session saved for:', userData.email);
@@ -141,6 +209,9 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
     setUser(null);
     setCurrentSession(null);
     vpsDataStore.setCurrentUser(null);
+    // Redirect to home page after logout
+    window.history.pushState({}, '', '/');
+    setCurrentPage('home');
   };
 
   const handlePurchase = async (moduleIds: string[]) => {
@@ -218,9 +289,18 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
     }
   };
 
-  // If user is logged in, show appropriate dashboard
-  if (user) {
-    if (user.role === 'admin') {
+  // Show loading during initial authentication check for protected routes
+  if (isLoading && (currentPage === 'admin' || currentPage === 'dashboard')) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  // If user is logged in and on dashboard pages, show appropriate dashboard
+  if (user && (currentPage === 'admin' || currentPage === 'dashboard')) {
+    if (currentPage === 'admin' && user.role === 'admin') {
       return (
         <ModernAdminDashboard 
           user={user} 
@@ -228,7 +308,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
           onNavigate={handleNavigation}
         />
       );
-    } else {
+    } else if (currentPage === 'dashboard' && user.role !== 'admin') {
       return (
         <ProfessionalUserDashboard 
           user={user}
