@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import {
   Card,
   CardBody,
@@ -119,7 +119,7 @@ interface SidebarItem {
 export default function ModernAdminDashboard({ user, onLogout, onNavigate }: ModernAdminDashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [mounted, setMounted] = useState(false);
+
   const [activeSection, setActiveSection] = useState('overview');
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
@@ -148,11 +148,59 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: 'success', message: 'New video uploaded successfully', time: '2 min ago' },
-    { id: 2, type: 'warning', message: '5 comments pending moderation', time: '10 min ago' },
-    { id: 3, type: 'info', message: 'Monthly report is ready', time: '1 hour ago' }
-  ]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  
+  // Generate real notifications
+  useEffect(() => {
+    const realNotifications = [];
+    
+    // New user registrations
+    const recentUsers = users.filter(user => {
+      const createdDate = new Date(user.createdAt);
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      return createdDate >= oneDayAgo;
+    });
+    
+    recentUsers.forEach(user => {
+      realNotifications.push({
+        id: `user_${user.id}`,
+        type: 'info',
+        message: `New user ${user.name} registered`,
+        time: new Date(user.createdAt).toLocaleTimeString()
+      });
+    });
+    
+    // Recent orders
+    const recentOrders = orders.filter(order => {
+      const orderDate = new Date(order.date);
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      return orderDate >= oneDayAgo;
+    });
+    
+    recentOrders.forEach(order => {
+      realNotifications.push({
+        id: `order_${order.id}`,
+        type: 'success',
+        message: `New order from ${order.customer.name}`,
+        time: order.date.toLocaleTimeString()
+      });
+    });
+    
+    // Comments pending moderation
+    const pendingComments = comments.filter(c => c.status === 'pending');
+    if (pendingComments.length > 0) {
+      realNotifications.push({
+        id: 'comments_pending',
+        type: 'warning',
+        message: `${pendingComments.length} comments pending moderation`,
+        time: 'Now'
+      });
+    }
+    
+    // Sort by most recent
+    realNotifications.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+    setNotifications(realNotifications.slice(0, 10));
+  }, [users, orders, comments]);
 
   const [dataStatus, setDataStatus] = useState({
     isRealData: false,
@@ -161,6 +209,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     hasRealOrders: false
   });
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [analyticsActiveTab, setAnalyticsActiveTab] = useState('overview');
 
   const [dashboardStats, setDashboardStats] = useState({
     totalUsers: 0,
@@ -176,7 +225,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
   useEffect(() => {
-    setMounted(true);
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
@@ -194,10 +242,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   // Load real data from vpsDataStore
   useEffect(() => {
-    if (mounted) {
-      loadRealData();
-    }
-  }, [mounted]);
+    loadRealData();
+  }, []);
   
   // Video form state - moved before useEffect
   const [editingVideo, setEditingVideo] = useState<Module | null>(null);
@@ -230,7 +276,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   }, [videoForm.videoUrl, videoForm.thumbnail]);
 
   const loadRealData = async () => {
-    if (!mounted) return;
     
     try {
       setDataLoaded(false);
@@ -868,19 +913,17 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const renderAnalytics = () => {
     // Calculate real analytics data
     const totalViews = videos.reduce((sum, video) => {
-      // Estimate views based on orders for this video
       const videoOrders = orders.filter(order => order.item.name === video.title);
-      return sum + (videoOrders.length * 15); // Estimate 15 views per purchase
+      return sum + (videoOrders.length * 15);
     }, 0);
 
     const avgRating = videos.length > 0 
       ? (videos.reduce((sum, video) => sum + (video.rating || 0), 0) / videos.length).toFixed(1)
       : '0.0';
 
-    const totalShares = Math.floor(totalViews * 0.08); // Estimate 8% share rate
-    const completionRate = videos.length > 0 ? 87.5 : 0; // Fixed completion rate
+    const totalShares = Math.floor(totalViews * 0.08);
+    const completionRate = videos.length > 0 ? 87.5 : 0;
 
-    // Calculate video performance data
     const videoPerformanceData = videos.map(video => {
       const realViews = (video as any).views || 0;
       const videoOrders = orders.filter(order => order.item.name === video.title);
@@ -899,12 +942,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       };
     }).sort((a, b) => b.views - a.views);
 
-    // Calculate user engagement metrics
     const userEngagementData = {
-      totalSessions: users.length * 3.2, // Estimate sessions per user
+      totalSessions: users.length * 3.2,
       avgSessionDuration: '8m 32s',
-      bounceRate: 32.5, // Fixed bounce rate
-      returnVisitors: Math.floor(users.length * 0.65), // 65% return rate
+      bounceRate: 32.5,
+      returnVisitors: Math.floor(users.length * 0.65),
       newUsers: users.filter(user => {
         const createdDate = new Date(user.createdAt);
         const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -912,30 +954,31 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       }).length
     };
 
-    // Advanced Analytics Data
     const advancedAnalytics = {
       conversionRate: users.length > 0 ? ((orders.length / users.length) * 100).toFixed(1) : '0.0',
       customerLifetimeValue: users.length > 0 ? (dashboardStats.totalRevenue / users.length).toFixed(2) : '0.00',
-      churnRate: '12.5', // Fixed churn rate
-      monthlyRecurringRevenue: (dashboardStats.totalRevenue * 0.3).toFixed(2), // 30% recurring
+      churnRate: '12.5',
+      monthlyRecurringRevenue: (dashboardStats.totalRevenue * 0.3).toFixed(2),
       topPerformingCategory: videoPerformanceData.length > 0 ? videoPerformanceData[0].category : 'N/A',
       peakUsageHours: ['2PM-4PM', '7PM-9PM'],
-      deviceBreakdown: {
-        mobile: 65,
-        desktop: 25,
-        tablet: 10
-      },
-      geographicData: [
-        { country: 'United States', users: Math.floor(users.length * 0.4), revenue: dashboardStats.totalRevenue * 0.4 },
-        { country: 'United Kingdom', users: Math.floor(users.length * 0.2), revenue: dashboardStats.totalRevenue * 0.2 },
-        { country: 'Canada', users: Math.floor(users.length * 0.15), revenue: dashboardStats.totalRevenue * 0.15 },
-        { country: 'Australia', users: Math.floor(users.length * 0.1), revenue: dashboardStats.totalRevenue * 0.1 },
-        { country: 'Others', users: Math.floor(users.length * 0.15), revenue: dashboardStats.totalRevenue * 0.15 }
-      ]
+      deviceBreakdown: { mobile: 65, desktop: 25, tablet: 10 },
+      geographicData: users.reduce((acc: any[], user) => {
+        const country = user.country || user.location || 'Unknown';
+        const existing = acc.find(item => item.country === country);
+        const userRevenue = orders.filter(order => order.customer.email === user.email).reduce((sum, order) => sum + order.amount, 0);
+        
+        if (existing) {
+          existing.users += 1;
+          existing.revenue += userRevenue;
+        } else {
+          acc.push({ country, users: 1, revenue: userRevenue });
+        }
+        return acc;
+      }, []).sort((a, b) => b.users - a.users)
     };
 
     return (
-      <div className="space-y-8">
+      <div className="space-y-6">
         <PageHeader 
           title="Analytics Dashboard" 
           actions={
@@ -950,10 +993,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               <Button 
                 variant="flat" 
                 startContent={<RotateCcw className="h-4 w-4" />}
-                onPress={() => {
-                  console.log('🔄 Refreshing data...');
-                  loadRealData();
-                }}
+                onPress={loadRealData}
                 className="bg-green-50 text-green-600 hover:bg-green-100"
               >
                 Refresh Data
@@ -962,39 +1002,46 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           }
         />
         
-        <StatsGrid stats={[
-          { 
-            label: 'Total Views', 
-            value: totalViews.toLocaleString(), 
-            color: 'from-blue-50 to-blue-100 border-blue-200 text-blue-600', 
-            change: dataStatus.isRealData ? 'Based on real data' : 'Estimated from orders',
-            icon: <Eye className="h-6 w-6 text-blue-600" />
-          },
-          { 
-            label: 'Completion Rate', 
-            value: `${completionRate.toFixed(1)}%`, 
-            color: 'from-green-50 to-green-100 border-green-200 text-green-600', 
-            change: 'Average across all videos',
-            icon: <CheckCircle className="h-6 w-6 text-green-600" />
-          },
-          { 
-            label: 'Avg Rating', 
-            value: avgRating, 
-            color: 'from-purple-50 to-purple-100 border-purple-200 text-purple-600', 
-            change: `From ${videos.length} videos`,
-            icon: <Star className="h-6 w-6 text-purple-600" />
-          },
-          { 
-            label: 'Total Shares', 
-            value: totalShares.toLocaleString(), 
-            color: 'from-orange-50 to-orange-100 border-orange-200 text-orange-600', 
-            change: 'Estimated engagement',
-            icon: <TrendingUp className="h-6 w-6 text-orange-600" />
-          }
-        ]} />
+        <Tabs 
+          selectedKey={analyticsActiveTab} 
+          onSelectionChange={(key) => setAnalyticsActiveTab(key as string)}
+          className="w-full"
+          variant="underlined"
+          color="primary"
+        >
+          <Tab key="overview" title="Overview">
+            <StatsGrid stats={[
+              { 
+                label: 'Total Views', 
+                value: totalViews.toLocaleString(), 
+                color: '', 
+                change: dataStatus.isRealData ? 'Based on real data' : 'Estimated from orders',
+                icon: <Eye className="h-6 w-6 text-blue-600" />
+              },
+              { 
+                label: 'Completion Rate', 
+                value: `${completionRate.toFixed(1)}%`, 
+                color: '', 
+                change: 'Average across all videos',
+                icon: <CheckCircle className="h-6 w-6 text-green-600" />
+              },
+              { 
+                label: 'Avg Rating', 
+                value: avgRating, 
+                color: '', 
+                change: `From ${videos.length} videos`,
+                icon: <Star className="h-6 w-6 text-purple-600" />
+              },
+              { 
+                label: 'Total Shares', 
+                value: totalShares.toLocaleString(), 
+                color: '', 
+                change: 'Estimated engagement',
+                icon: <TrendingUp className="h-6 w-6 text-orange-600" />
+              }
+            ]} />
 
-        {/* Video Performance Table */}
-        <Card className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
+            <Card className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="border-b border-slate-100">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 w-full">
               <h3 className="text-xl font-semibold text-slate-900">Video Performance</h3>
@@ -1079,10 +1126,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               </Table>
             </div>
           </CardBody>
-        </Card>
-
-        {/* Analytics Charts and User Engagement */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            </Card>
+          </Tab>
+          
+          <Tab key="engagement" title="User Engagement">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Card className="shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader>
               <h3 className="text-xl font-semibold">User Engagement Metrics</h3>
@@ -1230,10 +1278,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               </div>
             </CardBody>
           </Card>
-        </div>
-
-        {/* Advanced Analytics Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            </div>
+          </Tab>
+          
+          <Tab key="performance" title="Performance">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Conversion & Performance Metrics */}
           <Card className="shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader>
@@ -1379,9 +1428,44 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               </div>
             </CardBody>
           </Card>
-        </div>
+            </div>
+          </Tab>
+          
+          <Tab key="geographic" title="Geographic">
+            <div className="grid grid-cols-1 gap-8">
+              <Card className="shadow-xl hover:shadow-2xl transition-all duration-300">
+                <CardHeader>
+                  <h3 className="text-xl font-semibold">Geographic Distribution</h3>
+                </CardHeader>
+                <CardBody>
+                  <div className="space-y-4">
+                    {advancedAnalytics.geographicData.slice(0, 10).map((country, index) => (
+                      <div key={country.country} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
+                            index === 0 ? 'bg-yellow-500' : 
+                            index === 1 ? 'bg-gray-400' : 
+                            index === 2 ? 'bg-orange-500' : 'bg-blue-500'
+                          }`}>
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{country.country}</p>
+                            <p className="text-sm text-gray-500">{country.users} users</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-green-600">{formatCurrency(country.revenue)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+          </Tab>
+        </Tabs>
 
-        {/* Data Source Indicator */}
         {!dataStatus.isRealData && (
           <Card className="border-orange-200 bg-orange-50">
             <CardBody className="p-4">
@@ -2835,6 +2919,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 selectedKeys={[userFilter]}
                 onSelectionChange={(keys) => setUserFilter(Array.from(keys)[0] as string)}
                 className="w-32"
+                aria-label="Filter users"
               >
                 <SelectItem key="all">All Users</SelectItem>
                 <SelectItem key="active">Active</SelectItem>
@@ -3240,6 +3325,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 selectedKeys={[orderFilter]}
                 onSelectionChange={(keys) => setOrderFilter(Array.from(keys)[0] as string)}
                 className="w-32"
+                aria-label="Filter orders"
                 startContent={<Filter className="h-4 w-4" />}
               >
                 <SelectItem key="all">All Orders</SelectItem>
@@ -5152,6 +5238,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   setScheduleForm({ ...scheduleForm, contentId: selected });
                 }}
                 placeholder="Choose content to schedule"
+                aria-label="Select content to schedule"
                 classNames={{
                   trigger: "bg-white border-gray-300 hover:border-indigo-400 focus:border-indigo-500"
                 }}
@@ -6417,6 +6504,43 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     </div>
   );
 
+  const renderNotifications = () => (
+    <div className="space-y-6">
+      <PageHeader title="All Notifications" />
+      
+      <Card className="bg-white border border-gray-200">
+        <CardHeader className="border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Recent Notifications ({notifications.length})</h3>
+        </CardHeader>
+        <CardBody className="p-0">
+          <div className="divide-y divide-gray-100">
+            {notifications.map((notification) => (
+              <div key={notification.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex items-start space-x-3">
+                  <div className={`w-3 h-3 rounded-full mt-1 ${
+                    notification.type === 'success' ? 'bg-green-500' :
+                    notification.type === 'warning' ? 'bg-yellow-500' :
+                    'bg-blue-500'
+                  }`}></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{notification.message}</p>
+                    <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {notifications.length === 0 && (
+              <div className="p-8 text-center">
+                <Bell className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-500">No notifications yet</p>
+              </div>
+            )}
+          </div>
+        </CardBody>
+      </Card>
+    </div>
+  );
+
   const renderSettings = () => (
     <div className="space-y-6">
       <PageHeader title="Settings" />
@@ -6686,6 +6810,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       case 'flagged-content': return <div>Flagged Content - Feature coming soon</div>;
       case 'all-packages': return renderAllPackages();
       case 'add-package': return renderAddPackage();
+      case 'notifications': return renderNotifications();
       case 'admin-profile': return renderAdminProfile();
       case 'settings': return renderSettings();
       default:
@@ -6708,21 +6833,18 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     }
   };
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-            <BarChart3 className="h-10 w-10 text-white" />
-          </div>
-          <p className="text-gray-600 text-lg">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    }>
+      <div className="min-h-screen bg-gray-50">
       {/* Modern Admin Header */}
       <header className="bg-gray-900 border-b border-gray-700 sticky top-0 z-50 shadow-sm">
         <div className="px-4 sm:px-6 lg:px-8">
@@ -6750,8 +6872,59 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
 
 
+            {/* Center Search */}
+            <div className="flex-1 flex justify-center px-8">
+              <div className="relative w-full max-w-md">
+                <Input
+                  placeholder="Search..."
+                  startContent={<Search className="h-4 w-4 text-gray-400" />}
+                  className="w-full"
+                  classNames={{
+                    input: "bg-transparent text-white placeholder:text-gray-300 border-0",
+                    inputWrapper: "bg-transparent backdrop-blur-md border border-white/20 hover:border-white/30 focus-within:border-white/40 transition-all duration-200"
+                  }}
+                />
+              </div>
+            </div>
+
             {/* Right Section */}
             <div className="flex items-center space-x-2">
+              {/* Notifications */}
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button
+                    isIconOnly
+                    variant="light"
+                    className="hover:bg-gray-800 rounded-lg transition-colors relative"
+                  >
+                    <Bell className="h-5 w-5 text-gray-300" />
+                    <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-gray-900"></div>
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu className="w-80">
+                  {notifications.slice(0, 5).map((notification) => (
+                    <DropdownItem key={notification.id} className="p-3">
+                      <div className="flex items-start space-x-3">
+                        <div className={`w-2 h-2 rounded-full mt-2 ${
+                          notification.type === 'success' ? 'bg-green-500' :
+                          notification.type === 'warning' ? 'bg-yellow-500' :
+                          'bg-blue-500'
+                        }`}></div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">{notification.message}</p>
+                          <p className="text-xs text-gray-500">{notification.time}</p>
+                        </div>
+                      </div>
+                    </DropdownItem>
+                  ))}
+                  <DropdownItem key="view-all" className="border-t" onPress={() => setActiveSection('notifications')}>
+                    <div className="text-center py-2">
+                      <span className="text-sm font-medium text-blue-600">View All Notifications</span>
+                    </div>
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+              
               {/* User Menu */}
               <Dropdown>
                 <DropdownTrigger>
@@ -6914,6 +7087,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         title="Success!"
         message="Video created successfully!"
       />
-    </div>
+      </div>
+    </Suspense>
   );
 }
