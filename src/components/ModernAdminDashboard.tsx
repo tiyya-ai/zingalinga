@@ -2805,11 +2805,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 onSelectionChange={(keys) => setVideoCategoryFilter(Array.from(keys)[0] as string)}
                 className="w-40"
                 placeholder="Category"
+                items={[{key: 'all', label: 'All Categories'}, ...categories.map(cat => ({key: cat, label: cat}))]}
               >
-                <SelectItem key="all" value="all">All Categories</SelectItem>
-                {categories.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
+                {(item) => <SelectItem key={item.key}>{item.label}</SelectItem>}
               </Select>
             </div>
           </div>
