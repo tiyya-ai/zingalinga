@@ -1695,8 +1695,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     console.log('Editing video:', video); // Debug log
     setEditingVideo(video);
     
-    // Determine video type based on URL
-    let videoType = 'youtube';
+    // Determine video type based on URL and existing videoType
+    let videoType = (video as any).videoType || 'youtube';
     if (video.videoUrl) {
       if (video.videoUrl.includes('youtube.com') || video.videoUrl.includes('youtu.be')) {
         videoType = 'youtube';
@@ -1704,8 +1704,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         videoType = 'vimeo';
       } else if (video.videoUrl.startsWith('blob:') || video.videoUrl.startsWith('data:')) {
         videoType = 'upload';
-      } else {
+      } else if (video.videoUrl.startsWith('http')) {
         videoType = 'external';
+      } else {
+        // If no clear type detected, use existing videoType or default to upload for local files
+        videoType = (video as any).videoType || 'upload';
       }
     }
     
@@ -1739,6 +1742,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       price: video.price,
       category: video.category,
       videoType: videoType,
+      videoUrl: video.videoUrl?.substring(0, 50) + '...',
+      thumbnail: video.thumbnail?.substring(0, 50) + '...',
       tags: tagsString
     }); // Debug log
     
@@ -2188,7 +2193,14 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             <CardBody className="space-y-6">
               <Tabs 
                 selectedKey={videoForm.videoType} 
-                onSelectionChange={(key) => setVideoForm({ ...videoForm, videoType: key as string, videoUrl: '' })}
+                onSelectionChange={(key) => {
+                  // Only clear videoUrl if we're not editing or switching to a different type
+                  if (!editingVideo || key !== videoForm.videoType) {
+                    setVideoForm({ ...videoForm, videoType: key as string, videoUrl: key === videoForm.videoType ? videoForm.videoUrl : '' });
+                  } else {
+                    setVideoForm({ ...videoForm, videoType: key as string });
+                  }
+                }}
                 className="w-full"
                 variant="bordered"
                 color="primary"
@@ -2230,28 +2242,63 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     ) : null}
                     
                     <div className="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center hover:border-blue-500 transition-all duration-300 bg-blue-50/30 relative">
-                      {videoForm.videoUrl && videoForm.videoType === 'upload' ? (
+                      {videoForm.videoUrl && (videoForm.videoType === 'upload' || videoForm.videoUrl.startsWith('data:') || videoForm.videoUrl.startsWith('blob:')) ? (
                         <div className="space-y-4">
                           <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
                           <div>
-                            <p className="text-lg font-semibold text-green-700">Video selected!</p>
-                            <p className="text-sm text-gray-600">Duration: {videoForm.duration}</p>
+                            <p className="text-lg font-semibold text-green-700">
+                              {editingVideo ? 'Video loaded from saved data!' : 'Video selected!'}
+                            </p>
+                            <p className="text-sm text-gray-600">Duration: {videoForm.duration || 'Unknown'}</p>
+                            {editingVideo && (
+                              <p className="text-xs text-blue-600">Original video from: {editingVideo.title}</p>
+                            )}
                           </div>
-                          <Button 
-                            size="sm" 
-                            variant="flat" 
-                            color="primary"
-                            onPress={() => setVideoForm({ ...videoForm, videoUrl: '', videoType: 'upload', duration: '' })}
-                            startContent={<Upload className="h-4 w-4" />}
-                          >
-                            Select Different Video
-                          </Button>
+                          {!editingVideo && (
+                            <Button 
+                              size="sm" 
+                              variant="flat" 
+                              color="primary"
+                              onPress={() => setVideoForm({ ...videoForm, videoUrl: '', videoType: 'upload', duration: '' })}
+                              startContent={<Upload className="h-4 w-4" />}
+                            >
+                              Select Different Video
+                            </Button>
+                          )}
+                          {editingVideo && (
+                            <Button 
+                              size="sm" 
+                              variant="flat" 
+                              color="secondary"
+                              onPress={() => {
+                                if (videoForm.videoUrl.startsWith('data:')) {
+                                  // Create a temporary video element to preview base64 video
+                                  const video = document.createElement('video');
+                                  video.src = videoForm.videoUrl;
+                                  video.controls = true;
+                                  video.style.width = '100%';
+                                  video.style.maxHeight = '300px';
+                                  
+                                  const modal = document.createElement('div');
+                                  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999';
+                                  modal.onclick = () => document.body.removeChild(modal);
+                                  modal.appendChild(video);
+                                  document.body.appendChild(modal);
+                                }
+                              }}
+                              startContent={<Eye className="h-4 w-4" />}
+                            >
+                              Preview Video
+                            </Button>
+                          )}
                         </div>
                       ) : (
                         <div className="space-y-4">
                           <Upload className="h-16 w-16 text-gray-400 mx-auto" />
                           <div>
-                            <p className="text-lg font-semibold text-gray-900">Upload new video file</p>
+                            <p className="text-lg font-semibold text-gray-900">
+                              {editingVideo ? 'Replace video file' : 'Upload new video file'}
+                            </p>
                             <p className="text-sm text-gray-600">Supports: MP4, MOV, AVI, WMV - Max size: 500MB</p>
                           </div>
                           <Button 
@@ -2263,7 +2310,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                               fileInput?.click();
                             }}
                           >
-                            Choose File
+                            {editingVideo ? 'Replace File' : 'Choose File'}
                           </Button>
                           <input
                             id="video-file-input"
@@ -2321,7 +2368,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         <span>- m.youtube.com/...</span>
                       </div>
                     </div>
-                    {videoForm.videoUrl && (
+                    {videoForm.videoUrl && (videoForm.videoType === 'youtube' || videoForm.videoUrl.includes('youtube')) && (
                       <div className="space-y-3">
                         <h5 className="font-medium text-gray-900">Preview</h5>
                         <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg">
@@ -2333,6 +2380,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                             title="YouTube video preview"
                           />
                         </div>
+                        {editingVideo && (
+                          <div className="text-xs text-green-600 flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            YouTube URL loaded from saved video
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -2374,7 +2427,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         <span>- player.vimeo.com/...</span>
                       </div>
                     </div>
-                    {videoForm.videoUrl && (
+                    {videoForm.videoUrl && (videoForm.videoType === 'vimeo' || videoForm.videoUrl.includes('vimeo')) && (
                       <div className="space-y-3">
                         <h5 className="font-medium text-gray-900">Preview</h5>
                         <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg">
@@ -2386,6 +2439,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                             title="Vimeo video preview"
                           />
                         </div>
+                        {editingVideo && (
+                          <div className="text-xs text-green-600 flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            Vimeo URL loaded from saved video
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -2412,16 +2471,25 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         inputWrapper: "bg-white border-gray-300 hover:border-purple-400 focus-within:border-purple-500 shadow-sm"
                       }}
                     />
-                    {videoForm.videoUrl && videoForm.videoType === 'external' && (
-                      <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg">
-                        <video 
-                          src={videoForm.videoUrl} 
-                          controls 
-                          className="w-full h-full object-cover"
-                          onError={() => console.log('Video failed to load')}
-                        >
-                          Your browser does not support the video tag.
-                        </video>
+                    {videoForm.videoUrl && (videoForm.videoType === 'external' || (!videoForm.videoUrl.includes('youtube') && !videoForm.videoUrl.includes('vimeo') && !videoForm.videoUrl.startsWith('data:') && !videoForm.videoUrl.startsWith('blob:'))) && (
+                      <div className="space-y-3">
+                        <h5 className="font-medium text-gray-900">Preview</h5>
+                        <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg">
+                          <video 
+                            src={videoForm.videoUrl} 
+                            controls 
+                            className="w-full h-full object-cover"
+                            onError={() => console.log('Video failed to load')}
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        </div>
+                        {editingVideo && (
+                          <div className="text-xs text-green-600 flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            External video URL loaded from saved video
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
