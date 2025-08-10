@@ -3,18 +3,34 @@ import { writeFile, readFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 
+// Use relative path for better VPS compatibility
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'global-app-data.json');
 
-// Ensure data directory exists
+// Fallback data directory for VPS
+const FALLBACK_DATA_DIR = path.join(process.cwd(), 'data');
+const FALLBACK_DATA_FILE = path.join(FALLBACK_DATA_DIR, 'global-app-data.json');
+
+// Ensure data directory exists with fallback
 async function ensureDataDir() {
   try {
+    // Try primary data directory first
     if (!existsSync(DATA_DIR)) {
       await mkdir(DATA_DIR, { recursive: true });
     }
+    return { dataDir: DATA_DIR, dataFile: DATA_FILE };
   } catch (error) {
-    console.error('Failed to create data directory:', error);
-    throw new Error('Unable to initialize data storage');
+    console.warn('Primary data directory failed, trying fallback:', error);
+    try {
+      // Try fallback directory
+      if (!existsSync(FALLBACK_DATA_DIR)) {
+        await mkdir(FALLBACK_DATA_DIR, { recursive: true });
+      }
+      return { dataDir: FALLBACK_DATA_DIR, dataFile: FALLBACK_DATA_FILE };
+    } catch (fallbackError) {
+      console.error('Both data directories failed:', fallbackError);
+      throw new Error('Unable to initialize data storage');
+    }
   }
 }
 
@@ -93,36 +109,64 @@ function getDefaultData() {
   };
 }
 
-// Helper function to load data
+// Helper function to load data with fallback
 async function loadData() {
+  // Try primary data file first
   if (existsSync(DATA_FILE)) {
-    const data = await readFile(DATA_FILE, 'utf-8');
-    return JSON.parse(data);
+    try {
+      const data = await readFile(DATA_FILE, 'utf-8');
+      return JSON.parse(data);
+    } catch (error) {
+      console.warn('Failed to read primary data file:', error);
+    }
   }
+  
+  // Try fallback data file
+  if (existsSync(FALLBACK_DATA_FILE)) {
+    try {
+      const data = await readFile(FALLBACK_DATA_FILE, 'utf-8');
+      return JSON.parse(data);
+    } catch (error) {
+      console.warn('Failed to read fallback data file:', error);
+    }
+  }
+  
   return null;
 }
 
-// Helper function to create default data
+// Helper function to create default data with fallback
 async function createDefaultData() {
   const defaultData = getDefaultData();
-  await writeFile(DATA_FILE, JSON.stringify(defaultData, null, 2));
+  const { dataFile } = await ensureDataDir();
+  
+  try {
+    await writeFile(dataFile, JSON.stringify(defaultData, null, 2));
+    console.log(`✅ Default data created at: ${dataFile}`);
+  } catch (error) {
+    console.error('Failed to create default data:', error);
+    throw error;
+  }
+  
   return defaultData;
 }
 
 // GET - Load data from storage
 export async function GET() {
   try {
-    await ensureDataDir();
+    const { dataDir, dataFile } = await ensureDataDir();
+    console.log(`📁 Using data directory: ${dataDir}`);
     
     const existingData = await loadData();
     if (existingData) {
+      console.log('✅ Loaded existing data');
       return NextResponse.json(existingData);
     }
     
+    console.log('📝 Creating default data...');
     const defaultData = await createDefaultData();
     return NextResponse.json(defaultData);
   } catch (error) {
-    console.error('Error loading data:', error);
+    console.error('❌ Error loading data:', error);
     return NextResponse.json(
       { error: 'Failed to load data', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -133,7 +177,8 @@ export async function GET() {
 // POST - Save data to storage
 export async function POST(request: NextRequest) {
   try {
-    await ensureDataDir();
+    const { dataDir, dataFile } = await ensureDataDir();
+    console.log(`💾 Saving data to: ${dataFile}`);
     
     const data = await request.json();
     
@@ -144,11 +189,21 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    await writeFile(DATA_FILE, JSON.stringify(data, null, 2));
+    // Add timestamp for debugging
+    data.lastSaved = new Date().toISOString();
+    data.savedFrom = process.env.NODE_ENV || 'unknown';
     
-    return NextResponse.json({ success: true, message: 'Data saved successfully' });
+    await writeFile(dataFile, JSON.stringify(data, null, 2));
+    console.log('✅ Data saved successfully');
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Data saved successfully',
+      savedTo: dataFile,
+      timestamp: data.lastSaved
+    });
   } catch (error) {
-    console.error('Error saving data:', error);
+    console.error('❌ Error saving data:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(
       { success: false, error: 'Failed to save data', details: errorMessage },
