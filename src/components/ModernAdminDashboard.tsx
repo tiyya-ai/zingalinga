@@ -697,7 +697,25 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             if (hasChildren && !isCollapsed) {
               toggleExpanded(item.id);
             } else {
-              setActiveSection(item.id);
+              // Handle special cases for user management
+              if (item.id === 'add-user') {
+                setActiveSection('add-user');
+                // Reset editing state for new user
+                setEditingUser(null);
+                setUserForm({
+                  name: '',
+                  email: '',
+                  password: '',
+                  role: 'user',
+                  status: 'active',
+                  avatar: '',
+                  phone: '',
+                  dateOfBirth: '',
+                  subscription: 'free'
+                });
+              } else {
+                setActiveSection(item.id);
+              }
               if (isMobile) setSidebarOpen(false);
             }
           }}
@@ -1662,32 +1680,67 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   };
 
   const handleEditVideo = (video: Module) => {
+    console.log('Editing video:', video); // Debug log
     setEditingVideo(video);
+    
+    // Determine video type based on URL
+    let videoType = 'youtube';
+    if (video.videoUrl) {
+      if (video.videoUrl.includes('youtube.com') || video.videoUrl.includes('youtu.be')) {
+        videoType = 'youtube';
+      } else if (video.videoUrl.includes('vimeo.com')) {
+        videoType = 'vimeo';
+      } else if (video.videoUrl.startsWith('blob:') || video.videoUrl.startsWith('data:')) {
+        videoType = 'upload';
+      } else {
+        videoType = 'external';
+      }
+    }
+    
+    // Convert tags array to string if needed
+    let tagsString = '';
+    if (Array.isArray((video as any).tags)) {
+      tagsString = (video as any).tags.join(', ');
+    } else if (typeof (video as any).tags === 'string') {
+      tagsString = (video as any).tags;
+    }
+    
     setVideoForm({
-      title: video.title,
+      title: video.title || '',
       description: video.description || '',
       price: video.price || 0,
       category: video.category || '',
       rating: video.rating || 0,
-      ageGroup: (video as any).ageGroup || '3-8 years',
-      duration: (video as any).duration || '',
+      ageGroup: (video as any).ageGroup || (video as any).ageRange || '3-8 years',
+      duration: (video as any).duration || (video as any).estimatedDuration || '',
       thumbnail: video.thumbnail || '',
       videoUrl: video.videoUrl || '',
-      videoType: (video as any).videoType || 'youtube',
-      tags: (video as any).tags || '',
+      videoType: videoType,
+      tags: tagsString,
       language: (video as any).language || 'English',
-      status: (video as any).status || 'active'
+      status: (video as any).isActive === false ? 'inactive' : 'active'
     });
+    
+    console.log('Video form populated:', {
+      title: video.title,
+      description: video.description,
+      price: video.price,
+      category: video.category,
+      videoType: videoType,
+      tags: tagsString
+    }); // Debug log
+    
     setActiveSection('add-video');
   };
 
   const handleAddVideo = () => {
+    console.log('Adding new video'); // Debug log
     setEditingVideo(null);
     setVideoForm({
       title: '',
       description: '',
       price: 0,
-      category: '',
+      category: categories.length > 0 ? categories[0] : '',
       rating: 0,
       ageGroup: '3-8 years',
       duration: '',
@@ -1968,16 +2021,24 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const renderEditVideo = () => (
     <div className="space-y-6">
       <PageHeader 
-        title={editingVideo ? 'Edit Video' : 'Add New Video'}
+        title={editingVideo ? `Edit Video: ${editingVideo.title}` : 'Add New Video'}
         actions={
-          <Button 
-            variant="flat" 
-            onPress={() => setActiveSection('all-videos')}
-            className="bg-gray-100 text-gray-700 hover:bg-gray-200"
-            startContent={<X className="h-4 w-4" />}
-          >
-            Cancel
-          </Button>
+          <div className="flex gap-2">
+            {editingVideo && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-lg">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm text-blue-700 font-medium">Editing Mode</span>
+              </div>
+            )}
+            <Button 
+              variant="flat" 
+              onPress={() => setActiveSection('all-videos')}
+              className="bg-gray-100 text-gray-700 hover:bg-gray-200"
+              startContent={<X className="h-4 w-4" />}
+            >
+              Cancel
+            </Button>
+          </div>
         }
       />
       
@@ -1994,22 +2055,34 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <Input
                   value={videoForm.title}
                   onChange={(e) => setVideoForm({ ...videoForm, title: e.target.value })}
-                  placeholder="Enter video title"
+                  placeholder={editingVideo ? "Loading..." : "Enter video title"}
                   classNames={{
                     input: "bg-white focus:ring-0 focus:ring-offset-0 shadow-none",
                     inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
                   }}
                 />
+                {editingVideo && videoForm.title && (
+                  <div className="text-xs text-green-600 flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    Data loaded from: {editingVideo.title}
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Description</label>
                 <textarea
                   value={videoForm.description}
                   onChange={(e) => setVideoForm({ ...videoForm, description: e.target.value })}
-                  placeholder="Describe your video content"
+                  placeholder={editingVideo ? "Loading description..." : "Describe your video content"}
                   rows={4}
                   className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-0 focus:border-blue-500 hover:border-blue-400 transition-all duration-200 resize-none"
                 />
+                {editingVideo && videoForm.description && (
+                  <div className="text-xs text-green-600 flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    Description loaded ({videoForm.description.length} characters)
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -2018,7 +2091,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     type="number"
                     value={videoForm.price.toString()}
                     onChange={(e) => setVideoForm({ ...videoForm, price: parseFloat(e.target.value) || 0 })}
-                    placeholder="0.00"
+                    placeholder={editingVideo ? "Loading price..." : "0.00"}
                     size="lg"
                     radius="lg"
                     startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
@@ -2027,6 +2100,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       inputWrapper: "bg-white border-2 border-gray-200 hover:border-blue-400 focus-within:border-blue-500 shadow-sm hover:shadow-md transition-all duration-200 flex items-center"
                     }}
                   />
+                  {editingVideo && videoForm.price > 0 && (
+                    <div className="text-xs text-green-600 flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      Price loaded: ${videoForm.price}
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Category *</label>
@@ -2036,7 +2115,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       const selected = Array.from(keys)[0] as string;
                       setVideoForm({ ...videoForm, category: selected });
                     }}
-                    placeholder="Select category"
+                    placeholder={editingVideo ? "Loading category..." : "Select category"}
                     size="lg"
                     radius="lg"
                     classNames={{
@@ -2052,6 +2131,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       </SelectItem>
                     ))}
                   </Select>
+                  {editingVideo && videoForm.category && (
+                    <div className="text-xs text-green-600 flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      Category loaded: {videoForm.category}
+                    </div>
+                  )}
                 </div>
               </div>
             </CardBody>
@@ -2178,7 +2263,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       <Input
                         value={videoForm.videoUrl}
                         onChange={(e) => setVideoForm({ ...videoForm, videoUrl: e.target.value, videoType: 'youtube' })}
-                        placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                        placeholder={editingVideo ? "Loading YouTube URL..." : "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
                         startContent={<Youtube className="h-4 w-4 text-red-500" />}
                         size="lg"
                         classNames={{
@@ -2186,6 +2271,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                           inputWrapper: "bg-white border-gray-300 hover:border-red-400 focus-within:border-red-500 shadow-sm"
                         }}
                       />
+                      {editingVideo && videoForm.videoUrl && (
+                        <div className="text-xs text-green-600 flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          Video URL loaded: {videoForm.videoUrl.substring(0, 50)}...
+                        </div>
+                      )}
                       <div className="flex flex-wrap gap-2 text-xs text-gray-500">
                         <span>- youtube.com/watch?v=...</span>
                         <span>- youtu.be/...</span>
@@ -2305,6 +2396,52 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         </div>
 
         <div className="space-y-6">
+          {/* Data Summary for Editing */}
+          {editingVideo && (
+            <Card className="bg-blue-50 border border-blue-200">
+              <CardHeader className="border-b border-blue-200">
+                <h3 className="text-lg font-semibold text-blue-900 flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  Loaded Video Data
+                </h3>
+              </CardHeader>
+              <CardBody className="space-y-3">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-blue-800">Original Title:</span>
+                    <p className="text-blue-700">{editingVideo.title}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-blue-800">Category:</span>
+                    <p className="text-blue-700">{editingVideo.category || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-blue-800">Price:</span>
+                    <p className="text-blue-700">${editingVideo.price || 0}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-blue-800">Duration:</span>
+                    <p className="text-blue-700">{(editingVideo as any).duration || 'Not set'}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="font-medium text-blue-800">Video URL:</span>
+                    <p className="text-blue-700 truncate">{editingVideo.videoUrl || 'Not set'}</p>
+                  </div>
+                  {editingVideo.description && (
+                    <div className="col-span-2">
+                      <span className="font-medium text-blue-800">Description:</span>
+                      <p className="text-blue-700 line-clamp-2">{editingVideo.description}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 pt-2 border-t border-blue-200">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-green-700 font-medium">All data loaded successfully into editor</span>
+                </div>
+              </CardBody>
+            </Card>
+          )}
+          
           {/* Basic Information */}
           <Card className="bg-white border border-gray-200">
             <CardHeader className="border-b border-gray-200">
@@ -2424,13 +2561,19 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <Input
                   value={videoForm.tags}
                   onChange={(e) => setVideoForm({ ...videoForm, tags: e.target.value })}
-                  placeholder="education, kids, fun"
+                  placeholder={editingVideo ? "Loading tags..." : "education, kids, fun"}
                   startContent={<Tag className="h-4 w-4 text-gray-400" />}
                   classNames={{
                     input: "bg-white text-gray-900 placeholder:text-gray-400 border-0 focus:ring-0 focus:outline-none",
                     inputWrapper: "bg-white border border-gray-300 hover:border-blue-400 focus-within:!border-blue-500 shadow-sm hover:shadow-md transition-all duration-200 focus-within:!ring-0 focus-within:!outline-none focus-within:!shadow-none"
                   }}
                 />
+                {editingVideo && videoForm.tags && (
+                  <div className="text-xs text-green-600 flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    Tags loaded: {videoForm.tags}
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Rating</label>
