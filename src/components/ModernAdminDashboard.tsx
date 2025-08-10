@@ -430,7 +430,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           { 
             id: 'system_init', 
             type: 'system', 
-            message: 'Admin dashboard initialized', 
+            message: 'admin initialized', 
             time: 'Just now', 
             avatar: 'AD' 
           }
@@ -455,7 +455,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
       // Set minimal fallback activities
       setRecentActivities([
-        { id: 1, type: 'system', message: 'Admin dashboard initialized', time: 'Just now', avatar: 'AD' }
+        { id: 1, type: 'system', message: 'admin initialized', time: 'Just now', avatar: 'AD' }
       ]);
     } finally {
       setDataLoaded(true);
@@ -6964,7 +6964,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 </div>
                 <div className="hidden sm:block">
                   <h1 className="text-xl font-bold text-white">Zinga Linga</h1>
-                  <p className="text-sm text-gray-400">Admin Dashboard</p>
+                  <p className="text-sm text-gray-400">admin</p>
                 </div>
               </div>
             </div>
@@ -7297,7 +7297,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   <h1 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                     Zingalinga
                   </h1>
-                  <p className="text-xs text-gray-400">Admin Dashboard</p>
+                  <p className="text-xs text-gray-400">admin</p>
                 </div>
               </div>
             )}
