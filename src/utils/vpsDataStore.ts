@@ -181,16 +181,11 @@ class VPSDataStore {
           
           const dataToSave = JSON.stringify(compressedData);
           localStorage.setItem(this.storageKey, dataToSave);
-          console.log('✅ Data saved to localStorage successfully', {
-            modules: this.memoryData.modules?.length || 0,
-            users: this.memoryData.users?.length || 0,
-            size: `${(dataToSave.length / 1024).toFixed(1)}KB`
-          });
+
         } catch (storageError) {
-          console.error('❌ Failed to save to localStorage:', storageError);
-          // Clear old data and save minimal data
+          console.error('❌ VPS localStorage save failed:', storageError);
           if ((storageError as Error).name === 'QuotaExceededError') {
-            console.log('🧹 Clearing localStorage due to quota exceeded...');
+
             try {
               localStorage.removeItem(this.storageKey);
               const minimalData = {
@@ -201,22 +196,25 @@ class VPSDataStore {
                   type: m.type,
                   category: m.category,
                   price: m.price,
-                  isVisible: m.isVisible
+                  isVisible: m.isVisible,
+                  updatedAt: m.updatedAt
                 })) || [],
                 purchases: this.memoryData.purchases || [],
-                settings: this.memoryData.settings
+                settings: this.memoryData.settings,
+                lastUpdated: new Date().toISOString()
               };
               localStorage.setItem(this.storageKey, JSON.stringify(minimalData));
-              console.log('✅ Minimal data saved after quota exceeded');
+
             } catch (retryError) {
-              console.error('❌ Failed to save minimal data:', retryError);
+              console.error('❌ VPS Failed to save minimal data:', retryError);
             }
           }
         }
       }
       
-      // Try to save to API (optional)
+      // Try to save to API (VPS)
       try {
+
         const response = await fetch('/api/data', {
           method: 'POST',
           headers: {
@@ -226,10 +224,13 @@ class VPSDataStore {
         });
         
         if (response.ok) {
-          console.log('✅ Data saved to API successfully');
+          const result = await response.json();
+
+        } else {
+          console.error('❌ VPS API save failed:', response.status, response.statusText);
         }
       } catch (apiError) {
-        console.log('⚠️ API save failed, using localStorage only');
+        console.error('❌ VPS API save error:', apiError);
       }
       
       return true;
@@ -274,7 +275,7 @@ class VPSDataStore {
 
   async addProduct(product: any): Promise<boolean> {
     try {
-      console.log('💾 Adding product to data store:', product.title);
+
       
       const data = await this.loadData();
       
@@ -297,7 +298,7 @@ class VPSDataStore {
       data.modules.push(newProduct);
       
       const success = await this.saveData(data);
-      console.log(success ? '✅ Product added successfully' : '❌ Failed to add product');
+
       
       return success;
     } catch (error) {
@@ -308,7 +309,7 @@ class VPSDataStore {
 
   async updateProduct(updatedProduct: any): Promise<boolean> {
     try {
-      console.log('💾 Updating product in data store:', updatedProduct.title);
+
       
       const data = await this.loadData();
       data.modules = data.modules || [];
@@ -320,10 +321,10 @@ class VPSDataStore {
           updatedAt: new Date().toISOString()
         };
         const success = await this.saveData(data);
-        console.log(success ? '✅ Product updated successfully' : '❌ Failed to update product');
+
         return success;
       }
-      console.log('❌ Product not found for update:', updatedProduct.id);
+
       return false;
     } catch (error) {
       console.error('Error updating product:', error);
@@ -333,7 +334,7 @@ class VPSDataStore {
 
   async deleteProduct(productId: string): Promise<boolean> {
     try {
-      console.log('💾 Deleting product from data store:', productId);
+
       
       const data = await this.loadData();
       data.modules = data.modules || [];
@@ -342,10 +343,10 @@ class VPSDataStore {
       
       if (data.modules.length < originalLength) {
         const success = await this.saveData(data);
-        console.log(success ? '✅ Product deleted successfully' : '❌ Failed to delete product');
+
         return success;
       } else {
-        console.log('❌ Product not found for deletion:', productId);
+
         return false;
       }
     } catch (error) {
@@ -402,7 +403,7 @@ class VPSDataStore {
       // Check if user already exists
       const existingUser = data.users?.find(u => u.email === user.email);
       if (existingUser) {
-        console.log('User already exists:', user.email);
+
         return false;
       }
       
@@ -419,7 +420,7 @@ class VPSDataStore {
       data.users.push(newUser);
       
       const success = await this.saveData(data);
-      console.log('User added successfully:', success, newUser.email);
+
       return success;
     } catch (error) {
       console.error('Error adding user:', error);

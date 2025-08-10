@@ -38,7 +38,7 @@ class AuthManager {
     try {
       if (typeof window !== 'undefined') {
         localStorage.setItem(this.sessionKey, JSON.stringify(session));
-        console.log('💾 Session updated for:', session.user.email);
+  
       }
     } catch (error) {
       console.error('Error setting session:', error);
@@ -69,7 +69,7 @@ class AuthManager {
       session.lastActivity = Date.now();
       this.setSession(session);
       
-      console.log('✅ Valid session found for:', session.user.email, 'Role:', session.user.role);
+
       return session;
     } catch (error) {
       console.error('Error getting session:', error);

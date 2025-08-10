@@ -421,11 +421,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
 
       
-      console.log('✅ Real data loaded successfully:', {
-        users: realUsers.length,
-        videos: realVideos.length,
-        orders: realOrders.length
-      });
+
       
       setDataLoaded(true);
 
@@ -1646,7 +1642,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       language: (video as any).language || 'English',
       status: (video as any).status || 'active'
     });
-    setActiveSection('edit-video');
+    setActiveSection('add-video');
   };
 
   const handleAddVideo = () => {
@@ -1666,7 +1662,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       language: 'English',
       status: 'active'
     });
-    setActiveSection('edit-video');
+    setActiveSection('add-video');
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -6779,7 +6775,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       case 'analytics': return renderAnalytics();
       case 'all-videos': return renderAllVideos();
       case 'add-video': return renderEditVideo();
-      case 'edit-video': return renderEditVideo();
+      case 'add-video': return renderEditVideo();
       case 'audio-lessons': return renderAudioLessons();
       case 'add-audio-lesson': return renderAddAudioLesson();
       case 'video-lessons': return renderVideoLessons();
