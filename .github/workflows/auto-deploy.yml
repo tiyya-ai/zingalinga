@@ -1,8 +1,14 @@
-name: 🚀 Auto Deploy to VPS
+name: 🚀 Auto Deploy to VPS - Video Fixes Included
 
 on:
   push:
     branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      deploy_reason:
+        description: 'Reason for manual deployment'
+        required: false
+        default: 'Manual deployment'
 
 jobs:
   deploy:
@@ -18,21 +24,56 @@ jobs:
         node-version: '18'
         cache: 'npm'
 
-    - name: 📦 Install & Build
+    - name: 📦 Install Dependencies
       run: |
         npm ci
-        npm run build
+        echo "✅ Dependencies installed successfully"
 
-    - name: SSH and deploy
+    - name: 🏗️ Build Application
+      run: |
+        npm run build
+        echo "✅ Build completed successfully"
+
+    - name: 🚀 Deploy to VPS
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: 109.199.106.28
         username: root
         password: Secureweb25
         script: |
+          echo "🔄 Starting deployment process..."
+          
+          # Navigate to project directory
           cd /var/www/zinga-linga || mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
+          
+          # Backup current version
+          if [ -d ".git" ]; then
+            echo "📦 Creating backup..."
+            cp -r . ../zinga-linga-backup-$(date +%Y%m%d-%H%M%S) || echo "⚠️ Backup failed, continuing..."
+          fi
+          
+          # Pull latest changes
+          echo "📥 Pulling latest code..."
           git pull origin main || git clone https://github.com/${{ github.repository }} .
-          npm install
+          
+          # Install dependencies and build
+          echo "📦 Installing dependencies..."
+          npm install --production
+          
+          echo "🏗️ Building application..."
           npm run build
+          
+          # Restart application with PM2
+          echo "🔄 Restarting application..."
           pm2 restart zinga-linga || pm2 start npm --name "zinga-linga" -- start
-          echo "Deployment complete"
+          
+          # Verify deployment
+          sleep 5
+          if pm2 list | grep -q "zinga-linga.*online"; then
+            echo "✅ Deployment successful! Video editing fixes are now live."
+          else
+            echo "❌ Deployment may have issues. Check PM2 logs."
+            pm2 logs zinga-linga --lines 10
+          fi
+          
+          echo "🎉 Deployment process completed!"
