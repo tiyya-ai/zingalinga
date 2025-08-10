@@ -672,6 +672,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       color: 'text-blue-600'
     },
     {
+      id: 'admin-profile',
+      label: 'Admin Profile',
+      icon: <UserCheck className="h-5 w-5" />,
+      color: 'text-indigo-600'
+    },
+    {
       id: 'settings',
       label: 'Settings',
       icon: <Settings className="h-5 w-5" />,
@@ -4012,7 +4018,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           <CardBody className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Platform Logo</label>
-              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-500 transition-all duration-300 bg-gray-50/30 relative cursor-pointer">
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-500 transition-all duration-300 bg-gray-50/30 relative">
                 {logoFile ? (
                   <div className="space-y-4">
                     <div className="w-32 h-16 mx-auto bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex items-center justify-center">
@@ -4032,22 +4038,37 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       <p className="text-sm font-medium text-green-700">Logo uploaded successfully!</p>
                       <p className="text-xs text-gray-500">Click to change logo</p>
                     </div>
-                    <Button 
-                      size="sm" 
-                      variant="flat" 
-                      color="warning"
-                      onPress={() => {
-                        setLogoFile(null);
-                        // Clear from data store
-                        vpsDataStore.updateSettings({ platformLogo: null });
-                      }}
-                      startContent={<X className="h-4 w-4" />}
-                    >
-                      Remove Logo
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="flat" 
+                        color="primary"
+                        onPress={() => {
+                          const fileInput = document.getElementById('logo-file-input') as HTMLInputElement;
+                          fileInput?.click();
+                        }}
+                        startContent={<Upload className="h-4 w-4" />}
+                      >
+                        Change Logo
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="flat" 
+                        color="danger"
+                        onPress={async () => {
+                          setLogoFile(null);
+                          await vpsDataStore.updateSettings({ platformLogo: null });
+                          setToast({message: 'Logo removed successfully!', type: 'success'});
+                          setTimeout(() => setToast(null), 3000);
+                        }}
+                        startContent={<X className="h-4 w-4" />}
+                      >
+                        Remove
+                      </Button>
+                    </div>
                   </div>
                 ) : (
-                  <div className="space-y-4 pointer-events-none">
+                  <div className="space-y-4">
                     <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
                       {logoUploading ? (
                         <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -4065,7 +4086,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       color="primary" 
                       variant="flat"
                       startContent={<Upload className="h-4 w-4" />}
-                      className="pointer-events-none"
+                      onPress={() => {
+                        const fileInput = document.getElementById('logo-file-input') as HTMLInputElement;
+                        fileInput?.click();
+                      }}
                       isDisabled={logoUploading}
                     >
                       {logoUploading ? 'Uploading...' : 'Choose Logo'}
@@ -4073,11 +4097,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   </div>
                 )}
                 <input
+                  id="logo-file-input"
                   type="file"
                   accept="image/jpeg,image/jpg,image/png,image/webp"
                   onChange={handleLogoUpload}
                   disabled={logoUploading}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  className="hidden"
                 />
               </div>
             </div>
@@ -4164,9 +4189,21 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               />
             </div>
             <Button 
-              className="w-full bg-gray-900 text-white hover:bg-gray-800"
-              onPress={handleUpdateProfile}
-              isDisabled={!profileForm.currentPassword || !profileForm.newPassword || !profileForm.confirmPassword}
+              className="w-full bg-blue-600 text-white hover:bg-blue-700"
+              onPress={async () => {
+                if (!profileForm.currentPassword || !profileForm.newPassword || !profileForm.confirmPassword) {
+                  setToast({message: 'Please fill in all password fields', type: 'error'});
+                  setTimeout(() => setToast(null), 3000);
+                  return;
+                }
+                if (profileForm.newPassword !== profileForm.confirmPassword) {
+                  setToast({message: 'New passwords do not match', type: 'error'});
+                  setTimeout(() => setToast(null), 3000);
+                  return;
+                }
+                await handleUpdateProfile();
+              }}
+              isLoading={isLoading}
             >
               Update Password
             </Button>
@@ -4174,13 +4211,39 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         </Card>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-3">
         <Button 
-          className="bg-gray-900 text-white hover:bg-gray-800"
-          onPress={handleUpdateProfile}
-          isLoading={isLoading}
+          variant="flat"
+          className="bg-gray-100 text-gray-700 hover:bg-gray-200"
+          onPress={() => {
+            // Reset form to original values
+            setProfileForm({
+              name: user?.name || 'Admin User',
+              email: user?.email || 'admin@zingalinga.com',
+              currentPassword: '',
+              newPassword: '',
+              confirmPassword: ''
+            });
+            setToast({message: 'Form reset to original values', type: 'info'});
+            setTimeout(() => setToast(null), 3000);
+          }}
         >
-          Save Changes
+          Reset
+        </Button>
+        <Button 
+          className="bg-green-600 text-white hover:bg-green-700"
+          onPress={async () => {
+            if (!profileForm.name.trim() || !profileForm.email.trim()) {
+              setToast({message: 'Name and email are required', type: 'error'});
+              setTimeout(() => setToast(null), 3000);
+              return;
+            }
+            await handleUpdateProfile();
+          }}
+          isLoading={isLoading}
+          startContent={<CheckCircle className="h-4 w-4" />}
+        >
+          Save Profile Changes
         </Button>
       </div>
     </div>
