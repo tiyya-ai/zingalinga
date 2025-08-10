@@ -331,12 +331,24 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       })));
 
       // Set real videos data with proper URL handling
-      setVideos(realVideos.map(video => ({
-        ...video,
-        // Ensure URLs are properly handled for display
-        videoUrl: video.videoUrl || video.videoSource || '',
-        thumbnail: video.thumbnail || video.imageUrl || ''
-      })));
+      const processedVideos = realVideos.map(video => {
+        console.log('Processing video for display:', { id: video.id, title: video.title, videoUrl: video.videoUrl?.substring(0, 50) });
+        return {
+          ...video,
+          // Ensure URLs are properly handled for display
+          videoUrl: video.videoUrl || video.videoSource || '',
+          thumbnail: video.thumbnail || video.imageUrl || '',
+          // Ensure all required fields are present
+          ageGroup: video.ageGroup || video.ageRange || '3-8 years',
+          videoType: video.videoType || (video.videoUrl?.includes('youtube') ? 'youtube' : 'external'),
+          language: video.language || 'English',
+          tags: video.tags || [],
+          isActive: video.isActive !== undefined ? video.isActive : true
+        };
+      });
+      
+      console.log(`🎬 Loaded ${processedVideos.length} videos for display`);
+      setVideos(processedVideos);
 
       // Convert real purchases to orders format
       const convertedOrders = realOrders.map(purchase => {
@@ -1863,6 +1875,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       setIsLoading(true);
       setLoadingMessage(editingVideo ? 'Updating video...' : 'Creating video...');
       
+      console.log('🎬 Starting video save process:', { 
+        editing: !!editingVideo, 
+        title: videoForm.title, 
+        videoUrl: videoForm.videoUrl?.substring(0, 50),
+        thumbnail: videoForm.thumbnail?.substring(0, 50)
+      });
+      
       // Validate required fields
       if (!videoForm.title.trim()) {
         setToast({message: 'Please enter a video title', type: 'error'});
@@ -1887,8 +1906,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       let persistentVideoUrl = videoForm.videoUrl;
       let persistentThumbnail = videoForm.thumbnail;
       
+      console.log('🔄 Converting media URLs for persistence...');
+      
       if (videoForm.videoUrl.startsWith('blob:')) {
         try {
+          console.log('📹 Converting video blob to base64...');
           const response = await fetch(videoForm.videoUrl);
           const blob = await response.blob();
           const reader = new FileReader();
@@ -1896,13 +1918,15 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             reader.onload = () => resolve(reader.result as string);
             reader.readAsDataURL(blob);
           });
+          console.log('✅ Video blob converted to base64');
         } catch (error) {
-          console.error('Failed to convert video blob to base64:', error);
+          console.error('❌ Failed to convert video blob to base64:', error);
         }
       }
       
       if (videoForm.thumbnail && videoForm.thumbnail.startsWith('blob:')) {
         try {
+          console.log('🖼️ Converting thumbnail blob to base64...');
           const response = await fetch(videoForm.thumbnail);
           const blob = await response.blob();
           const reader = new FileReader();
@@ -1910,12 +1934,14 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             reader.onload = () => resolve(reader.result as string);
             reader.readAsDataURL(blob);
           });
+          console.log('✅ Thumbnail blob converted to base64');
         } catch (error) {
-          console.error('Failed to convert thumbnail blob to base64:', error);
+          console.error('❌ Failed to convert thumbnail blob to base64:', error);
         }
       }
       
       if (editingVideo) {
+        console.log('📝 Updating existing video...');
         const updatedVideo = { 
           ...editingVideo, 
           title: videoForm.title,
@@ -1927,15 +1953,20 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           videoUrl: persistentVideoUrl,
           duration: videoForm.duration,
           estimatedDuration: videoForm.duration,
+          ageGroup: videoForm.ageGroup,
+          ageRange: videoForm.ageGroup,
+          videoType: videoForm.videoType,
+          language: videoForm.language,
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
           isActive: videoForm.status === 'active',
           isVisible: videoForm.status === 'active',
           updatedAt: new Date().toISOString()
         };
         
-        // Save to data store first
+        console.log('💾 Saving updated video to data store...');
         const success = await vpsDataStore.updateProduct(updatedVideo);
         if (success) {
+          console.log('✅ Video updated in data store');
           // Clear cache to ensure fresh data on next load
           vpsDataStore.clearMemoryCache();
           // Update local state after successful save
@@ -1943,11 +1974,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           setToast({message: 'Video updated successfully!', type: 'success'});
           setTimeout(() => setToast(null), 3000);
         } else {
+          console.log('❌ Failed to update video in data store');
           setToast({message: 'Failed to update video. Please try again.', type: 'error'});
           setTimeout(() => setToast(null), 3000);
           return;
         }
       } else {
+        console.log('🆕 Creating new video...');
         const newVideo: Module = {
           id: `video_${Date.now()}`,
           title: videoForm.title,
@@ -1957,23 +1990,23 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           rating: videoForm.rating,
           thumbnail: persistentThumbnail,
           videoUrl: persistentVideoUrl,
-
           duration: videoForm.duration,
           estimatedDuration: videoForm.duration,
+          ageGroup: videoForm.ageGroup,
+          ageRange: videoForm.ageGroup,
+          videoType: videoForm.videoType,
+          language: videoForm.language,
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
-
-
-
-
           isActive: videoForm.status === 'active',
           isVisible: videoForm.status === 'active',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
         
-        // Save to data store first
+        console.log('💾 Saving new video to data store...');
         const success = await vpsDataStore.addProduct(newVideo);
         if (success) {
+          console.log('✅ Video created in data store');
           // Clear cache to ensure fresh data on next load
           vpsDataStore.clearMemoryCache();
           // Add to local state after successful save
@@ -1981,24 +2014,29 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           setToast({message: 'Video created successfully!', type: 'success'});
           setTimeout(() => setToast(null), 3000);
         } else {
+          console.log('❌ Failed to create video in data store');
           setToast({message: 'Failed to create video. Please try again.', type: 'error'});
           setTimeout(() => setToast(null), 3000);
           return;
         }
       }
       
-      // Clean up blob URLs
+      // Clean up blob URLs after successful save
       if (videoForm.videoUrl.startsWith('blob:')) {
         URL.revokeObjectURL(videoForm.videoUrl);
+        console.log('🧹 Cleaned up video blob URL');
       }
       if (videoForm.thumbnail && videoForm.thumbnail.startsWith('blob:')) {
         URL.revokeObjectURL(videoForm.thumbnail);
+        console.log('🧹 Cleaned up thumbnail blob URL');
       }
       
+      console.log('🎉 Video save process completed successfully');
       setActiveSection('all-videos');
     } catch (error) {
-      console.error('- Failed to save video:', error);
-      alert('Failed to save video. Please try again.');
+      console.error('❌ Failed to save video:', error);
+      setToast({message: 'Failed to save video. Please try again.', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
     } finally {
       setIsLoading(false);
       setLoadingMessage('');

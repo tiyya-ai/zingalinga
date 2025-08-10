@@ -204,23 +204,30 @@ class VPSDataStore {
       // Always save to localStorage for persistence
       if (typeof window !== 'undefined') {
         try {
-          // Compress data for localStorage - remove large base64 files
-          const compressedData = {
-            ...this.memoryData,
-            modules: this.memoryData.modules?.map(m => ({
-              ...m,
-              // Keep URLs but remove large base64 data
-              videoUrl: m.videoUrl?.startsWith('data:') ? '[BASE64_VIDEO_REMOVED]' : m.videoUrl,
-              thumbnail: m.thumbnail?.startsWith('data:') ? '[BASE64_IMAGE_REMOVED]' : m.thumbnail,
-              audioUrl: m.audioUrl?.startsWith?.('data:') ? '[BASE64_AUDIO_REMOVED]' : m.audioUrl
-            }))
-          };
-          
-          const dataToSave = JSON.stringify(compressedData);
+          // Save full data to localStorage - keep all media data
+          const dataToSave = JSON.stringify(this.memoryData);
           localStorage.setItem(this.storageKey, dataToSave);
-          console.log('✅ Data saved to localStorage');
+          console.log('✅ Data saved to localStorage with full media data');
         } catch (storageError) {
           console.error('❌ VPS localStorage save failed:', storageError);
+          // If localStorage fails due to size, try with compressed data
+          try {
+            const compressedData = {
+              ...this.memoryData,
+              modules: this.memoryData.modules?.map(m => ({
+                ...m,
+                // Keep URLs but remove large base64 data only as fallback
+                videoUrl: m.videoUrl?.startsWith('data:') ? '[BASE64_VIDEO_REMOVED]' : m.videoUrl,
+                thumbnail: m.thumbnail?.startsWith('data:') ? '[BASE64_IMAGE_REMOVED]' : m.thumbnail,
+                audioUrl: m.audioUrl?.startsWith?.('data:') ? '[BASE64_AUDIO_REMOVED]' : m.audioUrl
+              }))
+            };
+            const fallbackData = JSON.stringify(compressedData);
+            localStorage.setItem(this.storageKey, fallbackData);
+            console.log('⚠️ Data saved to localStorage with compressed media (fallback)');
+          } catch (fallbackError) {
+            console.error('❌ Even compressed localStorage save failed:', fallbackError);
+          }
         }
       }
       
@@ -266,12 +273,14 @@ class VPSDataStore {
 
   async addProduct(product: any): Promise<boolean> {
     try {
+      console.log('🎬 Adding product:', { title: product.title, videoUrl: product.videoUrl?.substring(0, 50), thumbnail: product.thumbnail?.substring(0, 50) });
       const data = await this.loadData();
       
       const newProduct = {
         ...product,
-        id: product.id || Date.now().toString(),
+        id: product.id || `video_${Date.now()}`,
         createdAt: product.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         isActive: product.isActive !== undefined ? product.isActive : true,
         isVisible: product.isVisible !== undefined ? product.isVisible : true,
         rating: product.rating || 0,
@@ -279,13 +288,19 @@ class VPSDataStore {
         features: product.features || [],
         fullContent: product.fullContent || [],
         difficulty: product.difficulty || 'beginner',
-        tags: product.tags || []
+        tags: product.tags || [],
+        // Ensure media URLs are preserved
+        videoUrl: product.videoUrl || '',
+        thumbnail: product.thumbnail || '',
+        audioUrl: product.audioUrl || ''
       };
       
       data.modules = data.modules || [];
       data.modules.push(newProduct);
       
+      console.log('💾 Saving product to data store...');
       const success = await this.saveData(data);
+      console.log(success ? '✅ Product saved successfully' : '❌ Product save failed');
       return success;
     } catch (error) {
       console.error('❌ Error adding product:', error);
@@ -295,18 +310,27 @@ class VPSDataStore {
 
   async updateProduct(updatedProduct: any): Promise<boolean> {
     try {
+      console.log('🔄 Updating product:', { id: updatedProduct.id, title: updatedProduct.title, videoUrl: updatedProduct.videoUrl?.substring(0, 50) });
       const data = await this.loadData();
       data.modules = data.modules || [];
       const index = data.modules.findIndex(p => p.id === updatedProduct.id);
       if (index !== -1) {
+        const originalProduct = data.modules[index];
         data.modules[index] = {
-          ...data.modules[index],
+          ...originalProduct,
           ...updatedProduct,
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
+          // Preserve media URLs if they exist
+          videoUrl: updatedProduct.videoUrl || originalProduct.videoUrl || '',
+          thumbnail: updatedProduct.thumbnail || originalProduct.thumbnail || '',
+          audioUrl: updatedProduct.audioUrl || originalProduct.audioUrl || ''
         };
+        console.log('💾 Saving updated product...');
         const success = await this.saveData(data);
+        console.log(success ? '✅ Product updated successfully' : '❌ Product update failed');
         return success;
       }
+      console.log('❌ Product not found for update');
       return false;
     } catch (error) {
       console.error('Error updating product:', error);
