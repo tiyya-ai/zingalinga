@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
 import {
@@ -444,7 +444,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       setDataLoaded(true);
 
     } catch (error) {
-      console.error('❌ Failed to load real data:', error);
+      console.error('- Failed to load real data:', error);
       // Keep sample data as fallback
       setDataStatus({
         isRealData: false,
@@ -1600,7 +1600,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     if (success) {
       const updatedScheduled = await vpsDataStore.getScheduledContent();
       setScheduledContent(updatedScheduled);
-      alert('✅ Content scheduled successfully!');
+      alert('- Content scheduled successfully!');
       
       // Reset form
       setScheduleForm({
@@ -1610,7 +1610,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         status: 'scheduled'
       });
     } else {
-      alert('❌ Failed to schedule content');
+      alert('- Failed to schedule content');
     }
   };
 
@@ -1619,9 +1619,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     if (success) {
       const updatedScheduled = await vpsDataStore.getScheduledContent();
       setScheduledContent(updatedScheduled);
-      alert('✅ Schedule cancelled successfully!');
+      alert('- Schedule cancelled successfully!');
     } else {
-      alert('❌ Failed to cancel schedule');
+      alert('- Failed to cancel schedule');
     }
   };
 
@@ -1644,7 +1644,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             : item
         )
       );
-      alert('✅ Content published successfully!');
+      alert('- Content published successfully!');
     }
   };
 
@@ -1931,7 +1931,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       
       setActiveSection('all-videos');
     } catch (error) {
-      console.error('❌ Failed to save video:', error);
+      console.error('- Failed to save video:', error);
       alert('Failed to save video. Please try again.');
     } finally {
       setIsLoading(false);
@@ -2080,7 +2080,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                                   <FileVideo className="h-5 w-5 text-blue-500" />
                                   <div>
                                     <p className="font-medium text-sm">{item.fileName || item.title}</p>
-                                    <p className="text-xs text-gray-500">{item.size} • {item.duration}</p>
+                                    <p className="text-xs text-gray-500">{item.size} - {item.duration}</p>
                                   </div>
                                 </div>
                                 <Chip size="sm" color={item.status === 'completed' ? 'success' : 'warning'} variant="flat">
@@ -2116,7 +2116,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                           <Upload className="h-16 w-16 text-gray-400 mx-auto" />
                           <div>
                             <p className="text-lg font-semibold text-gray-900">Upload new video file</p>
-                            <p className="text-sm text-gray-600">Supports: MP4, MOV, AVI, WMV • Max size: 500MB</p>
+                            <p className="text-sm text-gray-600">Supports: MP4, MOV, AVI, WMV - Max size: 500MB</p>
                           </div>
                           <Button 
                             color="primary" 
@@ -2174,9 +2174,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         }}
                       />
                       <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-                        <span>• youtube.com/watch?v=...</span>
-                        <span>• youtu.be/...</span>
-                        <span>• m.youtube.com/...</span>
+                        <span>- youtube.com/watch?v=...</span>
+                        <span>- youtu.be/...</span>
+                        <span>- m.youtube.com/...</span>
                       </div>
                     </div>
                     {videoForm.videoUrl && (
@@ -2228,8 +2228,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         }}
                       />
                       <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-                        <span>• vimeo.com/123456</span>
-                        <span>• player.vimeo.com/...</span>
+                        <span>- vimeo.com/123456</span>
+                        <span>- player.vimeo.com/...</span>
                       </div>
                     </div>
                     {videoForm.videoUrl && (
@@ -2485,7 +2485,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-900">Click to upload thumbnail</p>
-                        <p className="text-xs text-gray-500">Recommended: 1280x720 pixels • JPG, PNG, WebP</p>
+                        <p className="text-xs text-gray-500">Recommended: 1280x720 pixels - JPG, PNG, WebP</p>
                       </div>
                       <Button 
                         color="warning" 
@@ -2563,10 +2563,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 Quick Tips
               </h4>
               <ul className="text-xs text-blue-800 space-y-1">
-                <li>• Use descriptive titles for better discoverability</li>
-                <li>• Add relevant tags separated by commas</li>
-                <li>• YouTube/Vimeo videos load faster than uploads</li>
-                <li>• Thumbnails should be 1280x720 for best quality</li>
+                <li>- Use descriptive titles for better discoverability</li>
+                <li>- Add relevant tags separated by commas</li>
+                <li>- YouTube/Vimeo videos load faster than uploads</li>
+                <li>- Thumbnails should be 1280x720 for best quality</li>
               </ul>
             </CardBody>
           </Card>
@@ -2591,9 +2591,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         const updatedVideos = await vpsDataStore.getProducts();
         setVideos(updatedVideos);
         setSelectedVideos([]);
-        alert(`✅ ${selectedVideos.length} videos deleted successfully!`);
+        alert(`- ${selectedVideos.length} videos deleted successfully!`);
       } catch (error) {
-        alert('❌ Failed to delete some videos. Please try again.');
+        alert('- Failed to delete some videos. Please try again.');
       }
     }
   };
@@ -2617,9 +2617,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         
         setVideos(updatedVideos);
         setSelectedVideos([]);
-        alert(`✅ Price updated for ${selectedVideos.length} videos!`);
+        alert(`- Price updated for ${selectedVideos.length} videos!`);
       } catch (error) {
-        alert('❌ Failed to update prices. Please try again.');
+        alert('- Failed to update prices. Please try again.');
       }
     }
   };
@@ -2643,9 +2643,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         
         setVideos(updatedVideos);
         setSelectedVideos([]);
-        alert(`✅ Category updated for ${selectedVideos.length} videos!`);
+        alert(`- Category updated for ${selectedVideos.length} videos!`);
       } catch (error) {
-        alert('❌ Failed to update categories. Please try again.');
+        alert('- Failed to update categories. Please try again.');
       }
     }
   };
@@ -3002,9 +3002,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                             if (success) {
                               const updatedUsers = await vpsDataStore.getUsers();
                               setUsers(updatedUsers);
-                              alert('✅ User deleted successfully!');
+                              alert('- User deleted successfully!');
                             } else {
-                              alert('❌ Failed to delete user');
+                              alert('- Failed to delete user');
                             }
                           }
                         }}
@@ -3612,7 +3612,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">Upload Platform Logo</p>
-                    <p className="text-xs text-gray-500">PNG, JPG up to 2MB • Recommended: 200x80px</p>
+                    <p className="text-xs text-gray-500">PNG, JPG up to 2MB - Recommended: 200x80px</p>
                   </div>
                   <Button 
                     color="primary" 
@@ -3852,7 +3852,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                           }}
                           aria-label={`Play audio lesson ${lesson.title}`}
                         >
-                          <span className="text-white text-sm">▶</span>
+                          <span className="text-white text-sm">-</span>
                         </Button>
                       </td>
                       <td className="px-4 py-3">
@@ -4152,9 +4152,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         const success = await vpsDataStore.updateProduct(updatedLesson);
         if (success) {
           setVideos(prev => prev.map(v => v.id === editingVideo.id ? updatedLesson : v));
-          alert('✅ Audio lesson updated successfully!');
+          alert('- Audio lesson updated successfully!');
         } else {
-          alert('❌ Failed to update audio lesson.');
+          alert('- Failed to update audio lesson.');
           return;
         }
       } else {
@@ -4182,9 +4182,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         const success = await vpsDataStore.addProduct(newAudioLesson);
         if (success) {
           setVideos(prev => [...prev, newAudioLesson]);
-          alert('✅ Audio lesson created successfully!');
+          alert('- Audio lesson created successfully!');
         } else {
-          alert('❌ Failed to create audio lesson.');
+          alert('- Failed to create audio lesson.');
           return;
         }
       }
@@ -4208,7 +4208,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         previewDuration: ''
       });
     } catch (error) {
-      console.error('❌ Failed to save audio lesson:', error);
+      console.error('- Failed to save audio lesson:', error);
       alert('Failed to save audio lesson. Please try again.');
     }
   };
@@ -4316,7 +4316,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       <div className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-md mx-auto">
                         <div className="flex items-center gap-3 mb-3">
                           <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-lg">🎧</span>
+                            <span className="text-white text-lg">-</span>
                           </div>
                           <div>
                             <p className="text-sm font-medium text-green-800">Test Your Audio</p>
@@ -4352,7 +4352,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       <Headphones className="h-16 w-16 text-gray-400 mx-auto" />
                       <div>
                         <p className="text-lg font-semibold text-gray-900">Upload audio file</p>
-                        <p className="text-sm text-gray-600">Supports: MP3, WAV, M4A, AAC, OGG • Max: 100MB</p>
+                        <p className="text-sm text-gray-600">Supports: MP3, WAV, M4A, AAC, OGG - Max: 100MB</p>
                       </div>
                       <Button 
                         color="primary" 
@@ -4463,7 +4463,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-900">Click to upload cover image</p>
-                        <p className="text-xs text-gray-500">Recommended: 1280x720 pixels • JPG, PNG, WebP</p>
+                        <p className="text-xs text-gray-500">Recommended: 1280x720 pixels - JPG, PNG, WebP</p>
                       </div>
                       <Button 
                         color="primary" 
@@ -4557,10 +4557,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 Audio Lesson Tips
               </h4>
               <ul className="text-xs text-blue-800 space-y-1">
-                <li>• Use clear, high-quality audio recordings</li>
-                <li>• Add relevant tags for better categorization</li>
-                <li>• Enable previews to attract more learners</li>
-                <li>• Keep lessons focused and engaging</li>
+                <li>- Use clear, high-quality audio recordings</li>
+                <li>- Add relevant tags for better categorization</li>
+                <li>- Enable previews to attract more learners</li>
+                <li>- Keep lessons focused and engaging</li>
               </ul>
             </CardBody>
           </Card>
@@ -4633,10 +4633,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       const success = await vpsDataStore.addProduct(newContent);
       if (success) {
         setVideos(prev => [...prev, newContent]);
-        alert('✅ PP1 content created successfully!');
+        alert('- PP1 content created successfully!');
         setActiveSection('pp1-program');
       } else {
-        alert('❌ Failed to create PP1 content.');
+        alert('- Failed to create PP1 content.');
       }
     };
 
@@ -4761,7 +4761,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       <BookOpen className="h-12 w-12 text-green-500 mx-auto" />
                       <div>
                         <p className="text-sm font-medium text-gray-900">Upload cover image</p>
-                        <p className="text-xs text-gray-500">Recommended: 1280x720 pixels • JPG, PNG, WebP</p>
+                        <p className="text-xs text-gray-500">Recommended: 1280x720 pixels - JPG, PNG, WebP</p>
                       </div>
                       <Button 
                         color="success" 
@@ -4891,10 +4891,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   PP1 Content Tips
                 </h4>
                 <ul className="text-xs text-green-800 space-y-1">
-                  <li>• PP1 is for beginner level students</li>
-                  <li>• Use simple, clear language in descriptions</li>
-                  <li>• Add engaging cover images</li>
-                  <li>• Include relevant tags for categorization</li>
+                  <li>- PP1 is for beginner level students</li>
+                  <li>- Use simple, clear language in descriptions</li>
+                  <li>- Add engaging cover images</li>
+                  <li>- Include relevant tags for categorization</li>
                 </ul>
               </CardBody>
             </Card>
@@ -4945,10 +4945,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       const success = await vpsDataStore.addProduct(newContent);
       if (success) {
         setVideos(prev => [...prev, newContent]);
-        alert('✅ PP2 content created successfully!');
+        alert('- PP2 content created successfully!');
         setActiveSection('pp2-program');
       } else {
-        alert('❌ Failed to create PP2 content.');
+        alert('- Failed to create PP2 content.');
       }
     };
 
@@ -5074,7 +5074,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       <BookOpen className="h-12 w-12 text-purple-500 mx-auto" />
                       <div>
                         <p className="text-sm font-medium text-gray-900">Upload cover image</p>
-                        <p className="text-xs text-gray-500">Recommended: 1280x720 pixels • JPG, PNG, WebP</p>
+                        <p className="text-xs text-gray-500">Recommended: 1280x720 pixels - JPG, PNG, WebP</p>
                       </div>
                       <Button 
                         className="bg-purple-600 hover:bg-purple-700 text-white" 
@@ -5204,10 +5204,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   PP2 Content Tips
                 </h4>
                 <ul className="text-xs text-purple-800 space-y-1">
-                  <li>• PP2 is for advanced level students</li>
-                  <li>• Include more complex concepts and materials</li>
-                  <li>• Add engaging cover images</li>
-                  <li>• Use detailed descriptions with HTML formatting</li>
+                  <li>- PP2 is for advanced level students</li>
+                  <li>- Include more complex concepts and materials</li>
+                  <li>- Add engaging cover images</li>
+                  <li>- Use detailed descriptions with HTML formatting</li>
                 </ul>
               </CardBody>
             </Card>
@@ -5795,10 +5795,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   </div>
                 </div>
                 <ul className="text-sm text-red-800 space-y-1">
-                  <li>• Full system access</li>
-                  <li>• User management</li>
-                  <li>• Content management</li>
-                  <li>• System settings</li>
+                  <li>- Full system access</li>
+                  <li>- User management</li>
+                  <li>- Content management</li>
+                  <li>- System settings</li>
                 </ul>
               </div>
               
@@ -5811,10 +5811,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   </div>
                 </div>
                 <ul className="text-sm text-orange-800 space-y-1">
-                  <li>• Content moderation</li>
-                  <li>• Comment management</li>
-                  <li>• User support</li>
-                  <li>• Basic analytics</li>
+                  <li>- Content moderation</li>
+                  <li>- Comment management</li>
+                  <li>- User support</li>
+                  <li>- Basic analytics</li>
                 </ul>
               </div>
               
@@ -5827,10 +5827,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   </div>
                 </div>
                 <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• View content</li>
-                  <li>• Purchase videos</li>
-                  <li>• Manage profile</li>
-                  <li>• Leave comments</li>
+                  <li>- View content</li>
+                  <li>- Purchase videos</li>
+                  <li>- Manage profile</li>
+                  <li>- Leave comments</li>
                 </ul>
               </div>
             </div>
@@ -5890,9 +5890,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         const success = await vpsDataStore.updateUser(updatedUser.id, updatedUser);
         if (success) {
           setUsers(prev => prev.map(u => u.id === editingUser.id ? updatedUser : u));
-          alert('✅ User updated successfully!');
+          alert('- User updated successfully!');
         } else {
-          alert('❌ Failed to update user.');
+          alert('- Failed to update user.');
           return;
         }
       } else {
@@ -5916,9 +5916,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         const success = await vpsDataStore.addUser(newUser);
         if (success) {
           setUsers(prev => [...prev, newUser]);
-          alert('✅ User created successfully!');
+          alert('- User created successfully!');
         } else {
-          alert('❌ Failed to create user.');
+          alert('- Failed to create user.');
           return;
         }
       }
@@ -5939,7 +5939,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         subscription: 'free'
       });
     } catch (error) {
-      console.error('❌ Failed to save user:', error);
+      console.error('- Failed to save user:', error);
       alert('Failed to save user. Please try again.');
     }
   };
@@ -5949,9 +5949,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       const success = await vpsDataStore.deleteUser(userId);
       if (success) {
         setUsers(prev => prev.filter(u => u.id !== userId));
-        alert('✅ User deleted successfully!');
+        alert('- User deleted successfully!');
       } else {
-        alert('❌ Failed to delete user.');
+        alert('- Failed to delete user.');
       }
     }
   };
@@ -6082,7 +6082,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   <Input 
                     value={packageForm.icon}
                     onChange={(e) => setPackageForm({...packageForm, icon: e.target.value})}
-                    placeholder="🎒" 
+                    placeholder="-" 
                   />
                 </div>
               </div>
@@ -6229,7 +6229,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             <CardBody>
               <div className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center gap-3 mb-3">
-                  <span className="text-2xl">🎒</span>
+                  <span className="text-2xl">-</span>
                   <div>
                     <h4 className="font-semibold text-gray-900">Explorer Pack</h4>
                     <p className="text-sm text-gray-500">Subscription</p>
@@ -6262,7 +6262,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 const newPackage = {
                   id: Date.now().toString(),
                   name: packageForm.name,
-                  icon: packageForm.icon || '🎒',
+                  icon: packageForm.icon || '-',
                   description: packageForm.description,
                   price: packageForm.price,
                   type: packageForm.type,
@@ -6272,7 +6272,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   coverImage: packageForm.coverImage
                 };
                 setPackages(prev => [...prev, newPackage]);
-                alert('✅ Package created successfully!');
+                alert('- Package created successfully!');
                 setActiveSection('all-packages');
               }}
               isDisabled={!packageForm.name.trim()}
@@ -7202,7 +7202,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   );
 }
 
-                        <p className="text-xs text-gray-500">Recommended: 1280x720 pixels • JPG, PNG, WebP</p>
+                        <p className="text-xs text-gray-500">Recommended: 1280x720 pixels - JPG, PNG, WebP</p>
                       </div>
                       <Button 
                         color="primary" 
