@@ -1087,7 +1087,6 @@ export default function ProfessionalUserDashboard({
                                   </svg>
                                 )}
                               </div>
-                              </div>
                             </div>
                           )}
                         </div>
