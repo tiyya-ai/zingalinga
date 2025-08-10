@@ -12,7 +12,17 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [profileImage, setProfileImage] = useState<string>('/zinga-linga-logo.png');
   const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Form state for editable fields
+  const [formData, setFormData] = useState({
+    fullName: 'Admin User',
+    email: 'admin@zingalinga.com',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -49,6 +59,69 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
     link.click();
     document.body.removeChild(link);
   };
+
+  const handleFormChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      // Validate required fields
+      if (!formData.fullName.trim()) {
+        alert('❌ Full name is required!');
+        return;
+      }
+      if (!formData.email.trim()) {
+        alert('❌ Email is required!');
+        return;
+      }
+      
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        alert('❌ Please enter a valid email address!');
+        return;
+      }
+      
+      // If changing password, validate password fields
+      if (formData.newPassword || formData.confirmPassword) {
+        if (!formData.currentPassword) {
+          alert('❌ Current password is required to change password!');
+          return;
+        }
+        if (formData.newPassword !== formData.confirmPassword) {
+          alert('❌ New passwords do not match!');
+          return;
+        }
+        if (formData.newPassword.length < 6) {
+          alert('❌ New password must be at least 6 characters long!');
+          return;
+        }
+      }
+      
+      // Simulate API call to save profile
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Clear password fields after successful save
+      setFormData(prev => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      }));
+      
+      alert('✅ Profile updated successfully!');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      alert('❌ Failed to save profile. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 font-mali">
@@ -120,16 +193,20 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
                   <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                   <input
                     type="text"
-                    defaultValue="Admin User"
+                    value={formData.fullName}
+                    onChange={(e) => handleFormChange('fullName', e.target.value)}
                     className="w-full p-4 border border-gray-200 rounded-xl font-mali focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all"
+                    placeholder="Enter your full name"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                   <input
                     type="email"
-                    defaultValue="admin@zingalinga.com"
+                    value={formData.email}
+                    onChange={(e) => handleFormChange('email', e.target.value)}
                     className="w-full p-4 border border-gray-200 rounded-xl font-mali focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all"
+                    placeholder="Enter your email address"
                   />
                 </div>
                 <div>
@@ -149,6 +226,8 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
                   <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
                   <input
                     type="password"
+                    value={formData.currentPassword}
+                    onChange={(e) => handleFormChange('currentPassword', e.target.value)}
                     placeholder="Enter current password"
                     className="w-full p-4 border border-gray-200 rounded-xl font-mali focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all"
                   />
@@ -157,7 +236,9 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
                   <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
                   <input
                     type="password"
-                    placeholder="Enter new password"
+                    value={formData.newPassword}
+                    onChange={(e) => handleFormChange('newPassword', e.target.value)}
+                    placeholder="Enter new password (optional)"
                     className="w-full p-4 border border-gray-200 rounded-xl font-mali focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all"
                   />
                 </div>
@@ -165,6 +246,8 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
                   <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
                   <input
                     type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleFormChange('confirmPassword', e.target.value)}
                     placeholder="Confirm new password"
                     className="w-full p-4 border border-gray-200 rounded-xl font-mali focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all"
                   />
@@ -174,8 +257,16 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
           </div>
 
           <div className="mt-8 text-center">
-            <button className="bg-gradient-to-r from-brand-green to-brand-blue text-white font-mali font-bold py-4 px-12 rounded-xl hover:from-brand-green hover:to-brand-blue transform hover:scale-105 transition-all duration-300 shadow-lg">
-              Save Changes
+            <button 
+              onClick={handleSaveProfile}
+              disabled={isSaving}
+              className={`font-mali font-bold py-4 px-12 rounded-xl transition-all duration-300 transform shadow-lg ${
+                isSaving 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-brand-green to-brand-blue text-white hover:from-brand-green hover:to-brand-blue hover:scale-105'
+              }`}
+            >
+              {isSaving ? '⏳ Saving...' : '💾 Save Changes'}
             </button>
           </div>
         </div>
