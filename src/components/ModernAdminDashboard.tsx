@@ -2062,66 +2062,67 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   title={
                     <div className="flex items-center space-x-2 px-2">
                       <Upload className="h-4 w-4" />
-                      <span className="font-medium">File Upload</span>
+                      <span className="font-medium">Upload Queue</span>
                     </div>
                   }
                 >
                   <div className="space-y-6 pt-6">
-                    <div className="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center hover:border-blue-500 transition-all duration-300 bg-blue-50/30 relative">
-                      {videoForm.videoUrl ? (
-                        <div className="space-y-4">
-                          <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto">
-                            <CheckCircle className="h-8 w-8 text-white" />
-                          </div>
-                          <div>
-                            <p className="text-lg font-semibold text-green-700">Upload successful!</p>
-                            <p className="text-sm text-gray-600">Video file ready for preview</p>
-                          </div>
-                          <div className="space-y-3">
-                            <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg max-w-sm mx-auto">
-                              <video 
-                                src={videoForm.videoUrl} 
-                                controls 
-                                className="w-full h-full object-cover"
-                                preload="metadata"
-                                onError={() => console.log('Video preview failed to load')}
-                              >
-                                Your browser does not support the video tag.
-                              </video>
+                    {uploadQueue.length > 0 ? (
+                      <div className="space-y-4">
+                        <h4 className="font-medium text-gray-900">Select from Upload Queue</h4>
+                        <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
+                          {uploadQueue.map((item, index) => (
+                            <div key={index} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer" onClick={() => {
+                              setVideoForm({ ...videoForm, videoUrl: item.localUrl || item.fileName, videoType: 'upload', duration: item.duration || '' });
+                            }}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                  <FileVideo className="h-5 w-5 text-blue-500" />
+                                  <div>
+                                    <p className="font-medium text-sm">{item.fileName || item.title}</p>
+                                    <p className="text-xs text-gray-500">{item.size} • {item.duration}</p>
+                                  </div>
+                                </div>
+                                <Chip size="sm" color={item.status === 'completed' ? 'success' : 'warning'} variant="flat">
+                                  {item.status}
+                                </Chip>
+                              </div>
                             </div>
-                            <Button 
-                              size="sm" 
-                              variant="flat" 
-                              color="primary"
-                              onPress={() => {
-                                // Clean up the object URL to prevent memory leaks
-                                if (videoForm.videoUrl.startsWith('blob:')) {
-                                  URL.revokeObjectURL(videoForm.videoUrl);
-                                }
-                                setVideoForm({ ...videoForm, videoUrl: '', videoType: 'upload' });
-                              }}
-                              startContent={<Upload className="h-4 w-4" />}
-                            >
-                              Upload Different Video
-                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                    
+                    <div className="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center hover:border-blue-500 transition-all duration-300 bg-blue-50/30 relative">
+                      {videoForm.videoUrl && videoForm.videoType === 'upload' ? (
+                        <div className="space-y-4">
+                          <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+                          <div>
+                            <p className="text-lg font-semibold text-green-700">Video selected!</p>
+                            <p className="text-sm text-gray-600">Duration: {videoForm.duration}</p>
                           </div>
+                          <Button 
+                            size="sm" 
+                            variant="flat" 
+                            color="primary"
+                            onPress={() => setVideoForm({ ...videoForm, videoUrl: '', videoType: 'upload', duration: '' })}
+                            startContent={<Upload className="h-4 w-4" />}
+                          >
+                            Select Different Video
+                          </Button>
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-                            <Upload className="h-8 w-8 text-gray-400" />
-                          </div>
+                          <Upload className="h-16 w-16 text-gray-400 mx-auto" />
                           <div>
-                            <p className="text-lg font-semibold text-gray-900">Upload your video file</p>
-                            <p className="text-sm text-gray-600">Drag and drop or click to browse</p>
-                            <p className="text-xs text-gray-500 mt-2">Supports: MP4, MOV, AVI, WMV • Max size: 500MB</p>
+                            <p className="text-lg font-semibold text-gray-900">Upload new video file</p>
+                            <p className="text-sm text-gray-600">Supports: MP4, MOV, AVI, WMV • Max size: 500MB</p>
                           </div>
                           <Button 
                             color="primary" 
                             variant="flat"
                             startContent={<Upload className="h-4 w-4" />}
                             onPress={() => {
-                              // Trigger file input click
                               const fileInput = document.getElementById('video-file-input') as HTMLInputElement;
                               fileInput?.click();
                             }}
@@ -2163,67 +2164,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       </div>
                       <Input
                         value={videoForm.videoUrl}
-                        onChange={async (e) => {
-                          const url = e.target.value;
-                          setVideoForm({ ...videoForm, videoUrl: url });
-                          
-                          // Get real YouTube duration
-                          if (url.includes('youtube.com') || url.includes('youtu.be')) {
-                            let videoId = null;
-                            if (url.includes('youtu.be/')) {
-                              videoId = url.split('youtu.be/')[1]?.split('?')[0];
-                            } else if (url.includes('youtube.com/watch')) {
-                              videoId = url.split('v=')[1]?.split('&')[0];
-                            }
-                            
-                            if (videoId) {
-                              try {
-                                // Get real duration using YouTube Data API v3 (requires API key)
-                                // For now, we'll use a more sophisticated estimation
-                                
-                                // Try to extract duration from video page
-                                const proxyUrl = `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`;
-                                const response = await fetch(proxyUrl);
-                                
-                                if (response.ok) {
-                                  const data = await response.json();
-                                  if (data.duration) {
-                                    // Parse duration from noembed (format: PT4M13S)
-                                    const duration = data.duration;
-                                    const match = duration.match(/PT(?:(\d+)M)?(?:(\d+)S)?/);
-                                    if (match) {
-                                      const minutes = parseInt(match[1] || '0');
-                                      const seconds = parseInt(match[2] || '0');
-                                      const formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                                      setVideoForm(prev => ({ ...prev, duration: formattedDuration }));
-                                      return;
-                                    }
-                                  }
-                                }
-                                
-                                // Fallback: More realistic estimation
-                                const hash = videoId.split('').reduce((a, b) => {
-                                  a = ((a << 5) - a) + b.charCodeAt(0);
-                                  return a & a;
-                                }, 0);
-                                const minutes = Math.abs(hash % 18) + 2; // 2-20 minutes
-                                const seconds = Math.abs(hash % 60);
-                                const formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                                setVideoForm(prev => ({ ...prev, duration: formattedDuration }));
-                              } catch (error) {
-                                // Final fallback
-                                const hash = videoId.split('').reduce((a, b) => {
-                                  a = ((a << 5) - a) + b.charCodeAt(0);
-                                  return a & a;
-                                }, 0);
-                                const minutes = Math.abs(hash % 18) + 2;
-                                const seconds = Math.abs(hash % 60);
-                                const formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                                setVideoForm(prev => ({ ...prev, duration: formattedDuration }));
-                              }
-                            }
-                          }
-                        }}
+                        onChange={(e) => setVideoForm({ ...videoForm, videoUrl: e.target.value, videoType: 'youtube' })}
                         placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                         startContent={<Youtube className="h-4 w-4 text-red-500" />}
                         size="lg"
@@ -2277,7 +2218,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       </div>
                       <Input
                         value={videoForm.videoUrl}
-                        onChange={(e) => setVideoForm({ ...videoForm, videoUrl: e.target.value })}
+                        onChange={(e) => setVideoForm({ ...videoForm, videoUrl: e.target.value, videoType: 'vimeo' })}
                         placeholder="https://vimeo.com/123456789"
                         startContent={<Video className="h-4 w-4 text-blue-600" />}
                         size="lg"
@@ -2313,57 +2254,32 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   title={
                     <div className="flex items-center space-x-2 px-2">
                       <Link className="h-4 w-4" />
-                      <span className="font-medium">External Link</span>
+                      <span className="font-medium">Direct Link</span>
                     </div>
                   }
                 >
                   <div className="space-y-6 pt-6">
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-2 mb-3">
-                        <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
-                          <Link className="h-4 w-4 text-white" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">External Video Link</h4>
-                          <p className="text-xs text-gray-500">Direct link to video file or streaming URL</p>
-                        </div>
-                      </div>
-                      <Input
-                        value={videoForm.videoUrl}
-                        onChange={(e) => setVideoForm({ ...videoForm, videoUrl: e.target.value })}
-                        placeholder="https://example.com/video.mp4"
-                        startContent={<Link className="h-4 w-4 text-purple-500" />}
-                        size="lg"
-                        classNames={{
-                          input: "bg-white focus:ring-0 focus:ring-offset-0 shadow-none",
-                          inputWrapper: "bg-white border-gray-300 hover:border-purple-400 focus-within:border-purple-500 shadow-sm"
-                        }}
-                      />
-                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                        <p className="text-sm text-purple-800 font-medium mb-2">Supported formats:</p>
-                        <div className="grid grid-cols-2 gap-2 text-xs text-purple-700">
-                          <span>• MP4 (.mp4)</span>
-                          <span>• WebM (.webm)</span>
-                          <span>• MOV (.mov)</span>
-                          <span>• AVI (.avi)</span>
-                          <span>• M3U8 (streaming)</span>
-                          <span>• Other video URLs</span>
-                        </div>
-                      </div>
-                    </div>
-                    {videoForm.videoUrl && (
-                      <div className="space-y-3">
-                        <h5 className="font-medium text-gray-900">Preview</h5>
-                        <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg">
-                          <video 
-                            src={videoForm.videoUrl} 
-                            controls 
-                            className="w-full h-full object-cover"
-                            onError={() => console.log('Video failed to load')}
-                          >
-                            Your browser does not support the video tag.
-                          </video>
-                        </div>
+                    <Input
+                      value={videoForm.videoUrl}
+                      onChange={(e) => setVideoForm({ ...videoForm, videoUrl: e.target.value, videoType: 'external' })}
+                      placeholder="https://example.com/video.mp4"
+                      startContent={<Link className="h-4 w-4 text-purple-500" />}
+                      size="lg"
+                      classNames={{
+                        input: "bg-white focus:ring-0 focus:ring-offset-0 shadow-none",
+                        inputWrapper: "bg-white border-gray-300 hover:border-purple-400 focus-within:border-purple-500 shadow-sm"
+                      }}
+                    />
+                    {videoForm.videoUrl && videoForm.videoType === 'external' && (
+                      <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg">
+                        <video 
+                          src={videoForm.videoUrl} 
+                          controls 
+                          className="w-full h-full object-cover"
+                          onError={() => console.log('Video failed to load')}
+                        >
+                          Your browser does not support the video tag.
+                        </video>
                       </div>
                     )}
                   </div>
@@ -7285,7 +7201,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     </Suspense>
   );
 }
-o upload cover</p>
+
                         <p className="text-xs text-gray-500">Recommended: 1280x720 pixels • JPG, PNG, WebP</p>
                       </div>
                       <Button 
