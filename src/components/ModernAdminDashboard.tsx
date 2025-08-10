@@ -143,12 +143,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [newAgeGroup, setNewAgeGroup] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [orderFilter, setOrderFilter] = useState('all');
+  const [orderSearchTerm, setOrderSearchTerm] = useState('');
   const { isOpen: isOrderModalOpen, onOpen: onOrderModalOpen, onClose: onOrderModalClose } = useDisclosure();
   
 
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
   
   // Generate real notifications
   useEffect(() => {
@@ -1532,6 +1536,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [editingUser, setEditingUser] = useState<any>(null);
   const [userFilter, setUserFilter] = useState('all');
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [userSearchTerm, setUserSearchTerm] = useState('');
   const { isOpen: isUserModalOpen, onOpen: onUserModalOpen, onClose: onUserModalClose } = useDisclosure();
   
   // Package form state
@@ -1688,13 +1693,15 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     if (file) {
       const allowedTypes = ['video/mp4', 'video/mov', 'video/avi', 'video/wmv', 'video/webm'];
       if (!allowedTypes.includes(file.type)) {
-        alert('Please select a valid video file (MP4, MOV, AVI, WMV, WebM)');
+        setToast({message: 'Please select a valid video file (MP4, MOV, AVI, WMV, WebM)', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
         return;
       }
       
-      const maxSize = 10 * 1024 * 1024; // 10MB limit
+      const maxSize = 500 * 1024 * 1024; // 500MB limit
       if (file.size > maxSize) {
-        alert('❌ File size must be less than 10MB. For larger videos, please use YouTube or external hosting.');
+        setToast({message: 'File size must be less than 500MB. For larger videos, please use YouTube or external hosting.', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
         return;
       }
       
@@ -1752,14 +1759,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       // Validate file type
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
-        alert('Please select a valid image file (JPG, PNG, WebP)');
+        setToast({message: 'Please select a valid image file (JPG, PNG, WebP)', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
         return;
       }
       
-      // Validate file size (5MB limit)
-      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      // Validate file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
       if (file.size > maxSize) {
-        alert('Image size must be less than 5MB');
+        setToast({message: 'Image size must be less than 10MB', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
         return;
       }
       
@@ -1785,17 +1794,26 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const handleSaveVideo = async () => {
     try {
+      setIsLoading(true);
+      setLoadingMessage(editingVideo ? 'Updating video...' : 'Creating video...');
+      
       // Validate required fields
       if (!videoForm.title.trim()) {
-        alert('Please enter a video title');
+        setToast({message: 'Please enter a video title', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
+        setIsLoading(false);
         return;
       }
       if (!videoForm.category) {
-        alert('Please select a category');
+        setToast({message: 'Please select a category', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
+        setIsLoading(false);
         return;
       }
       if (!videoForm.videoUrl) {
-        alert('Please provide a video URL or upload a video file');
+        setToast({message: 'Please provide a video URL or upload a video file', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
+        setIsLoading(false);
         return;
       }
       
@@ -1856,10 +1874,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           vpsDataStore.clearMemoryCache();
           // Update local state after successful save
           setVideos(prev => prev.map(v => v.id === editingVideo.id ? updatedVideo : v));
-          setShowSuccessModal(true);
-          setTimeout(() => setShowSuccessModal(false), 3000);
+          setToast({message: 'Video updated successfully!', type: 'success'});
+          setTimeout(() => setToast(null), 3000);
         } else {
-          alert('❌ Failed to update video. Please try again.');
+          setToast({message: 'Failed to update video. Please try again.', type: 'error'});
+          setTimeout(() => setToast(null), 3000);
           return;
         }
       } else {
@@ -1893,10 +1912,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           vpsDataStore.clearMemoryCache();
           // Add to local state after successful save
           setVideos(prev => [...prev, newVideo]);
-          setShowSuccessModal(true);
-          setTimeout(() => setShowSuccessModal(false), 3000);
+          setToast({message: 'Video created successfully!', type: 'success'});
+          setTimeout(() => setToast(null), 3000);
         } else {
-          alert('❌ Failed to create video. Please try again.');
+          setToast({message: 'Failed to create video. Please try again.', type: 'error'});
+          setTimeout(() => setToast(null), 3000);
           return;
         }
       }
@@ -1913,6 +1933,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     } catch (error) {
       console.error('❌ Failed to save video:', error);
       alert('Failed to save video. Please try again.');
+    } finally {
+      setIsLoading(false);
+      setLoadingMessage('');
     }
   };
 
@@ -2060,6 +2083,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                                 src={videoForm.videoUrl} 
                                 controls 
                                 className="w-full h-full object-cover"
+                                preload="metadata"
                                 onError={() => console.log('Video preview failed to load')}
                               >
                                 Your browser does not support the video tag.
@@ -2637,16 +2661,19 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
+  const [videoSearchTerm, setVideoSearchTerm] = useState('');
+  const [videoCategoryFilter, setVideoCategoryFilter] = useState('all');
 
   const handleBulkDelete = async () => {
     if (selectedVideos.length === 0) return;
     
     if (confirm(`Delete ${selectedVideos.length} selected videos?`)) {
       try {
-        for (const videoId of selectedVideos) {
-          await vpsDataStore.deleteProduct(videoId);
-        }
-        setVideos(videos.filter(v => !selectedVideos.includes(v.id)));
+        const deletePromises = selectedVideos.map(videoId => vpsDataStore.deleteProduct(videoId));
+        await Promise.all(deletePromises);
+        
+        const updatedVideos = await vpsDataStore.getProducts();
+        setVideos(updatedVideos);
         setSelectedVideos([]);
         alert(`✅ ${selectedVideos.length} videos deleted successfully!`);
       } catch (error) {
@@ -2761,15 +2788,30 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         <CardHeader className="border-b border-gray-200 p-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 w-full">
             <h3 className="text-lg font-semibold text-gray-900">Video Library ({videos.filter(v => v.type !== 'audio' && v.category !== 'Audio Lessons' && v.category !== 'audio').length})</h3>
-            <Input
-              placeholder="Search videos..."
-              startContent={<Search className="h-4 w-4" />}
-              className="w-full sm:w-64"
-              classNames={{
-                input: "bg-gray-50",
-                inputWrapper: "bg-gray-50 border-gray-200"
-              }}
-            />
+            <div className="flex gap-2">
+              <Input
+                placeholder="Search videos..."
+                value={videoSearchTerm}
+                onChange={(e) => setVideoSearchTerm(e.target.value)}
+                startContent={<Search className="h-4 w-4" />}
+                className="w-full sm:w-64"
+                classNames={{
+                  input: "bg-gray-50",
+                  inputWrapper: "bg-gray-50 border-gray-200"
+                }}
+              />
+              <Select
+                selectedKeys={[videoCategoryFilter]}
+                onSelectionChange={(keys) => setVideoCategoryFilter(Array.from(keys)[0] as string)}
+                className="w-40"
+                placeholder="Category"
+              >
+                <SelectItem key="all">All Categories</SelectItem>
+                {categories.map(cat => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardBody className="p-0">
@@ -2802,7 +2844,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-1/6">ACTIONS</TableColumn>
               </TableHeader>
               <TableBody emptyContent="No videos found">
-                {videos.filter(video => video.type !== 'audio' && video.category !== 'Audio Lessons' && video.category !== 'audio').map((video) => (
+                {videos
+                  .filter(video => video.type !== 'audio' && video.category !== 'Audio Lessons' && video.category !== 'audio')
+                  .filter(video => {
+                    const matchesSearch = videoSearchTerm === '' || 
+                      video.title.toLowerCase().includes(videoSearchTerm.toLowerCase()) ||
+                      (video.description && video.description.toLowerCase().includes(videoSearchTerm.toLowerCase()));
+                    const matchesCategory = videoCategoryFilter === 'all' || video.category === videoCategoryFilter;
+                    return matchesSearch && matchesCategory;
+                  })
+                  .map((video) => (
                   <TableRow key={video.id} className={`hover:bg-gray-50 transition-colors ${selectedVideos.includes(video.id) ? 'bg-blue-50' : ''}`}>
                     <TableCell className="py-4 px-6 text-center">
                       <input 
@@ -2931,6 +2982,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             <div className="flex space-x-2">
               <Input
                 placeholder="Search users..."
+                value={userSearchTerm}
+                onChange={(e) => setUserSearchTerm(e.target.value)}
                 startContent={<Search className="h-4 w-4" />}
                 className="w-64"
               />
@@ -2958,7 +3011,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               <TableColumn>ACTIONS</TableColumn>
             </TableHeader>
             <TableBody emptyContent="No users found">
-              {users.filter(user => userFilter === 'all' || user.status === userFilter).map((user) => (
+              {users
+                .filter(user => userFilter === 'all' || user.status === userFilter)
+                .filter(user => {
+                  if (userSearchTerm === '') return true;
+                  const searchLower = userSearchTerm.toLowerCase();
+                  return user.name.toLowerCase().includes(searchLower) ||
+                         user.email.toLowerCase().includes(searchLower) ||
+                         user.id.toLowerCase().includes(searchLower);
+                })
+                .map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center space-x-3">
@@ -3400,6 +3462,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             <div className="flex space-x-2">
               <Input
                 placeholder="Search orders..."
+                value={orderSearchTerm}
+                onChange={(e) => setOrderSearchTerm(e.target.value)}
                 startContent={<Search className="h-4 w-4" />}
                 className="w-64"
               />
@@ -3430,7 +3494,17 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               <TableColumn>ACTIONS</TableColumn>
             </TableHeader>
             <TableBody emptyContent="No orders found">
-              {orders.filter(order => orderFilter === 'all' || order.status === orderFilter).map((order) => (
+              {orders
+                .filter(order => orderFilter === 'all' || order.status === orderFilter)
+                .filter(order => {
+                  if (orderSearchTerm === '') return true;
+                  const searchLower = orderSearchTerm.toLowerCase();
+                  return order.id.toString().toLowerCase().includes(searchLower) ||
+                         order.customer.name.toLowerCase().includes(searchLower) ||
+                         order.customer.email.toLowerCase().includes(searchLower) ||
+                         order.item.name.toLowerCase().includes(searchLower);
+                })
+                .map((order) => (
                 <TableRow key={order.id}>
                   <TableCell>
                     <div className="font-mono text-sm">
@@ -7213,3 +7287,31 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     </Suspense>
   );
 }
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
+          toast.type === 'success' ? 'bg-green-500 text-white' :
+          toast.type === 'error' ? 'bg-red-500 text-white' :
+          'bg-blue-500 text-white'
+        }`}>
+          <div className="flex items-center space-x-2">
+            {toast.type === 'success' && <CheckCircle className="h-5 w-5" />}
+            {toast.type === 'error' && <XCircle className="h-5 w-5" />}
+            {toast.type === 'info' && <AlertTriangle className="h-5 w-5" />}
+            <span>{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-2 hover:opacity-75">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 flex items-center space-x-3">
+            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-gray-700">{loadingMessage}</span>
+          </div>
+        </div>
+      )}
