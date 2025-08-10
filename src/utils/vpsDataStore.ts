@@ -56,6 +56,7 @@ class VPSDataStore {
   private currentUser: User | null = null;
   private storageKey = 'zinga-linga-app-data';
   private memoryData: AppData | null = null;
+  private videoMemoryCache: Map<string, string> | null = null;
 
   constructor() {
     // File-based data store initialized
@@ -231,13 +232,26 @@ class VPSDataStore {
         console.error('❌ API save error:', apiError);
       }
 
-      // Always save to localStorage for persistence - prioritize base64 data preservation
+      // Always save to localStorage for persistence - with optimized storage strategy
       if (typeof window !== 'undefined') {
         try {
-          // First, try to save with full media data
-          const dataToSave = JSON.stringify(this.memoryData);
+          // Create optimized data copy that excludes large video data already in memory cache
+          const optimizedData = {
+            ...this.memoryData,
+            uploadQueue: this.memoryData.uploadQueue?.map(item => {
+              // If item has large video in memory cache, don't include it in localStorage
+              if ((item as any).hasLargeVideo && (item as any).videoStorageType === 'memory') {
+                const { localUrl, ...itemWithoutVideo } = item as any;
+                return itemWithoutVideo;
+              }
+              return item;
+            })
+          };
+          
+          // First, try to save with optimized data
+          const dataToSave = JSON.stringify(optimizedData);
           localStorage.setItem(this.storageKey, dataToSave);
-          console.log('✅ Data saved to localStorage with full media data preserved');
+          console.log('✅ Data saved to localStorage with optimized storage strategy');
         } catch (storageError) {
           console.error('❌ VPS localStorage save failed:', storageError);
           
@@ -257,18 +271,32 @@ class VPSDataStore {
                 // Store large base64 data separately
                 if (m.videoUrl?.startsWith('data:') && m.videoUrl.length > 100000) {
                   const videoKey = `${this.storageKey}_video_${m.id}`;
-                  localStorage.setItem(videoKey, m.videoUrl);
-                  moduleData.videoUrl = `[STORED_SEPARATELY:${videoKey}]`;
+                  try {
+                    localStorage.setItem(videoKey, m.videoUrl);
+                    moduleData.videoUrl = `[STORED_SEPARATELY:${videoKey}]`;
+                  } catch (e) {
+                    console.warn('⚠️ Failed to store large video separately, excluding from storage');
+                    moduleData.videoUrl = '[VIDEO_TOO_LARGE_FOR_STORAGE]';
+                  }
                 }
                 
                 if (m.thumbnail?.startsWith('data:') && m.thumbnail.length > 50000) {
                   const thumbKey = `${this.storageKey}_thumb_${m.id}`;
-                  localStorage.setItem(thumbKey, m.thumbnail);
-                  moduleData.thumbnail = `[STORED_SEPARATELY:${thumbKey}]`;
+                  try {
+                    localStorage.setItem(thumbKey, m.thumbnail);
+                    moduleData.thumbnail = `[STORED_SEPARATELY:${thumbKey}]`;
+                  } catch (e) {
+                    console.warn('⚠️ Failed to store large thumbnail separately, excluding from storage');
+                    moduleData.thumbnail = '[THUMBNAIL_TOO_LARGE_FOR_STORAGE]';
+                  }
                 }
                 
                 return moduleData;
-              })
+              }),
+              // Remove upload queue items with large videos
+              uploadQueue: this.memoryData.uploadQueue?.filter(item => 
+                !((item as any).hasLargeVideo && (item as any).videoStorageType === 'memory')
+              ) || []
             };
             
             // Save the main data
@@ -287,12 +315,14 @@ class VPSDataStore {
                   ...m,
                   videoUrl: m.videoUrl?.startsWith('data:') ? '[BASE64_VIDEO_TOO_LARGE]' : m.videoUrl,
                   thumbnail: m.thumbnail?.startsWith('data:') ? '[BASE64_IMAGE_TOO_LARGE]' : m.thumbnail
-                }))
+                })),
+                uploadQueue: [] // Clear upload queue in minimal mode
               };
               localStorage.setItem(this.storageKey, JSON.stringify(minimalData));
-              console.log('⚠️ Minimal data saved - large media files excluded');
+              console.log('⚠️ Minimal data saved - large media files and upload queue excluded');
             } catch (minimalError) {
               console.error('❌ All storage methods failed:', minimalError);
+              console.log('📊 Memory cache info:', this.getMemoryCacheInfo());
             }
           }
         }
@@ -705,7 +735,23 @@ class VPSDataStore {
   async getUploadQueue(): Promise<UploadQueueItem[]> {
     try {
       const data = await this.loadData();
-      return data.uploadQueue || [];
+      const queue = data.uploadQueue || [];
+      
+      // Restore video data from memory cache for items that have it
+      const restoredQueue = queue.map(item => {
+        if ((item as any).hasLargeVideo && (item as any).videoStorageType === 'memory') {
+          const videoData = this.videoMemoryCache?.get(item.id);
+          if (videoData) {
+            return {
+              ...item,
+              localUrl: videoData
+            };
+          }
+        }
+        return item;
+      });
+      
+      return restoredQueue;
     } catch (error) {
       console.error('Error getting upload queue:', error);
       return [];
@@ -716,7 +762,37 @@ class VPSDataStore {
     try {
       const data = await this.loadData();
       data.uploadQueue = data.uploadQueue || [];
-      data.uploadQueue.unshift(uploadItem);
+      
+      // Handle large video data separately to avoid localStorage quota issues
+      const processedItem = { ...uploadItem };
+      
+      // If the item contains large base64 video data, store it separately
+      if (uploadItem.formData?.videoFile || (uploadItem as any).localUrl?.startsWith('data:video/')) {
+        const videoData = (uploadItem as any).localUrl || '';
+        
+        // Only store video metadata in the main queue, not the actual video data
+        if (videoData.length > 100000) { // If larger than 100KB
+          console.log('🔄 Large video detected, using memory-only storage to avoid localStorage quota');
+          
+          // Store only metadata in localStorage
+          delete (processedItem as any).localUrl;
+          delete processedItem.formData?.videoFile;
+          
+          // Add a flag to indicate video is stored in memory
+          (processedItem as any).hasLargeVideo = true;
+          (processedItem as any).videoStorageType = 'memory';
+          
+          // Store the actual video data in a separate memory cache
+          if (!this.videoMemoryCache) {
+            this.videoMemoryCache = new Map();
+          }
+          this.videoMemoryCache.set(uploadItem.id, videoData);
+          
+          console.log('✅ Video stored in memory cache, metadata saved to localStorage');
+        }
+      }
+      
+      data.uploadQueue.unshift(processedItem);
       return await this.saveData(data);
     } catch (error) {
       console.error('Error adding to upload queue:', error);
@@ -744,6 +820,13 @@ class VPSDataStore {
     try {
       const data = await this.loadData();
       data.uploadQueue = data.uploadQueue || [];
+      
+      // Clean up video memory cache if item exists
+      if (this.videoMemoryCache?.has(uploadId)) {
+        this.videoMemoryCache.delete(uploadId);
+        console.log('🗑️ Removed video from memory cache:', uploadId);
+      }
+      
       data.uploadQueue = data.uploadQueue.filter(item => item.id !== uploadId);
       return await this.saveData(data);
     } catch (error) {
@@ -756,6 +839,16 @@ class VPSDataStore {
     try {
       const data = await this.loadData();
       data.uploadQueue = data.uploadQueue || [];
+      
+      // Clean up video memory cache for completed items
+      const completedItems = data.uploadQueue.filter(item => item.status === 'completed');
+      completedItems.forEach(item => {
+        if (this.videoMemoryCache?.has(item.id)) {
+          this.videoMemoryCache.delete(item.id);
+          console.log('🗑️ Removed completed video from memory cache:', item.id);
+        }
+      });
+      
       data.uploadQueue = data.uploadQueue.filter(item => item.status !== 'completed');
       return await this.saveData(data);
     } catch (error) {
@@ -942,6 +1035,36 @@ class VPSDataStore {
       console.error('Error adding purchase:', error);
       return false;
     }
+  }
+
+  // Method to get video data from memory cache
+  getVideoFromMemoryCache(uploadId: string): string | null {
+    return this.videoMemoryCache?.get(uploadId) || null;
+  }
+
+  // Method to clear all video memory cache (useful for cleanup)
+  clearVideoMemoryCache(): void {
+    if (this.videoMemoryCache) {
+      this.videoMemoryCache.clear();
+      console.log('🧹 Video memory cache cleared');
+    }
+  }
+
+  // Method to get memory cache size for debugging
+  getMemoryCacheInfo(): { count: number; totalSize: number } {
+    if (!this.videoMemoryCache) {
+      return { count: 0, totalSize: 0 };
+    }
+    
+    let totalSize = 0;
+    this.videoMemoryCache.forEach(videoData => {
+      totalSize += videoData.length;
+    });
+    
+    return {
+      count: this.videoMemoryCache.size,
+      totalSize: Math.round(totalSize / (1024 * 1024)) // Size in MB
+    };
   }
 }
 

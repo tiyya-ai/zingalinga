@@ -133,6 +133,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [comments, setComments] = useState<any[]>([]);
   const [flaggedContent, setFlaggedContent] = useState<any[]>([]);
   const [uploadQueue, setUploadQueue] = useState<any[]>([]);
+  const [uploadQueueSearch, setUploadQueueSearch] = useState('');
   const [accessLogs, setAccessLogs] = useState<any[]>([]);
   const [childrenProfiles, setChildrenProfiles] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>(['Audio Lessons', 'PP1 Program', 'PP2 Program']);
@@ -1783,34 +1784,58 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const allowedTypes = ['video/mp4', 'video/mov', 'video/avi', 'video/wmv', 'video/webm'];
-      if (!allowedTypes.includes(file.type)) {
-        setToast({message: 'Please select a valid video file (MP4, MOV, AVI, WMV, WebM)', type: 'error'});
-        setTimeout(() => setToast(null), 3000);
-        return;
-      }
+    if (!file) return;
+
+    // Enhanced file validation
+    const allowedTypes = ['video/mp4', 'video/mov', 'video/avi', 'video/wmv', 'video/webm', 'video/quicktime'];
+    const fileExtension = file.name.toLowerCase().split('.').pop();
+    const allowedExtensions = ['mp4', 'mov', 'avi', 'wmv', 'webm'];
+    
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension || '')) {
+      setToast({message: 'Please select a valid video file (MP4, MOV, AVI, WMV, WebM)', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+    
+    const maxSize = 500 * 1024 * 1024; // 500MB limit
+    if (file.size > maxSize) {
+      setToast({message: 'File size must be less than 500MB. For larger videos, please use YouTube or external hosting.', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+    
+    // Show loading state
+    setIsLoading(true);
+    setLoadingMessage('Processing video file...');
+    console.log('📁 Processing video file:', file.name, 'Size:', (file.size / (1024 * 1024)).toFixed(1), 'MB');
+    
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      const base64Video = e.target?.result as string;
+      console.log('✅ Video converted to base64, length:', base64Video.length);
       
-      const maxSize = 500 * 1024 * 1024; // 500MB limit
-      if (file.size > maxSize) {
-        setToast({message: 'File size must be less than 500MB. For larger videos, please use YouTube or external hosting.', type: 'error'});
-        setTimeout(() => setToast(null), 3000);
-        return;
-      }
+      const video = document.createElement('video');
       
-      console.log('📁 Processing video file:', file.name, 'Size:', (file.size / (1024 * 1024)).toFixed(1), 'MB');
+      // Enhanced metadata loading with timeout
+      const metadataTimeout = setTimeout(() => {
+        console.warn('⚠️ Video metadata loading timeout');
+        setToast({message: 'Video processing is taking longer than expected. The video may still work.', type: 'warning'});
+        setTimeout(() => setToast(null), 5000);
+      }, 10000);
       
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64Video = e.target?.result as string;
-        console.log('✅ Video converted to base64, length:', base64Video.length);
+      video.onloadedmetadata = async () => {
+        clearTimeout(metadataTimeout);
         
-        const video = document.createElement('video');
-        video.onloadedmetadata = async () => {
+        try {
           const duration = video.duration;
-          const minutes = Math.floor(duration / 60);
-          const seconds = Math.floor(duration % 60);
-          const formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+          let formattedDuration = 'Unknown';
+          
+          if (duration && !isNaN(duration) && isFinite(duration)) {
+            const minutes = Math.floor(duration / 60);
+            const seconds = Math.floor(duration % 60);
+            formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+          }
           
           console.log('🎬 Video metadata loaded - Duration:', formattedDuration);
           
@@ -1826,13 +1851,15 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           const uploadItem = {
             id: `upload_${Date.now()}`,
             fileName: file.name,
-            title: file.name,
+            title: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
             size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
             status: 'completed' as 'uploading' | 'processing' | 'encoding' | 'completed' | 'failed',
             progress: 100,
             uploadedAt: new Date().toISOString(),
             duration: formattedDuration,
-            localUrl: base64Video
+            localUrl: base64Video,
+            fileType: file.type,
+            originalName: file.name
           };
           
           const success = await vpsDataStore.addToUploadQueue(uploadItem);
@@ -1840,24 +1867,59 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             const updatedQueue = await vpsDataStore.getUploadQueue();
             setUploadQueue(updatedQueue);
             console.log('📋 Upload queue updated');
+            
+            // Check if video was stored in memory cache due to size
+            const cacheInfo = vpsDataStore.getMemoryCacheInfo();
+            if (cacheInfo.count > 0) {
+              setToast({message: `Video "${file.name}" uploaded successfully! Large videos are optimized for storage (${cacheInfo.totalSize}MB in memory).`, type: 'success'});
+            } else {
+              setToast({message: `Video "${file.name}" uploaded successfully!`, type: 'success'});
+            }
+            setTimeout(() => setToast(null), 4000);
+          } else {
+            setToast({message: 'Video uploaded but failed to add to queue', type: 'warning'});
+            setTimeout(() => setToast(null), 3000);
           }
-        };
-        video.onerror = () => {
-          console.error('❌ Failed to load video metadata');
-          setToast({message: 'Failed to process video file', type: 'error'});
+        } catch (error) {
+          console.error('❌ Error processing video metadata:', error);
+          setToast({message: 'Video uploaded but metadata processing failed', type: 'warning'});
           setTimeout(() => setToast(null), 3000);
-        };
-        video.src = base64Video;
+        } finally {
+          setIsLoading(false);
+          setLoadingMessage('');
+        }
       };
       
-      reader.onerror = () => {
-        console.error('❌ Failed to read video file');
-        setToast({message: 'Failed to read video file', type: 'error'});
+      video.onerror = (error) => {
+        clearTimeout(metadataTimeout);
+        console.error('❌ Failed to load video metadata:', error);
+        setToast({message: 'Failed to process video file. Please try a different format.', type: 'error'});
         setTimeout(() => setToast(null), 3000);
+        setIsLoading(false);
+        setLoadingMessage('');
       };
       
-      reader.readAsDataURL(file);
-    }
+      // Set video source and preload metadata
+      video.preload = 'metadata';
+      video.src = base64Video;
+    };
+    
+    reader.onerror = (error) => {
+      console.error('❌ Failed to read video file:', error);
+      setToast({message: 'Failed to read video file. Please try again.', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
+      setIsLoading(false);
+      setLoadingMessage('');
+    };
+    
+    reader.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const progress = Math.round((e.loaded / e.total) * 100);
+        setLoadingMessage(`Reading video file... ${progress}%`);
+      }
+    };
+    
+    reader.readAsDataURL(file);
   };
 
   const handleThumbnailUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -2250,11 +2312,19 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               <Tabs 
                 selectedKey={videoForm.videoType} 
                 onSelectionChange={(key) => {
-                  // Only clear videoUrl if we're not editing or switching to a different type
-                  if (!editingVideo || key !== videoForm.videoType) {
-                    setVideoForm({ ...videoForm, videoType: key as string, videoUrl: key === videoForm.videoType ? videoForm.videoUrl : '' });
-                  } else {
+                  // Preserve uploaded video data when switching tabs
+                  const isUploadedVideo = videoForm.videoUrl && (videoForm.videoUrl.startsWith('data:') || videoForm.videoUrl.startsWith('blob:'));
+                  
+                  if (isUploadedVideo) {
+                    // Keep the uploaded video data but change the type
                     setVideoForm({ ...videoForm, videoType: key as string });
+                  } else {
+                    // For non-uploaded videos, only clear URL if switching to a different type
+                    setVideoForm({ 
+                      ...videoForm, 
+                      videoType: key as string, 
+                      videoUrl: key === videoForm.videoType ? videoForm.videoUrl : '' 
+                    });
                   }
                 }}
                 className="w-full"
@@ -2273,26 +2343,115 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   <div className="space-y-6 pt-6">
                     {uploadQueue.length > 0 ? (
                       <div className="space-y-4">
-                        <h4 className="font-medium text-gray-900">Select from Upload Queue</h4>
-                        <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
-                          {uploadQueue.map((item, index) => (
-                            <div key={index} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer" onClick={() => {
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-gray-900">Select from Upload Queue ({uploadQueue.filter(item => 
+                            (item.fileName || item.title || '').toLowerCase().includes(uploadQueueSearch.toLowerCase())
+                          ).length} of {uploadQueue.length})</h4>
+                        </div>
+                        
+                        <Input
+                          placeholder="Search videos by name..."
+                          value={uploadQueueSearch}
+                          onChange={(e) => setUploadQueueSearch(e.target.value)}
+                          startContent={<Search className="h-4 w-4 text-gray-400" />}
+                          isClearable
+                          onClear={() => setUploadQueueSearch('')}
+                          className="max-w-md"
+                        />
+                        
+                        <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto">
+                          {uploadQueue
+                            .filter(item => 
+                              (item.fileName || item.title || '').toLowerCase().includes(uploadQueueSearch.toLowerCase())
+                            )
+                            .map((item, index) => (
+                            <div key={index} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-all duration-200 hover:shadow-md" onClick={() => {
                               setVideoForm({ ...videoForm, videoUrl: item.localUrl || item.fileName, videoType: 'upload', duration: item.duration || '' });
                             }}>
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-3">
-                                  <FileVideo className="h-5 w-5 text-blue-500" />
-                                  <div>
-                                    <p className="font-medium text-sm">{item.fileName || item.title}</p>
+                                  {/* Video Thumbnail Preview */}
+                                  {item.localUrl && item.localUrl.startsWith('data:') ? (
+                                    <div className="w-16 h-12 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                                      <video 
+                                        src={item.localUrl} 
+                                        className="w-full h-full object-cover"
+                                        muted
+                                        onError={() => console.log('Thumbnail preview failed')}
+                                      />
+                                    </div>
+                                  ) : (
+                                    <FileVideo className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                                  )}
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-medium text-sm truncate">{item.fileName || item.title}</p>
                                     <p className="text-xs text-gray-500">{item.size} - {item.duration}</p>
+                                    {item.localUrl && item.localUrl.startsWith('data:') && (
+                                      <p className="text-xs text-green-600">✓ Preview available</p>
+                                    )}
                                   </div>
                                 </div>
-                                <Chip size="sm" color={item.status === 'completed' ? 'success' : 'warning'} variant="flat">
-                                  {item.status}
-                                </Chip>
+                                <div className="flex items-center space-x-2">
+                                  {item.localUrl && item.localUrl.startsWith('data:') && (
+                                    <Button
+                                      size="sm"
+                                      variant="flat"
+                                      color="secondary"
+                                      isIconOnly
+                                      onPress={(e) => {
+                                        e.stopPropagation();
+                                        // Create fullscreen video preview
+                                        const video = document.createElement('video');
+                                        video.src = item.localUrl;
+                                        video.controls = true;
+                                        video.autoplay = true;
+                                        video.style.cssText = 'width:90%;max-width:800px;max-height:80vh;border-radius:8px;';
+                                        
+                                        const closeBtn = document.createElement('button');
+                                        closeBtn.innerHTML = '✕';
+                                        closeBtn.style.cssText = 'position:absolute;top:20px;right:20px;background:rgba(0,0,0,0.7);color:white;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;z-index:10001;';
+                                        
+                                        const modal = document.createElement('div');
+                                        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10000;flex-direction:column;';
+                                        
+                                        const title = document.createElement('h3');
+                                        title.textContent = `Preview: ${item.fileName || item.title}`;
+                                        title.style.cssText = 'color:white;margin-bottom:20px;font-size:18px;text-align:center;';
+                                        
+                                        const closeModal = () => {
+                                          video.pause();
+                                          document.body.removeChild(modal);
+                                        };
+                                        
+                                        modal.onclick = (e) => {
+                                          if (e.target === modal) closeModal();
+                                        };
+                                        closeBtn.onclick = closeModal;
+                                        
+                                        modal.appendChild(closeBtn);
+                                        modal.appendChild(title);
+                                        modal.appendChild(video);
+                                        document.body.appendChild(modal);
+                                      }}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  <Chip size="sm" color={item.status === 'completed' ? 'success' : 'warning'} variant="flat">
+                                    {item.status}
+                                  </Chip>
+                                </div>
                               </div>
                             </div>
                           ))}
+                          {uploadQueue.filter(item => 
+                            (item.fileName || item.title || '').toLowerCase().includes(uploadQueueSearch.toLowerCase())
+                          ).length === 0 && uploadQueueSearch && (
+                            <div className="text-center py-8 text-gray-500">
+                              <Search className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                              <p>No videos found matching "{uploadQueueSearch}"</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : null}
@@ -2441,7 +2600,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         </div>
                       </div>
                       <Input
-                        value={videoForm.videoUrl}
+                        value={videoForm.videoType === 'youtube' ? videoForm.videoUrl : ''}
                         onChange={(e) => setVideoForm({ ...videoForm, videoUrl: e.target.value, videoType: 'youtube' })}
                         placeholder={editingVideo ? "Loading YouTube URL..." : "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
                         startContent={<Youtube className="h-4 w-4 text-red-500" />}
@@ -2507,7 +2666,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         </div>
                       </div>
                       <Input
-                        value={videoForm.videoUrl}
+                        value={videoForm.videoType === 'vimeo' ? videoForm.videoUrl : ''}
                         onChange={(e) => setVideoForm({ ...videoForm, videoUrl: e.target.value, videoType: 'vimeo' })}
                         placeholder="https://vimeo.com/123456789"
                         startContent={<Video className="h-4 w-4 text-blue-600" />}
@@ -2556,7 +2715,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 >
                   <div className="space-y-6 pt-6">
                     <Input
-                      value={videoForm.videoUrl}
+                      value={videoForm.videoType === 'external' ? videoForm.videoUrl : ''}
                       onChange={(e) => setVideoForm({ ...videoForm, videoUrl: e.target.value, videoType: 'external' })}
                       placeholder="https://example.com/video.mp4"
                       startContent={<Link className="h-4 w-4 text-purple-500" />}
@@ -2597,48 +2756,165 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         </div>
 
         <div className="space-y-6">
-          {/* Data Summary for Editing */}
-          {editingVideo && (
-            <Card className="bg-blue-50 border border-blue-200">
-              <CardHeader className="border-b border-blue-200">
-                <h3 className="text-lg font-semibold text-blue-900 flex items-center gap-2">
-                  <Eye className="h-5 w-5" />
-                  Loaded Video Data
+
+          
+          {/* Video Preview */}
+          {(videoForm.videoUrl || editingVideo) && (
+            <Card className="bg-white border border-gray-200">
+              <CardHeader className="border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Play className="h-5 w-5" />
+                  Video Preview
                 </h3>
               </CardHeader>
-              <CardBody className="space-y-3">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium text-blue-800">Original Title:</span>
-                    <p className="text-blue-700">{editingVideo.title}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-blue-800">Category:</span>
-                    <p className="text-blue-700">{editingVideo.category || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-blue-800">Price:</span>
-                    <p className="text-blue-700">${editingVideo.price || 0}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-blue-800">Duration:</span>
-                    <p className="text-blue-700">{(editingVideo as any).duration || 'Not set'}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="font-medium text-blue-800">Video URL:</span>
-                    <p className="text-blue-700 truncate">{editingVideo.videoUrl || 'Not set'}</p>
-                  </div>
-                  {editingVideo.description && (
-                    <div className="col-span-2">
-                      <span className="font-medium text-blue-800">Description:</span>
-                      <p className="text-blue-700 line-clamp-2">{editingVideo.description}</p>
+              <CardBody className="space-y-4">
+                {/* Video Preview based on type */}
+                {videoForm.videoUrl && (
+                  <div className="space-y-3">
+                    {/* Base64/Blob Video Preview */}
+                    {(videoForm.videoUrl.startsWith('data:') || videoForm.videoUrl.startsWith('blob:')) && (
+                      <div className="space-y-3">
+                        <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg">
+                          <video 
+                            src={videoForm.videoUrl} 
+                            controls 
+                            className="w-full h-full object-cover"
+                            onError={() => console.log('Video preview failed to load')}
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span className="text-sm text-green-700 font-medium">Uploaded Video</span>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="flat"
+                            color="primary"
+                            onPress={() => {
+                              // Create fullscreen video preview
+                              const video = document.createElement('video');
+                              video.src = videoForm.videoUrl;
+                              video.controls = true;
+                              video.autoplay = true;
+                              video.style.cssText = 'width:90%;max-width:900px;max-height:80vh;border-radius:8px;';
+                              
+                              const closeBtn = document.createElement('button');
+                              closeBtn.innerHTML = '✕';
+                              closeBtn.style.cssText = 'position:absolute;top:20px;right:20px;background:rgba(0,0,0,0.7);color:white;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;z-index:10001;';
+                              
+                              const modal = document.createElement('div');
+                              modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10000;flex-direction:column;';
+                              
+                              const title = document.createElement('h3');
+                              title.textContent = `Preview: ${videoForm.title || 'Video'}`;
+                              title.style.cssText = 'color:white;margin-bottom:20px;font-size:18px;text-align:center;';
+                              
+                              const closeModal = () => {
+                                video.pause();
+                                document.body.removeChild(modal);
+                              };
+                              
+                              modal.onclick = (e) => {
+                                if (e.target === modal) closeModal();
+                              };
+                              closeBtn.onclick = closeModal;
+                              
+                              modal.appendChild(closeBtn);
+                              modal.appendChild(title);
+                              modal.appendChild(video);
+                              document.body.appendChild(modal);
+                            }}
+                            startContent={<Eye className="h-4 w-4" />}
+                          >
+                            Fullscreen
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* YouTube Video Preview */}
+                    {(videoForm.videoType === 'youtube' || videoForm.videoUrl.includes('youtube')) && (
+                      <div className="space-y-3">
+                        <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg">
+                          <iframe
+                            src={getVideoEmbedUrl(videoForm.videoUrl)}
+                            className="w-full h-full"
+                            frameBorder="0"
+                            allowFullScreen
+                            title="YouTube video preview"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Youtube className="h-4 w-4 text-red-500" />
+                          <span className="text-sm text-red-700 font-medium">YouTube Video</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Vimeo Video Preview */}
+                    {(videoForm.videoType === 'vimeo' || videoForm.videoUrl.includes('vimeo')) && (
+                      <div className="space-y-3">
+                        <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg">
+                          <iframe
+                            src={getVideoEmbedUrl(videoForm.videoUrl)}
+                            className="w-full h-full"
+                            frameBorder="0"
+                            allowFullScreen
+                            title="Vimeo video preview"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Video className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm text-blue-700 font-medium">Vimeo Video</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* External Video Preview */}
+                    {(videoForm.videoType === 'external' || (!videoForm.videoUrl.includes('youtube') && !videoForm.videoUrl.includes('vimeo') && !videoForm.videoUrl.startsWith('data:') && !videoForm.videoUrl.startsWith('blob:') && videoForm.videoUrl.startsWith('http'))) && (
+                      <div className="space-y-3">
+                        <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg">
+                          <video 
+                            src={videoForm.videoUrl} 
+                            controls 
+                            className="w-full h-full object-cover"
+                            onError={() => console.log('External video failed to load')}
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Link className="h-4 w-4 text-purple-500" />
+                          <span className="text-sm text-purple-700 font-medium">External Video</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Video Info */}
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="font-medium text-gray-600">Duration:</span>
+                          <p className="text-gray-800">{videoForm.duration || 'Auto-detected'}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Type:</span>
+                          <p className="text-gray-800 capitalize">{videoForm.videoType || 'Auto-detected'}</p>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 pt-2 border-t border-blue-200">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-700 font-medium">All data loaded successfully into editor</span>
-                </div>
+                  </div>
+                )}
+                
+                {!videoForm.videoUrl && editingVideo && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Play className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>Select a video to see preview</p>
+                  </div>
+                )}
               </CardBody>
             </Card>
           )}

@@ -8,7 +8,7 @@ interface AdminProfilePageProps {
   onNavigate: (page: string) => void;
 }
 
-const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate }) => {
+const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate }): JSX.Element => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [profileImage, setProfileImage] = useState<string>('/zinga-linga-logo.png');
   const [isUploading, setIsUploading] = useState(false);
