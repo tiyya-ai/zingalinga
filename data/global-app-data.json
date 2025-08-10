@@ -23,7 +23,23 @@
       "lastLogin": "2025-01-20T10:00:00.000Z"
     }
   ],
-  "modules": [],
+  "modules": [
+    {
+      "id": "sample_video_001",
+      "title": "Sample Educational Video",
+      "description": "A sample video for testing the admin",
+      "price": 9.99,
+      "category": "education",
+      "thumbnail": "/placeholder-video.jpg",
+      "videoUrl": "/sample-video.mp4",
+      "duration": "15:30",
+      "estimatedDuration": "15:30",
+      "createdAt": "2025-01-20T10:00:00.000Z",
+      "isActive": true,
+      "rating": 4.5,
+      "ageRange": "3-8 years"
+    }
+  ],
   "purchases": [],
   "contentFiles": [],
   "settings": {
@@ -48,6 +64,15 @@
       "multiLanguage": false
     }
   },
+  "categories": ["Audio Lessons", "PP1 Program", "PP2 Program", "education", "entertainment"],
+  "comments": [],
+  "subscriptions": [],
+  "transactions": [],
+  "notifications": [],
+  "scheduledContent": [],
+  "flaggedContent": [],
+  "accessLogs": [],
+  "uploadQueue": [],
   "lastUpdated": "2025-01-20T10:00:00.000Z",
   "lastLoaded": "2025-01-20T10:00:00.000Z"
 }

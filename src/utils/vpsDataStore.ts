@@ -180,6 +180,25 @@ class VPSDataStore {
         lastUpdated: new Date().toISOString()
       };
 
+      // Save to API first
+      try {
+        const response = await fetch('/api/data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(this.memoryData)
+        });
+        
+        if (response.ok) {
+          console.log('✅ Data saved to API successfully');
+        } else {
+          console.error('❌ API save failed:', await response.text());
+        }
+      } catch (apiError) {
+        console.error('❌ API save error:', apiError);
+      }
+
       // Always save to localStorage for persistence
       if (typeof window !== 'undefined') {
         try {
@@ -197,6 +216,7 @@ class VPSDataStore {
           
           const dataToSave = JSON.stringify(compressedData);
           localStorage.setItem(this.storageKey, dataToSave);
+          console.log('✅ Data saved to localStorage');
         } catch (storageError) {
           console.error('❌ VPS localStorage save failed:', storageError);
         }

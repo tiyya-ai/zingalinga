@@ -4,7 +4,7 @@ import { existsSync } from 'fs';
 import path from 'path';
 
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
-const DATA_FILE = path.join(DATA_DIR, 'app-data.json');
+const DATA_FILE = path.join(DATA_DIR, 'global-app-data.json');
 
 // Ensure data directory exists
 async function ensureDataDir() {
