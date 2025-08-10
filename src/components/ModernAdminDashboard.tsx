@@ -247,7 +247,20 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   // Load real data from vpsDataStore
   useEffect(() => {
     loadRealData();
+    loadExistingLogo();
   }, []);
+
+  // Load existing logo from settings
+  const loadExistingLogo = async () => {
+    try {
+      const settings = await vpsDataStore.getSettings();
+      if (settings.platformLogo) {
+        setLogoFile(settings.platformLogo);
+      }
+    } catch (error) {
+      console.error('Failed to load existing logo:', error);
+    }
+  };
   
   // Video form state - moved before useEffect
   const [editingVideo, setEditingVideo] = useState<Module | null>(null);
@@ -3598,6 +3611,146 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     </div>
   );
 
+  // Profile form state
+  const [profileForm, setProfileForm] = useState({
+    name: user?.name || 'Admin User',
+    email: user?.email || 'admin@zingalinga.com',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  const handleUpdateProfile = async () => {
+    try {
+      setIsLoading(true);
+      setLoadingMessage('Updating profile...');
+      
+      // Basic validation
+      if (!profileForm.name.trim() || !profileForm.email.trim()) {
+        setToast({message: 'Name and email are required', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
+        return;
+      }
+      
+      // Password validation if changing password
+      if (profileForm.newPassword) {
+        if (!profileForm.currentPassword) {
+          setToast({message: 'Current password is required to change password', type: 'error'});
+          setTimeout(() => setToast(null), 3000);
+          return;
+        }
+        if (profileForm.newPassword !== profileForm.confirmPassword) {
+          setToast({message: 'New passwords do not match', type: 'error'});
+          setTimeout(() => setToast(null), 3000);
+          return;
+        }
+        if (profileForm.newPassword.length < 6) {
+          setToast({message: 'New password must be at least 6 characters', type: 'error'});
+          setTimeout(() => setToast(null), 3000);
+          return;
+        }
+      }
+      
+      // Update user profile
+      const updateData: any = {
+        name: profileForm.name,
+        email: profileForm.email
+      };
+      
+      if (profileForm.newPassword) {
+        updateData.password = profileForm.newPassword;
+      }
+      
+      const success = await vpsDataStore.updateUser(user.id, updateData);
+      if (success) {
+        setToast({message: 'Profile updated successfully!', type: 'success'});
+        setTimeout(() => setToast(null), 3000);
+        
+        // Reset password fields
+        setProfileForm(prev => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        }));
+      } else {
+        setToast({message: 'Failed to update profile. Please try again.', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      setToast({message: 'Failed to update profile. Please try again.', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setIsLoading(false);
+      setLoadingMessage('');
+    }
+  };
+
+  // Logo upload state
+  const [logoFile, setLogoFile] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setToast({message: 'Please select a valid image file (JPG, PNG, WebP)', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    // Validate file size (2MB limit)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setToast({message: 'Logo size must be less than 2MB', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    try {
+      setLogoUploading(true);
+      
+      // Convert to base64 for storage
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64Logo = e.target?.result as string;
+        
+        try {
+          // Save logo to data store
+          const success = await vpsDataStore.updateSettings({
+            platformLogo: base64Logo,
+            logoUpdatedAt: new Date().toISOString()
+          });
+          
+          if (success) {
+            setLogoFile(base64Logo);
+            setToast({message: 'Logo uploaded successfully!', type: 'success'});
+            setTimeout(() => setToast(null), 3000);
+          } else {
+            setToast({message: 'Failed to save logo. Please try again.', type: 'error'});
+            setTimeout(() => setToast(null), 3000);
+          }
+        } catch (error) {
+          console.error('Logo save error:', error);
+          setToast({message: 'Failed to save logo. Please try again.', type: 'error'});
+          setTimeout(() => setToast(null), 3000);
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Logo upload error:', error);
+      setToast({message: 'Failed to upload logo. Please try again.', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
   const renderAdminProfile = () => (
     <div className="space-y-6">
       <PageHeader title="Admin Profile" />
@@ -3611,32 +3764,70 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Platform Logo</label>
               <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-500 transition-all duration-300 bg-gray-50/30 relative cursor-pointer">
-                <div className="space-y-4 pointer-events-none">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                    <ImageIcon className="h-8 w-8 text-blue-500" />
+                {logoFile ? (
+                  <div className="space-y-4">
+                    <div className="w-32 h-16 mx-auto bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex items-center justify-center">
+                      <img 
+                        src={logoFile} 
+                        alt="Platform Logo" 
+                        className="max-w-full max-h-full object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon') as HTMLElement;
+                          if (fallback) fallback.style.display = 'block';
+                        }}
+                      />
+                      <ImageIcon className="h-8 w-8 text-gray-400 fallback-icon" style={{ display: 'none' }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-green-700">Logo uploaded successfully!</p>
+                      <p className="text-xs text-gray-500">Click to change logo</p>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="flat" 
+                      color="warning"
+                      onPress={() => {
+                        setLogoFile(null);
+                        // Clear from data store
+                        vpsDataStore.updateSettings({ platformLogo: null });
+                      }}
+                      startContent={<X className="h-4 w-4" />}
+                    >
+                      Remove Logo
+                    </Button>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Upload Platform Logo</p>
-                    <p className="text-xs text-gray-500">PNG, JPG up to 2MB - Recommended: 200x80px</p>
+                ) : (
+                  <div className="space-y-4 pointer-events-none">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                      {logoUploading ? (
+                        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <ImageIcon className="h-8 w-8 text-blue-500" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {logoUploading ? 'Uploading...' : 'Upload Platform Logo'}
+                      </p>
+                      <p className="text-xs text-gray-500">PNG, JPG up to 2MB - Recommended: 200x80px</p>
+                    </div>
+                    <Button 
+                      color="primary" 
+                      variant="flat"
+                      startContent={<Upload className="h-4 w-4" />}
+                      className="pointer-events-none"
+                      isDisabled={logoUploading}
+                    >
+                      {logoUploading ? 'Uploading...' : 'Choose Logo'}
+                    </Button>
                   </div>
-                  <Button 
-                    color="primary" 
-                    variant="flat"
-                    startContent={<Upload className="h-4 w-4" />}
-                    className="pointer-events-none"
-                  >
-                    Choose Logo
-                  </Button>
-                </div>
+                )}
                 <input
                   type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      console.log('Logo uploaded successfully');
-                    }
-                  }}
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handleLogoUpload}
+                  disabled={logoUploading}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
               </div>
@@ -3644,23 +3835,25 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
               <Input 
-                value={user?.name || 'Admin User'} 
+                value={profileForm.name}
+                onChange={(e) => setProfileForm({...profileForm, name: e.target.value})}
                 className="w-full"
                 classNames={{
-                  input: "bg-gray-50",
-                  inputWrapper: "bg-gray-50 border-gray-200"
+                  input: "bg-white",
+                  inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
                 }}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
               <Input 
-                value={user?.email || 'admin@zingalinga.com'} 
+                value={profileForm.email}
+                onChange={(e) => setProfileForm({...profileForm, email: e.target.value})}
                 type="email"
                 className="w-full"
                 classNames={{
-                  input: "bg-gray-50",
-                  inputWrapper: "bg-gray-50 border-gray-200"
+                  input: "bg-white",
+                  inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
                 }}
               />
             </div>
@@ -3683,11 +3876,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
               <Input 
                 type="password"
+                value={profileForm.currentPassword}
+                onChange={(e) => setProfileForm({...profileForm, currentPassword: e.target.value})}
                 placeholder="Enter current password"
                 className="w-full"
                 classNames={{
-                  input: "bg-gray-50",
-                  inputWrapper: "bg-gray-50 border-gray-200"
+                  input: "bg-white",
+                  inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
                 }}
               />
             </div>
@@ -3695,11 +3890,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
               <Input 
                 type="password"
+                value={profileForm.newPassword}
+                onChange={(e) => setProfileForm({...profileForm, newPassword: e.target.value})}
                 placeholder="Enter new password"
                 className="w-full"
                 classNames={{
-                  input: "bg-gray-50",
-                  inputWrapper: "bg-gray-50 border-gray-200"
+                  input: "bg-white",
+                  inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
                 }}
               />
             </div>
@@ -3707,15 +3904,21 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
               <Input 
                 type="password"
+                value={profileForm.confirmPassword}
+                onChange={(e) => setProfileForm({...profileForm, confirmPassword: e.target.value})}
                 placeholder="Confirm new password"
                 className="w-full"
                 classNames={{
-                  input: "bg-gray-50",
-                  inputWrapper: "bg-gray-50 border-gray-200"
+                  input: "bg-white",
+                  inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
                 }}
               />
             </div>
-            <Button className="w-full bg-gray-900 text-white hover:bg-gray-800">
+            <Button 
+              className="w-full bg-gray-900 text-white hover:bg-gray-800"
+              onPress={handleUpdateProfile}
+              isDisabled={!profileForm.currentPassword || !profileForm.newPassword || !profileForm.confirmPassword}
+            >
               Update Password
             </Button>
           </CardBody>
@@ -3723,7 +3926,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       </div>
 
       <div className="flex justify-end">
-        <Button className="bg-gray-900 text-white hover:bg-gray-800">
+        <Button 
+          className="bg-gray-900 text-white hover:bg-gray-800"
+          onPress={handleUpdateProfile}
+          isLoading={isLoading}
+        >
           Save Changes
         </Button>
       </div>

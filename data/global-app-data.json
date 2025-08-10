@@ -21,6 +21,17 @@
       "totalSpent": 0,
       "createdAt": "2025-01-20T10:00:00.000Z",
       "lastLogin": "2025-01-20T10:00:00.000Z"
+    },
+    {
+      "id": "user-1",
+      "email": "user@example.com",
+      "password": "user123",
+      "name": "User",
+      "role": "user",
+      "purchasedModules": [],
+      "totalSpent": 0,
+      "createdAt": "2025-01-20T10:00:00.000Z",
+      "lastLogin": "2025-01-20T10:00:00.000Z"
     }
   ],
   "modules": [

@@ -20,6 +20,7 @@ async function ensureDataDir() {
 
 // Default data structure
 function getDefaultData() {
+  const staticDate = '2025-01-20T10:00:00.000Z';
   return {
     users: [
       {
@@ -30,8 +31,8 @@ function getDefaultData() {
         role: 'admin',
         purchasedModules: [],
         totalSpent: 0,
-        createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString()
+        createdAt: staticDate,
+        lastLogin: staticDate
       },
       {
         id: 'user_001',
@@ -41,8 +42,19 @@ function getDefaultData() {
         role: 'user',
         purchasedModules: [],
         totalSpent: 0,
-        createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString()
+        createdAt: staticDate,
+        lastLogin: staticDate
+      },
+      {
+        id: 'user-1',
+        email: 'user@example.com',
+        password: 'user123',
+        name: 'User',
+        role: 'user',
+        purchasedModules: [],
+        totalSpent: 0,
+        createdAt: staticDate,
+        lastLogin: staticDate
       }
     ],
     modules: [
@@ -56,7 +68,7 @@ function getDefaultData() {
         videoUrl: '/sample-video.mp4',
         duration: '15:30',
         estimatedDuration: '15:30',
-        createdAt: new Date().toISOString(),
+        createdAt: staticDate,
         isActive: true,
         rating: 4.5,
         ageRange: '3-8 years'

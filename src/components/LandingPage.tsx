@@ -66,11 +66,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
         <div className="relative z-10 text-center max-w-6xl mx-auto">
           {/* Logo */}
           <div className="mb-8 flex justify-center">
-            <img 
-              src="/zinga linga logo.png" 
-              alt="Zinga Linga Logo" 
-              className="h-40 w-auto drop-shadow-2xl hover:scale-105 transition-transform duration-300"
-            />
+            <button onClick={() => window.location.href = '/'} className="focus:outline-none">
+              <img 
+                src="/zinga-linga-logo.png" 
+                alt="Zinga Linga Logo" 
+                className="h-40 w-auto drop-shadow-2xl hover:scale-105 transition-transform duration-300 cursor-pointer"
+              />
+            </button>
           </div>
 
           {/* Characters - Kiki and Tano */}
@@ -150,7 +152,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
             <p className="text-lg sm:text-xl md:text-2xl font-mali text-gray-700 mb-8">
               Discover the magic of learning with Kiki & Tano
             </p>
-            <div className="w-24 h-1 bg-gradient-to-r from-brand-yellow to-brand-red mx-auto rounded-full"></div>
+            <div className="w-24 h-1 bg-gradient-to-r from-brand-yellow to-brand-red mx-auto rounded-full" suppressHydrationWarning></div>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mb-12 sm:mb-16">

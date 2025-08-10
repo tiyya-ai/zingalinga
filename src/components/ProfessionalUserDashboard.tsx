@@ -600,7 +600,7 @@ export default function ProfessionalUserDashboard({
               { id: 'dashboard', label: '🏠 Home', count: null },
               { id: 'all-content', label: '📚 Content', count: allContent.length },
               { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
-              { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type)).length },
+              { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length },
               { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => !localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed')).length },
               { id: 'packages', label: '📦 Packages', count: null },
               { id: 'playlist', label: '📋 Playlist', count: playlist.length },
@@ -632,7 +632,7 @@ export default function ProfessionalUserDashboard({
                 { id: 'dashboard', label: '🏠 Home', count: null },
                 { id: 'all-content', label: '📚 Content', count: allContent.length },
                 { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
-                { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type)).length },
+                { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length },
                 { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => 
                   !localPurchases.some(purchase => 
                     purchase.moduleId === item.id && 
@@ -2603,27 +2603,34 @@ export default function ProfessionalUserDashboard({
                         return;
                       }
 
+                      if (!user?.id) {
+                        alert('❌ User ID not found. Please log in again.');
+                        return;
+                      }
+
                       const updatedUser = {
                         ...user,
-                        id: user?.id || '',
                         name: finalName.trim(),
-                        phone: (profileData.phone || user?.phone || '').trim(),
-                        address: (profileData.address || user?.address || '').trim(),
-                        avatar: profileData.avatar || user?.avatar,
+                        phone: (profileData.phone !== undefined ? profileData.phone : user?.phone || '').trim(),
+                        address: (profileData.address !== undefined ? profileData.address : user?.address || '').trim(),
+                        avatar: profileData.avatar !== undefined ? profileData.avatar : user?.avatar,
                         updatedAt: new Date().toISOString()
                       } as User;
                       
+                      console.log('Updating user profile:', { userId: user.id, updatedUser });
+                      
                       // Update user in VPS
-                      const saveSuccess = await vpsDataStore.updateUser(user?.id || '', updatedUser);
+                      const saveSuccess = await vpsDataStore.updateUser(user.id, updatedUser);
+                      console.log('VPS updateUser result:', saveSuccess);
+                      
                       if (!saveSuccess) {
-                        throw new Error('Failed to save profile data to VPS');
+                        console.error('VPS update failed for user:', user.id);
+                        alert('❌ Failed to save profile data. Please check console for details.');
+                        return;
                       }
                       
-                      alert('✅ Profile updated successfully!');
-                      setShowEditProfile(false);
-                      setProfileData({ name: '', phone: '', address: '', avatar: '' });
+                      console.log('✅ Profile updated successfully in VPS');
                       
-                      // Update user state without logout
                       // Update local state
                       if (setUser) {
                         setUser(updatedUser);
@@ -2645,6 +2652,10 @@ export default function ProfessionalUserDashboard({
                           console.error('Failed to update session:', sessionError);
                         }
                       }
+                      
+                      alert('✅ Profile updated successfully!');
+                      setShowEditProfile(false);
+                      setProfileData({ name: '', phone: '', address: '', avatar: '' });
                     } catch (error) {
                       console.error('❌ Profile update error:', error);
                       alert('❌ Failed to update profile. Please try again.');

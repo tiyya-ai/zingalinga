@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { vpsDataStore } from '../utils/vpsDataStore';
 
 interface HeaderProps {
   onLoginClick: () => void;
@@ -16,6 +17,22 @@ export default function Header({
   onNavigate,
 }: HeaderProps) {
   const [showCart, setShowCart] = React.useState(false);
+  const [platformLogo, setPlatformLogo] = React.useState<string | null>(null);
+
+  // Load platform logo from settings
+  React.useEffect(() => {
+    const loadLogo = async () => {
+      try {
+        const settings = await vpsDataStore.getSettings();
+        if (settings.platformLogo) {
+          setPlatformLogo(settings.platformLogo);
+        }
+      } catch (error) {
+        console.error('Failed to load platform logo:', error);
+      }
+    };
+    loadLogo();
+  }, []);
   return (
     <header className="bg-gradient-to-r from-purple-800 via-blue-800 to-indigo-800 shadow-2xl border-b border-purple-500/30 fixed top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -27,9 +44,13 @@ export default function Header({
               className="flex items-center focus:outline-none transform hover:scale-105 transition-transform duration-200"
             >
               <img 
-                src="/zinga linga logo.png" 
+                src={platformLogo || "/zinga linga logo.png"} 
                 alt="Zinga Linga Logo" 
-                className="h-12 sm:h-14 md:h-16 w-auto"
+                className="h-12 sm:h-14 md:h-16 w-auto max-w-[200px] object-contain"
+                onError={(e) => {
+                  // Fallback to default logo if custom logo fails to load
+                  e.currentTarget.src = "/zinga linga logo.png";
+                }}
               />
             </button>
           </div>

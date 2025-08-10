@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowLeft, User, Mail, Shield, Settings } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ArrowLeft, User, Mail, Shield, Settings, Upload, Download, Camera } from 'lucide-react';
 import Header from '../components/Header';
 import { Footer } from '../components/footer';
 
@@ -10,6 +10,45 @@ interface AdminProfilePageProps {
 
 const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [profileImage, setProfileImage] = useState<string>('/zinga-linga-logo.png');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setProfileImage(result.url);
+      } else {
+        alert('Upload failed: ' + result.error);
+      }
+    } catch (error) {
+      alert('Upload failed: ' + error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleImageDownload = () => {
+    const link = document.createElement('a');
+    link.href = profileImage;
+    link.download = 'admin-profile-image';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 font-mali">
@@ -31,13 +70,46 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
           </button>
           
           <div className="bg-gradient-to-br from-brand-green via-brand-blue to-brand-pink rounded-3xl p-12 text-white mb-12 text-center">
-            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-6">
-              <User className="w-12 h-12 text-brand-green" />
+            <div className="relative w-24 h-24 mx-auto mb-6">
+              <img 
+                src={profileImage} 
+                alt="Admin Profile" 
+                className="w-24 h-24 rounded-full object-cover border-4 border-white"
+              />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }}
+                className="absolute -bottom-2 -right-2 bg-white text-brand-green p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+                disabled={isUploading}
+              >
+                {isUploading ? (
+                  <div className="w-4 h-4 border-2 border-brand-green border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Camera className="w-4 h-4" />
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
             </div>
             <h1 className="text-5xl font-mali font-bold mb-6">Admin Profile</h1>
             <p className="text-2xl font-mali mb-4">
               Manage your administrator account settings
             </p>
+            <button
+              onClick={handleImageDownload}
+              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg flex items-center gap-2 mx-auto transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Download Profile Image
+            </button>
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -28,6 +28,8 @@ interface AppSettings {
   dataSource: 'real' | 'sample';
   apiEndpoint?: string;
   enableRealTimeSync: boolean;
+  platformLogo?: string | null;
+  logoUpdatedAt?: string;
 }
 
 interface AppData {
@@ -427,14 +429,44 @@ class VPSDataStore {
 
   async updateUser(userId: string, updatedUser: any): Promise<boolean> {
     try {
+      console.log('updateUser called with:', { userId, updatedUser });
       const data = await this.loadData();
       data.users = data.users || [];
+      console.log('Current users:', data.users.map(u => ({ id: u.id, name: u.name })));
+      
       const index = data.users.findIndex(u => u.id === userId);
+      console.log('User index found:', index);
+      
       if (index !== -1) {
-        data.users[index] = { ...data.users[index], ...updatedUser };
-        return await this.saveData(data);
+        const oldUser = data.users[index];
+        data.users[index] = { ...oldUser, ...updatedUser };
+        console.log('Updated user:', data.users[index]);
+        
+        const saveResult = await this.saveData(data);
+        console.log('Save result:', saveResult);
+        return saveResult;
+      } else {
+        // Create user if not found
+        console.log('User not found, creating new user with ID:', userId);
+        const staticDate = '2025-01-20T10:00:00.000Z';
+        const newUser = {
+          id: userId,
+          email: updatedUser.email || 'user@example.com',
+          name: updatedUser.name || 'User',
+          role: 'user',
+          purchasedModules: [],
+          totalSpent: 0,
+          createdAt: staticDate,
+          lastLogin: staticDate,
+          ...updatedUser
+        };
+        data.users.push(newUser);
+        console.log('Created new user:', newUser);
+        
+        const saveResult = await this.saveData(data);
+        console.log('Save result:', saveResult);
+        return saveResult;
       }
-      return false;
     } catch (error) {
       console.error('Error updating user:', error);
       return false;
