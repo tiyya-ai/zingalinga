@@ -2290,6 +2290,20 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     <div className="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center hover:border-blue-500 transition-all duration-300 bg-blue-50/30 relative">
                       {videoForm.videoUrl && (videoForm.videoType === 'upload' || videoForm.videoUrl.startsWith('data:') || videoForm.videoUrl.startsWith('blob:')) ? (
                         <div className="space-y-4">
+                          {/* Video Preview for Uploaded Videos */}
+                          {videoForm.videoUrl.startsWith('data:') && (
+                            <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg max-w-md mx-auto">
+                              <video 
+                                src={videoForm.videoUrl} 
+                                controls 
+                                className="w-full h-full object-cover"
+                                onError={() => console.log('Video preview failed to load')}
+                              >
+                                Your browser does not support the video tag.
+                              </video>
+                            </div>
+                          )}
+                          
                           <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
                           <div>
                             <p className="text-lg font-semibold text-green-700">
@@ -2300,43 +2314,65 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                               <p className="text-xs text-blue-600">Original video from: {editingVideo.title}</p>
                             )}
                           </div>
-                          {!editingVideo && (
-                            <Button 
-                              size="sm" 
-                              variant="flat" 
-                              color="primary"
-                              onPress={() => setVideoForm({ ...videoForm, videoUrl: '', videoType: 'upload', duration: '' })}
-                              startContent={<Upload className="h-4 w-4" />}
-                            >
-                              Select Different Video
-                            </Button>
-                          )}
-                          {editingVideo && (
-                            <Button 
-                              size="sm" 
-                              variant="flat" 
-                              color="secondary"
-                              onPress={() => {
-                                if (videoForm.videoUrl.startsWith('data:')) {
-                                  // Create a temporary video element to preview base64 video
+                          
+                          <div className="flex gap-2 justify-center">
+                            {!editingVideo && (
+                              <Button 
+                                size="sm" 
+                                variant="flat" 
+                                color="primary"
+                                onPress={() => setVideoForm({ ...videoForm, videoUrl: '', videoType: 'upload', duration: '' })}
+                                startContent={<Upload className="h-4 w-4" />}
+                              >
+                                Select Different Video
+                              </Button>
+                            )}
+                            
+                            {editingVideo && videoForm.videoUrl.startsWith('data:') && (
+                              <Button 
+                                size="sm" 
+                                variant="flat" 
+                                color="secondary"
+                                onPress={() => {
+                                  // Create fullscreen video preview
                                   const video = document.createElement('video');
                                   video.src = videoForm.videoUrl;
                                   video.controls = true;
-                                  video.style.width = '100%';
-                                  video.style.maxHeight = '300px';
+                                  video.autoplay = true;
+                                  video.style.cssText = 'width:90%;max-width:800px;max-height:80vh;border-radius:8px;';
+                                  
+                                  const closeBtn = document.createElement('button');
+                                  closeBtn.innerHTML = '✕';
+                                  closeBtn.style.cssText = 'position:absolute;top:20px;right:20px;background:rgba(0,0,0,0.7);color:white;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;z-index:10001;';
                                   
                                   const modal = document.createElement('div');
-                                  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999';
-                                  modal.onclick = () => document.body.removeChild(modal);
+                                  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10000;flex-direction:column;';
+                                  
+                                  const title = document.createElement('h3');
+                                  title.textContent = `Preview: ${editingVideo.title}`;
+                                  title.style.cssText = 'color:white;margin-bottom:20px;font-size:18px;text-align:center;';
+                                  
+                                  const closeModal = () => {
+                                    video.pause();
+                                    document.body.removeChild(modal);
+                                  };
+                                  
+                                  modal.onclick = (e) => {
+                                    if (e.target === modal) closeModal();
+                                  };
+                                  closeBtn.onclick = closeModal;
+                                  
+                                  modal.appendChild(closeBtn);
+                                  modal.appendChild(title);
                                   modal.appendChild(video);
                                   document.body.appendChild(modal);
-                                }
-                              }}
-                              startContent={<Eye className="h-4 w-4" />}
-                            >
-                              Preview Video
-                            </Button>
-                          )}
+                                }}
+                                startContent={<Eye className="h-4 w-4" />}
+                              >
+                                Fullscreen Preview
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       ) : (
                         <div className="space-y-4">
@@ -2346,6 +2382,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                               {editingVideo ? 'Replace video file' : 'Upload new video file'}
                             </p>
                             <p className="text-sm text-gray-600">Supports: MP4, MOV, AVI, WMV - Max size: 500MB</p>
+                            {editingVideo && (
+                              <p className="text-xs text-orange-600">Note: Uploading a new file will replace the current video</p>
+                            )}
                           </div>
                           <Button 
                             color="primary" 
@@ -7467,6 +7506,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       case 'children-profiles': return renderChildrenProfilesPage();
       case 'access-logs': return <div>Access Logs - Feature coming soon</div>;
       case 'orders': return renderOrdersPage();
+      case 'admin-profile': return renderAdminProfile();
       case 'subscriptions': return <div>Subscriptions - Feature coming soon</div>;
       case 'transactions': return <div>Transactions - Feature coming soon</div>;
       case 'comments': return <div>Comments - Feature coming soon</div>;
