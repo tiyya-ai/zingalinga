@@ -587,7 +587,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         { id: 'all-videos', label: 'All Videos', icon: <Folder className="h-4 w-4" /> },
         { id: 'add-video', label: 'Add New', icon: <Plus className="h-4 w-4" /> },
         { id: 'categories', label: 'Categories', icon: <Tag className="h-4 w-4" /> },
-        { id: 'upload-queue', label: 'Upload Queue', icon: <Upload className="h-4 w-4" />, badge: '3' }
+        { id: 'upload-queue', label: 'Upload Queue', icon: <Upload className="h-4 w-4" />, badge: uploadQueue.length > 0 ? uploadQueue.length.toString() : undefined }
       ]
     },
     {
@@ -3292,10 +3292,15 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         size="sm" 
                         variant="light"
                         onPress={() => {
-                          if (item.localUrl) {
-                            window.open(item.localUrl, '_blank');
+                          if (item.videoUrl || item.localUrl) {
+                            const url = item.videoUrl || item.localUrl;
+                            if (url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('http')) {
+                              window.open(url, '_blank');
+                            } else {
+                              alert('Preview not available - invalid URL format');
+                            }
                           } else {
-                            alert('Preview not available');
+                            alert('Preview not available - no video URL');
                           }
                         }}
                       >
