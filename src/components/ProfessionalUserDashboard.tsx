@@ -1077,7 +1077,7 @@ export default function ProfessionalUserDashboard({
                               }}
                             >
                               <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/30 backdrop-blur-sm group-hover:scale-110 transition-all duration-300">
-
+                                {content.category === 'Audio Lessons' || content.type === 'audio' ? (
                                   <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                                   </svg>
@@ -1086,6 +1086,7 @@ export default function ProfessionalUserDashboard({
                                     <path d="M8 5v14l11-7z"/>
                                   </svg>
                                 )}
+                              </div>
                               </div>
                             </div>
                           )}
