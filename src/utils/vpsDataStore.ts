@@ -38,6 +38,14 @@ interface AppData {
   uploadQueue: UploadQueueItem[];
   settings?: AppSettings;
   savedVideos?: any[];
+  categories?: string[];
+  comments?: any[];
+  subscriptions?: any[];
+  transactions?: any[];
+  notifications?: any[];
+  scheduledContent?: any[];
+  flaggedContent?: any[];
+  accessLogs?: any[];
   lastUpdated?: string;
   lastLoaded?: string;
 }
@@ -90,6 +98,14 @@ class VPSDataStore {
       contentFiles: [],
       uploadQueue: [],
       savedVideos: [],
+      categories: ['Audio Lessons', 'PP1 Program', 'PP2 Program'],
+      comments: [],
+      subscriptions: [],
+      transactions: [],
+      notifications: [],
+      scheduledContent: [],
+      flaggedContent: [],
+      accessLogs: [],
       settings: this.getDefaultSettings(),
       lastUpdated: new Date().toISOString(),
       lastLoaded: new Date().toISOString()
@@ -395,6 +411,23 @@ class VPSDataStore {
     }
   }
 
+  async deleteOrder(orderId: string): Promise<boolean> {
+    try {
+      const data = await this.loadData();
+      data.purchases = data.purchases || [];
+      const originalLength = data.purchases.length;
+      data.purchases = data.purchases.filter(o => o.id !== orderId);
+      
+      if (data.purchases.length < originalLength) {
+        return await this.saveData(data);
+      }
+      return false;
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      return false;
+    }
+  }
+
   // User management methods
   async addUser(user: any): Promise<boolean> {
     try {
@@ -640,6 +673,186 @@ class VPSDataStore {
       return await this.saveData(data);
     } catch (error) {
       console.error('Error clearing completed uploads:', error);
+      return false;
+    }
+  }
+
+  // Categories management
+  async getCategories(): Promise<string[]> {
+    const data = await this.loadData();
+    return data.categories || ['Audio Lessons', 'PP1 Program', 'PP2 Program'];
+  }
+
+  async addCategory(category: string): Promise<boolean> {
+    try {
+      const data = await this.loadData();
+      data.categories = data.categories || [];
+      if (!data.categories.includes(category)) {
+        data.categories.push(category);
+        return await this.saveData(data);
+      }
+      return false;
+    } catch (error) {
+      console.error('Error adding category:', error);
+      return false;
+    }
+  }
+
+  async deleteCategory(category: string): Promise<boolean> {
+    try {
+      const data = await this.loadData();
+      data.categories = data.categories || [];
+      data.categories = data.categories.filter(c => c !== category);
+      return await this.saveData(data);
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      return false;
+    }
+  }
+
+  // Comments management
+  async getComments(): Promise<any[]> {
+    const data = await this.loadData();
+    return data.comments || [];
+  }
+
+  async addComment(comment: any): Promise<boolean> {
+    try {
+      const data = await this.loadData();
+      data.comments = data.comments || [];
+      data.comments.push({ ...comment, id: `comment_${Date.now()}`, createdAt: new Date().toISOString() });
+      return await this.saveData(data);
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      return false;
+    }
+  }
+
+  async updateCommentStatus(commentId: string, status: string): Promise<boolean> {
+    try {
+      const data = await this.loadData();
+      data.comments = data.comments || [];
+      const index = data.comments.findIndex(c => c.id === commentId);
+      if (index !== -1) {
+        data.comments[index].status = status;
+        return await this.saveData(data);
+      }
+      return false;
+    } catch (error) {
+      console.error('Error updating comment status:', error);
+      return false;
+    }
+  }
+
+  // Subscriptions management
+  async getSubscriptions(): Promise<any[]> {
+    const data = await this.loadData();
+    return data.subscriptions || [];
+  }
+
+  async addSubscription(subscription: any): Promise<boolean> {
+    try {
+      const data = await this.loadData();
+      data.subscriptions = data.subscriptions || [];
+      data.subscriptions.push({ ...subscription, id: `sub_${Date.now()}`, createdAt: new Date().toISOString() });
+      return await this.saveData(data);
+    } catch (error) {
+      console.error('Error adding subscription:', error);
+      return false;
+    }
+  }
+
+  // Notifications management
+  async getNotifications(): Promise<any[]> {
+    const data = await this.loadData();
+    return data.notifications || [];
+  }
+
+  async addNotification(notification: any): Promise<boolean> {
+    try {
+      const data = await this.loadData();
+      data.notifications = data.notifications || [];
+      data.notifications.unshift({ ...notification, id: `notif_${Date.now()}`, createdAt: new Date().toISOString() });
+      return await this.saveData(data);
+    } catch (error) {
+      console.error('Error adding notification:', error);
+      return false;
+    }
+  }
+
+  // Scheduled content management
+  async getScheduledContent(): Promise<any[]> {
+    const data = await this.loadData();
+    return data.scheduledContent || [];
+  }
+
+  async addScheduledContent(content: any): Promise<boolean> {
+    try {
+      const data = await this.loadData();
+      data.scheduledContent = data.scheduledContent || [];
+      data.scheduledContent.push({ ...content, id: `schedule_${Date.now()}`, createdAt: new Date().toISOString() });
+      return await this.saveData(data);
+    } catch (error) {
+      console.error('Error adding scheduled content:', error);
+      return false;
+    }
+  }
+
+  async updateScheduledContent(scheduleId: string, updates: any): Promise<boolean> {
+    try {
+      const data = await this.loadData();
+      data.scheduledContent = data.scheduledContent || [];
+      const index = data.scheduledContent.findIndex(s => s.id === scheduleId);
+      if (index !== -1) {
+        data.scheduledContent[index] = { ...data.scheduledContent[index], ...updates };
+        return await this.saveData(data);
+      }
+      return false;
+    } catch (error) {
+      console.error('Error updating scheduled content:', error);
+      return false;
+    }
+  }
+
+  // User-specific methods
+  async getSavedVideos(userId: string): Promise<any[]> {
+    const data = await this.loadData();
+    return data.savedVideos?.filter(v => v.userId === userId) || [];
+  }
+
+  async addSavedVideo(userId: string, video: any): Promise<boolean> {
+    try {
+      const data = await this.loadData();
+      data.savedVideos = data.savedVideos || [];
+      const savedVideo = { ...video, userId, savedAt: new Date().toISOString() };
+      data.savedVideos.push(savedVideo);
+      return await this.saveData(data);
+    } catch (error) {
+      console.error('Error adding saved video:', error);
+      return false;
+    }
+  }
+
+  async removeSavedVideo(userId: string, videoId: string): Promise<boolean> {
+    try {
+      const data = await this.loadData();
+      data.savedVideos = data.savedVideos || [];
+      data.savedVideos = data.savedVideos.filter(v => !(v.userId === userId && v.id === videoId));
+      return await this.saveData(data);
+    } catch (error) {
+      console.error('Error removing saved video:', error);
+      return false;
+    }
+  }
+
+  async addPurchase(purchase: any): Promise<boolean> {
+    try {
+      const data = await this.loadData();
+      data.purchases = data.purchases || [];
+      data.purchases.push({ ...purchase, id: purchase.id || `purchase_${Date.now()}`, createdAt: new Date().toISOString() });
+      return await this.saveData(data);
+    } catch (error) {
+      console.error('Error adding purchase:', error);
       return false;
     }
   }

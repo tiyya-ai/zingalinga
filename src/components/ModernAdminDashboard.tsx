@@ -290,10 +290,18 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       const realOrders = await vpsDataStore.getOrders();
       const realUploadQueue = await vpsDataStore.getUploadQueue();
       
-      // Load categories from VPS
-      if (data.categories && data.categories.length > 0) {
-        setCategories(data.categories);
-      }
+      // Load all data from VPS
+      const realCategories = await vpsDataStore.getCategories();
+      const realComments = await vpsDataStore.getComments();
+      const realSubscriptions = await vpsDataStore.getSubscriptions();
+      const realNotifications = await vpsDataStore.getNotifications();
+      const realScheduledContent = await vpsDataStore.getScheduledContent();
+      
+      setCategories(realCategories);
+      setComments(realComments);
+      setSubscriptions(realSubscriptions);
+      setNotifications(realNotifications);
+      setScheduledContent(realScheduledContent);
 
       // Set real users data
       setUsers(realUsers.map(user => ({
@@ -1578,34 +1586,38 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     }
 
     const scheduledItem = {
-      id: `schedule_${Date.now()}`,
       contentId: scheduleForm.contentId,
       publishDateTime: new Date(`${scheduleForm.publishDate}T${scheduleForm.publishTime}`),
-      status: scheduleForm.status,
-      createdAt: new Date().toISOString()
+      status: scheduleForm.status
     };
 
-    setScheduledContent([...scheduledContent, scheduledItem]);
-    alert('✅ Content scheduled successfully!');
-    
-    // Reset form
-    setScheduleForm({
-      contentId: '',
-      publishDate: '',
-      publishTime: '',
-      status: 'scheduled'
-    });
+    const success = await vpsDataStore.addScheduledContent(scheduledItem);
+    if (success) {
+      const updatedScheduled = await vpsDataStore.getScheduledContent();
+      setScheduledContent(updatedScheduled);
+      alert('✅ Content scheduled successfully!');
+      
+      // Reset form
+      setScheduleForm({
+        contentId: '',
+        publishDate: '',
+        publishTime: '',
+        status: 'scheduled'
+      });
+    } else {
+      alert('❌ Failed to schedule content');
+    }
   };
 
-  const handleCancelSchedule = (scheduleId: string) => {
-    setScheduledContent(prev => 
-      prev.map(item => 
-        item.id === scheduleId 
-          ? { ...item, status: 'cancelled' }
-          : item
-      )
-    );
-    alert('✅ Schedule cancelled successfully!');
+  const handleCancelSchedule = async (scheduleId: string) => {
+    const success = await vpsDataStore.updateScheduledContent(scheduleId, { status: 'cancelled' });
+    if (success) {
+      const updatedScheduled = await vpsDataStore.getScheduledContent();
+      setScheduledContent(updatedScheduled);
+      alert('✅ Schedule cancelled successfully!');
+    } else {
+      alert('❌ Failed to cancel schedule');
+    }
   };
 
   const handlePublishNow = async (scheduleId: string) => {
@@ -1710,22 +1722,20 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           
           const uploadItem = {
             id: `upload_${Date.now()}`,
-            name: file.name,
+            fileName: file.name,
+            title: file.name,
             size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-            status: 'completed',
+            status: 'completed' as 'uploading' | 'processing' | 'encoding' | 'completed' | 'failed',
             progress: 100,
             uploadedAt: new Date().toISOString(),
-            fileType: file.type,
-            localUrl: base64Video
+            duration: formattedDuration
           };
           
-          setUploadQueue(prev => [uploadItem, ...prev]);
-          
-          // Save to VPS
-          const data = await vpsDataStore.loadData();
-          data.uploadQueue = data.uploadQueue || [];
-          data.uploadQueue.unshift(uploadItem);
-          await vpsDataStore.saveData(data);
+          const success = await vpsDataStore.addToUploadQueue(uploadItem);
+          if (success) {
+            const updatedQueue = await vpsDataStore.getUploadQueue();
+            setUploadQueue(updatedQueue);
+          }
         };
         video.src = base64Video;
       };
@@ -3011,10 +3021,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         size="sm" 
                         variant="light" 
                         className="hover:bg-red-50 transition-colors"
-                        onPress={() => {
+                        onPress={async () => {
                           if (confirm(`Are you sure you want to delete user "${user.name}"? This action cannot be undone.`)) {
-                            setUsers(prev => prev.filter(u => u.id !== user.id));
-                            alert('✅ User deleted successfully!');
+                            const success = await vpsDataStore.deleteUser(user.id);
+                            if (success) {
+                              const updatedUsers = await vpsDataStore.getUsers();
+                              setUsers(updatedUsers);
+                              alert('✅ User deleted successfully!');
+                            } else {
+                              alert('❌ Failed to delete user');
+                            }
                           }
                         }}
                         aria-label={`Delete user ${user.name}`}
@@ -3096,23 +3112,28 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 
                 if (editingUser) {
                   // Update user
-                  const updatedUser = { ...editingUser, ...userForm };
-                  setUsers(prev => prev.map(u => u.id === editingUser.id ? updatedUser : u));
-                  alert('User updated successfully!');
+                  const success = await vpsDataStore.updateUser(editingUser.id, userForm);
+                  if (success) {
+                    const updatedUsers = await vpsDataStore.getUsers();
+                    setUsers(updatedUsers);
+                    alert('User updated successfully!');
+                  } else {
+                    alert('Failed to update user');
+                  }
                 } else {
                   // Add new user
                   if (!userForm.password.trim()) {
                     alert('Password is required for new users');
                     return;
                   }
-                  const newUser = {
-                    id: `user_${Date.now()}`,
-                    ...userForm,
-                    createdAt: new Date().toISOString(),
-                    totalSpent: 0
-                  };
-                  setUsers(prev => [...prev, newUser]);
-                  alert('User created successfully!');
+                  const success = await vpsDataStore.addUser(userForm);
+                  if (success) {
+                    const updatedUsers = await vpsDataStore.getUsers();
+                    setUsers(updatedUsers);
+                    alert('User created successfully!');
+                  } else {
+                    alert('Failed to create user or user already exists');
+                  }
                 }
                 
                 onUserModalClose();
@@ -3135,16 +3156,15 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
             startContent={<Plus className="h-4 w-4" />}
             onPress={async () => {
-              if (newCategory.trim() && !categories.includes(newCategory.trim())) {
-                const updatedCategories = [...categories, newCategory.trim()];
-                setCategories(updatedCategories);
-                
-                // Save to VPS
-                const data = await vpsDataStore.loadData();
-                data.categories = updatedCategories;
-                await vpsDataStore.saveData(data);
-                
-                setNewCategory('');
+              if (newCategory.trim()) {
+                const success = await vpsDataStore.addCategory(newCategory.trim());
+                if (success) {
+                  const updatedCategories = await vpsDataStore.getCategories();
+                  setCategories(updatedCategories);
+                  setNewCategory('');
+                } else {
+                  alert('Category already exists or failed to add');
+                }
               }
             }}
           >
@@ -3184,7 +3204,22 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-1">
-                          <Button size="sm" variant="light" className="hover:bg-red-50">
+                          <Button 
+                            size="sm" 
+                            variant="light" 
+                            className="hover:bg-red-50"
+                            onPress={async () => {
+                              if (confirm(`Delete category "${category}"?`)) {
+                                const success = await vpsDataStore.deleteCategory(category);
+                                if (success) {
+                                  const updatedCategories = await vpsDataStore.getCategories();
+                                  setCategories(updatedCategories);
+                                } else {
+                                  alert('Failed to delete category');
+                                }
+                              }
+                            }}
+                          >
                             <Trash2 className="h-4 w-4 text-red-600" />
                           </Button>
                         </div>
@@ -3217,16 +3252,15 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               <Button 
                 className="w-full bg-gray-900 text-white hover:bg-gray-800"
                 onPress={async () => {
-                  if (newCategory.trim() && !categories.includes(newCategory.trim())) {
-                    const updatedCategories = [...categories, newCategory.trim()];
-                    setCategories(updatedCategories);
-                    
-                    // Save to VPS
-                    const data = await vpsDataStore.loadData();
-                    data.categories = updatedCategories;
-                    await vpsDataStore.saveData(data);
-                    
-                    setNewCategory('');
+                  if (newCategory.trim()) {
+                    const success = await vpsDataStore.addCategory(newCategory.trim());
+                    if (success) {
+                      const updatedCategories = await vpsDataStore.getCategories();
+                      setCategories(updatedCategories);
+                      setNewCategory('');
+                    } else {
+                      alert('Category already exists or failed to add');
+                    }
                   }
                 }}
                 startContent={<Plus className="h-4 w-4" />}
@@ -3298,13 +3332,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         className="hover:bg-red-50"
                         onPress={async () => {
                           if (confirm('Delete this upload?')) {
-                            const updatedQueue = uploadQueue.filter((_, i) => i !== index);
-                            setUploadQueue(updatedQueue);
-                            
-                            // Save to VPS
-                            const data = await vpsDataStore.loadData();
-                            data.uploadQueue = updatedQueue;
-                            await vpsDataStore.saveData(data);
+                            const success = await vpsDataStore.removeFromUploadQueue(item.id);
+                            if (success) {
+                              const updatedQueue = await vpsDataStore.getUploadQueue();
+                              setUploadQueue(updatedQueue);
+                            } else {
+                              alert('Failed to delete upload');
+                            }
                           }
                         }}
                       >
@@ -3461,10 +3495,39 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         size="sm" 
                         variant="light" 
                         className="hover:bg-red-50"
-                        onPress={() => {
-                          if (confirm(`Cancel order #${order.id.toString().slice(-6)}?`)) {
-                            setOrders(prev => prev.filter(o => o.id !== order.id));
-                            alert('Order cancelled successfully!');
+                        onPress={async () => {
+                          if (confirm(`Delete order #${order.id.toString().slice(-6)}?`)) {
+                            const success = await vpsDataStore.deleteOrder(order.id);
+                            if (success) {
+                              const updatedOrders = await vpsDataStore.getOrders();
+                              const convertedOrders = updatedOrders.map(purchase => {
+                                const user = users.find(u => u.id === purchase.userId);
+                                const video = videos.find(v => v.id === purchase.moduleId);
+                                return {
+                                  id: purchase.id,
+                                  customer: {
+                                    name: user?.name || 'Unknown User',
+                                    email: user?.email || 'unknown@email.com',
+                                    avatar: user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'UN'
+                                  },
+                                  item: {
+                                    name: video?.title || 'Unknown Product',
+                                    count: 1,
+                                    type: 'video'
+                                  },
+                                  amount: purchase.amount || video?.price || 0,
+                                  status: purchase.status || 'completed',
+                                  orderType: 'Video Purchase',
+                                  date: new Date(purchase.createdAt || purchase.purchaseDate || Date.now()),
+                                  paymentMethod: purchase.paymentMethod || 'Credit Card',
+                                  transactionId: purchase.transactionId || purchase.id
+                                };
+                              });
+                              setOrders(convertedOrders);
+                              alert('Order deleted successfully!');
+                            } else {
+                              alert('Failed to delete order');
+                            }
                           }
                         }}
                       >

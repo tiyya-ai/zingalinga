@@ -169,12 +169,9 @@ export default function ProfessionalUserDashboard({
         }
         
         // Load saved videos from VPS
-        if (vpsData.savedVideos && vpsData.savedVideos.length > 0) {
-          setSavedVideosList(vpsData.savedVideos);
-          localStorage.setItem('savedVideos', JSON.stringify(vpsData.savedVideos));
-        } else {
-          const localSaved = JSON.parse(localStorage.getItem('savedVideos') || '[]');
-          setSavedVideosList(localSaved);
+        if (user?.id) {
+          const userSavedVideos = await vpsDataStore.getSavedVideos(user.id);
+          setSavedVideosList(userSavedVideos);
         }
       } catch (error) {
         console.error('Failed to load data:', error);
@@ -1036,7 +1033,7 @@ export default function ProfessionalUserDashboard({
                             <div 
                               className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors group-hover:bg-black/30 cursor-pointer"
                               onClick={() => {
-
+                                if (content.category === 'Audio Lessons' || content.type === 'audio') {
                                   let audioUrl = content.audioUrl || content.videoUrl;
                                   let audioFile = null;
                                   
@@ -1117,24 +1114,7 @@ export default function ProfessionalUserDashboard({
                         {isPurchased ? (
                           <button 
                             onClick={() => {
-                              if (content.type === 'video' || !content.type) {
-                                const video = {
-                                  id: content.id,
-                                  title: content.title,
-                                  thumbnail: content.thumbnail || '',
-                                  duration: content.duration || '5:00',
-                                  description: content.description || '',
-                                  videoUrl: content.videoUrl || '',
-                                  category: content.category || 'Videos',
-                                  isPremium: content.isPremium || false,
-                                  price: content.price || 0,
-                                  rating: (content as any).rating,
-                                  views: (content as any).views,
-                                  tags: (content as any).tags,
-                                  isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
-                                };
-                                playVideo(video);
-
+                              if (content.category === 'Audio Lessons' || content.type === 'audio') {
                                 // Handle audio content
                                 let audioUrl = content.audioUrl || content.videoUrl;
                                 
@@ -1155,6 +1135,23 @@ export default function ProfessionalUserDashboard({
                                 } else {
                                   alert('⚠️ Audio file not available for this content.');
                                 }
+                              } else if (content.type === 'video' || !content.type) {
+                                const video = {
+                                  id: content.id,
+                                  title: content.title,
+                                  thumbnail: content.thumbnail || '',
+                                  duration: content.duration || '5:00',
+                                  description: content.description || '',
+                                  videoUrl: content.videoUrl || '',
+                                  category: content.category || 'Videos',
+                                  isPremium: content.isPremium || false,
+                                  price: content.price || 0,
+                                  rating: (content as any).rating,
+                                  views: (content as any).views,
+                                  tags: (content as any).tags,
+                                  isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
+                                };
+                                playVideo(video);
                               } else {
                                 alert(`✅ You own this ${content.category}! Content access available.`);
                               }
@@ -1867,19 +1864,16 @@ export default function ProfessionalUserDashboard({
                         <button 
                           onClick={async () => {
                             try {
-                              const updatedList = savedVideosList.filter(v => v.id !== video.id);
-                              setSavedVideosList(updatedList);
-                              localStorage.setItem('savedVideos', JSON.stringify(updatedList));
-                              
-                              // Update VPS
-                              const data = await vpsDataStore.loadData();
-                              const updatedData = {
-                                ...data,
-                                savedVideos: updatedList
-                              };
-                              await vpsDataStore.saveData(updatedData);
-                              
-                              console.log('✅ Video removed from saved list');
+                              if (user?.id) {
+                                const success = await vpsDataStore.removeSavedVideo(user.id, video.id);
+                                if (success) {
+                                  const updatedList = await vpsDataStore.getSavedVideos(user.id);
+                                  setSavedVideosList(updatedList);
+                                  console.log('✅ Video removed from saved list');
+                                } else {
+                                  console.error('❌ Failed to remove video from VPS');
+                                }
+                              }
                             } catch (error) {
                               console.error('❌ Failed to remove video:', error);
                             }
@@ -2831,12 +2825,9 @@ export default function ProfessionalUserDashboard({
                         type: 'video' as const
                       }));
                       
-                      const data = await vpsDataStore.loadData();
-                      const updatedData = {
-                        ...data,
-                        purchases: [...(data.purchases || []), ...newPurchases]
-                      };
-                      await vpsDataStore.saveData(updatedData);
+                      for (const purchase of newPurchases) {
+                        await vpsDataStore.addPurchase(purchase);
+                      }
                       
                       setLocalPurchases([...localPurchases, ...newPurchases]);
                       setCartItems([]);
