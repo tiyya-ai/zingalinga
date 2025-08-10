@@ -210,23 +210,37 @@ class VPSDataStore {
           console.log('✅ Data saved to localStorage with full media data');
         } catch (storageError) {
           console.error('❌ VPS localStorage save failed:', storageError);
-          // If localStorage fails due to size, try with compressed data
+          console.log('Storage error details:', storageError.message);
+          
+          // Try to save without compression first, but with error handling
           try {
-            const compressedData = {
-              ...this.memoryData,
-              modules: this.memoryData.modules?.map(m => ({
-                ...m,
-                // Keep URLs but remove large base64 data only as fallback
-                videoUrl: m.videoUrl?.startsWith('data:') ? '[BASE64_VIDEO_REMOVED]' : m.videoUrl,
-                thumbnail: m.thumbnail?.startsWith('data:') ? '[BASE64_IMAGE_REMOVED]' : m.thumbnail,
-                audioUrl: m.audioUrl?.startsWith?.('data:') ? '[BASE64_AUDIO_REMOVED]' : m.audioUrl
-              }))
-            };
-            const fallbackData = JSON.stringify(compressedData);
-            localStorage.setItem(this.storageKey, fallbackData);
-            console.log('⚠️ Data saved to localStorage with compressed media (fallback)');
-          } catch (fallbackError) {
-            console.error('❌ Even compressed localStorage save failed:', fallbackError);
+            // Clear old data first
+            localStorage.removeItem(this.storageKey);
+            
+            // Try saving again
+            const retryData = JSON.stringify(this.memoryData);
+            localStorage.setItem(this.storageKey, retryData);
+            console.log('✅ Data saved to localStorage on retry with full media data');
+          } catch (retryError) {
+            console.error('❌ Retry failed, using compressed fallback:', retryError);
+            // Only compress as last resort
+            try {
+              const compressedData = {
+                ...this.memoryData,
+                modules: this.memoryData.modules?.map(m => ({
+                  ...m,
+                  // Keep URLs but remove large base64 data only as fallback
+                  videoUrl: m.videoUrl?.startsWith('data:') ? '[BASE64_VIDEO_REMOVED]' : m.videoUrl,
+                  thumbnail: m.thumbnail?.startsWith('data:') ? '[BASE64_IMAGE_REMOVED]' : m.thumbnail,
+                  audioUrl: m.audioUrl?.startsWith?.('data:') ? '[BASE64_AUDIO_REMOVED]' : m.audioUrl
+                }))
+              };
+              const fallbackData = JSON.stringify(compressedData);
+              localStorage.setItem(this.storageKey, fallbackData);
+              console.log('⚠️ Data saved to localStorage with compressed media (fallback)');
+            } catch (fallbackError) {
+              console.error('❌ Even compressed localStorage save failed:', fallbackError);
+            }
           }
         }
       }
