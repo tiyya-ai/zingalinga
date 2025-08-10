@@ -1,38 +1,44 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ModernAdminDashboard from '../../components/ModernAdminDashboard';
+import dynamic from 'next/dynamic';
 import { authManager } from '../../utils/auth';
 import { User } from '../../types';
 
+const ModernAdminDashboard = dynamic(() => import('../../components/ModernAdminDashboard'), {
+  ssr: false,
+  loading: () => <div className="min-h-screen bg-gray-900 flex items-center justify-center"><div className="text-white">Loading...</div></div>
+});
+
 export default function AdminPage() {
-  const [user, setUser] = useState<User | null>(() => {
+  const [user, setUser] = useState<User | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    
     if (typeof window !== 'undefined') {
       try {
         const session = authManager.getCurrentSession();
         if (session && authManager.isSessionValid(session) && session.user.role === 'admin') {
-          return session.user;
+          setUser(session.user);
+        } else {
+          window.location.href = '/';
         }
       } catch (error) {
-        // Handle error silently
+        console.error('Auth error:', error);
+        window.location.href = '/';
       }
     }
-    return null;
-  });
-
-  useEffect(() => {
-    if (!user && typeof window !== 'undefined') {
-      window.location.href = '/';
-    }
-  }, [user]);
+  }, []);
 
   const handleLogout = () => {
     authManager.logout();
     window.location.href = '/';
   };
 
-  if (!user) {
-    return null;
+  if (!mounted || !user) {
+    return <div className="min-h-screen bg-gray-900 flex items-center justify-center"><div className="text-white">Loading...</div></div>;
   }
 
   return (

@@ -1199,7 +1199,7 @@ export default function ProfessionalUserDashboard({
                 <div className="flex items-center space-x-4">
                   <h2 className="text-2xl font-bold text-white">Video Library</h2>
                   <span className="bg-yellow-400 text-purple-900 px-3 py-1 rounded-full text-sm font-bold">
-                    {allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length} my videos
+                    {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length} my videos
                   </span>
                 </div>
                 
@@ -1282,7 +1282,7 @@ export default function ProfessionalUserDashboard({
 
             {/* Video Cards - Only Show Purchased Videos */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).map(module => {
+              {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).map(module => {
                 const isPurchased = isItemPurchased(module.id);
                 let thumbnail = module.thumbnail || '';
                 
@@ -1428,7 +1428,7 @@ export default function ProfessionalUserDashboard({
             </div>
             
             {/* Show message when no purchased videos */}
-            {allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length === 0 && (
+            {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length === 0 && (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <div className="text-6xl mb-4">🎬</div>
                 <div className="text-white text-xl mb-2">No videos available</div>
