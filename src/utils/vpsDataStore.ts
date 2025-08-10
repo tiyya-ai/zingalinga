@@ -167,7 +167,19 @@ class VPSDataStore {
       // Always save to localStorage for persistence
       if (typeof window !== 'undefined') {
         try {
-          const dataToSave = JSON.stringify(this.memoryData);
+          // Compress data before saving
+          const compressedData = {
+            ...this.memoryData,
+            modules: this.memoryData.modules?.map(m => ({
+              ...m,
+              // Remove large base64 data for localStorage
+              videoUrl: m.videoUrl?.startsWith('data:') ? undefined : m.videoUrl,
+              thumbnail: m.thumbnail?.startsWith('data:') ? undefined : m.thumbnail,
+              audioUrl: m.audioUrl?.startsWith?.('data:') ? undefined : m.audioUrl
+            }))
+          };
+          
+          const dataToSave = JSON.stringify(compressedData);
           localStorage.setItem(this.storageKey, dataToSave);
           console.log('✅ Data saved to localStorage successfully', {
             modules: this.memoryData.modules?.length || 0,
@@ -176,24 +188,28 @@ class VPSDataStore {
           });
         } catch (storageError) {
           console.error('❌ Failed to save to localStorage:', storageError);
-          // Try to clear some space and retry
+          // Clear old data and save minimal data
           if ((storageError as Error).name === 'QuotaExceededError') {
-            console.log('🧹 Attempting to clear localStorage space...');
+            console.log('🧹 Clearing localStorage due to quota exceeded...');
             try {
-              // Keep only essential data
-              const essentialData = {
-                ...this.memoryData,
+              localStorage.removeItem(this.storageKey);
+              const minimalData = {
+                users: this.memoryData.users || [],
                 modules: this.memoryData.modules?.map(m => ({
-                  ...m,
-                  // Convert large base64 data to placeholder for storage efficiency
-                  videoUrl: m.videoUrl?.startsWith('data:') ? 'local-video-data' : m.videoUrl,
-                  thumbnail: m.thumbnail?.startsWith('data:') ? 'local-thumbnail-data' : m.thumbnail
-                }))
+                  id: m.id,
+                  title: m.title,
+                  type: m.type,
+                  category: m.category,
+                  price: m.price,
+                  isVisible: m.isVisible
+                })) || [],
+                purchases: this.memoryData.purchases || [],
+                settings: this.memoryData.settings
               };
-              localStorage.setItem(this.storageKey, JSON.stringify(essentialData));
-              console.log('✅ Data saved with compression');
+              localStorage.setItem(this.storageKey, JSON.stringify(minimalData));
+              console.log('✅ Minimal data saved after quota exceeded');
             } catch (retryError) {
-              console.error('❌ Failed to save even with compression:', retryError);
+              console.error('❌ Failed to save minimal data:', retryError);
             }
           }
         }

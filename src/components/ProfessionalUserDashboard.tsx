@@ -148,8 +148,9 @@ export default function ProfessionalUserDashboard({
     setLocalPurchases(purchases);
   }, [purchases]);
 
-  // Update live modules when prop changes
+  // Update live modules when prop changes and clear cache
   useEffect(() => {
+    vpsDataStore.clearMemoryCache();
     setLiveModules(modules);
   }, [modules]);
   
@@ -157,17 +158,13 @@ export default function ProfessionalUserDashboard({
   useEffect(() => {
     const loadData = async () => {
       try {
-
-        // Clear cache to ensure fresh data after login
+        // Always clear cache to ensure fresh data
         vpsDataStore.clearMemoryCache();
-        const vpsData = await vpsDataStore.loadData();
-
         
-        if (vpsData.modules && vpsData.modules.length > 0) {
-          // Log audio content specifically
-          const audioContent = vpsData.modules.filter(m => m.category === 'Audio Lessons' || m.audioUrl);
-
-          
+        // Force fresh data load from API/VPS
+        const vpsData = await vpsDataStore.loadData();
+        
+        if (vpsData.modules) {
           setLiveModules(vpsData.modules);
         }
         
@@ -176,35 +173,42 @@ export default function ProfessionalUserDashboard({
           setSavedVideosList(vpsData.savedVideos);
           localStorage.setItem('savedVideos', JSON.stringify(vpsData.savedVideos));
         } else {
-          // Fallback to localStorage
           const localSaved = JSON.parse(localStorage.getItem('savedVideos') || '[]');
           setSavedVideosList(localSaved);
         }
       } catch (error) {
+        console.error('Failed to load data:', error);
       }
     };
     
     if (mounted) {
+      // Load data immediately on mount
       loadData();
       
       // Real-time updates with multiple triggers
       const handleVisibilityChange = () => {
-        if (!document.hidden) loadData();
+        if (!document.hidden) {
+          vpsDataStore.clearMemoryCache();
+          loadData();
+        }
       };
-      const handleFocus = () => loadData();
-      const handleClick = () => loadData();
+      const handleFocus = () => {
+        vpsDataStore.clearMemoryCache();
+        loadData();
+      };
       
       document.addEventListener('visibilitychange', handleVisibilityChange);
       window.addEventListener('focus', handleFocus);
-      document.addEventListener('click', handleClick);
       
-      // Auto-sync every 3 seconds for real-time updates
-      const interval = setInterval(loadData, 3000);
+      // Auto-sync every 5 seconds for real-time updates
+      const interval = setInterval(() => {
+        vpsDataStore.clearMemoryCache();
+        loadData();
+      }, 5000);
       
       return () => {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         window.removeEventListener('focus', handleFocus);
-        document.removeEventListener('click', handleClick);
         clearInterval(interval);
       };
     }

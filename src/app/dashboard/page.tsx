@@ -40,6 +40,8 @@ export default function DashboardPage() {
       // Load data after user is confirmed
       const loadData = async () => {
         try {
+          // Clear cache to get fresh data
+          vpsDataStore.clearMemoryCache();
           const data = await vpsDataStore.loadData();
           setModules(data.modules || []);
           setPurchases(data.purchases || []);
@@ -63,7 +65,10 @@ export default function DashboardPage() {
       loadData();
       
       // Set up periodic sync for profile updates
-      const syncInterval = setInterval(loadData, 5000);
+      const syncInterval = setInterval(() => {
+        vpsDataStore.clearMemoryCache();
+        loadData();
+      }, 5000);
       return () => clearInterval(syncInterval);
     }
   }, [user]);
