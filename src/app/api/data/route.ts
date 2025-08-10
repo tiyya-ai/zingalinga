@@ -44,7 +44,7 @@ function getDefaultData() {
       {
         id: 'sample_video_001',
         title: 'Sample Educational Video',
-        description: 'A sample video for testing the admin dashboard',
+        description: 'A sample video for testing the admin',
         price: 9.99,
         category: 'education',
         thumbnail: '/placeholder-video.jpg',
