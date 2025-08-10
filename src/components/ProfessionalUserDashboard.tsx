@@ -128,8 +128,20 @@ export default function ProfessionalUserDashboard({
     checkMobile();
     window.addEventListener('resize', checkMobile);
     
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+    // Listen for profile updates
+    const handleProfileUpdate = (event: CustomEvent) => {
+      if (setUser && event.detail) {
+        setUser(event.detail);
+      }
+    };
+    
+    window.addEventListener('userProfileUpdated', handleProfileUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('userProfileUpdated', handleProfileUpdate as EventListener);
+    };
+  }, [setUser]);
 
   // Update local purchases when prop changes
   useEffect(() => {
@@ -529,10 +541,25 @@ export default function ProfessionalUserDashboard({
 
               <button
                 onClick={() => setActiveTab('profile')}
-                className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-all duration-200 backdrop-blur-sm border border-white/20"
+                className="relative bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-all duration-200 backdrop-blur-sm border border-white/20"
               >
-                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center border-2 border-yellow-400/50">
-                  <span className="text-purple-900 font-bold text-xs sm:text-sm">{(user?.name || 'U').charAt(0).toUpperCase()}</span>
+                <div className="w-6 h-6 rounded-full overflow-hidden border-2 border-yellow-400/50">
+                  {user?.avatar && user.avatar.trim() ? (
+                    <img 
+                      src={user.avatar} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover" 
+                      key={user.avatar}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div className="w-full h-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center" style={{ display: user?.avatar && user.avatar.trim() ? 'none' : 'flex' }}>
+                    <span className="text-purple-900 font-bold text-xs">{(user?.name || 'U').charAt(0).toUpperCase()}</span>
+                  </div>
                 </div>
               </button>
               
@@ -544,7 +571,7 @@ export default function ProfessionalUserDashboard({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z" />
                 </svg>
                 {cartItems.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-yellow-400 text-purple-900 text-xs w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center font-bold">
+                  <span className="absolute -top-2 -right-2 bg-yellow-400 text-purple-900 text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold">
                     {cartItems.length}
                   </span>
                 )}
@@ -2038,7 +2065,10 @@ export default function ProfessionalUserDashboard({
                     src={user?.avatar && user.avatar.trim() ? user.avatar : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'} 
                     alt="Profile" 
                     className="w-32 h-32 rounded-full border-4 border-white shadow-2xl object-cover" 
-                    key={user?.avatar || 'profile-default'}
+                    key={`profile-${user?.id}-${user?.avatar || 'default'}-${Date.now()}`}
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
+                    }}
                   />
                   <div className="absolute -bottom-2 -right-2 bg-green-500 w-10 h-10 rounded-full border-4 border-white flex items-center justify-center">
                     <span className="text-white text-lg">✓</span>
@@ -2496,7 +2526,7 @@ export default function ProfessionalUserDashboard({
                     src={(profileData.avatar && profileData.avatar.trim()) || (user?.avatar && user.avatar.trim()) || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'} 
                     alt="Profile" 
                     className="w-24 h-24 rounded-full border-4 border-purple-400 object-cover shadow-lg" 
-                    key={profileData.avatar || user?.avatar || 'default'}
+                    key={`edit-profile-${user?.id}-${profileData.avatar || user?.avatar || 'default'}`}
                   />
                   <button 
                     onClick={() => document.getElementById('avatar-upload')?.click()}
@@ -2581,20 +2611,14 @@ export default function ProfessionalUserDashboard({
                         name: finalName.trim(),
                         phone: (profileData.phone || user?.phone || '').trim(),
                         address: (profileData.address || user?.address || '').trim(),
-                        avatar: profileData.avatar || user?.avatar
+                        avatar: profileData.avatar || user?.avatar,
+                        updatedAt: new Date().toISOString()
                       } as User;
                       
-                      const data = await vpsDataStore.loadData();
-                      const userIndex = (data.users || []).findIndex(u => u.id === user?.id);
-                      
-                      if (userIndex !== -1) {
-                        data.users[userIndex] = { ...data.users[userIndex], ...updatedUser };
-                        const saveSuccess = await vpsDataStore.saveData(data);
-                        if (!saveSuccess) {
-                          throw new Error('Failed to save profile data');
-                        }
-                      } else {
-                        throw new Error('User not found in database');
+                      // Update user in VPS
+                      const saveSuccess = await vpsDataStore.updateUser(user?.id || '', updatedUser);
+                      if (!saveSuccess) {
+                        throw new Error('Failed to save profile data to VPS');
                       }
                       
                       alert('✅ Profile updated successfully!');
@@ -2602,17 +2626,26 @@ export default function ProfessionalUserDashboard({
                       setProfileData({ name: '', phone: '', address: '', avatar: '' });
                       
                       // Update user state without logout
+                      // Update local state
                       if (setUser) {
                         setUser(updatedUser);
                       }
                       
+                      // Update session storage
                       if (typeof window !== 'undefined') {
-                        const currentSession = JSON.parse(localStorage.getItem('authSession') || '{}');
-                        if (currentSession.user) {
-                          currentSession.user = updatedUser;
-                          localStorage.setItem('authSession', JSON.stringify(currentSession));
+                        try {
+                          const currentSession = JSON.parse(localStorage.getItem('zinga-linga-session') || '{}');
+                          if (currentSession.user) {
+                            currentSession.user = updatedUser;
+                            localStorage.setItem('zinga-linga-session', JSON.stringify(currentSession));
+                          }
+                          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+                          
+                          // Force re-render by dispatching custom event
+                          window.dispatchEvent(new CustomEvent('userProfileUpdated', { detail: updatedUser }));
+                        } catch (sessionError) {
+                          console.error('Failed to update session:', sessionError);
                         }
-                        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
                       }
                     } catch (error) {
                       console.error('❌ Profile update error:', error);

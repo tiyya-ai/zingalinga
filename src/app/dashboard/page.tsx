@@ -44,11 +44,27 @@ export default function DashboardPage() {
           setModules(data.modules || []);
           setPurchases(data.purchases || []);
           setContentFiles(data.contentFiles || []);
+          
+          // Check if user data has been updated in VPS and sync it
+          const updatedUser = data.users?.find(u => u.id === user.id);
+          if (updatedUser && JSON.stringify(updatedUser) !== JSON.stringify(user)) {
+            setUser(updatedUser);
+            // Update session storage
+            const currentSession = authManager.getCurrentSession();
+            if (currentSession) {
+              const updatedSession = { ...currentSession, user: updatedUser };
+              authManager.setSession(updatedSession);
+            }
+          }
         } catch (error) {
           console.error('Failed to load data:', error);
         }
       };
       loadData();
+      
+      // Set up periodic sync for profile updates
+      const syncInterval = setInterval(loadData, 5000);
+      return () => clearInterval(syncInterval);
     }
   }, [user]);
 

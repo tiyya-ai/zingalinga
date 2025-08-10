@@ -33,6 +33,18 @@ class AuthManager {
     return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
   }
 
+  // Set session
+  setSession(session: AuthSession): void {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(this.sessionKey, JSON.stringify(session));
+        console.log('💾 Session updated for:', session.user.email);
+      }
+    } catch (error) {
+      console.error('Error setting session:', error);
+    }
+  }
+
   // Get current session
   getCurrentSession(): AuthSession | null {
     try {
@@ -55,7 +67,7 @@ class AuthManager {
 
       // Update last activity
       session.lastActivity = Date.now();
-      localStorage.setItem(this.sessionKey, JSON.stringify(session));
+      this.setSession(session);
       
       console.log('✅ Valid session found for:', session.user.email, 'Role:', session.user.role);
       return session;
