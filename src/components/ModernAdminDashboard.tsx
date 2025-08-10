@@ -1698,7 +1698,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   };
 
   const handleEditVideo = (video: Module) => {
-    console.log('Editing video:', video); // Debug log
+    console.log('🎬 Editing video:', { id: video.id, title: video.title, hasVideoUrl: !!video.videoUrl, hasThumbnail: !!video.thumbnail });
     setEditingVideo(video);
     
     // Determine video type based on URL and existing videoType
@@ -1708,12 +1708,15 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         videoType = 'youtube';
       } else if (video.videoUrl.includes('vimeo.com')) {
         videoType = 'vimeo';
-      } else if (video.videoUrl.startsWith('blob:') || video.videoUrl.startsWith('data:')) {
+      } else if (video.videoUrl.startsWith('data:')) {
         videoType = 'upload';
+        console.log('📹 Detected base64 uploaded video');
+      } else if (video.videoUrl.startsWith('blob:')) {
+        videoType = 'upload';
+        console.log('📹 Detected blob uploaded video');
       } else if (video.videoUrl.startsWith('http')) {
         videoType = 'external';
       } else {
-        // If no clear type detected, use existing videoType or default to upload for local files
         videoType = (video as any).videoType || 'upload';
       }
     }
@@ -1726,7 +1729,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       tagsString = (video as any).tags;
     }
     
-    setVideoForm({
+    // Populate form with all video data
+    const formData = {
       title: video.title || '',
       description: video.description || '',
       price: video.price || 0,
@@ -1740,18 +1744,18 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       tags: tagsString,
       language: (video as any).language || 'English',
       status: (video as any).isActive === false ? 'inactive' : 'active'
-    });
+    };
     
-    console.log('Video form populated:', {
-      title: video.title,
-      description: video.description,
-      price: video.price,
-      category: video.category,
-      videoType: videoType,
-      videoUrl: video.videoUrl?.substring(0, 50) + '...',
-      thumbnail: video.thumbnail?.substring(0, 50) + '...',
-      tags: tagsString
-    }); // Debug log
+    setVideoForm(formData);
+    
+    console.log('✅ Video form populated:', {
+      title: formData.title,
+      videoType: formData.videoType,
+      hasVideoUrl: !!formData.videoUrl,
+      videoUrlType: formData.videoUrl?.substring(0, 20),
+      hasThumbnail: !!formData.thumbnail,
+      thumbnailType: formData.thumbnail?.substring(0, 20)
+    });
     
     setActiveSection('add-video');
   };
@@ -1942,7 +1946,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         return;
       }
       
-      // Handle media URLs for persistence
+      // Handle media URLs for persistence - ensure base64 data is preserved
       let persistentVideoUrl = videoForm.videoUrl;
       let persistentThumbnail = videoForm.thumbnail;
       
@@ -1950,43 +1954,49 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       console.log('Video URL type:', videoForm.videoUrl?.substring(0, 20));
       console.log('Thumbnail URL type:', videoForm.thumbnail?.substring(0, 20));
       
-      // Only convert blob URLs to base64 - preserve existing base64 data
-      if (videoForm.videoUrl && videoForm.videoUrl.startsWith('blob:')) {
-        try {
-          console.log('📹 Converting video blob to base64...');
-          const response = await fetch(videoForm.videoUrl);
-          const blob = await response.blob();
-          const reader = new FileReader();
-          persistentVideoUrl = await new Promise((resolve) => {
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(blob);
-          });
-          console.log('✅ Video blob converted to base64');
-        } catch (error) {
-          console.error('❌ Failed to convert video blob to base64:', error);
+      // Convert blob URLs to base64, preserve existing base64 and external URLs
+      if (videoForm.videoUrl) {
+        if (videoForm.videoUrl.startsWith('blob:')) {
+          try {
+            console.log('📹 Converting video blob to base64...');
+            const response = await fetch(videoForm.videoUrl);
+            const blob = await response.blob();
+            const reader = new FileReader();
+            persistentVideoUrl = await new Promise((resolve) => {
+              reader.onload = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+            console.log('✅ Video blob converted to base64');
+          } catch (error) {
+            console.error('❌ Failed to convert video blob to base64:', error);
+          }
+        } else {
+          // Preserve base64, YouTube, Vimeo, and external URLs as-is
+          console.log('✅ Preserving existing video URL format');
+          persistentVideoUrl = videoForm.videoUrl;
         }
-      } else if (videoForm.videoUrl && videoForm.videoUrl.startsWith('data:')) {
-        console.log('✅ Video already in base64 format, preserving...');
-        persistentVideoUrl = videoForm.videoUrl;
       }
       
-      if (videoForm.thumbnail && videoForm.thumbnail.startsWith('blob:')) {
-        try {
-          console.log('🖼️ Converting thumbnail blob to base64...');
-          const response = await fetch(videoForm.thumbnail);
-          const blob = await response.blob();
-          const reader = new FileReader();
-          persistentThumbnail = await new Promise((resolve) => {
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(blob);
-          });
-          console.log('✅ Thumbnail blob converted to base64');
-        } catch (error) {
-          console.error('❌ Failed to convert thumbnail blob to base64:', error);
+      if (videoForm.thumbnail) {
+        if (videoForm.thumbnail.startsWith('blob:')) {
+          try {
+            console.log('🖼️ Converting thumbnail blob to base64...');
+            const response = await fetch(videoForm.thumbnail);
+            const blob = await response.blob();
+            const reader = new FileReader();
+            persistentThumbnail = await new Promise((resolve) => {
+              reader.onload = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+            console.log('✅ Thumbnail blob converted to base64');
+          } catch (error) {
+            console.error('❌ Failed to convert thumbnail blob to base64:', error);
+          }
+        } else {
+          // Preserve base64 and external URLs as-is
+          console.log('✅ Preserving existing thumbnail URL format');
+          persistentThumbnail = videoForm.thumbnail;
         }
-      } else if (videoForm.thumbnail && videoForm.thumbnail.startsWith('data:')) {
-        console.log('✅ Thumbnail already in base64 format, preserving...');
-        persistentThumbnail = videoForm.thumbnail;
       }
       
       console.log('💾 Final URLs - Video:', persistentVideoUrl?.substring(0, 50), 'Thumbnail:', persistentThumbnail?.substring(0, 50));
@@ -3947,12 +3957,23 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
-    name: user?.name || 'Admin User',
-    email: user?.email || 'admin@zingalinga.com',
+    name: '',
+    email: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+  
+  // Initialize profile form when user data is available
+  useEffect(() => {
+    if (user) {
+      setProfileForm(prev => ({
+        ...prev,
+        name: user.name || 'Admin User',
+        email: user.email || 'admin@zingalinga.com'
+      }));
+    }
+  }, [user]);
 
   const handleUpdateProfile = async () => {
     try {
