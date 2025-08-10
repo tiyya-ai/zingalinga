@@ -2806,7 +2806,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 className="w-40"
                 placeholder="Category"
               >
-                <SelectItem key="all">All Categories</SelectItem>
+                <SelectItem key="all" value="all">All Categories</SelectItem>
                 {categories.map(cat => (
                   <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                 ))}
