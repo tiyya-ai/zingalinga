@@ -270,6 +270,19 @@ input:not(.relative .absolute + input) {
   padding-right: 0.25rem;
 }
 
+/* Mobile 2-Column Quick Layout */
+.mobile-2-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.mobile-2-col-gap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
 /* Responsive Utilities */
 @media (max-width: 768px) {
   .sidebar-mobile {
@@ -309,7 +322,7 @@ input:not(.relative .absolute + input) {
   }
   
   .grid-responsive {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr 1fr !important;
   }
   
   .text-responsive {

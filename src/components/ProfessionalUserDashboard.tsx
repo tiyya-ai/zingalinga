@@ -565,23 +565,40 @@ export default function ProfessionalUserDashboard({
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-        {/* Navigation Tabs - Mobile Responsive */}
-        <div className="mb-6">
-          {/* Mobile Menu Button */}
-          <div className="md:hidden mb-4">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="w-full bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 flex items-center justify-between text-white"
-            >
-              <span className="font-semibold">Menu</span>
-              <svg className={`w-5 h-5 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
+        {/* Quick Actions Bar */}
+        <div className="md:hidden mb-4">
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { id: 'dashboard', label: '🏠 Home', count: null },
+              { id: 'all-content', label: '📚 Content', count: allContent.length },
+              { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons').length },
+              { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type)).length },
+              { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => !localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed')).length },
+              { id: 'packages', label: '📦 Packages', count: null },
+              { id: 'playlist', label: '📋 Playlist', count: playlist.length },
+              { id: 'saved-list', label: '💾 Saved', count: savedVideosList.length },
+              { id: 'orders', label: '📋 Orders', count: localPurchases.filter(p => p.userId === user?.id).length },
+              { id: 'profile', label: '👤 Profile', count: null }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 flex items-center justify-center text-white space-x-3 hover:bg-white/20"
+              >
+                <span className="text-2xl">{tab.label.split(' ')[0]}</span>
+                <span className="font-semibold">{tab.label.split(' ').slice(1).join(' ')}</span>
+                {tab.count !== null && (
+                  <span className="text-xs px-2 py-1 rounded-full bg-white/20 text-white">
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
-          
-          {/* Desktop Tabs / Mobile Dropdown */}
-          <div className={`${showFilters || !isMobile ? 'block' : 'hidden'} md:block`}>
+        </div>
+
+        {/* Desktop Tabs */}
+        <div className="hidden md:block mb-6">
             <div className="flex flex-col md:flex-row md:flex-wrap gap-2 bg-white/10 backdrop-blur-sm rounded-xl p-2 border border-white/20">
               {[
                 { id: 'dashboard', label: '🏠 Home', count: null },
@@ -598,8 +615,7 @@ export default function ProfessionalUserDashboard({
                 { id: 'packages', label: '📦 Packages', count: null },
                 { id: 'playlist', label: '📋 Playlist', count: playlist.length },
             { id: 'saved-list', label: '💾 Saved', count: savedVideosList.length },
-                { id: 'orders', label: '📋 Orders', count: localPurchases.filter(p => p.userId === user?.id).length },
-                { id: 'profile', label: '👤 Profile', count: null }
+                { id: 'orders', label: '📋 Orders', count: localPurchases.filter(p => p.userId === user?.id).length }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -625,7 +641,6 @@ export default function ProfessionalUserDashboard({
               ))}
             </div>
           </div>
-        </div>
 
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
