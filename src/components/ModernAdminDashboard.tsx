@@ -283,9 +283,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       // Clear memory cache to force fresh data load
       vpsDataStore.clearMemoryCache();
       
-      // Force a complete data refresh
-      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to ensure cache is cleared
-      
       // Load real data from vpsDataStore
       const data = await vpsDataStore.loadData();
       const realUsers = await vpsDataStore.getUsers();
