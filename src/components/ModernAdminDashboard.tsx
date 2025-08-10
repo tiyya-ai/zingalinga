@@ -283,6 +283,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       // Clear memory cache to force fresh data load
       vpsDataStore.clearMemoryCache();
       
+      // Force a complete data refresh
+      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to ensure cache is cleared
+      
       // Load real data from vpsDataStore
       const data = await vpsDataStore.loadData();
       const realUsers = await vpsDataStore.getUsers();
@@ -1841,14 +1844,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           rating: videoForm.rating,
           thumbnail: persistentThumbnail,
           videoUrl: persistentVideoUrl,
-
           duration: videoForm.duration,
           estimatedDuration: videoForm.duration,
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
-
-
-
-
           isActive: videoForm.status === 'active',
           isVisible: videoForm.status === 'active',
           updatedAt: new Date().toISOString()
@@ -1857,6 +1855,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         // Save to data store first
         const success = await vpsDataStore.updateProduct(updatedVideo);
         if (success) {
+          // Clear cache to ensure fresh data on next load
+          vpsDataStore.clearMemoryCache();
           // Update local state after successful save
           setVideos(prev => prev.map(v => v.id === editingVideo.id ? updatedVideo : v));
           setShowSuccessModal(true);
@@ -1892,6 +1892,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         // Save to data store first
         const success = await vpsDataStore.addProduct(newVideo);
         if (success) {
+          // Clear cache to ensure fresh data on next load
+          vpsDataStore.clearMemoryCache();
           // Add to local state after successful save
           setVideos(prev => [...prev, newVideo]);
           setShowSuccessModal(true);
