@@ -154,18 +154,48 @@ class VPSDataStore {
     }
     
     try {
-      // Fallback to localStorage
+      // Fallback to localStorage with chunked data support
       if (typeof window !== 'undefined') {
         const savedData = localStorage.getItem(this.storageKey);
         if (savedData) {
           const parsedData = JSON.parse(savedData);
+          
+          // Restore chunked media data if it exists
+          if (parsedData.modules) {
+            parsedData.modules = parsedData.modules.map((m: any) => {
+              const module = { ...m };
+              
+              // Restore separately stored video data
+              if (m.videoUrl?.startsWith('[STORED_SEPARATELY:')) {
+                const videoKey = m.videoUrl.replace('[STORED_SEPARATELY:', '').replace(']', '');
+                const storedVideo = localStorage.getItem(videoKey);
+                if (storedVideo) {
+                  module.videoUrl = storedVideo;
+                  console.log('✅ Restored chunked video data for module:', m.id);
+                }
+              }
+              
+              // Restore separately stored thumbnail data
+              if (m.thumbnail?.startsWith('[STORED_SEPARATELY:')) {
+                const thumbKey = m.thumbnail.replace('[STORED_SEPARATELY:', '').replace(']', '');
+                const storedThumb = localStorage.getItem(thumbKey);
+                if (storedThumb) {
+                  module.thumbnail = storedThumb;
+                  console.log('✅ Restored chunked thumbnail data for module:', m.id);
+                }
+              }
+              
+              return module;
+            });
+          }
+          
           this.memoryData = parsedData;
-
+          console.log('✅ VPS data loaded from localStorage with media restoration');
           return parsedData;
         }
       }
     } catch (error) {
-
+      console.error('❌ Failed to load from localStorage:', error);
     }
     
     const defaultData = this.getDefaultData();
@@ -201,45 +231,68 @@ class VPSDataStore {
         console.error('❌ API save error:', apiError);
       }
 
-      // Always save to localStorage for persistence
+      // Always save to localStorage for persistence - prioritize base64 data preservation
       if (typeof window !== 'undefined') {
         try {
-          // Save full data to localStorage - keep all media data
+          // First, try to save with full media data
           const dataToSave = JSON.stringify(this.memoryData);
           localStorage.setItem(this.storageKey, dataToSave);
-          console.log('✅ Data saved to localStorage with full media data');
+          console.log('✅ Data saved to localStorage with full media data preserved');
         } catch (storageError) {
           console.error('❌ VPS localStorage save failed:', storageError);
-          console.log('Storage error details:', storageError.message);
           
-          // Try to save without compression first, but with error handling
+          // Try chunked storage approach for large data
           try {
-            // Clear old data first
+            console.log('🔄 Attempting chunked storage for large media data...');
+            
+            // Clear old data
             localStorage.removeItem(this.storageKey);
             
-            // Try saving again
-            const retryData = JSON.stringify(this.memoryData);
-            localStorage.setItem(this.storageKey, retryData);
-            console.log('✅ Data saved to localStorage on retry with full media data');
-          } catch (retryError) {
-            console.error('❌ Retry failed, using compressed fallback:', retryError);
-            // Only compress as last resort
+            // Separate large media items and store them individually
+            const dataWithoutLargeMedia = {
+              ...this.memoryData,
+              modules: this.memoryData.modules?.map(m => {
+                const moduleData = { ...m };
+                
+                // Store large base64 data separately
+                if (m.videoUrl?.startsWith('data:') && m.videoUrl.length > 100000) {
+                  const videoKey = `${this.storageKey}_video_${m.id}`;
+                  localStorage.setItem(videoKey, m.videoUrl);
+                  moduleData.videoUrl = `[STORED_SEPARATELY:${videoKey}]`;
+                }
+                
+                if (m.thumbnail?.startsWith('data:') && m.thumbnail.length > 50000) {
+                  const thumbKey = `${this.storageKey}_thumb_${m.id}`;
+                  localStorage.setItem(thumbKey, m.thumbnail);
+                  moduleData.thumbnail = `[STORED_SEPARATELY:${thumbKey}]`;
+                }
+                
+                return moduleData;
+              })
+            };
+            
+            // Save the main data
+            const mainData = JSON.stringify(dataWithoutLargeMedia);
+            localStorage.setItem(this.storageKey, mainData);
+            console.log('✅ Data saved using chunked storage approach');
+            
+          } catch (chunkedError) {
+            console.error('❌ Chunked storage failed, using minimal fallback:', chunkedError);
+            
+            // Last resort: save without base64 data but keep structure
             try {
-              const compressedData = {
+              const minimalData = {
                 ...this.memoryData,
                 modules: this.memoryData.modules?.map(m => ({
                   ...m,
-                  // Keep URLs but remove large base64 data only as fallback
-                  videoUrl: m.videoUrl?.startsWith('data:') ? '[BASE64_VIDEO_REMOVED]' : m.videoUrl,
-                  thumbnail: m.thumbnail?.startsWith('data:') ? '[BASE64_IMAGE_REMOVED]' : m.thumbnail,
-                  audioUrl: m.audioUrl?.startsWith?.('data:') ? '[BASE64_AUDIO_REMOVED]' : m.audioUrl
+                  videoUrl: m.videoUrl?.startsWith('data:') ? '[BASE64_VIDEO_TOO_LARGE]' : m.videoUrl,
+                  thumbnail: m.thumbnail?.startsWith('data:') ? '[BASE64_IMAGE_TOO_LARGE]' : m.thumbnail
                 }))
               };
-              const fallbackData = JSON.stringify(compressedData);
-              localStorage.setItem(this.storageKey, fallbackData);
-              console.log('⚠️ Data saved to localStorage with compressed media (fallback)');
-            } catch (fallbackError) {
-              console.error('❌ Even compressed localStorage save failed:', fallbackError);
+              localStorage.setItem(this.storageKey, JSON.stringify(minimalData));
+              console.log('⚠️ Minimal data saved - large media files excluded');
+            } catch (minimalError) {
+              console.error('❌ All storage methods failed:', minimalError);
             }
           }
         }
