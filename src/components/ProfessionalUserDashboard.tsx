@@ -389,7 +389,7 @@ export default function ProfessionalUserDashboard({
 
   // Get content icons and colors for new content types
   const getContentIcon = (type: string, category: string) => {
-    if (category === 'Audio Lessons') return '🎧';
+
     if (category === 'Video Lessons') return '🎬';
     if (category === 'PP1 Program') return '📚';
     if (category === 'PP2 Program') return '📖';
@@ -399,7 +399,7 @@ export default function ProfessionalUserDashboard({
 
   const getContentColor = (category: string) => {
     switch (category) {
-      case 'Audio Lessons': return 'from-blue-500 to-blue-600';
+
       case 'Video Lessons': return 'from-green-500 to-green-600';
       case 'PP1 Program': return 'from-orange-500 to-orange-600';
       case 'PP2 Program': return 'from-purple-500 to-purple-600';
@@ -602,7 +602,7 @@ export default function ProfessionalUserDashboard({
             {[
               { id: 'dashboard', label: '🏠 Home', count: null },
               { id: 'all-content', label: '📚 Content', count: allContent.length },
-              { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons').length },
+              { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
               { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type)).length },
               { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => !localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed')).length },
               { id: 'packages', label: '📦 Packages', count: null },
@@ -634,7 +634,7 @@ export default function ProfessionalUserDashboard({
               {[
                 { id: 'dashboard', label: '🏠 Home', count: null },
                 { id: 'all-content', label: '📚 Content', count: allContent.length },
-                { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons').length },
+                { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
                 { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type)).length },
                 { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => 
                   !localPurchases.some(purchase => 
@@ -1036,7 +1036,7 @@ export default function ProfessionalUserDashboard({
                             <div 
                               className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors group-hover:bg-black/30 cursor-pointer"
                               onClick={() => {
-                                if (content.category === 'Audio Lessons') {
+
                                   let audioUrl = content.audioUrl || content.videoUrl;
                                   let audioFile = null;
                                   
@@ -1080,7 +1080,7 @@ export default function ProfessionalUserDashboard({
                               }}
                             >
                               <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/30 backdrop-blur-sm group-hover:scale-110 transition-all duration-300">
-                                {content.category === 'Audio Lessons' ? (
+
                                   <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                                   </svg>
@@ -1134,7 +1134,7 @@ export default function ProfessionalUserDashboard({
                                   isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
                                 };
                                 playVideo(video);
-                              } else if (content.category === 'Audio Lessons') {
+
                                 // Handle audio content
                                 let audioUrl = content.audioUrl || content.videoUrl;
                                 

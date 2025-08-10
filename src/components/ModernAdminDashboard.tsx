@@ -284,10 +284,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       vpsDataStore.clearMemoryCache();
       
       // Load real data from vpsDataStore
+      const data = await vpsDataStore.loadData();
       const realUsers = await vpsDataStore.getUsers();
       const realVideos = await vpsDataStore.getProducts();
       const realOrders = await vpsDataStore.getOrders();
       const realUploadQueue = await vpsDataStore.getUploadQueue();
+      
+      // Load categories from VPS
+      if (data.categories && data.categories.length > 0) {
+        setCategories(data.categories);
+      }
 
       // Set real users data
       setUsers(realUsers.map(user => ({
@@ -336,7 +342,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       setOrders(convertedOrders);
 
       // Set real upload queue
-      setUploadQueue(realUploadQueue);
+      setUploadQueue(realUploadQueue || []);
 
       // Update dashboard stats with real data
       const totalRevenue = convertedOrders.reduce((sum, order) => sum + order.amount, 0);
@@ -1687,7 +1693,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         const base64Video = e.target?.result as string;
         
         const video = document.createElement('video');
-        video.onloadedmetadata = () => {
+        video.onloadedmetadata = async () => {
           const duration = video.duration;
           const minutes = Math.floor(duration / 60);
           const seconds = Math.floor(duration % 60);
@@ -1702,7 +1708,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           
 
           
-          setUploadQueue(prev => [{
+          const uploadItem = {
             id: `upload_${Date.now()}`,
             name: file.name,
             size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
@@ -1711,7 +1717,15 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             uploadedAt: new Date().toISOString(),
             fileType: file.type,
             localUrl: base64Video
-          }, ...prev]);
+          };
+          
+          setUploadQueue(prev => [uploadItem, ...prev]);
+          
+          // Save to VPS
+          const data = await vpsDataStore.loadData();
+          data.uploadQueue = data.uploadQueue || [];
+          data.uploadQueue.unshift(uploadItem);
+          await vpsDataStore.saveData(data);
         };
         video.src = base64Video;
       };
@@ -3120,9 +3134,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           <Button 
             className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
             startContent={<Plus className="h-4 w-4" />}
-            onPress={() => {
+            onPress={async () => {
               if (newCategory.trim() && !categories.includes(newCategory.trim())) {
-                setCategories([...categories, newCategory.trim()]);
+                const updatedCategories = [...categories, newCategory.trim()];
+                setCategories(updatedCategories);
+                
+                // Save to VPS
+                const data = await vpsDataStore.loadData();
+                data.categories = updatedCategories;
+                await vpsDataStore.saveData(data);
+                
                 setNewCategory('');
               }
             }}
@@ -3195,9 +3216,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               />
               <Button 
                 className="w-full bg-gray-900 text-white hover:bg-gray-800"
-                onPress={() => {
+                onPress={async () => {
                   if (newCategory.trim() && !categories.includes(newCategory.trim())) {
-                    setCategories([...categories, newCategory.trim()]);
+                    const updatedCategories = [...categories, newCategory.trim()];
+                    setCategories(updatedCategories);
+                    
+                    // Save to VPS
+                    const data = await vpsDataStore.loadData();
+                    data.categories = updatedCategories;
+                    await vpsDataStore.saveData(data);
+                    
                     setNewCategory('');
                   }
                 }}
@@ -3251,10 +3279,35 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-1">
-                      <Button size="sm" variant="light">
+                      <Button 
+                        size="sm" 
+                        variant="light"
+                        onPress={() => {
+                          if (item.localUrl) {
+                            window.open(item.localUrl, '_blank');
+                          } else {
+                            alert('Preview not available');
+                          }
+                        }}
+                      >
                         <Eye className="h-4 w-4 text-blue-600" />
                       </Button>
-                      <Button size="sm" variant="light" className="hover:bg-red-50">
+                      <Button 
+                        size="sm" 
+                        variant="light" 
+                        className="hover:bg-red-50"
+                        onPress={async () => {
+                          if (confirm('Delete this upload?')) {
+                            const updatedQueue = uploadQueue.filter((_, i) => i !== index);
+                            setUploadQueue(updatedQueue);
+                            
+                            // Save to VPS
+                            const data = await vpsDataStore.loadData();
+                            data.uploadQueue = updatedQueue;
+                            await vpsDataStore.saveData(data);
+                          }
+                        }}
+                      >
                         <Trash2 className="h-4 w-4 text-red-600" />
                       </Button>
                     </div>
