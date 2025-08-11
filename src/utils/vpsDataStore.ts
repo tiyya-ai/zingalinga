@@ -427,8 +427,8 @@ class VPSDataStore {
         console.log(success ? '✅ Product updated successfully' : '❌ Product update failed');
         return success;
       }
-      console.log('❌ Product not found for update');
-      return false;
+      console.log('🔄 Product not found, adding as new product');
+      return await this.addProduct(updatedProduct);
     } catch (error) {
       console.error('Error updating product:', error);
       return false;

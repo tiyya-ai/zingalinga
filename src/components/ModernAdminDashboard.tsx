@@ -251,15 +251,15 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     loadExistingLogo();
   }, []);
 
-  // Load existing logo from settings
+  // Load existing admin logo from settings
   const loadExistingLogo = async () => {
     try {
       const settings = await vpsDataStore.getSettings();
-      if (settings.platformLogo) {
-        setLogoFile(settings.platformLogo);
+      if (settings.adminLogo) {
+        setLogoFile(settings.adminLogo);
       }
     } catch (error) {
-      console.error('Failed to load existing logo:', error);
+      console.error('Failed to load existing admin logo:', error);
     }
   };
   
@@ -3771,10 +3771,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         const base64Logo = e.target?.result as string;
         
         try {
-          // Save logo to data store
+          // Save admin logo to data store
           const success = await vpsDataStore.updateSettings({
-            platformLogo: base64Logo,
-            logoUpdatedAt: new Date().toISOString()
+            adminLogo: base64Logo,
+            adminLogoUpdatedAt: new Date().toISOString()
           });
           
           if (success) {
@@ -3813,7 +3813,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           </CardHeader>
           <CardBody className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Platform Logo</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Admin Dashboard Logo</label>
               <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-500 transition-all duration-300 bg-gray-50/30 relative">
                 {logoFile ? (
                   <div className="space-y-4">
@@ -3853,8 +3853,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         color="danger"
                         onPress={async () => {
                           setLogoFile(null);
-                          await vpsDataStore.updateSettings({ platformLogo: null });
-                          setToast({message: 'Logo removed successfully!', type: 'success'});
+                          await vpsDataStore.updateSettings({ adminLogo: null });
+                          setToast({message: 'Admin logo removed successfully!', type: 'success'});
                           setTimeout(() => setToast(null), 3000);
                         }}
                         startContent={<X className="h-4 w-4" />}
@@ -7279,11 +7279,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               >
                 <Menu className="h-5 w-5 text-gray-300" />
               </Button>
-              <div className="flex items-center space-x-3">
+              <div className="hidden md:flex items-center space-x-3">
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                   <BarChart3 className="h-6 w-6 text-white" />
                 </div>
-                <div className="hidden sm:block">
+                <div>
                   <h1 className="text-xl font-bold text-white">Zinga Linga</h1>
                   <p className="text-sm text-gray-400">admin</p>
                 </div>
@@ -7292,8 +7292,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
 
 
-            {/* Center Search */}
-            <div className="flex-1 flex justify-center px-8">
+            {/* Center Search - Hidden on mobile */}
+            <div className="hidden md:flex flex-1 justify-center px-8">
               <div className="relative w-full max-w-md">
                 <Input
                   placeholder="Search..."
