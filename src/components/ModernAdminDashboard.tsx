@@ -100,6 +100,8 @@ import { vpsDataStore } from '../utils/vpsDataStore';
 import { UserManagement } from './UserManagement';
 import { Module } from '../types';
 import { SuccessModal } from './SuccessModal';
+import SimpleVideoUploader from './SimpleVideoUploader';
+import EasyVideoCreator from './EasyVideoCreator';
 
 interface ModernAdminDashboardProps {
   user: any;
@@ -612,6 +614,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       children: [
         { id: 'all-videos', label: 'All Videos', icon: <Folder className="h-4 w-4" /> },
         { id: 'add-video', label: 'Add New', icon: <Plus className="h-4 w-4" /> },
+        { id: 'easy-video', label: 'Easy Creator', icon: <Video className="h-4 w-4" /> },
         { id: 'categories', label: 'Categories', icon: <Tag className="h-4 w-4" /> },
         { id: 'upload-queue', label: 'Upload Queue', icon: <Upload className="h-4 w-4" />, badge: uploadQueue.length > 0 ? uploadQueue.length.toString() : undefined }
       ]
@@ -2283,84 +2286,19 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             </CardBody>
           </Card>
 
-          {/* Video Source */}
-          <Card className="bg-white border border-gray-200">
-            <CardHeader className="border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Video Source</h3>
-            </CardHeader>
-            <CardBody className="space-y-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Video URL</label>
-                  <Input
-                    value={videoForm.videoUrl}
-                    onChange={(e) => setVideoForm({ ...videoForm, videoUrl: e.target.value })}
-                    placeholder="https://www.youtube.com/watch?v=... or https://vimeo.com/..."
-                    startContent={<Link className="h-4 w-4 text-gray-400" />}
-                    classNames={{
-                      input: "bg-white focus:ring-0 focus:ring-offset-0 shadow-none",
-                      inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
-                    }}
-                  />
-                </div>
-                
-                <div className="text-center">
-                  <span className="text-sm text-gray-500">OR</span>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Upload from Desktop</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
-                    {isLoading ? (
-                      <div className="space-y-4">
-                        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-                        <div>
-                          <p className="text-sm font-medium text-blue-600">{loadingMessage}</p>
-                          <p className="text-xs text-gray-500">Please wait...</p>
-                        </div>
-                      </div>
-                    ) : videoForm.videoUrl && videoForm.videoUrl.startsWith('data:') ? (
-                      <div className="space-y-4">
-                        <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden max-w-xs mx-auto">
-                          <video src={videoForm.videoUrl} controls className="w-full h-full object-cover" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-green-600">Video uploaded!</p>
-                          <p className="text-xs text-gray-500">Duration: {videoForm.duration}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <Upload className="h-8 w-8 text-gray-400 mx-auto" />
-                        <div>
-                          <p className="text-sm text-gray-600">Click to upload video file</p>
-                          <p className="text-xs text-gray-500">MP4, MOV, AVI, WMV - Max 100MB</p>
-                        </div>
-                        <Button 
-                          size="sm"
-                          variant="flat" 
-                          color="primary"
-                          onPress={() => {
-                            const input = document.getElementById('video-upload') as HTMLInputElement;
-                            input?.click();
-                          }}
-                        >
-                          Choose File
-                        </Button>
-                      </div>
-                    )}
-                    <input
-                      id="video-upload"
-                      type="file"
-                      accept="video/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
+          {/* Simple Video Uploader */}
+          <SimpleVideoUploader 
+            onVideoUploaded={(videoData) => {
+              setVideoForm({
+                ...videoForm,
+                title: videoData.title,
+                videoUrl: videoData.videoUrl,
+                duration: videoData.duration,
+                thumbnail: videoData.thumbnail || '',
+                videoType: 'upload'
+              });
+            }}
+          />
         </div>
 
         <div className="space-y-6">
@@ -7221,7 +7159,21 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       case 'analytics': return renderAnalytics();
       case 'all-videos': return renderAllVideos();
       case 'add-video': return renderEditVideo();
-      case 'add-video': return renderEditVideo();
+      case 'easy-video': return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-semibold text-gray-900">Easy Video Creator</h1>
+            <Button variant="flat" onPress={() => setActiveSection('all-videos')}>Back to Videos</Button>
+          </div>
+          <EasyVideoCreator 
+            categories={categories} 
+            onSuccess={() => {
+              loadRealData();
+              setActiveSection('all-videos');
+            }} 
+          />
+        </div>
+      );
       case 'audio-lessons': return renderAudioLessons();
       case 'add-audio-lesson': return renderAddAudioLesson();
       case 'video-lessons': return renderVideoLessons();
