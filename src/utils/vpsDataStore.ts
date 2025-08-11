@@ -134,11 +134,10 @@ class VPSDataStore {
   }
 
   // Load data from API
-  async loadData(): Promise<AppData> {
+  async loadData(forceRefresh = false): Promise<AppData> {
     try {
-      // Return memory data if available and recent
-      if (this.memoryData) {
-
+      // Return memory data if available and not forcing refresh
+      if (this.memoryData && !forceRefresh) {
         return this.memoryData;
       }
       
@@ -147,57 +146,15 @@ class VPSDataStore {
       if (response.ok) {
         const data = await response.json();
         this.memoryData = data;
-
+        console.log('✅ Data loaded from API');
         return data;
       }
     } catch (error) {
-
+      console.error('❌ API load failed:', error);
     }
     
-    try {
-      // Fallback to localStorage with chunked data support
-      if (typeof window !== 'undefined') {
-        const savedData = localStorage.getItem(this.storageKey);
-        if (savedData) {
-          const parsedData = JSON.parse(savedData);
-          
-          // Restore chunked media data if it exists
-          if (parsedData.modules) {
-            parsedData.modules = parsedData.modules.map((m: any) => {
-              const module = { ...m };
-              
-              // Restore separately stored video data
-              if (m.videoUrl?.startsWith('[STORED_SEPARATELY:')) {
-                const videoKey = m.videoUrl.replace('[STORED_SEPARATELY:', '').replace(']', '');
-                const storedVideo = localStorage.getItem(videoKey);
-                if (storedVideo) {
-                  module.videoUrl = storedVideo;
-                  console.log('✅ Restored chunked video data for module:', m.id);
-                }
-              }
-              
-              // Restore separately stored thumbnail data
-              if (m.thumbnail?.startsWith('[STORED_SEPARATELY:')) {
-                const thumbKey = m.thumbnail.replace('[STORED_SEPARATELY:', '').replace(']', '');
-                const storedThumb = localStorage.getItem(thumbKey);
-                if (storedThumb) {
-                  module.thumbnail = storedThumb;
-                  console.log('✅ Restored chunked thumbnail data for module:', m.id);
-                }
-              }
-              
-              return module;
-            });
-          }
-          
-          this.memoryData = parsedData;
-          console.log('✅ VPS data loaded from localStorage with media restoration');
-          return parsedData;
-        }
-      }
-    } catch (error) {
-      console.error('❌ Failed to load from localStorage:', error);
-    }
+    // Skip localStorage fallback to avoid quota issues
+    console.log('⚠️ API failed, using default data (localStorage skipped)');
     
     const defaultData = this.getDefaultData();
     this.memoryData = defaultData;
@@ -232,101 +189,8 @@ class VPSDataStore {
         console.error('❌ API save error:', apiError);
       }
 
-      // Always save to localStorage for persistence - with optimized storage strategy
-      if (typeof window !== 'undefined') {
-        try {
-          // Create optimized data copy that excludes large video data already in memory cache
-          const optimizedData = {
-            ...this.memoryData,
-            uploadQueue: this.memoryData.uploadQueue?.map(item => {
-              // If item has large video in memory cache, don't include it in localStorage
-              if ((item as any).hasLargeVideo && (item as any).videoStorageType === 'memory') {
-                const { localUrl, ...itemWithoutVideo } = item as any;
-                return itemWithoutVideo;
-              }
-              return item;
-            })
-          };
-          
-          // First, try to save with optimized data
-          const dataToSave = JSON.stringify(optimizedData);
-          localStorage.setItem(this.storageKey, dataToSave);
-          console.log('✅ Data saved to localStorage with optimized storage strategy');
-        } catch (storageError) {
-          console.error('❌ VPS localStorage save failed:', storageError);
-          
-          // Try chunked storage approach for large data
-          try {
-            console.log('🔄 Attempting chunked storage for large media data...');
-            
-            // Clear old data
-            localStorage.removeItem(this.storageKey);
-            
-            // Separate large media items and store them individually
-            const dataWithoutLargeMedia = {
-              ...this.memoryData,
-              modules: this.memoryData.modules?.map(m => {
-                const moduleData = { ...m };
-                
-                // Store large base64 data separately
-                if (m.videoUrl?.startsWith('data:') && m.videoUrl.length > 100000) {
-                  const videoKey = `${this.storageKey}_video_${m.id}`;
-                  try {
-                    localStorage.setItem(videoKey, m.videoUrl);
-                    moduleData.videoUrl = `[STORED_SEPARATELY:${videoKey}]`;
-                  } catch (e) {
-                    console.warn('⚠️ Failed to store large video separately, excluding from storage');
-                    moduleData.videoUrl = '[VIDEO_TOO_LARGE_FOR_STORAGE]';
-                  }
-                }
-                
-                if (m.thumbnail?.startsWith('data:') && m.thumbnail.length > 50000) {
-                  const thumbKey = `${this.storageKey}_thumb_${m.id}`;
-                  try {
-                    localStorage.setItem(thumbKey, m.thumbnail);
-                    moduleData.thumbnail = `[STORED_SEPARATELY:${thumbKey}]`;
-                  } catch (e) {
-                    console.warn('⚠️ Failed to store large thumbnail separately, excluding from storage');
-                    moduleData.thumbnail = '[THUMBNAIL_TOO_LARGE_FOR_STORAGE]';
-                  }
-                }
-                
-                return moduleData;
-              }),
-              // Remove upload queue items with large videos
-              uploadQueue: this.memoryData.uploadQueue?.filter(item => 
-                !((item as any).hasLargeVideo && (item as any).videoStorageType === 'memory')
-              ) || []
-            };
-            
-            // Save the main data
-            const mainData = JSON.stringify(dataWithoutLargeMedia);
-            localStorage.setItem(this.storageKey, mainData);
-            console.log('✅ Data saved using chunked storage approach');
-            
-          } catch (chunkedError) {
-            console.error('❌ Chunked storage failed, using minimal fallback:', chunkedError);
-            
-            // Last resort: save without base64 data but keep structure
-            try {
-              const minimalData = {
-                ...this.memoryData,
-                modules: this.memoryData.modules?.map(m => ({
-                  ...m,
-                  videoUrl: m.videoUrl?.startsWith('data:') ? '[BASE64_VIDEO_TOO_LARGE]' : m.videoUrl,
-                  thumbnail: m.thumbnail?.startsWith('data:') ? '[BASE64_IMAGE_TOO_LARGE]' : m.thumbnail
-                })),
-                uploadQueue: [] // Clear upload queue in minimal mode
-              };
-              localStorage.setItem(this.storageKey, JSON.stringify(minimalData));
-              console.log('⚠️ Minimal data saved - large media files and upload queue excluded');
-            } catch (minimalError) {
-              console.error('❌ All storage methods failed:', minimalError);
-              console.log('📊 Memory cache info:', this.getMemoryCacheInfo());
-            }
-          }
-        }
-      }
+      // Skip localStorage to avoid quota issues - API storage only
+      console.log('✅ Data saved to API, localStorage skipped to avoid quota issues');
       
       return true;
     } catch (error) {

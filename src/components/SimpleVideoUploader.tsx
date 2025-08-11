@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Button, Input, Progress } from '@nextui-org/react';
+import { Button, Input, Progress, Tabs, Tab } from '@nextui-org/react';
 import { Upload, Video, CheckCircle, X, Link } from 'lucide-react';
 
 interface SimpleVideoUploaderProps {
@@ -20,7 +20,10 @@ export default function SimpleVideoUploader({ onVideoUploaded }: SimpleVideoUplo
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [urlPreview, setUrlPreview] = useState<string | null>(null);
+  const [urlThumbnail, setUrlThumbnail] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -49,71 +52,84 @@ export default function SimpleVideoUploader({ onVideoUploaded }: SimpleVideoUplo
   };
 
   const handleFile = async (file: File) => {
-    if (!file.type.startsWith('video/')) {
-      alert('Please select a video file');
-      return;
-    }
+    alert('For large files, please use YouTube or other video hosting services to avoid storage issues.');
+    return;
+  };
 
-    if (file.size > 100 * 1024 * 1024) {
-      alert('File size must be less than 100MB');
-      return;
-    }
+  const getYouTubeVideoId = (url: string) => {
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  };
 
-    setIsUploading(true);
-    setProgress(0);
-    setTitle(file.name.replace(/\.[^/.]+$/, ''));
+  const getVimeoVideoId = (url: string) => {
+    const regex = /vimeo\.com\/(?:.*#|\/)?([0-9]+)/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  };
 
-    try {
-      const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
+  const handleUrlChange = (url: string) => {
+    setVideoUrl(url);
+    if (url.trim()) {
+      const youtubeId = getYouTubeVideoId(url);
+      const vimeoId = getVimeoVideoId(url);
+      
+      if (youtubeId) {
+        setUrlPreview(`https://www.youtube.com/embed/${youtubeId}`);
+        setUrlThumbnail(`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`);
+        // Auto-populate video data for YouTube
+        onVideoUploaded({
+          title: title || 'YouTube Video',
+          videoUrl: url,
+          duration: 'Unknown',
+          thumbnail: `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`
         });
-      }, 200);
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const videoUrl = e.target?.result as string;
-        setVideoPreview(videoUrl);
-        
-        const video = document.createElement('video');
-        video.onloadedmetadata = () => {
-          const duration = video.duration;
-          const minutes = Math.floor(duration / 60);
-          const seconds = Math.floor(duration % 60);
-          const formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-          
-          clearInterval(progressInterval);
-          setProgress(100);
-          setIsUploading(false);
-          
-          video.currentTime = duration / 2;
-          video.oncanplay = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx?.drawImage(video, 0, 0);
-            const thumbnail = canvas.toDataURL('image/jpeg', 0.8);
-            
-            onVideoUploaded({
-              title,
-              videoUrl,
-              duration: formattedDuration,
-              thumbnail
-            });
-          };
-        };
-        video.src = videoUrl;
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      setIsUploading(false);
-      alert('Upload failed. Please try again.');
+      } else if (vimeoId) {
+        setUrlPreview(`https://player.vimeo.com/video/${vimeoId}`);
+        setUrlThumbnail(`https://vumbnail.com/${vimeoId}.jpg`);
+        // Auto-populate video data for Vimeo
+        onVideoUploaded({
+          title: title || 'Vimeo Video',
+          videoUrl: url,
+          duration: 'Unknown',
+          thumbnail: `https://vumbnail.com/${vimeoId}.jpg`
+        });
+      } else if (url.match(/\.(mp4|webm|ogg)$/i)) {
+        setUrlPreview(url);
+        onVideoUploaded({
+          title: title || 'Video',
+          videoUrl: url,
+          duration: 'Unknown'
+        });
+      } else {
+        setUrlPreview(null);
+        setUrlThumbnail(null);
+      }
+    } else {
+      setUrlPreview(null);
+      setUrlThumbnail(null);
     }
+  };
+
+  const generateThumbnailFromUrl = (url: string) => {
+    const video = document.createElement('video');
+    video.crossOrigin = 'anonymous';
+    video.onloadedmetadata = () => {
+      video.currentTime = video.duration / 2;
+    };
+    video.oncanplay = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(video, 0, 0);
+      const thumbnail = canvas.toDataURL('image/jpeg', 0.8);
+      setUrlThumbnail(thumbnail);
+    };
+    video.onerror = () => {
+      setUrlThumbnail(null);
+    };
+    video.src = url;
   };
 
   const handleUrlSubmit = () => {
@@ -133,17 +149,24 @@ export default function SimpleVideoUploader({ onVideoUploaded }: SimpleVideoUplo
     onVideoUploaded({
       title: videoTitle,
       videoUrl: videoUrl,
-      duration: 'Unknown'
+      duration: 'Unknown',
+      thumbnail: urlThumbnail || undefined
     });
     
-    // Don't clear title, only clear URL
+    // Clear form after successful submission
     setVideoUrl('');
+    setTitle('');
+    setUrlPreview(null);
+    setUrlThumbnail(null);
   };
 
   const reset = () => {
     setVideoPreview(null);
     setVideoUrl('');
+    setUrlPreview(null);
+    setUrlThumbnail(null);
     setProgress(0);
+    setTitle('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -151,131 +174,70 @@ export default function SimpleVideoUploader({ onVideoUploaded }: SimpleVideoUplo
 
   return (
     <div className="w-full p-6 bg-white rounded-lg border border-gray-200">
-      <h3 className="text-lg font-semibold mb-6">Quick Video Upload</h3>
+      <h3 className="text-lg font-semibold mb-6">Add New Video</h3>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Video URL Section */}
-        <div className="space-y-4">
-          <h4 className="font-medium text-gray-900">Add Video URL</h4>
-          <Input
-            label="Video URL"
-            placeholder="Paste video link here"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            startContent={<Link className="h-4 w-4 text-gray-400" />}
-            classNames={{
-              input: "bg-white",
-              inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
-            }}
-          />
-          <Input
-            label="Video Title"
-            placeholder="Enter video title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <p className="text-xs text-gray-500">Supports YouTube, Vimeo, and direct video links</p>
-          <Button 
-            color="primary" 
-            className="w-full"
-            onPress={handleUrlSubmit}
-            isDisabled={!videoUrl.trim()}
-            startContent={<Video className="h-4 w-4" />}
-          >
-            Add Video URL
-          </Button>
-        </div>
+      <Tabs aria-label="Video upload options" className="w-full">
+        <Tab key="url" title="Video URL">
+          <div className="space-y-4 pt-4">
+            <Input
+              placeholder="https://youtube.com/watch?v=example"
+              value={videoUrl}
+              onChange={(e) => handleUrlChange(e.target.value)}
+              startContent={<Link className="h-4 w-4 text-gray-400" />}
+            />
+            {urlPreview && (
+              <div className="space-y-4">
+                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                  {urlPreview.includes('youtube.com/embed') || urlPreview.includes('player.vimeo.com') ? (
+                    <iframe 
+                      src={urlPreview}
+                      className="w-full h-full"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video 
+                      ref={videoRef}
+                      src={urlPreview} 
+                      controls 
+                      className="w-full h-full object-cover"
+                      onError={() => {
+                        setUrlPreview(null);
+                        setUrlThumbnail(null);
+                      }}
+                    />
+                  )}
+                </div>
 
-        {/* File Upload Section */}
-        <div className="space-y-4">
-          <h4 className="font-medium text-gray-900">Upload Video File</h4>
-          {!videoPreview ? (
-            <div
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                isDragging 
-                  ? 'border-blue-500 bg-blue-50' 
-                  : 'border-gray-300 hover:border-blue-400'
-              }`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              {isUploading ? (
-                <div className="space-y-4">
-                  <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-                  <div>
-                    <p className="text-sm font-medium text-blue-600">Uploading...</p>
-                    <Progress value={progress} className="w-full mt-2" color="primary" />
-                    <p className="text-xs text-gray-500 mt-1">{progress}%</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <Upload className="h-8 w-8 text-gray-400 mx-auto" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Drop video here</p>
-                    <p className="text-xs text-gray-500">MP4, MOV, AVI - Max 100MB</p>
-                  </div>
-                  <Button 
-                    size="sm"
-                    color="primary" 
-                    onPress={() => fileInputRef.current?.click()}
-                  >
-                    Choose File
-                  </Button>
-                </div>
-              )}
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="video/*"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                <video src={videoPreview} controls className="w-full h-full object-cover" />
               </div>
-              
-              <Input
-                label="Video Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter video title"
-              />
-              
-              <div className="flex gap-2">
+            )}
+            <p className="text-xs text-gray-500">Supports YouTube, Vimeo, and direct video links</p>
+          </div>
+        </Tab>
+        
+        <Tab key="upload" title="Upload File">
+          <div className="pt-4">
+            <div className="border-2 border-dashed rounded-lg p-6 text-center bg-yellow-50 border-yellow-300">
+              <div className="space-y-3">
+                <Upload className="h-8 w-8 text-yellow-500 mx-auto" />
+                <div>
+                  <p className="text-sm font-medium text-yellow-800">File Upload Disabled</p>
+                  <p className="text-xs text-yellow-600">Use YouTube, Vimeo, or direct video links instead</p>
+                </div>
                 <Button 
-                  color="success" 
-                  className="flex-1"
                   size="sm"
-                  startContent={<CheckCircle className="h-4 w-4" />}
-                  onPress={() => {
-                    if (title.trim()) {
-                      reset();
-                    } else {
-                      alert('Please enter a video title');
-                    }
-                  }}
+                  color="warning"
+                  variant="flat"
+                  isDisabled
                 >
-                  Add Video
-                </Button>
-                <Button 
-                  variant="flat" 
-                  size="sm"
-                  onPress={reset}
-                  startContent={<X className="h-4 w-4" />}
-                >
-                  Cancel
+                  Upload Not Available
                 </Button>
               </div>
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        </Tab>
+      </Tabs>
     </div>
   );
 }

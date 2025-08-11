@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button, Input, Textarea, Select, SelectItem, Card, CardBody, Progress } from '@nextui-org/react';
-import { Upload, Video, CheckCircle, DollarSign, Tag } from 'lucide-react';
+import { Button, Input, Textarea, Select, SelectItem, Card, CardBody, Progress, Tabs, Tab } from '@nextui-org/react';
+import { Upload, Video, CheckCircle, DollarSign, Tag, Link, Eye } from 'lucide-react';
 import { vpsDataStore } from '../utils/vpsDataStore';
 
 interface EasyVideoCreatorProps {
@@ -15,6 +15,7 @@ export default function EasyVideoCreator({ onSuccess, categories }: EasyVideoCre
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   
+  const [activeTab, setActiveTab] = useState('links');
   const [videoData, setVideoData] = useState({
     title: '',
     description: '',
@@ -23,8 +24,48 @@ export default function EasyVideoCreator({ onSuccess, categories }: EasyVideoCre
     videoUrl: '',
     thumbnail: '',
     duration: '',
-    tags: ''
+    tags: '',
+    isYouTube: false
   });
+
+  const extractVideoInfo = (url: string) => {
+    let videoId = null;
+    let isYouTube = false;
+    let thumbnail = '';
+    
+    // YouTube URL handling
+    if (url.includes('youtube.com/watch') && url.includes('v=')) {
+      const urlParams = new URLSearchParams(url.split('?')[1]);
+      videoId = urlParams.get('v');
+      isYouTube = true;
+    } else if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1]?.split('?')[0]?.split('&')[0];
+      isYouTube = true;
+    }
+    
+    if (videoId && isYouTube) {
+      thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      return { videoId, isYouTube, thumbnail, embedUrl: `https://www.youtube.com/embed/${videoId}` };
+    }
+    
+    return { videoId: null, isYouTube: false, thumbnail: '', embedUrl: url };
+  };
+
+  const handleVideoLink = (url: string) => {
+    if (!url.trim()) return;
+    
+    const { videoId, isYouTube, thumbnail, embedUrl } = extractVideoInfo(url);
+    
+    setVideoData(prev => ({
+      ...prev,
+      videoUrl: embedUrl,
+      thumbnail: thumbnail || prev.thumbnail,
+      isYouTube,
+      duration: '5:00' // Default duration for links
+    }));
+    
+    setStep(2);
+  };
 
   const handleVideoUpload = async (file: File) => {
     if (file.size > 50 * 1024 * 1024) {
@@ -127,9 +168,11 @@ export default function EasyVideoCreator({ onSuccess, categories }: EasyVideoCre
           videoUrl: '',
           thumbnail: '',
           duration: '',
-          tags: ''
+          tags: '',
+          isYouTube: false
         });
         setStep(1);
+        setActiveTab('links');
       } else {
         alert('❌ Failed to save video');
       }
@@ -148,58 +191,111 @@ export default function EasyVideoCreator({ onSuccess, categories }: EasyVideoCre
           <p className="text-gray-600">Add videos in 2 simple steps</p>
         </div>
 
-        {/* Step 1: Upload Video */}
+        {/* Step 1: Add Video */}
         {step === 1 && (
           <div className="space-y-6">
             <div className="text-center">
               <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center mx-auto mb-2">
                 1
               </div>
-              <h3 className="text-lg font-semibold">Upload Your Video</h3>
+              <h3 className="text-lg font-semibold">Add Your Video</h3>
             </div>
 
-            {isProcessing ? (
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-                <div>
-                  <p className="font-medium text-blue-600">Processing video...</p>
-                  <Progress value={progress} className="w-full mt-2" color="primary" />
-                  <p className="text-sm text-gray-500 mt-1">{progress}% complete</p>
+            <Tabs 
+              selectedKey={activeTab} 
+              onSelectionChange={(key) => setActiveTab(key as string)}
+              className="w-full"
+            >
+              <Tab key="links" title="🔗 Video Links">
+                <div className="space-y-4 pt-4">
+                  <div className="text-center mb-6">
+                    <Link className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                      Add Video from URL
+                    </h4>
+                    <p className="text-gray-600">YouTube, Vimeo, or direct video links</p>
+                  </div>
+                  
+                  <Input
+                    label="Video URL"
+                    placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
+                    startContent={<Link className="h-4 w-4 text-gray-400" />}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        const url = (e.target as HTMLInputElement).value;
+                        handleVideoLink(url);
+                      }
+                    }}
+                  />
+                  
+                  <Button 
+                    color="primary" 
+                    size="lg"
+                    className="w-full"
+                    startContent={<Video className="h-4 w-4" />}
+                    onPress={() => {
+                      const input = document.querySelector('input[placeholder*="youtube"]') as HTMLInputElement;
+                      if (input?.value) {
+                        handleVideoLink(input.value);
+                      }
+                    }}
+                  >
+                    Add Video Link
+                  </Button>
+                  
+                  <div className="text-xs text-gray-500 text-center">
+                    Supports YouTube, Vimeo, and direct video file URLs
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div 
-                className="border-2 border-dashed border-blue-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer"
-                onClick={() => document.getElementById('video-input')?.click()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const file = e.dataTransfer.files[0];
-                  if (file && file.type.startsWith('video/')) {
-                    handleVideoUpload(file);
-                  }
-                }}
-                onDragOver={(e) => e.preventDefault()}
-              >
-                <Upload className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                  Drop video here or click to browse
-                </h4>
-                <p className="text-gray-600 mb-4">MP4, MOV, AVI - Max 50MB</p>
-                <Button color="primary" size="lg">
-                  Choose Video File
-                </Button>
-                <input
-                  id="video-input"
-                  type="file"
-                  accept="video/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleVideoUpload(file);
-                  }}
-                  className="hidden"
-                />
-              </div>
-            )}
+              </Tab>
+              
+              <Tab key="upload" title="📁 File Upload">
+                <div className="pt-4">
+                  {isProcessing ? (
+                    <div className="text-center space-y-4">
+                      <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                      <div>
+                        <p className="font-medium text-blue-600">Processing video...</p>
+                        <Progress value={progress} className="w-full mt-2" color="primary" />
+                        <p className="text-sm text-gray-500 mt-1">{progress}% complete</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div 
+                      className="border-2 border-dashed border-blue-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer"
+                      onClick={() => document.getElementById('video-input')?.click()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const file = e.dataTransfer.files[0];
+                        if (file && file.type.startsWith('video/')) {
+                          handleVideoUpload(file);
+                        }
+                      }}
+                      onDragOver={(e) => e.preventDefault()}
+                    >
+                      <Upload className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                        Drop video here or click to browse
+                      </h4>
+                      <p className="text-gray-600 mb-4">MP4, MOV, AVI - Max 50MB</p>
+                      <Button color="primary" size="lg">
+                        Choose Video File
+                      </Button>
+                      <input
+                        id="video-input"
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleVideoUpload(file);
+                        }}
+                        className="hidden"
+                      />
+                    </div>
+                  )}
+                </div>
+              </Tab>
+            </Tabs>
           </div>
         )}
 
@@ -214,8 +310,34 @@ export default function EasyVideoCreator({ onSuccess, categories }: EasyVideoCre
             </div>
 
             {/* Video Preview */}
-            <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-              <video src={videoData.videoUrl} controls className="w-full h-full object-cover" />
+            <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden relative">
+              {videoData.isYouTube ? (
+                <div className="relative w-full h-full">
+                  {videoData.thumbnail && (
+                    <img 
+                      src={videoData.thumbnail} 
+                      alt="Video thumbnail" 
+                      className="w-full h-full object-cover" 
+                    />
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <Button
+                      color="danger"
+                      size="lg"
+                      startContent={<Eye className="h-5 w-5" />}
+                      onPress={() => {
+                        if (videoData.videoUrl) {
+                          window.open(videoData.videoUrl, '_blank');
+                        }
+                      }}
+                    >
+                      Preview Video
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <video src={videoData.videoUrl} controls className="w-full h-full object-cover" />
+              )}
             </div>
 
             {/* Form Fields */}
@@ -229,6 +351,19 @@ export default function EasyVideoCreator({ onSuccess, categories }: EasyVideoCre
                   isRequired
                 />
               </div>
+              
+              {videoData.isYouTube && (
+                <div className="md:col-span-2">
+                  <Input
+                    label="Video URL"
+                    value={videoData.videoUrl}
+                    onChange={(e) => setVideoData(prev => ({ ...prev, videoUrl: e.target.value }))}
+                    placeholder="Video URL"
+                    startContent={<Link className="h-4 w-4" />}
+                    isReadOnly
+                  />
+                </div>
+              )}
 
               <div className="md:col-span-2">
                 <Textarea

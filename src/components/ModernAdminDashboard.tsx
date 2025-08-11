@@ -907,11 +907,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               </Button>
               <Button 
                 className="h-24 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('analytics')}
+                onPress={() => setActiveSection('all-videos')}
               >
                 <div className="text-center">
-                  <BarChart3 className="h-8 w-8 mx-auto mb-2" />
-                  <span className="text-sm font-semibold">Analytics</span>
+                  <Video className="h-8 w-8 mx-auto mb-2" />
+                  <span className="text-sm font-semibold">Manage Videos</span>
                 </div>
               </Button>
               <Button 
@@ -1760,7 +1760,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       thumbnailType: formData.thumbnail?.substring(0, 20)
     });
     
-    setActiveSection('add-video');
+    setActiveSection('edit-video');
   };
 
   const handleAddVideo = () => {
@@ -7183,7 +7183,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       case 'analytics': return renderAnalytics();
       case 'all-videos': return renderAllVideos();
       case 'add-video': return renderEditVideo();
-      case 'add-video': return renderEditVideo();
+      case 'edit-video': return renderEditVideo();
       case 'audio-lessons': return renderAudioLessons();
       case 'add-audio-lesson': return renderAddAudioLesson();
       case 'video-lessons': return renderVideoLessons();
