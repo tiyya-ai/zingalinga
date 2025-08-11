@@ -2312,14 +2312,21 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
           {/* Simple Video Uploader */}
           <SimpleVideoUploader 
+            initialData={editingVideo ? {
+              title: videoForm.title,
+              videoUrl: videoForm.videoUrl,
+              thumbnail: videoForm.thumbnail,
+              duration: videoForm.duration
+            } : undefined}
             onVideoUploaded={(videoData) => {
               setVideoForm({
                 ...videoForm,
-                title: videoData.title,
+                title: videoData.title || videoForm.title,
                 videoUrl: videoData.videoUrl,
                 duration: videoData.duration,
-                thumbnail: videoData.thumbnail || '',
-                videoType: 'upload'
+                thumbnail: videoData.thumbnail || videoForm.thumbnail,
+                videoType: videoData.videoUrl.includes('youtube.com') || videoData.videoUrl.includes('youtu.be') ? 'youtube' : 
+                          videoData.videoUrl.includes('vimeo.com') ? 'vimeo' : 'external'
               });
             }}
           />

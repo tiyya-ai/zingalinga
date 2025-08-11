@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button, Input, Progress, Tabs, Tab } from '@nextui-org/react';
 import { Upload, Video, CheckCircle, X, Link } from 'lucide-react';
 
@@ -11,19 +11,47 @@ interface SimpleVideoUploaderProps {
     duration: string;
     thumbnail?: string;
   }) => void;
+  initialData?: {
+    title?: string;
+    videoUrl?: string;
+    thumbnail?: string;
+    duration?: string;
+  };
 }
 
-export default function SimpleVideoUploader({ onVideoUploaded }: SimpleVideoUploaderProps) {
+export default function SimpleVideoUploader({ onVideoUploaded, initialData }: SimpleVideoUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [title, setTitle] = useState('');
-  const [videoUrl, setVideoUrl] = useState('');
+  const [videoUrl, setVideoUrl] = useState(initialData?.videoUrl || '');
   const [urlPreview, setUrlPreview] = useState<string | null>(null);
-  const [urlThumbnail, setUrlThumbnail] = useState<string | null>(null);
+  const [urlThumbnail, setUrlThumbnail] = useState<string | null>(initialData?.thumbnail || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Initialize preview when component mounts with initial data
+  useEffect(() => {
+    if (initialData?.videoUrl) {
+      const youtubeId = getYouTubeVideoId(initialData.videoUrl);
+      const vimeoId = getVimeoVideoId(initialData.videoUrl);
+      
+      if (youtubeId) {
+        setUrlPreview(`https://www.youtube.com/embed/${youtubeId}`);
+        if (!initialData.thumbnail) {
+          setUrlThumbnail(`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`);
+        }
+      } else if (vimeoId) {
+        setUrlPreview(`https://player.vimeo.com/video/${vimeoId}`);
+        if (!initialData.thumbnail) {
+          setUrlThumbnail(`https://vumbnail.com/${vimeoId}.jpg`);
+        }
+      } else if (initialData.videoUrl.match(/\.(mp4|webm|ogg)$/i)) {
+        setUrlPreview(initialData.videoUrl);
+      }
+    }
+  }, [initialData]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
