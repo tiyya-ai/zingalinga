@@ -2850,7 +2850,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-gray-900 truncate">{video.title}</p>
-                          <p className="text-sm text-gray-500 truncate">{video.description || 'No description'}</p>
                         </div>
                       </div>
                     </TableCell>
