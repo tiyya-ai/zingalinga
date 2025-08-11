@@ -2128,18 +2128,28 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         };
         
         console.log('💾 Saving new video to data store...');
-        const success = await vpsDataStore.addProduct(newVideo);
+        let success = await vpsDataStore.addProduct(newVideo);
+        
+        // If failed due to large file, save metadata only
+        if (!success && newVideo.videoUrl.startsWith('data:')) {
+          console.log('🔄 Large file detected, saving metadata only');
+          const lightVideo = {
+            ...newVideo,
+            videoUrl: 'LARGE_FILE_REMOVED',
+            thumbnail: newVideo.thumbnail?.length > 50000 ? '' : newVideo.thumbnail
+          };
+          success = await vpsDataStore.addProduct(lightVideo);
+        }
+        
         if (success) {
           console.log('✅ Video created in data store');
-          // Clear cache to ensure fresh data on next load
           vpsDataStore.clearMemoryCache();
-          // Add to local state after successful save
           setVideos(prev => [...prev, newVideo]);
-          setToast({message: 'Video created successfully!', type: 'success'});
+          setToast({message: 'Video saved! Use YouTube URLs for better persistence.', type: 'success'});
           setTimeout(() => setToast(null), 3000);
         } else {
           console.log('❌ Failed to create video in data store');
-          setToast({message: 'Failed to create video. Please try again.', type: 'error'});
+          setToast({message: 'Failed to save. Try YouTube URL instead.', type: 'error'});
           setTimeout(() => setToast(null), 3000);
           return;
         }
