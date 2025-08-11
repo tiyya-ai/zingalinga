@@ -142,7 +142,6 @@ export default function SimpleVideoUploader({ onVideoUploaded }: SimpleVideoUplo
 
   const reset = () => {
     setVideoPreview(null);
-    // Don't clear title, preserve it
     setVideoUrl('');
     setProgress(0);
     if (fileInputRef.current) {
@@ -160,7 +159,7 @@ export default function SimpleVideoUploader({ onVideoUploaded }: SimpleVideoUplo
           <h4 className="font-medium text-gray-900">Add Video URL</h4>
           <Input
             label="Video URL"
-            placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
+            placeholder="Paste video link here"
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
             startContent={<Link className="h-4 w-4 text-gray-400" />}
