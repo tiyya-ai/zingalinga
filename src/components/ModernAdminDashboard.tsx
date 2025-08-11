@@ -275,7 +275,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     duration: '',
     thumbnail: '',
     videoUrl: '',
-    videoType: 'youtube',
+    videoType: 'upload',
     tags: '',
     language: 'English',
     status: 'active'
@@ -2222,12 +2222,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
                   }}
                 />
-                {editingVideo && videoForm.title && (
-                  <div className="text-xs text-green-600 flex items-center gap-1">
-                    <CheckCircle className="h-3 w-3" />
-                    Data loaded from: {editingVideo.title}
-                  </div>
-                )}
+
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Description</label>
@@ -2238,12 +2233,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   rows={4}
                   className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-0 focus:border-blue-500 hover:border-blue-400 transition-all duration-200 resize-none"
                 />
-                {editingVideo && videoForm.description && (
-                  <div className="text-xs text-green-600 flex items-center gap-1">
-                    <CheckCircle className="h-3 w-3" />
-                    Description loaded ({videoForm.description.length} characters)
-                  </div>
-                )}
+
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -2261,12 +2251,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       inputWrapper: "bg-white border-2 border-gray-200 hover:border-blue-400 focus-within:border-blue-500 shadow-sm hover:shadow-md transition-all duration-200 flex items-center"
                     }}
                   />
-                  {editingVideo && videoForm.price > 0 && (
-                    <div className="text-xs text-green-600 flex items-center gap-1">
-                      <CheckCircle className="h-3 w-3" />
-                      Price loaded: ${videoForm.price}
-                    </div>
-                  )}
+
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Category *</label>
@@ -2292,378 +2277,72 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       </SelectItem>
                     ))}
                   </Select>
-                  {editingVideo && videoForm.category && (
-                    <div className="text-xs text-green-600 flex items-center gap-1">
-                      <CheckCircle className="h-3 w-3" />
-                      Category loaded: {videoForm.category}
-                    </div>
-                  )}
+
                 </div>
               </div>
             </CardBody>
           </Card>
 
-          {/* Media & Content */}
+          {/* Video Source */}
           <Card className="bg-white border border-gray-200">
             <CardHeader className="border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Media & Content</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Video Source</h3>
             </CardHeader>
-            <CardBody className="space-y-6">
-              <div className="w-full">
-                {/* Upload Video Section */}
-                <div className="space-y-4">
-                  <div className="space-y-6 pt-6">
-                    {uploadQueue.length > 0 ? (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-gray-900">Select from Upload Queue ({uploadQueue.filter(item => 
-                            (item.fileName || item.title || '').toLowerCase().includes(uploadQueueSearch.toLowerCase())
-                          ).length} of {uploadQueue.length})</h4>
-                        </div>
-                        
-                        <Input
-                          placeholder="Search videos by name..."
-                          value={uploadQueueSearch}
-                          onChange={(e) => setUploadQueueSearch(e.target.value)}
-                          startContent={<Search className="h-4 w-4 text-gray-400" />}
-                          isClearable
-                          onClear={() => setUploadQueueSearch('')}
-                          className="max-w-md"
-                        />
-                        
-                        <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto">
-                          {uploadQueue
-                            .filter(item => 
-                              (item.fileName || item.title || '').toLowerCase().includes(uploadQueueSearch.toLowerCase())
-                            )
-                            .map((item, index) => (
-                            <div key={index} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-all duration-200 hover:shadow-md" onClick={() => {
-                              setVideoForm({ ...videoForm, videoUrl: item.localUrl || item.fileName, videoType: 'upload', duration: item.duration || '' });
-                            }}>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                  {/* Video Thumbnail Preview */}
-                                  {item.localUrl && item.localUrl.startsWith('data:') ? (
-                                    <div className="w-16 h-12 bg-gray-100 rounded overflow-hidden flex-shrink-0">
-                                      <video 
-                                        src={item.localUrl} 
-                                        className="w-full h-full object-cover"
-                                        muted
-                                        onError={() => console.log('Thumbnail preview failed')}
-                                      />
-                                    </div>
-                                  ) : (
-                                    <FileVideo className="h-5 w-5 text-blue-500 flex-shrink-0" />
-                                  )}
-                                  <div className="min-w-0 flex-1">
-                                    <p className="font-medium text-sm truncate">{item.fileName || item.title}</p>
-                                    <p className="text-xs text-gray-500">{item.size} - {item.duration}</p>
-                                    {item.localUrl && item.localUrl.startsWith('data:') && (
-                                      <p className="text-xs text-green-600">✓ Preview available</p>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  {item.localUrl && item.localUrl.startsWith('data:') && (
-                                    <Button
-                                      size="sm"
-                                      variant="flat"
-                                      color="secondary"
-                                      isIconOnly
-                                      onPress={(e) => {
-                                        e.stopPropagation();
-                                        // Create fullscreen video preview
-                                        const video = document.createElement('video');
-                                        video.src = item.localUrl;
-                                        video.controls = true;
-                                        video.autoplay = true;
-                                        video.style.cssText = 'width:90%;max-width:800px;max-height:80vh;border-radius:8px;';
-                                        
-                                        const closeBtn = document.createElement('button');
-                                        closeBtn.innerHTML = '✕';
-                                        closeBtn.style.cssText = 'position:absolute;top:20px;right:20px;background:rgba(0,0,0,0.7);color:white;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;z-index:10001;';
-                                        
-                                        const modal = document.createElement('div');
-                                        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10000;flex-direction:column;';
-                                        
-                                        const title = document.createElement('h3');
-                                        title.textContent = `Preview: ${item.fileName || item.title}`;
-                                        title.style.cssText = 'color:white;margin-bottom:20px;font-size:18px;text-align:center;';
-                                        
-                                        const closeModal = () => {
-                                          video.pause();
-                                          document.body.removeChild(modal);
-                                        };
-                                        
-                                        modal.onclick = (e) => {
-                                          if (e.target === modal) closeModal();
-                                        };
-                                        closeBtn.onclick = closeModal;
-                                        
-                                        modal.appendChild(closeBtn);
-                                        modal.appendChild(title);
-                                        modal.appendChild(video);
-                                        document.body.appendChild(modal);
-                                      }}
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                  <Chip size="sm" color={item.status === 'completed' ? 'success' : 'warning'} variant="flat">
-                                    {item.status}
-                                  </Chip>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                          {uploadQueue.filter(item => 
-                            (item.fileName || item.title || '').toLowerCase().includes(uploadQueueSearch.toLowerCase())
-                          ).length === 0 && uploadQueueSearch && (
-                            <div className="text-center py-8 text-gray-500">
-                              <Search className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                              <p>No videos found matching "{uploadQueueSearch}"</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ) : null}
-                    
-                    <div className="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center hover:border-blue-500 transition-all duration-300 bg-blue-50/30 relative">
-                      {videoForm.videoUrl && (videoForm.videoType === 'upload' || videoForm.videoUrl.startsWith('data:') || videoForm.videoUrl.startsWith('blob:')) ? (
-                        <div className="space-y-4">
-                          {/* Video Preview for Uploaded Videos */}
-                          {videoForm.videoUrl.startsWith('data:') && (
-                            <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg max-w-md mx-auto">
-                              <video 
-                                src={videoForm.videoUrl} 
-                                controls 
-                                className="w-full h-full object-cover"
-                                onError={() => console.log('Video preview failed to load')}
-                              >
-                                Your browser does not support the video tag.
-                              </video>
-                            </div>
-                          )}
-                          
-                          <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
-                          <div>
-                            <p className="text-lg font-semibold text-green-700">
-                              {editingVideo ? 'Video loaded from saved data!' : 'Video selected!'}
-                            </p>
-                            <p className="text-sm text-gray-600">Duration: {videoForm.duration || 'Unknown'}</p>
-                            {editingVideo && (
-                              <p className="text-xs text-blue-600">Original video from: {editingVideo.title}</p>
-                            )}
-                          </div>
-                          
-                          <div className="flex gap-2 justify-center">
-                            {!editingVideo && (
-                              <Button 
-                                size="sm" 
-                                variant="flat" 
-                                color="primary"
-                                onPress={() => setVideoForm({ ...videoForm, videoUrl: '', videoType: 'upload', duration: '' })}
-                                startContent={<Upload className="h-4 w-4" />}
-                              >
-                                Select Different Video
-                              </Button>
-                            )}
-                            
-                            {editingVideo && videoForm.videoUrl.startsWith('data:') && (
-                              <Button 
-                                size="sm" 
-                                variant="flat" 
-                                color="secondary"
-                                onPress={() => {
-                                  // Create fullscreen video preview
-                                  const video = document.createElement('video');
-                                  video.src = videoForm.videoUrl;
-                                  video.controls = true;
-                                  video.autoplay = true;
-                                  video.style.cssText = 'width:90%;max-width:800px;max-height:80vh;border-radius:8px;';
-                                  
-                                  const closeBtn = document.createElement('button');
-                                  closeBtn.innerHTML = '✕';
-                                  closeBtn.style.cssText = 'position:absolute;top:20px;right:20px;background:rgba(0,0,0,0.7);color:white;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;z-index:10001;';
-                                  
-                                  const modal = document.createElement('div');
-                                  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10000;flex-direction:column;';
-                                  
-                                  const title = document.createElement('h3');
-                                  title.textContent = `Preview: ${editingVideo.title}`;
-                                  title.style.cssText = 'color:white;margin-bottom:20px;font-size:18px;text-align:center;';
-                                  
-                                  const closeModal = () => {
-                                    video.pause();
-                                    document.body.removeChild(modal);
-                                  };
-                                  
-                                  modal.onclick = (e) => {
-                                    if (e.target === modal) closeModal();
-                                  };
-                                  closeBtn.onclick = closeModal;
-                                  
-                                  modal.appendChild(closeBtn);
-                                  modal.appendChild(title);
-                                  modal.appendChild(video);
-                                  document.body.appendChild(modal);
-                                }}
-                                startContent={<Eye className="h-4 w-4" />}
-                              >
-                                Fullscreen Preview
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          <Upload className="h-16 w-16 text-gray-400 mx-auto" />
-                          <div>
-                            <p className="text-lg font-semibold text-gray-900">
-                              {editingVideo ? 'Replace video file' : 'Upload new video file'}
-                            </p>
-                            <p className="text-sm text-gray-600">Supports: MP4, MOV, AVI, WMV - Max size: 500MB</p>
-                            {editingVideo && (
-                              <p className="text-xs text-orange-600">Note: Uploading a new file will replace the current video</p>
-                            )}
-                          </div>
-                          <Button 
-                            color="primary" 
-                            variant="flat"
-                            startContent={<Upload className="h-4 w-4" />}
-                            onPress={() => {
-                              const fileInput = document.getElementById('video-file-input') as HTMLInputElement;
-                              fileInput?.click();
-                            }}
-                          >
-                            {editingVideo ? 'Replace File' : 'Choose File'}
-                          </Button>
-                          <input
-                            id="video-file-input"
-                            type="file"
-                            accept="video/mp4,video/mov,video/avi,video/wmv,video/webm"
-                            onChange={handleFileUpload}
-                            className="hidden"
-                          />
-                        </div>
-                      )}
-                    </div>
+            <CardBody className="space-y-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Video URL</label>
+                  <Input
+                    value={videoForm.videoUrl}
+                    onChange={(e) => setVideoForm({ ...videoForm, videoUrl: e.target.value })}
+                    placeholder="https://www.youtube.com/watch?v=... or https://vimeo.com/..."
+                    startContent={<Link className="h-4 w-4 text-gray-400" />}
+                    classNames={{
+                      input: "bg-white focus:ring-0 focus:ring-offset-0 shadow-none",
+                      inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
+                    }}
+                  />
+                </div>
+                
+                <div className="text-center">
+                  <span className="text-sm text-gray-500">OR</span>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Upload from Desktop</label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600 mb-2">Click to upload video file</p>
+                    <p className="text-xs text-gray-500">MP4, MOV, AVI, WMV - Max 500MB</p>
+                    <Button 
+                      size="sm"
+                      variant="flat" 
+                      color="primary"
+                      className="mt-2"
+                      onPress={() => {
+                        const input = document.getElementById('video-upload') as HTMLInputElement;
+                        input?.click();
+                      }}
+                    >
+                      Choose File
+                    </Button>
+                    <input
+                      id="video-upload"
+                      type="file"
+                      accept="video/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
                   </div>
                 </div>
               </div>
-              
-
             </CardBody>
           </Card>
         </div>
 
         <div className="space-y-6">
 
-          
-          {/* Video Preview */}
-          {(videoForm.videoUrl || editingVideo) && (
-            <Card className="bg-white border border-gray-200">
-              <CardHeader className="border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <Play className="h-5 w-5" />
-                  Video Preview
-                </h3>
-              </CardHeader>
-              <CardBody className="space-y-4">
-                {/* Video Preview based on type */}
-                {videoForm.videoUrl && (
-                  <div className="space-y-3">
-                    {/* Base64/Blob Video Preview */}
-                    {(videoForm.videoUrl.startsWith('data:') || videoForm.videoUrl.startsWith('blob:')) && (
-                      <div className="space-y-3">
-                        <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg">
-                          <video 
-                            src={videoForm.videoUrl} 
-                            controls 
-                            className="w-full h-full object-cover"
-                            onError={() => console.log('Video preview failed to load')}
-                          >
-                            Your browser does not support the video tag.
-                          </video>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-sm text-green-700 font-medium">Uploaded Video</span>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="flat"
-                            color="primary"
-                            onPress={() => {
-                              // Create fullscreen video preview
-                              const video = document.createElement('video');
-                              video.src = videoForm.videoUrl;
-                              video.controls = true;
-                              video.autoplay = true;
-                              video.style.cssText = 'width:90%;max-width:900px;max-height:80vh;border-radius:8px;';
-                              
-                              const closeBtn = document.createElement('button');
-                              closeBtn.innerHTML = '✕';
-                              closeBtn.style.cssText = 'position:absolute;top:20px;right:20px;background:rgba(0,0,0,0.7);color:white;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;z-index:10001;';
-                              
-                              const modal = document.createElement('div');
-                              modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10000;flex-direction:column;';
-                              
-                              const title = document.createElement('h3');
-                              title.textContent = `Preview: ${videoForm.title || 'Video'}`;
-                              title.style.cssText = 'color:white;margin-bottom:20px;font-size:18px;text-align:center;';
-                              
-                              const closeModal = () => {
-                                video.pause();
-                                document.body.removeChild(modal);
-                              };
-                              
-                              modal.onclick = (e) => {
-                                if (e.target === modal) closeModal();
-                              };
-                              closeBtn.onclick = closeModal;
-                              
-                              modal.appendChild(closeBtn);
-                              modal.appendChild(title);
-                              modal.appendChild(video);
-                              document.body.appendChild(modal);
-                            }}
-                            startContent={<Eye className="h-4 w-4" />}
-                          >
-                            Fullscreen
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Only show uploaded video preview since we removed other tabs */}
-                    
-                    {/* Video Info */}
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="font-medium text-gray-600">Duration:</span>
-                          <p className="text-gray-800">{videoForm.duration || 'Auto-detected'}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600">Type:</span>
-                          <p className="text-gray-800 capitalize">{videoForm.videoType || 'Auto-detected'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {!videoForm.videoUrl && editingVideo && (
-                  <div className="text-center py-8 text-gray-500">
-                    <Play className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>Select a video to see preview</p>
-                  </div>
-                )}
-              </CardBody>
-            </Card>
-          )}
+
           
           {/* Basic Information */}
           <Card className="bg-white border border-gray-200">
@@ -2791,12 +2470,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     inputWrapper: "bg-white border border-gray-300 hover:border-blue-400 focus-within:!border-blue-500 shadow-sm hover:shadow-md transition-all duration-200 focus-within:!ring-0 focus-within:!outline-none focus-within:!shadow-none"
                   }}
                 />
-                {editingVideo && videoForm.tags && (
-                  <div className="text-xs text-green-600 flex items-center gap-1">
-                    <CheckCircle className="h-3 w-3" />
-                    Tags loaded: {videoForm.tags}
-                  </div>
-                )}
+
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Rating</label>
@@ -2944,7 +2618,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               <ul className="text-xs text-blue-800 space-y-1">
                 <li>- Use descriptive titles for better discoverability</li>
                 <li>- Add relevant tags separated by commas</li>
-                <li>- YouTube/Vimeo videos load faster than uploads</li>
+                <li>- Upload high-quality videos for best user experience</li>
                 <li>- Thumbnails should be 1280x720 for best quality</li>
               </ul>
             </CardBody>
