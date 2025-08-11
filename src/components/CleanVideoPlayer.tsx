@@ -327,7 +327,7 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
           </div>
           <div className="flex items-center gap-1">
             <Clock className="w-4 h-4" />
-            <span>{module.estimatedDuration || '30 min'}</span>
+            <span>{module.duration || module.estimatedDuration || '30 min'}</span>
           </div>
           <div className="flex items-center gap-1">
             <Eye className="w-4 h-4" />
@@ -579,7 +579,7 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
                 
                 {/* Duration */}
                 <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 py-0.5 rounded">
-                  {relatedModule.estimatedDuration || '5:00'}
+                  {relatedModule.duration || relatedModule.estimatedDuration || '5:00'}
                 </div>
 
                 {/* Status indicator */}

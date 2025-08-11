@@ -1,145 +1,90 @@
-# Video Issues Fixed 🎥
+# Video Creation and Duration Display Fixes
 
-## Issues Addressed
+## Issues Fixed
 
-### 1. Videos Becoming Locked After Purchase ❌➡️✅
-**Problem**: Users were purchasing videos but they would become locked again after refresh or revisit.
+### 1. Video Creation Button Not Functioning
+**Problem**: The "Create Video" button in the admin dashboard was not working properly due to validation issues.
 
-**Root Cause**: 
-- Purchase data wasn't being persisted properly
-- Access checking only relied on single data source
-- No redundancy in purchase verification
+**Solution**: 
+- Added proper validation for the duration field as a required field
+- Updated the button's `isDisabled` condition to include duration validation
+- Added loading state to the button to show progress during video creation
+- Made duration a required field with proper validation
 
-**Solution Implemented**:
-- Created `PurchaseManager` class with multiple persistence layers
-- Enhanced `videoAccess.ts` with comprehensive access checking
-- Added localStorage backup for purchase data
-- Implemented purchase verification from multiple sources
+**Changes Made**:
+- Added duration field as required in the video form validation
+- Updated button text to show "Creating..." or "Updating..." during loading
+- Added `isLoading` prop to the button for better UX
 
-### 2. Videos Added from URL Not Working in Player ❌➡️✅
-**Problem**: When admins added videos via URL, they wouldn't play in the video player.
+### 2. Video Duration Display Issue
+**Problem**: When users play videos, they see "unknown" duration instead of the actual video length.
 
-**Root Cause**:
-- No URL validation before attempting to play
-- Poor error handling for invalid video URLs
-- No fallback mechanisms for failed video loads
+**Solution**:
+- Added a dedicated "Duration" field in the admin video creation form
+- Enhanced the SimpleVideoUploader to automatically extract duration from video files
+- Updated the video player to prioritize admin-set duration over estimated duration
+- Added duration extraction for YouTube videos using oEmbed API
 
-**Solution Implemented**:
-- Added comprehensive URL validation in `isValidVideoUrl()`
-- Enhanced video player with better error handling
-- Added retry mechanisms and admin URL update functionality
-- Support for multiple video formats and hosting platforms
+**Changes Made**:
 
-## New Components Created
+#### Admin Dashboard (`ModernAdminDashboard.tsx`):
+- Added a new "Duration" input field in the video creation form
+- Made duration a required field with placeholder text and validation
+- Added Clock icon to the duration field for better UX
 
-### 1. `PurchaseManager` (`src/utils/purchaseManager.ts`)
-- Handles video purchases with multiple persistence layers
-- Saves to VPS data store, localStorage, and user profile
-- Provides purchase verification from multiple sources
-- Includes caching for better performance
+#### SimpleVideoUploader (`SimpleVideoUploader.tsx`):
+- Added automatic duration extraction for direct video files
+- Enhanced YouTube video info fetching with oEmbed API
+- Added proper duration formatting (MM:SS format)
+- Added "Add Video" button for better workflow
 
-### 2. `EnhancedVideoPlayer` (`src/components/EnhancedVideoPlayer.tsx`)
-- Improved video player with better URL handling
-- Enhanced error recovery and retry mechanisms
-- Admin functionality to update video URLs
-- Better loading states and error messages
+#### Video Player (`CleanVideoPlayer.tsx`):
+- Updated duration display to use `module.duration` first, then fall back to `module.estimatedDuration`
+- Applied this change to both main video info and related videos sidebar
 
-### 3. `VideoTestComponent` (`src/components/VideoTestComponent.tsx`)
-- Testing component to verify fixes work correctly
-- Allows testing purchase flow and access verification
-- Useful for debugging video-related issues
+## How It Works Now
 
-## Key Improvements
+### For Admins:
+1. When creating a video, admins must enter a duration in the format "15:30" or descriptive text like "15 minutes"
+2. The system automatically tries to extract duration from uploaded video files
+3. For YouTube videos, it attempts to fetch video information automatically
+4. The "Create Video" button is only enabled when all required fields (including duration) are filled
 
-### Purchase Persistence
-```typescript
-// Multiple persistence layers
-await Promise.all([
-  this.savePurchaseToVPS(purchase),
-  this.savePurchaseToLocalStorage(purchase),
-  this.updateUserPurchasedModules(userId, moduleId)
-]);
-```
+### For Users:
+1. Videos now display the admin-specified duration instead of "unknown"
+2. Duration appears in video cards, player interface, and related videos
+3. The duration is shown in a consistent format across the platform
 
-### Enhanced Access Checking
-```typescript
-// Check multiple sources for purchase verification
-const hasPurchasedViaManager = await purchaseManager.hasPurchased(user.id, module.id);
-const hasPurchasedInArray = purchases.some(/* check purchases array */);
-const hasLocalPurchase = localPurchases.some(/* check localStorage */);
-```
+## Technical Details
 
-### URL Validation
-```typescript
-// Comprehensive URL validation
-export function isValidVideoUrl(url: string): boolean {
-  // Check for video extensions: .mp4, .webm, .ogg, etc.
-  // Check for video hosting platforms: YouTube, Vimeo, etc.
-  // Check for streaming indicators
-  return hasVideoExtension || isVideoHost || hasStreamingIndicator;
-}
-```
+### Duration Field Validation:
+- Required field that must be filled before video creation
+- Accepts formats like "15:30", "5 minutes", "1 hour", etc.
+- Provides helpful placeholder text and validation messages
 
-## How to Test the Fixes
+### Automatic Duration Extraction:
+- For direct video files: Uses HTML5 video element to get actual duration
+- For YouTube videos: Attempts to use YouTube oEmbed API
+- For Vimeo videos: Uses standard Vimeo embed approach
+- Falls back to manual input if automatic extraction fails
 
-### Testing Purchase Persistence
-1. Purchase a video
-2. Refresh the page
-3. Video should remain accessible
-4. Check browser localStorage for backup purchase data
+### Display Priority:
+1. `module.duration` (admin-set duration)
+2. `module.estimatedDuration` (fallback)
+3. Default values ("30 min", "5:00", etc.)
 
-### Testing Video URL Functionality
-1. As admin, try adding a video with various URL formats:
-   - Direct MP4: `https://example.com/video.mp4`
-   - YouTube: `https://youtube.com/watch?v=...`
-   - Google Cloud Storage: `https://commondatastorage.googleapis.com/...`
-2. Video should load and play correctly
-3. Invalid URLs should show proper error messages with retry options
+## Files Modified:
+1. `src/components/ModernAdminDashboard.tsx` - Added duration field and validation
+2. `src/components/SimpleVideoUploader.tsx` - Enhanced with duration extraction
+3. `src/components/CleanVideoPlayer.tsx` - Updated duration display logic
 
-### Using the Test Component
-```tsx
-import { VideoTestComponent } from './components/VideoTestComponent';
+## Testing:
+- Test video creation with various duration formats
+- Verify duration display in video player
+- Check that "Create Video" button works properly with all validations
+- Ensure duration appears correctly in video cards and related videos
 
-// Add to your dashboard for testing
-<VideoTestComponent user={user} module={selectedModule} />
-```
-
-## Files Modified
-
-1. **Enhanced**: `src/utils/videoAccess.ts`
-   - Added async access checking
-   - Enhanced URL validation
-   - Multiple purchase verification sources
-
-2. **Updated**: `src/components/FinalUserDashboard.tsx`
-   - Integrated new purchase manager
-   - Updated to use enhanced video player
-   - Better error handling
-
-3. **Created**: `src/utils/purchaseManager.ts`
-   - New purchase management system
-   - Multiple persistence layers
-   - Comprehensive purchase verification
-
-4. **Created**: `src/components/EnhancedVideoPlayer.tsx`
-   - Improved video player
-   - Better URL handling and validation
-   - Enhanced error recovery
-
-## Benefits
-
-✅ **Reliable Purchases**: Videos stay accessible after purchase
-✅ **Better Video Support**: Wide range of video URLs now work
-✅ **Error Recovery**: Users can retry failed videos
-✅ **Admin Tools**: Easy video URL management for admins
-✅ **Offline Resilience**: localStorage backup ensures access even when server is down
-✅ **Better UX**: Clear error messages and loading states
-
-## Next Steps
-
-1. Test the fixes thoroughly with different video URLs
-2. Monitor purchase persistence in production
-3. Consider adding video format conversion for unsupported formats
-4. Add analytics to track video loading success rates
-
-The fixes ensure that your video platform now has reliable purchase persistence and robust video URL handling! 🚀
+The fixes ensure that:
+1. Admins can successfully create videos with proper validation
+2. Users see actual video durations instead of "unknown"
+3. The system provides a better user experience for both content creators and viewers

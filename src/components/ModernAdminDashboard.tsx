@@ -2331,6 +2331,20 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             </CardHeader>
             <CardBody className="space-y-4">
               <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Duration *</label>
+                <Input
+                  value={videoForm.duration}
+                  onChange={(e) => setVideoForm({ ...videoForm, duration: e.target.value })}
+                  placeholder="e.g., 15:30 or 5 minutes"
+                  startContent={<Clock className="h-4 w-4 text-gray-400" />}
+                  classNames={{
+                    input: "bg-white text-gray-900 placeholder:text-gray-400 border-0 focus:ring-0 focus:outline-none",
+                    inputWrapper: "bg-white border border-gray-300 hover:border-blue-400 focus-within:!border-blue-500 focus-within:!ring-0 focus-within:!outline-none focus-within:!shadow-none"
+                  }}
+                />
+                <p className="text-xs text-gray-500">Enter duration in MM:SS format (e.g., 15:30) or descriptive text</p>
+              </div>
+              <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Age Group</label>
                 <div className="flex gap-2">
                   <Select
@@ -2564,10 +2578,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               className="w-full bg-blue-600 text-white hover:bg-blue-700 h-12 text-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               onPress={handleSaveVideo}
               startContent={editingVideo ? <Edit className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-              isDisabled={editingVideo ? false : (!videoForm.title.trim() || !videoForm.category || !videoForm.videoUrl)}
+              isDisabled={!videoForm.title.trim() || !videoForm.category || !videoForm.videoUrl || !videoForm.duration.trim()}
+              isLoading={isLoading}
               aria-label={editingVideo ? 'Update video' : 'Create new video'}
             >
-              {editingVideo ? 'Update Video' : 'Create Video'}
+              {isLoading ? (editingVideo ? 'Updating...' : 'Creating...') : (editingVideo ? 'Update Video' : 'Create Video')}
             </Button>
             
             {editingVideo && (
