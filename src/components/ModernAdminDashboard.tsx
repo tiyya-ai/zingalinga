@@ -101,7 +101,6 @@ import { UserManagement } from './UserManagement';
 import { Module } from '../types';
 import { SuccessModal } from './SuccessModal';
 import SimpleVideoUploader from './SimpleVideoUploader';
-import EasyVideoCreator from './EasyVideoCreator';
 
 interface ModernAdminDashboardProps {
   user: any;
@@ -614,7 +613,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       children: [
         { id: 'all-videos', label: 'All Videos', icon: <Folder className="h-4 w-4" /> },
         { id: 'add-video', label: 'Add New', icon: <Plus className="h-4 w-4" /> },
-        { id: 'easy-video', label: 'Easy Creator', icon: <Video className="h-4 w-4" /> },
         { id: 'categories', label: 'Categories', icon: <Tag className="h-4 w-4" /> },
         { id: 'upload-queue', label: 'Upload Queue', icon: <Upload className="h-4 w-4" />, badge: uploadQueue.length > 0 ? uploadQueue.length.toString() : undefined }
       ]
@@ -2158,6 +2156,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       }
       
       console.log('🎉 Video save process completed successfully');
+      // Force save to ensure persistence
+      await vpsDataStore.saveData(await vpsDataStore.loadData());
       setActiveSection('all-videos');
     } catch (error) {
       console.error('❌ Failed to save video:', error);
@@ -7159,21 +7159,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       case 'analytics': return renderAnalytics();
       case 'all-videos': return renderAllVideos();
       case 'add-video': return renderEditVideo();
-      case 'easy-video': return (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-gray-900">Easy Video Creator</h1>
-            <Button variant="flat" onPress={() => setActiveSection('all-videos')}>Back to Videos</Button>
-          </div>
-          <EasyVideoCreator 
-            categories={categories} 
-            onSuccess={() => {
-              loadRealData();
-              setActiveSection('all-videos');
-            }} 
-          />
-        </div>
-      );
+      case 'add-video': return renderEditVideo();
       case 'audio-lessons': return renderAudioLessons();
       case 'add-audio-lesson': return renderAddAudioLesson();
       case 'video-lessons': return renderVideoLessons();
