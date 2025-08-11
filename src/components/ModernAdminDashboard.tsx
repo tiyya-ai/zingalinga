@@ -1797,9 +1797,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       return;
     }
     
-    const maxSize = 500 * 1024 * 1024; // 500MB limit
+    const maxSize = 100 * 1024 * 1024; // 100MB limit
     if (file.size > maxSize) {
-      setToast({message: 'File size must be less than 500MB. For larger videos, please use YouTube or external hosting.', type: 'error'});
+      setToast({message: 'File size must be less than 100MB. For larger videos, please use YouTube or external hosting.', type: 'error'});
       setTimeout(() => setToast(null), 3000);
       return;
     }
@@ -2311,21 +2311,44 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Upload from Desktop</label>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
-                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">Click to upload video file</p>
-                    <p className="text-xs text-gray-500">MP4, MOV, AVI, WMV - Max 500MB</p>
-                    <Button 
-                      size="sm"
-                      variant="flat" 
-                      color="primary"
-                      className="mt-2"
-                      onPress={() => {
-                        const input = document.getElementById('video-upload') as HTMLInputElement;
-                        input?.click();
-                      }}
-                    >
-                      Choose File
-                    </Button>
+                    {isLoading ? (
+                      <div className="space-y-4">
+                        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                        <div>
+                          <p className="text-sm font-medium text-blue-600">{loadingMessage}</p>
+                          <p className="text-xs text-gray-500">Please wait...</p>
+                        </div>
+                      </div>
+                    ) : videoForm.videoUrl && videoForm.videoUrl.startsWith('data:') ? (
+                      <div className="space-y-4">
+                        <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden max-w-xs mx-auto">
+                          <video src={videoForm.videoUrl} controls className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-green-600">Video uploaded!</p>
+                          <p className="text-xs text-gray-500">Duration: {videoForm.duration}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <Upload className="h-8 w-8 text-gray-400 mx-auto" />
+                        <div>
+                          <p className="text-sm text-gray-600">Click to upload video file</p>
+                          <p className="text-xs text-gray-500">MP4, MOV, AVI, WMV - Max 100MB</p>
+                        </div>
+                        <Button 
+                          size="sm"
+                          variant="flat" 
+                          color="primary"
+                          onPress={() => {
+                            const input = document.getElementById('video-upload') as HTMLInputElement;
+                            input?.click();
+                          }}
+                        >
+                          Choose File
+                        </Button>
+                      </div>
+                    )}
                     <input
                       id="video-upload"
                       type="file"
