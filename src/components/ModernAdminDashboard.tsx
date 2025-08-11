@@ -141,6 +141,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [contentBundles, setContentBundles] = useState<any[]>([]);
   const [userProgress, setUserProgress] = useState<any[]>([]);
   const [newCategory, setNewCategory] = useState('');
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [editCategoryValue, setEditCategoryValue] = useState('');
   const [ageGroups, setAgeGroups] = useState<string[]>(['3-5 years', '3-8 years', '6-12 years', 'All ages']);
   const [newAgeGroup, setNewAgeGroup] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -812,20 +814,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   // Render functions for each section
   const renderOverview = () => {
-    if (!dataLoaded) {
-      return (
-        <div className="space-y-8">
-          <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-600">Preparing dashboard...</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
     
     return (
       <div className="space-y-8">
@@ -3167,6 +3155,43 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     </div>
   );
 
+  const handleUpdateCategory = async (oldCategory: string, newCategory: string) => {
+    if (!newCategory.trim() || newCategory === oldCategory) {
+      setEditingCategory(null);
+      return;
+    }
+    
+    if (categories.includes(newCategory.trim())) {
+      alert('Category already exists');
+      return;
+    }
+    
+    try {
+      // Update category in data store
+      const success = await vpsDataStore.updateCategory(oldCategory, newCategory.trim());
+      if (success) {
+        const updatedCategories = await vpsDataStore.getCategories();
+        setCategories(updatedCategories);
+        
+        // Update videos that use this category
+        const updatedVideos = videos.map(video => 
+          video.category === oldCategory 
+            ? { ...video, category: newCategory.trim() }
+            : video
+        );
+        setVideos(updatedVideos);
+        
+        setEditingCategory(null);
+        alert('Category updated successfully!');
+      } else {
+        alert('Failed to update category');
+      }
+    } catch (error) {
+      console.error('Error updating category:', error);
+      alert('Failed to update category');
+    }
+  };
+
   const renderCategoriesPage = () => (
     <div className="space-y-6">
       <PageHeader 
@@ -3215,7 +3240,24 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                           <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
                             <Tag className="h-4 w-4 text-white" />
                           </div>
-                          <span className="font-medium">{category}</span>
+                          {editingCategory === category ? (
+                            <Input
+                              value={editCategoryValue}
+                              onChange={(e) => setEditCategoryValue(e.target.value)}
+                              size="sm"
+                              className="w-48"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleUpdateCategory(category, editCategoryValue);
+                                } else if (e.key === 'Escape') {
+                                  setEditingCategory(null);
+                                }
+                              }}
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="font-medium">{category}</span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>{videos.filter(v => v.category === category).length}</TableCell>
@@ -3224,24 +3266,58 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-1">
-                          <Button 
-                            size="sm" 
-                            variant="light" 
-                            className="hover:bg-red-50"
-                            onPress={async () => {
-                              if (confirm(`Delete category "${category}"?`)) {
-                                const success = await vpsDataStore.deleteCategory(category);
-                                if (success) {
-                                  const updatedCategories = await vpsDataStore.getCategories();
-                                  setCategories(updatedCategories);
-                                } else {
-                                  alert('Failed to delete category');
-                                }
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                          </Button>
+                          {editingCategory === category ? (
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant="light" 
+                                className="hover:bg-green-50"
+                                onPress={() => handleUpdateCategory(category, editCategoryValue)}
+                              >
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="light" 
+                                className="hover:bg-gray-50"
+                                onPress={() => setEditingCategory(null)}
+                              >
+                                <X className="h-4 w-4 text-gray-600" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant="light" 
+                                className="hover:bg-blue-50"
+                                onPress={() => {
+                                  setEditingCategory(category);
+                                  setEditCategoryValue(category);
+                                }}
+                              >
+                                <Edit className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="light" 
+                                className="hover:bg-red-50"
+                                onPress={async () => {
+                                  if (confirm(`Delete category "${category}"?`)) {
+                                    const success = await vpsDataStore.deleteCategory(category);
+                                    if (success) {
+                                      const updatedCategories = await vpsDataStore.getCategories();
+                                      setCategories(updatedCategories);
+                                    } else {
+                                      alert('Failed to delete category');
+                                    }
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

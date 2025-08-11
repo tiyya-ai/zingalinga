@@ -742,6 +742,37 @@ class VPSDataStore {
     }
   }
 
+  async updateCategory(oldCategory: string, newCategory: string): Promise<boolean> {
+    try {
+      const data = await this.loadData();
+      data.categories = data.categories || [];
+      
+      // Check if new category already exists
+      if (data.categories.includes(newCategory)) {
+        return false;
+      }
+      
+      // Update category name
+      const index = data.categories.indexOf(oldCategory);
+      if (index !== -1) {
+        data.categories[index] = newCategory;
+        
+        // Update all videos that use this category
+        data.modules = data.modules?.map(module => 
+          module.category === oldCategory 
+            ? { ...module, category: newCategory }
+            : module
+        ) || [];
+        
+        return await this.saveData(data);
+      }
+      return false;
+    } catch (error) {
+      console.error('Error updating category:', error);
+      return false;
+    }
+  }
+
   async deleteCategory(category: string): Promise<boolean> {
     try {
       const data = await this.loadData();
