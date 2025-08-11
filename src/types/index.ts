@@ -19,6 +19,8 @@ export interface User {
   emergencyContact?: string;
   emergencyPhone?: string;
   avatar?: string;
+  isOnline?: boolean;
+  lastSeen?: string;
 }
 
 export interface Module {
