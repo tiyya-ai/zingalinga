@@ -299,11 +299,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     try {
       setDataLoaded(false);
       
-      // Clear memory cache to force fresh data load
+      // Clear ALL caches to force fresh data load
       vpsDataStore.clearMemoryCache();
+      localStorage.removeItem('zinga-linga-app-data-cache');
       
-      // Load real data from vpsDataStore
-      const data = await vpsDataStore.loadData();
+      // Load real data from vpsDataStore with force refresh
+      const data = await vpsDataStore.loadData(true);
       const realUsers = await vpsDataStore.getUsers();
       const realVideos = await vpsDataStore.getProducts();
       const realOrders = await vpsDataStore.getOrders();
@@ -2091,10 +2092,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         const success = await vpsDataStore.updateProduct(updatedVideo);
         if (success) {
           console.log('✅ Video updated in data store');
-          // Clear cache to ensure fresh data on next load
           vpsDataStore.clearMemoryCache();
-          // Update local state after successful save
-          setVideos(prev => prev.map(v => v.id === editingVideo.id ? updatedVideo : v));
+          // Reload videos from data store to ensure sync
+          const updatedVideos = await vpsDataStore.getProducts();
+          setVideos(updatedVideos);
           setToast({message: 'Video updated successfully!', type: 'success'});
           setTimeout(() => setToast(null), 3000);
         } else {
@@ -2144,8 +2145,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         if (success) {
           console.log('✅ Video created in data store');
           vpsDataStore.clearMemoryCache();
-          setVideos(prev => [...prev, newVideo]);
-          setToast({message: 'Video saved! Use YouTube URLs for better persistence.', type: 'success'});
+          // Reload videos from data store to ensure sync
+          const updatedVideos = await vpsDataStore.getProducts();
+          setVideos(updatedVideos);
+          setToast({message: 'Video saved successfully!', type: 'success'});
           setTimeout(() => setToast(null), 3000);
         } else {
           console.log('❌ Failed to create video in data store');
@@ -2166,8 +2169,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       }
       
       console.log('🎉 Video save process completed successfully');
-      // Force save to ensure persistence
-      await vpsDataStore.saveData(await vpsDataStore.loadData());
+      // Force immediate reload to show new video
+      await loadRealData();
       setActiveSection('all-videos');
     } catch (error) {
       console.error('❌ Failed to save video:', error);
