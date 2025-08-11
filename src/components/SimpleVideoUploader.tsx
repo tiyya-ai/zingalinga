@@ -136,13 +136,13 @@ export default function SimpleVideoUploader({ onVideoUploaded }: SimpleVideoUplo
       duration: 'Unknown'
     });
     
-    setTitle('');
+    // Don't clear title, only clear URL
     setVideoUrl('');
   };
 
   const reset = () => {
     setVideoPreview(null);
-    setTitle('');
+    // Don't clear title, preserve it
     setVideoUrl('');
     setProgress(0);
     if (fileInputRef.current) {
@@ -164,10 +164,14 @@ export default function SimpleVideoUploader({ onVideoUploaded }: SimpleVideoUplo
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
             startContent={<Link className="h-4 w-4 text-gray-400" />}
+            classNames={{
+              input: "bg-white",
+              inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
+            }}
           />
           <Input
-            label="Video Title (Optional)"
-            placeholder="Enter custom title"
+            label="Video Title"
+            placeholder="Enter video title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
