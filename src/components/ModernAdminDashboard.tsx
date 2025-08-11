@@ -819,7 +819,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading your dashboard data...</p>
+                <p className="text-gray-600">Preparing dashboard...</p>
               </div>
             </div>
           </div>
@@ -1845,7 +1845,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             ...prev, 
             duration: formattedDuration,
             videoUrl: base64Video,
-            videoType: 'upload'
+            videoType: 'upload',
+            // Preserve title if it exists, otherwise use filename
+            title: prev.title || file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
           }));
           
           console.log('💾 Video form updated with base64 data');
@@ -2136,19 +2138,28 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           console.log('🔄 Large file detected, saving metadata only');
           const lightVideo = {
             ...newVideo,
-            videoUrl: 'LARGE_FILE_REMOVED',
-            thumbnail: newVideo.thumbnail?.length > 50000 ? '' : newVideo.thumbnail
+            videoUrl: '', // Remove video data but keep metadata
+            thumbnail: newVideo.thumbnail?.length > 10000 ? '' : newVideo.thumbnail, // Keep small thumbnails
+            originalVideoSize: `${(newVideo.videoUrl.length / 1024 / 1024).toFixed(1)}MB`,
+            videoStatus: 'metadata_only'
           };
           success = await vpsDataStore.addProduct(lightVideo);
+          if (success) {
+            console.log('✅ Video metadata saved successfully');
+          }
         }
         
         if (success) {
           console.log('✅ Video created in data store');
+          console.log('🔍 Verifying save - checking if video exists in data store...');
           vpsDataStore.clearMemoryCache();
           // Reload videos from data store to ensure sync
           const updatedVideos = await vpsDataStore.getProducts();
+          console.log('📊 Total videos after save:', updatedVideos.length);
+          const savedVideo = updatedVideos.find(v => v.id === newVideo.id);
+          console.log('🔍 Video found in data store:', savedVideo ? 'YES' : 'NO');
           setVideos(updatedVideos);
-          setToast({message: 'Video saved successfully!', type: 'success'});
+          setToast({message: savedVideo ? 'Video saved successfully!' : 'Video may not have saved properly', type: savedVideo ? 'success' : 'warning'});
           setTimeout(() => setToast(null), 3000);
         } else {
           console.log('❌ Failed to create video in data store');
@@ -2232,7 +2243,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <Input
                   value={videoForm.title}
                   onChange={(e) => setVideoForm({ ...videoForm, title: e.target.value })}
-                  placeholder={editingVideo ? "Loading..." : "Enter video title"}
+                  placeholder="Enter video title"
                   classNames={{
                     input: "bg-white focus:ring-0 focus:ring-offset-0 shadow-none",
                     inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
@@ -2245,7 +2256,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <textarea
                   value={videoForm.description}
                   onChange={(e) => setVideoForm({ ...videoForm, description: e.target.value })}
-                  placeholder={editingVideo ? "Loading description..." : "Describe your video content"}
+                  placeholder="Describe your video content"
                   rows={4}
                   className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-0 focus:border-blue-500 hover:border-blue-400 transition-all duration-200 resize-none"
                 />
@@ -2258,7 +2269,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     type="number"
                     value={videoForm.price.toString()}
                     onChange={(e) => setVideoForm({ ...videoForm, price: parseFloat(e.target.value) || 0 })}
-                    placeholder={editingVideo ? "Loading price..." : "0.00"}
+                    placeholder="0.00"
                     size="lg"
                     radius="lg"
                     startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
@@ -2277,7 +2288,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       const selected = Array.from(keys)[0] as string;
                       setVideoForm({ ...videoForm, category: selected });
                     }}
-                    placeholder={editingVideo ? "Loading category..." : "Select category"}
+                    placeholder="Select category"
                     size="lg"
                     radius="lg"
                     classNames={{
@@ -2437,7 +2448,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <Input
                   value={videoForm.tags}
                   onChange={(e) => setVideoForm({ ...videoForm, tags: e.target.value })}
-                  placeholder={editingVideo ? "Loading tags..." : "education, kids, fun"}
+                  placeholder="education, kids, fun"
                   startContent={<Tag className="h-4 w-4 text-gray-400" />}
                   classNames={{
                     input: "bg-white text-gray-900 placeholder:text-gray-400 border-0 focus:ring-0 focus:outline-none",
@@ -7234,7 +7245,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <p className="text-gray-600">Starting dashboard...</p>
         </div>
       </div>
     }>
@@ -7250,6 +7261,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 isIconOnly
                 onPress={() => setSidebarOpen(!sidebarOpen)}
                 className="hover:bg-gray-800 rounded-lg transition-colors"
+                aria-label="Toggle sidebar"
               >
                 <Menu className="h-5 w-5 text-gray-300" />
               </Button>
@@ -7290,6 +7302,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     isIconOnly
                     variant="light"
                     className="hover:bg-gray-800 rounded-lg transition-colors relative"
+                    aria-label="View notifications"
                   >
                     <Bell className="h-5 w-5 text-gray-300" />
                     <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-gray-900"></div>
@@ -7409,6 +7422,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       isIconOnly
                       className="hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
                       onPress={loadRealData}
+                      aria-label="Refresh data"
                     >
                       <RotateCcw className="h-3 w-3" />
                     </Button>
