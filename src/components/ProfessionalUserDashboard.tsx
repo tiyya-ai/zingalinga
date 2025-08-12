@@ -2957,6 +2957,29 @@ export default function ProfessionalUserDashboard({
                     );
                   }
                   
+                  // Google Drive videos
+                  if (videoUrl.includes('drive.google.com')) {
+                    let embedUrl = videoUrl;
+                    
+                    // Convert Google Drive URLs to embed format
+                    const fileIdMatch = videoUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                    if (fileIdMatch) {
+                      const fileId = fileIdMatch[1];
+                      embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+                    }
+                    
+                    return (
+                      <iframe
+                        src={embedUrl}
+                        className="w-full aspect-video rounded-none sm:rounded-lg"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        title={selectedVideo.title}
+                      />
+                    );
+                  }
+                  
                   // Vimeo videos
                   if (videoUrl.includes('vimeo.com')) {
                     let embedUrl = videoUrl;
