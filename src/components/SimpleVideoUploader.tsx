@@ -106,7 +106,7 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         onVideoUploaded({
           title: title || 'Vimeo Video',
           videoUrl: url,
-          duration: 'Vimeo Video',
+          duration: '5:00',
           thumbnail: `https://vumbnail.com/${vimeoId}.jpg`
         });
       } else if (url.match(/\.(mp4|webm|ogg)$/i)) {
@@ -180,7 +180,7 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
       videoDuration = videoInfo.duration;
     } else if (vimeoId) {
       videoTitle = videoTitle || 'Vimeo Video';
-      videoDuration = 'Vimeo Video';
+      videoDuration = '5:00';
     } else if (videoUrl.match(/\.(mp4|webm|ogg)$/i)) {
       videoTitle = videoTitle || 'Video';
       // Try to get duration from video element
@@ -258,16 +258,6 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         )}
         <div className="flex justify-between items-center">
           <p className="text-xs text-gray-500">Supports YouTube, Vimeo, and direct video links</p>
-          {videoUrl.trim() && (
-            <Button
-              size="sm"
-              color="primary"
-              onPress={handleUrlSubmit}
-              className="ml-2"
-            >
-              Add Video
-            </Button>
-          )}
         </div>
       </div>
     </div>

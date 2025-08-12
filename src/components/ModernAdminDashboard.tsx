@@ -154,8 +154,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('');
+
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
   
   // Generate real notifications
@@ -1830,9 +1829,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const handleSaveVideo = async () => {
     try {
-      setIsLoading(true);
-      setLoadingMessage(editingVideo ? 'Updating video...' : 'Creating video...');
-      
       console.log('🎬 Starting video save process:', { 
         editing: !!editingVideo, 
         title: videoForm.title, 
@@ -1844,19 +1840,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       if (!videoForm.title.trim()) {
         setToast({message: 'Please enter a video title', type: 'error'});
         setTimeout(() => setToast(null), 3000);
-        setIsLoading(false);
         return;
       }
       if (!videoForm.category) {
         setToast({message: 'Please select a category', type: 'error'});
         setTimeout(() => setToast(null), 3000);
-        setIsLoading(false);
         return;
       }
       if (!videoForm.videoUrl) {
         setToast({message: 'Please provide a video URL or upload a video file', type: 'error'});
         setTimeout(() => setToast(null), 3000);
-        setIsLoading(false);
         return;
       }
       
@@ -2035,9 +2028,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       console.error('❌ Failed to save video:', error);
       setToast({message: 'Failed to save video. Please try again.', type: 'error'});
       setTimeout(() => setToast(null), 3000);
-    } finally {
-      setIsLoading(false);
-      setLoadingMessage('');
     }
   };
 
@@ -2169,7 +2159,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             onVideoUploaded={(videoData) => {
               setVideoForm({
                 ...videoForm,
-                title: videoData.title || videoForm.title,
                 videoUrl: videoData.videoUrl,
                 duration: videoData.duration,
                 thumbnail: videoData.thumbnail || videoForm.thumbnail,
@@ -2439,10 +2428,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               onPress={handleSaveVideo}
               startContent={editingVideo ? <Edit className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
               isDisabled={!videoForm.title.trim() || !videoForm.category || !videoForm.videoUrl || !videoForm.duration.trim()}
-              isLoading={isLoading}
               aria-label={editingVideo ? 'Update video' : 'Create new video'}
             >
-              {isLoading ? (editingVideo ? 'Updating...' : 'Creating...') : (editingVideo ? 'Update Video' : 'Create Video')}
+              {editingVideo ? 'Update Video' : 'Create Video'}
             </Button>
             
             {editingVideo && (
@@ -3615,8 +3603,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const handleUpdateProfile = async () => {
     try {
-      setIsLoading(true);
-      setLoadingMessage('Updating profile...');
+      console.log('🔄 Starting profile update...', { 
+        name: profileForm.name, 
+        email: profileForm.email,
+        userId: user?.id,
+        hasNewPassword: !!profileForm.newPassword
+      });
       
       // Basic validation
       if (!profileForm.name.trim() || !profileForm.email.trim()) {
@@ -3644,31 +3636,37 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         }
       }
       
-      // Update user profile
-      const updateData: any = {
-        name: profileForm.name,
-        email: profileForm.email
-      };
-      
-      if (profileForm.newPassword) {
-        updateData.password = profileForm.newPassword;
+      // Ensure we have a valid user ID
+      if (!user?.id) {
+        setToast({message: 'User ID not found. Please log in again.', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
+        return;
       }
       
+      // Update user profile
+      const updateData: any = {
+        name: profileForm.name.trim(),
+        email: profileForm.email.trim(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      if (profileForm.newPassword && profileForm.newPassword.trim()) {
+        updateData.password = profileForm.newPassword.trim();
+      }
+      
+      console.log('💾 Updating user with data:', updateData);
+      
       const success = await vpsDataStore.updateUser(user.id, updateData);
+      
+      console.log('✅ Update result:', success);
+      
       if (success) {
-        // Update the local user object to reflect changes in UI immediately
-        const updatedUser = { ...user, ...updateData };
-        
-        // If there's a callback to update the parent component's user state, call it
-        if (onNavigate) {
-          // Force a re-render by navigating to the same section
-          onNavigate('admin-profile');
-        }
-        
+        // Show success message immediately
+        alert('✅ Profile updated successfully!');
         setToast({message: 'Profile updated successfully!', type: 'success'});
-        setTimeout(() => setToast(null), 3000);
+        setTimeout(() => setToast(null), 5000);
         
-        // Reset password fields
+        // Reset password fields only
         setProfileForm(prev => ({
           ...prev,
           currentPassword: '',
@@ -3676,19 +3674,22 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           confirmPassword: ''
         }));
         
-        // Reload data to ensure all components get the updated user info
+        // Force reload of user data
+        console.log('🔄 Reloading user data...');
         await loadRealData();
+        
+        console.log('🎉 Profile update completed successfully!');
       } else {
-        setToast({message: 'Failed to update profile. Please try again.', type: 'error'});
+        console.error('❌ Profile update failed');
+        alert('❌ Failed to update profile. Please check your information and try again.');
+        setToast({message: 'Failed to update profile. Please check your information and try again.', type: 'error'});
         setTimeout(() => setToast(null), 3000);
       }
     } catch (error) {
-      console.error('Profile update error:', error);
-      setToast({message: 'Failed to update profile. Please try again.', type: 'error'});
+      console.error('❌ Profile update error:', error);
+      alert('❌ An error occurred while updating your profile. Please try again.');
+      setToast({message: 'An error occurred while updating your profile. Please try again.', type: 'error'});
       setTimeout(() => setToast(null), 3000);
-    } finally {
-      setIsLoading(false);
-      setLoadingMessage('');
     }
   };
 
@@ -3939,21 +3940,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               />
             </div>
             <Button 
-              className="w-full bg-blue-600 text-white hover:bg-blue-700"
-              onPress={async () => {
-                if (!profileForm.currentPassword || !profileForm.newPassword || !profileForm.confirmPassword) {
-                  setToast({message: 'Please fill in all password fields', type: 'error'});
-                  setTimeout(() => setToast(null), 3000);
-                  return;
-                }
-                if (profileForm.newPassword !== profileForm.confirmPassword) {
-                  setToast({message: 'New passwords do not match', type: 'error'});
-                  setTimeout(() => setToast(null), 3000);
-                  return;
-                }
-                await handleUpdateProfile();
-              }}
-              isLoading={isLoading}
+              className="w-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              onPress={handleUpdateProfile}
+              isDisabled={!profileForm.currentPassword || !profileForm.newPassword || !profileForm.confirmPassword || profileForm.newPassword !== profileForm.confirmPassword}
             >
               Update Password
             </Button>
@@ -3981,16 +3970,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           Reset
         </Button>
         <Button 
-          className="bg-green-600 text-white hover:bg-green-700"
-          onPress={async () => {
-            if (!profileForm.name.trim() || !profileForm.email.trim()) {
-              setToast({message: 'Name and email are required', type: 'error'});
-              setTimeout(() => setToast(null), 3000);
-              return;
-            }
-            await handleUpdateProfile();
-          }}
-          isLoading={isLoading}
+          className="bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          onPress={handleUpdateProfile}
+          isDisabled={!profileForm.name.trim() || !profileForm.email.trim()}
           startContent={<CheckCircle className="h-4 w-4" />}
         >
           Save Profile Changes
