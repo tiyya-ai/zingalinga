@@ -450,6 +450,11 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
             onSelectStart={(e) => e.preventDefault()}
             style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
           >
+            {/* Overlay to block Google Drive buttons */}
+            <div 
+              className="absolute top-0 right-0 w-24 h-12 bg-black/80 z-10"
+              style={{ pointerEvents: 'none' }}
+            />
             <iframe
               ref={iframeRef}
               src={getEmbedUrl()}
@@ -463,7 +468,26 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
                 setError('Failed to load embedded video');
                 setIsLoading(false);
               }}
+              style={{
+                pointerEvents: 'auto'
+              }}
             />
+            {/* Overlay to hide Google Drive UI elements */}
+            <style jsx>{`
+              iframe {
+                position: relative;
+              }
+              iframe::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 100px;
+                height: 50px;
+                background: black;
+                z-index: 10;
+              }
+            `}</style>
           </div>
         )}
 
@@ -699,6 +723,12 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
         footer: "border-t border-white/20"
       }}
     >
+      <div 
+        onContextMenu={(e) => e.preventDefault()}
+        onSelectStart={(e) => e.preventDefault()}
+        onDragStart={(e) => e.preventDefault()}
+        style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+      >
       <ModalContent>
         <ModalHeader className="text-white">
           <div className="flex items-center justify-between w-full">
@@ -799,6 +829,7 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
           )}
         </ModalFooter>
       </ModalContent>
+      </div>
     </Modal>
   );
 };
