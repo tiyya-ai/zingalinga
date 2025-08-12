@@ -10,7 +10,6 @@ import { ClientOnly } from './ClientOnly';
 import dynamic from 'next/dynamic';
 
 import { VideoCard } from './VideoCard';
-import ProfileAvatar from './ProfileAvatar';
 
 
 
@@ -541,15 +540,29 @@ export default function ProfessionalUserDashboard({
             {/* User Info & Actions */}
             <div className="flex items-center space-x-2 sm:space-x-4">
 
-              <div className="relative bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-all duration-200 backdrop-blur-sm border border-white/20">
-                <ProfileAvatar 
-                  user={user || { id: '', name: 'User', email: '', role: 'user', purchasedModules: [], createdAt: '', isOnline: true }}
-                  size="sm"
-                  showOnlineStatus={true}
-                  onClick={() => setActiveTab('profile')}
-                  className="border-2 border-yellow-400/50"
-                />
-              </div>
+              <button
+                onClick={() => setActiveTab('profile')}
+                className="relative bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-all duration-200 backdrop-blur-sm border border-white/20"
+              >
+                <div className="w-6 h-6 rounded-full overflow-hidden border-2 border-yellow-400/50">
+                  {user?.avatar && user.avatar.trim() ? (
+                    <img 
+                      src={user.avatar} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover" 
+                      key={user.avatar}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div className="w-full h-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center" style={{ display: user?.avatar && user.avatar.trim() ? 'none' : 'flex' }}>
+                    <span className="text-purple-900 font-bold text-xs">{(user?.name || 'U').charAt(0).toUpperCase()}</span>
+                  </div>
+                </div>
+              </button>
               
               <button 
                 onClick={() => setActiveTab('cart')}

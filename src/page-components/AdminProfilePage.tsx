@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, User, Mail, Shield, Settings, Upload, Download, Camera } from 'lucide-react';
 import Header from '../components/Header';
 import { Footer } from '../components/footer';
@@ -17,12 +17,39 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
   
   // Form state for editable fields
   const [formData, setFormData] = useState({
-    fullName: 'Admin User',
-    email: 'admin@zingalinga.com',
+    fullName: '',
+    email: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+  
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Load admin data on component mount
+  useEffect(() => {
+    loadAdminData();
+  }, []);
+  
+  const loadAdminData = async () => {
+    try {
+      const response = await fetch('/api/data');
+      const data = await response.json();
+      const adminUser = data.users?.find((user: any) => user.role === 'admin');
+      
+      if (adminUser) {
+        setFormData(prev => ({
+          ...prev,
+          fullName: adminUser.name || '',
+          email: adminUser.email || ''
+        }));
+      }
+    } catch (error) {
+      alert('❌ Failed to load admin data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -103,20 +130,50 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
         }
       }
       
-      // Simulate API call to save profile
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Load current data
+      const response = await fetch('/api/data');
+      const data = await response.json();
       
-      // Clear password fields after successful save
-      setFormData(prev => ({
-        ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      }));
+      // Find and update admin user
+      const adminUserIndex = data.users?.findIndex((user: any) => user.role === 'admin');
+      if (adminUserIndex === -1) {
+        alert('❌ Admin user not found!');
+        return;
+      }
       
-      alert('✅ Profile updated successfully!');
+      // Update admin user data
+      data.users[adminUserIndex] = {
+        ...data.users[adminUserIndex],
+        name: formData.fullName.trim(),
+        email: formData.email.trim(),
+        ...(formData.newPassword && { password: formData.newPassword })
+      };
+      
+      // Save updated data to VPS
+      const saveResponse = await fetch('/api/data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      const saveResult = await saveResponse.json();
+      
+      if (saveResult.success) {
+        // Clear password fields after successful save
+        setFormData(prev => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        }));
+        
+        alert('✅ Profile updated successfully and saved to VPS!');
+      } else {
+        throw new Error(saveResult.error || 'Failed to save data');
+      }
     } catch (error) {
-      console.error('Error saving profile:', error);
       alert('❌ Failed to save profile. Please try again.');
     } finally {
       setIsSaving(false);
@@ -188,6 +245,12 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="bg-white rounded-2xl shadow-xl p-8">
               <h2 className="text-2xl font-mali font-bold text-brand-green mb-6">Account Information</h2>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-8 h-8 border-4 border-brand-green border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-3 text-gray-600">Loading admin data...</span>
+                </div>
+              ) : (
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
@@ -217,6 +280,7 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
                   </div>
                 </div>
               </div>
+              )}
             </div>
 
             <div className="bg-white rounded-2xl shadow-xl p-8">

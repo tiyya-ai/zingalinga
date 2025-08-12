@@ -45,7 +45,6 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { vpsDataStore } from '../utils/vpsDataStore';
-import ProfileAvatar from './ProfileAvatar';
 
 interface UserManagementProps {
   users: any[];
@@ -346,22 +345,29 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers,
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center space-x-3">
-                      <ProfileAvatar 
-                        user={user} 
-                        size="md" 
-                        showOnlineStatus={true}
-                        onClick={() => {
-                          // Navigate to user profile or open user details modal
-                          console.log(`Viewing profile for user: ${user.name}`);
-                          // You can add navigation logic here
-                        }}
-                      />
+                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center overflow-hidden">
+                        {user.avatar && user.avatar.trim() ? (
+                          <img 
+                            src={user.avatar} 
+                            alt={user.name} 
+                            className="w-full h-full object-cover" 
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <span 
+                          className="text-white text-sm font-medium" 
+                          style={{ display: user.avatar && user.avatar.trim() ? 'none' : 'flex' }}
+                        >
+                          {user.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
                       <div>
                         <p className="font-medium text-gray-900">{user.name}</p>
                         <p className="text-sm text-gray-500">ID: {user.id.slice(-6)}</p>
-                        {user.isOnline && (
-                          <p className="text-xs text-green-600 font-medium">● Online</p>
-                        )}
                       </div>
                     </div>
                   </TableCell>

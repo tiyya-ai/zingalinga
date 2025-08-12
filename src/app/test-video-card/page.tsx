@@ -34,11 +34,11 @@ export default function TestVideoCardPage() {
   };
 
   const handlePlay = (content: Module) => {
-    console.log('Playing:', content.title);
+    // Play video logic
   };
 
   const handleAddToCart = (contentId: string) => {
-    console.log('Adding to cart:', contentId);
+    // Add to cart logic
   };
 
   return (
