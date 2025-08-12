@@ -178,7 +178,7 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
     } finally {
       setIsSaving(false);
     }
-  };}
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 font-mali">
