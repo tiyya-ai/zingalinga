@@ -7110,25 +7110,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
 
         </CardHeader>
-        <CardBody>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <p className="text-sm font-medium text-gray-700">Platform Version</p>
-              <p className="text-lg font-semibold text-gray-900">v2.1.0</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700">Database Status</p>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <p className="text-lg font-semibold text-green-600">Connected</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700">Last Backup</p>
-              <p className="text-lg font-semibold text-gray-900">{new Date().toLocaleDateString()}</p>
-            </div>
-          </div>
-        </CardBody>
       </Card>
 
       {/* Action Buttons */}
