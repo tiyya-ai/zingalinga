@@ -7108,10 +7108,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         </Card>
       </div>
 
-      {/* System Information */}
-      <Card className="bg-white border border-gray-200">
-        <CardHeader className="border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">System Information</h3>
+
         </CardHeader>
         <CardBody>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
