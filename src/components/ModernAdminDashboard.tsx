@@ -7109,8 +7109,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       </div>
 
 
-        </CardHeader>
-      </Card>
+
 
       {/* Action Buttons */}
       <div className="flex justify-end space-x-3">
