@@ -205,13 +205,15 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
   };
 
   const handleLogout = () => {
+    // Clear session immediately
     authManager.logout();
+    
+    // Update state immediately
     setUser(null);
     setCurrentSession(null);
-    vpsDataStore.setCurrentUser(null);
-    // Redirect to home page after logout
-    window.history.pushState({}, '', '/');
-    setCurrentPage('home');
+    
+    // Redirect immediately without waiting
+    window.location.href = '/';
   };
 
   const handlePurchase = async (moduleIds: string[]) => {
