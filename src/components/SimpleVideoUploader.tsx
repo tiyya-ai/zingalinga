@@ -299,13 +299,22 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
           <div className="space-y-4">
             <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
               {urlPreview.includes('youtube.com/embed') || urlPreview.includes('player.vimeo.com') || urlPreview.includes('drive.google.com') ? (
-                <iframe 
-                  src={urlPreview}
-                  className="w-full h-full"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
+                <div className="relative w-full h-full">
+                  <iframe 
+                    src={urlPreview}
+                    className="w-full h-full"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                  {/* Hide Google Drive buttons in admin preview */}
+                  {urlPreview.includes('drive.google.com') && (
+                    <>
+                      <div className="absolute top-0 right-0 w-32 h-16 bg-black z-20" style={{ pointerEvents: 'none' }} />
+                      <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-black/60 to-transparent z-10" style={{ pointerEvents: 'none' }} />
+                    </>
+                  )}
+                </div>
               ) : (
                 <video 
                   ref={videoRef}

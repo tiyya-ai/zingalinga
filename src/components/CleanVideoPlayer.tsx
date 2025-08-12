@@ -452,7 +452,11 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
           >
             {/* Overlay to block Google Drive buttons */}
             <div 
-              className="absolute top-0 right-0 w-24 h-12 bg-black/80 z-10"
+              className="absolute top-0 right-0 w-32 h-16 bg-black z-20"
+              style={{ pointerEvents: 'none' }}
+            />
+            <div 
+              className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-black/60 to-transparent z-10"
               style={{ pointerEvents: 'none' }}
             />
             <iframe
