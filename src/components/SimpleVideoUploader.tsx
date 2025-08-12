@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Input, Button } from '@nextui-org/react';
 import { Link } from 'lucide-react';
+import { convertGoogleDriveUrl, isGoogleDriveUrl } from '../utils/googleDriveUtils';
 
 interface SimpleVideoUploaderProps {
   onVideoUploaded: (videoData: {
@@ -89,9 +90,21 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
     setVideoUrl(url);
     if (url.trim()) {
       console.log('Processing URL:', url);
-      const youtubeId = getYouTubeVideoId(url);
-      const vimeoId = getVimeoVideoId(url);
-      const googleDriveId = getGoogleDriveVideoId(url);
+      
+      // Convert Google Drive URLs to direct links
+      let processedUrl = url;
+      if (isGoogleDriveUrl(url)) {
+        const driveResult = convertGoogleDriveUrl(url);
+        console.log('Google Drive conversion:', driveResult);
+        if (driveResult.directUrl !== url) {
+          processedUrl = driveResult.directUrl;
+          console.log('Converted to direct URL:', processedUrl);
+        }
+      }
+      
+      const youtubeId = getYouTubeVideoId(processedUrl);
+      const vimeoId = getVimeoVideoId(processedUrl);
+      const googleDriveId = getGoogleDriveVideoId(processedUrl);
       console.log('Google Drive ID:', googleDriveId);
       
       if (youtubeId) {
@@ -104,7 +117,7 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         // Auto-populate video data for YouTube
         onVideoUploaded({
           title: title || videoInfo.title,
-          videoUrl: url,
+          videoUrl: processedUrl,
           duration: videoInfo.duration,
           thumbnail: `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`
         });
@@ -114,7 +127,7 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         // Auto-populate video data for Vimeo
         onVideoUploaded({
           title: title || 'Vimeo Video',
-          videoUrl: url,
+          videoUrl: processedUrl,
           duration: '5:00',
           thumbnail: `https://vumbnail.com/${vimeoId}.jpg`
         });
@@ -141,7 +154,7 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
             setUrlThumbnail(defaultThumbnail);
             onVideoUploaded({
               title: title || 'Google Drive Video',
-              videoUrl: url,
+              videoUrl: processedUrl,
               duration: '5:00',
               thumbnail: defaultThumbnail
             });
@@ -155,7 +168,7 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
             setUrlThumbnail(thumbnailUrls[index]);
             onVideoUploaded({
               title: title || 'Google Drive Video',
-              videoUrl: url,
+              videoUrl: processedUrl,
               duration: '5:00',
               thumbnail: thumbnailUrls[index]
             });
@@ -181,14 +194,14 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
           
           onVideoUploaded({
             title: title || 'Video',
-            videoUrl: url,
+            videoUrl: processedUrl,
             duration: formattedDuration
           });
         };
         video.onerror = () => {
           onVideoUploaded({
             title: title || 'Video',
-            videoUrl: url,
+            videoUrl: processedUrl,
             duration: '5:00'
           });
         };
@@ -199,7 +212,7 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         // For other URLs, set a default duration
         onVideoUploaded({
           title: title || 'Video',
-          videoUrl: url,
+          videoUrl: processedUrl,
           duration: '5:00'
         });
       }

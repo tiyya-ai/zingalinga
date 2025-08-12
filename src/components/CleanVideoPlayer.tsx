@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { User, Module, Purchase } from '../types';
 import { checkVideoAccess, getVideoUrl } from '../utils/videoAccess';
+import { convertGoogleDriveUrl, isGoogleDriveUrl } from '../utils/googleDriveUtils';
 
 interface CleanVideoPlayerProps {
   isOpen: boolean;
@@ -99,13 +100,12 @@ const getVimeoEmbedUrl = (url: string) => {
 
 // Helper function to get Google Drive embed URL
 const getGoogleDriveEmbedUrl = (url: string) => {
-  const regExp = /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)(?:\/view|\/edit)?/;
-  const match = url.match(regExp);
-  
-  if (match && match[1]) {
-    return `https://drive.google.com/file/d/${match[1]}/preview`;
+  if (isGoogleDriveUrl(url)) {
+    const result = convertGoogleDriveUrl(url);
+    if (result.fileId) {
+      return `https://drive.google.com/file/d/${result.fileId}/preview`;
+    }
   }
-  
   return url;
 };
 
