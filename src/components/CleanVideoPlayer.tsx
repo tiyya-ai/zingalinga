@@ -241,6 +241,36 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
     }
   }, [isOpen]);
 
+  // Disable developer tools and keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
+        (e.ctrlKey && e.key === 'u')
+      ) {
+        e.preventDefault();
+        return false;
+      }
+    };
+
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      return false;
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('contextmenu', handleContextMenu);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, [isOpen]);
+
   const togglePlay = () => {
     if (!accessResult.hasAccess && !accessResult.isDemo) return;
     
@@ -385,20 +415,41 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
       >
         {/* Video Content */}
         {videoType === 'direct' ? (
-          <video
-            ref={videoRef}
-            className="w-full h-64 md:h-96 object-cover"
-            poster={module.thumbnail}
-            preload="metadata"
-            onClick={togglePlay}
-            src={videoUrl}
-            crossOrigin="anonymous"
+          <div 
+            className="relative w-full h-64 md:h-96"
+            onContextMenu={(e) => e.preventDefault()}
+            onSelectStart={(e) => e.preventDefault()}
+            onDragStart={(e) => e.preventDefault()}
+            style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
           >
-            <source src={videoUrl} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              poster={module.thumbnail}
+              preload="metadata"
+              onClick={togglePlay}
+              src={videoUrl}
+              crossOrigin="anonymous"
+              controlsList="nodownload nofullscreen noremoteplayback"
+              disablePictureInPicture
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              <source src={videoUrl} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+            {/* Overlay to prevent right-click */}
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{ zIndex: 1 }}
+            />
+          </div>
         ) : (
-          <div className="relative w-full h-64 md:h-96">
+          <div 
+            className="relative w-full h-64 md:h-96"
+            onContextMenu={(e) => e.preventDefault()}
+            onSelectStart={(e) => e.preventDefault()}
+            style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+          >
             <iframe
               ref={iframeRef}
               src={getEmbedUrl()}
