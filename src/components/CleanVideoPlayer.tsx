@@ -450,8 +450,8 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
                 }}
               />
               <div className="flex justify-between text-white text-sm mt-1">
-                <span>{formatTime(currentTime)}</span>
-                <span>{formatTime(duration)}</span>
+                <span>{formatTime(currentTime || 0)}</span>
+                <span>{formatTime(duration || 0)}</span>
               </div>
             </div>
 
