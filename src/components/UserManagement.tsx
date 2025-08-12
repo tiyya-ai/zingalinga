@@ -127,18 +127,38 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers,
     setActiveSection('add-user');
   };
 
+  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium transition-all duration-300 transform translate-x-full ${
+      type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    }`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    setTimeout(() => {
+      notification.style.transform = 'translateX(full)';
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 300);
+    }, 3000);
+  };
+
   const handleSaveUser = async () => {
     try {
       if (!userForm.name.trim()) {
-        alert('Please enter a name');
+        showNotification('Please enter a name', 'error');
         return;
       }
       if (!userForm.email.trim()) {
-        alert('Please enter an email');
+        showNotification('Please enter an email', 'error');
         return;
       }
       if (!editingUser && !userForm.password.trim()) {
-        alert('Please enter a password for new users');
+        showNotification('Please enter a password for new users', 'error');
         return;
       }
       
@@ -163,13 +183,13 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers,
           const success = await vpsDataStore.saveData(data);
           if (success) {
             setUsers(users.map(u => u.id === editingUser.id ? updatedUser : u));
-            alert('✅ User updated successfully!');
+            showNotification('User updated successfully!');
           } else {
-            alert('❌ Failed to update user.');
+            showNotification('Failed to update user', 'error');
             return;
           }
         } else {
-          alert('❌ User not found.');
+          showNotification('User not found', 'error');
           return;
         }
       } else {
@@ -192,9 +212,9 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers,
         const success = await vpsDataStore.addUser(newUser);
         if (success) {
           setUsers([...users, newUser]);
-          alert('✅ User created successfully!');
+          showNotification('User created successfully!');
         } else {
-          alert('❌ Failed to create user.');
+          showNotification('Failed to create user', 'error');
           return;
         }
       }
@@ -215,7 +235,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers,
       });
     } catch (error) {
       console.error('❌ Failed to save user:', error);
-      alert('Failed to save user. Please try again.');
+      showNotification('Failed to save user. Please try again.', 'error');
     }
   };
 
@@ -224,9 +244,9 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers,
       const success = await vpsDataStore.deleteUser(userId);
       if (success) {
         setUsers(users.filter(u => u.id !== userId));
-        alert('✅ User deleted successfully!');
+        showNotification('User deleted successfully!');
       } else {
-        alert('❌ Failed to delete user.');
+        showNotification('Failed to delete user', 'error');
       }
     }
   };

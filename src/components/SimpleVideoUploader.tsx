@@ -62,6 +62,12 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
     return match ? match[1] : null;
   };
 
+  const getGoogleDriveVideoId = (url: string) => {
+    const regex = /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)(?:\/view|\/edit)?/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  };
+
   const fetchYouTubeVideoInfo = async (videoId: string) => {
     try {
       // Try to get video info from YouTube oEmbed API
@@ -70,20 +76,23 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         const data = await response.json();
         return {
           title: data.title || 'YouTube Video',
-          duration: 'YouTube Video' // YouTube API requires API key for duration
+          duration: '5:00' // Default duration since YouTube API requires API key for actual duration
         };
       }
     } catch (error) {
       console.log('Could not fetch YouTube video info:', error);
     }
-    return { title: 'YouTube Video', duration: 'YouTube Video' };
+    return { title: 'YouTube Video', duration: '5:00' };
   };
 
   const handleUrlChange = async (url: string) => {
     setVideoUrl(url);
     if (url.trim()) {
+      console.log('Processing URL:', url);
       const youtubeId = getYouTubeVideoId(url);
       const vimeoId = getVimeoVideoId(url);
+      const googleDriveId = getGoogleDriveVideoId(url);
+      console.log('Google Drive ID:', googleDriveId);
       
       if (youtubeId) {
         setUrlPreview(`https://www.youtube.com/embed/${youtubeId}`);
@@ -109,6 +118,56 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
           duration: '5:00',
           thumbnail: `https://vumbnail.com/${vimeoId}.jpg`
         });
+      } else if (googleDriveId) {
+        console.log('Setting Google Drive preview for ID:', googleDriveId);
+        const previewUrl = `https://drive.google.com/file/d/${googleDriveId}/preview`;
+        console.log('Preview URL:', previewUrl);
+        setUrlPreview(previewUrl);
+        
+        // Try multiple Google Drive thumbnail approaches
+        const thumbnailUrls = [
+          `https://drive.google.com/thumbnail?id=${googleDriveId}&sz=w480-h270`,
+          `https://lh3.googleusercontent.com/d/${googleDriveId}=w480-h270`,
+          `https://drive.google.com/thumbnail?id=${googleDriveId}`
+        ];
+        
+        let thumbnailFound = false;
+        
+        const tryThumbnail = (index = 0) => {
+          if (index >= thumbnailUrls.length || thumbnailFound) {
+            // All failed, use default
+            console.log('All Google Drive thumbnail methods failed, using default');
+            const defaultThumbnail = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGY4NWY0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Hb29nbGUgRHJpdmUgVmlkZW88L3RleHQ+PC9zdmc+';
+            setUrlThumbnail(defaultThumbnail);
+            onVideoUploaded({
+              title: title || 'Google Drive Video',
+              videoUrl: url,
+              duration: '5:00',
+              thumbnail: defaultThumbnail
+            });
+            return;
+          }
+          
+          const img = new Image();
+          img.onload = () => {
+            console.log(`Google Drive thumbnail loaded successfully with method ${index + 1}:`, thumbnailUrls[index]);
+            thumbnailFound = true;
+            setUrlThumbnail(thumbnailUrls[index]);
+            onVideoUploaded({
+              title: title || 'Google Drive Video',
+              videoUrl: url,
+              duration: '5:00',
+              thumbnail: thumbnailUrls[index]
+            });
+          };
+          img.onerror = () => {
+            console.log(`Thumbnail method ${index + 1} failed:`, thumbnailUrls[index]);
+            tryThumbnail(index + 1);
+          };
+          img.src = thumbnailUrls[index];
+        };
+        
+        tryThumbnail();
       } else if (url.match(/\.(mp4|webm|ogg)$/i)) {
         setUrlPreview(url);
         // For direct video files, try to get duration from video element
@@ -130,13 +189,19 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
           onVideoUploaded({
             title: title || 'Video',
             videoUrl: url,
-            duration: 'Unknown'
+            duration: '5:00'
           });
         };
         video.src = url;
       } else {
         setUrlPreview(null);
         setUrlThumbnail(null);
+        // For other URLs, set a default duration
+        onVideoUploaded({
+          title: title || 'Video',
+          videoUrl: url,
+          duration: '5:00'
+        });
       }
     } else {
       setUrlPreview(null);
@@ -169,7 +234,7 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
     if (!videoUrl.trim()) return;
     
     let videoTitle = title.trim();
-    let videoDuration = 'Unknown';
+    let videoDuration = '5:00';
     
     const youtubeId = getYouTubeVideoId(videoUrl);
     const vimeoId = getVimeoVideoId(videoUrl);
@@ -195,6 +260,7 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
       video.src = videoUrl;
     } else {
       videoTitle = videoTitle || 'Video';
+      videoDuration = '5:00';
     }
     
     onVideoUploaded({
@@ -232,7 +298,7 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         {urlPreview && (
           <div className="space-y-4">
             <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-              {urlPreview.includes('youtube.com/embed') || urlPreview.includes('player.vimeo.com') ? (
+              {urlPreview.includes('youtube.com/embed') || urlPreview.includes('player.vimeo.com') || urlPreview.includes('drive.google.com') ? (
                 <iframe 
                   src={urlPreview}
                   className="w-full h-full"
@@ -257,7 +323,7 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
           </div>
         )}
         <div className="flex justify-between items-center">
-          <p className="text-xs text-gray-500">Supports YouTube, Vimeo, and direct video links</p>
+          <p className="text-xs text-gray-500">Supports YouTube, Vimeo, Google Drive, and direct video links</p>
         </div>
       </div>
     </div>

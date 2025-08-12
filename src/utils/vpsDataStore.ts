@@ -76,16 +76,6 @@ class VPSDataStore {
     return {
       users: [
         {
-          id: 'admin_001',
-          email: 'admin@zingalinga.com',
-          name: 'Admin User',
-          role: 'admin' as 'user' | 'admin',
-          purchasedModules: [],
-          totalSpent: 0,
-          createdAt: new Date().toISOString(),
-          lastLogin: new Date().toISOString()
-        },
-        {
           id: 'user_001',
           email: 'test@example.com',
           name: 'Test User',

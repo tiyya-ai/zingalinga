@@ -75,6 +75,8 @@ export default function DashboardPage() {
 
   const handleLogout = () => {
     authManager.logout();
+    // Clear any intervals or timeouts
+    vpsDataStore.clearMemoryCache();
     window.location.href = '/';
   };
 

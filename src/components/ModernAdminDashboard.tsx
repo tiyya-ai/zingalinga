@@ -295,14 +295,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     };
   }, [videoForm.videoUrl, videoForm.thumbnail]);
 
-  const loadRealData = async () => {
+  const loadRealData = async (skipCache = false) => {
     
     try {
       setDataLoaded(false);
       
-      // Clear ALL caches to force fresh data load
-      vpsDataStore.clearMemoryCache();
-      localStorage.removeItem('zinga-linga-app-data-cache');
+      // Only clear cache if explicitly requested
+      if (skipCache) {
+        vpsDataStore.clearMemoryCache();
+        localStorage.removeItem('zinga-linga-app-data-cache');
+      }
       
       // Load real data from vpsDataStore with force refresh
       const data = await vpsDataStore.loadData(true);

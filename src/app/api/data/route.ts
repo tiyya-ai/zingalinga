@@ -19,32 +19,10 @@ function getDefaultData() {
   return {
     users: [
       {
-        id: 'admin_001',
-        email: 'admin@zingalinga.com',
-        password: process.env.DEFAULT_ADMIN_PASSWORD || 'change-me-admin',
-        name: 'Admin User',
-        role: 'admin',
-        purchasedModules: [],
-        totalSpent: 0,
-        createdAt: staticDate,
-        lastLogin: staticDate
-      },
-      {
         id: 'user_001',
         email: 'test@example.com',
         password: process.env.DEFAULT_USER_PASSWORD || 'change-me-user',
         name: 'Test User',
-        role: 'user',
-        purchasedModules: [],
-        totalSpent: 0,
-        createdAt: staticDate,
-        lastLogin: staticDate
-      },
-      {
-        id: 'user-1',
-        email: 'user@example.com',
-        password: 'user123',
-        name: 'User',
         role: 'user',
         purchasedModules: [],
         totalSpent: 0,

@@ -59,6 +59,11 @@ const getVideoType = (url: string) => {
     return 'vimeo';
   }
   
+  // Google Drive detection
+  if (url.includes('drive.google.com')) {
+    return 'googledrive';
+  }
+  
   // Direct video file detection
   if (url.match(/\.(mp4|webm|ogg|mov|avi|mkv)(\?.*)?$/i)) {
     return 'direct';
@@ -87,6 +92,18 @@ const getVimeoEmbedUrl = (url: string) => {
   
   if (match && match[1]) {
     return `https://player.vimeo.com/video/${match[1]}?title=0&byline=0&portrait=0`;
+  }
+  
+  return url;
+};
+
+// Helper function to get Google Drive embed URL
+const getGoogleDriveEmbedUrl = (url: string) => {
+  const regExp = /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)(?:\/view|\/edit)?/;
+  const match = url.match(regExp);
+  
+  if (match && match[1]) {
+    return `https://drive.google.com/file/d/${match[1]}/preview`;
   }
   
   return url;
@@ -153,6 +170,8 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
         return getYouTubeEmbedUrl(videoUrl);
       case 'vimeo':
         return getVimeoEmbedUrl(videoUrl);
+      case 'googledrive':
+        return getGoogleDriveEmbedUrl(videoUrl);
       case 'iframe':
         return videoUrl;
       default:
@@ -449,10 +468,7 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
                   handleSeek(newTime);
                 }}
               />
-              <div className="flex justify-between text-white text-sm mt-1">
-                <span>{formatTime(currentTime || 0)}</span>
-                <span>{formatTime(duration || 0)}</span>
-              </div>
+
             </div>
 
             {/* Control Buttons */}
@@ -577,10 +593,7 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
                   </div>
                 )}
                 
-                {/* Duration */}
-                <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 py-0.5 rounded">
-                  {relatedModule.duration || relatedModule.estimatedDuration || '5:00'}
-                </div>
+
 
                 {/* Status indicator */}
                 {isPurchased && (

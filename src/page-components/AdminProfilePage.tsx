@@ -25,11 +25,26 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
   });
   
   const [isLoading, setIsLoading] = useState(true);
+  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   
   // Load admin data on component mount
   useEffect(() => {
     loadAdminData();
   }, []);
+  
+  // Auto-hide notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+  
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+  };
   
   const loadAdminData = async () => {
     try {
@@ -45,7 +60,7 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
         }));
       }
     } catch (error) {
-      alert('❌ Failed to load admin data');
+      showNotification('error', 'Failed to load admin data');
     } finally {
       setIsLoading(false);
     }
@@ -94,38 +109,57 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
     }));
   };
 
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = async (event?: React.MouseEvent<HTMLButtonElement>) => {
+    // Prevent any default browser behavior
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    }
+    
+    // Prevent any potential navigation
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+    
     setIsSaving(true);
+    
     try {
       // Validate required fields
       if (!formData.fullName.trim()) {
-        alert('❌ Full name is required!');
+        showNotification('error', 'Full name is required!');
+        setIsSaving(false);
         return;
       }
       if (!formData.email.trim()) {
-        alert('❌ Email is required!');
+        showNotification('error', 'Email is required!');
+        setIsSaving(false);
         return;
       }
       
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email)) {
-        alert('❌ Please enter a valid email address!');
+        showNotification('error', 'Please enter a valid email address!');
+        setIsSaving(false);
         return;
       }
       
       // If changing password, validate password fields
       if (formData.newPassword || formData.confirmPassword) {
         if (!formData.currentPassword) {
-          alert('❌ Current password is required to change password!');
+          showNotification('error', 'Current password is required to change password!');
+          setIsSaving(false);
           return;
         }
         if (formData.newPassword !== formData.confirmPassword) {
-          alert('❌ New passwords do not match!');
+          showNotification('error', 'New passwords do not match!');
+          setIsSaving(false);
           return;
         }
         if (formData.newPassword.length < 6) {
-          alert('❌ New password must be at least 6 characters long!');
+          showNotification('error', 'New password must be at least 6 characters long!');
+          setIsSaving(false);
           return;
         }
       }
@@ -137,7 +171,8 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
       // Find and update admin user
       const adminUserIndex = data.users?.findIndex((user: any) => user.role === 'admin');
       if (adminUserIndex === -1) {
-        alert('❌ Admin user not found!');
+        showNotification('error', 'Admin user not found!');
+        setIsSaving(false);
         return;
       }
       
@@ -169,12 +204,12 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
           confirmPassword: ''
         }));
         
-        alert('✅ Profile updated successfully and saved to VPS!');
+        showNotification('success', 'Profile updated successfully and saved to VPS!');
       } else {
         throw new Error(saveResult.error || 'Failed to save data');
       }
     } catch (error) {
-      alert('❌ Failed to save profile. Please try again.');
+      showNotification('error', 'Failed to save profile. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -233,13 +268,6 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
             <p className="text-2xl font-mali mb-4">
               Manage your administrator account settings
             </p>
-            <button
-              onClick={handleImageDownload}
-              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg flex items-center gap-2 mx-auto transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Download Profile Image
-            </button>
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -321,22 +349,53 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
           </div>
 
           <div className="mt-8 text-center">
-            <button 
-              onClick={handleSaveProfile}
-              disabled={isSaving}
-              className={`font-mali font-bold py-4 px-12 rounded-xl transition-all duration-300 transform shadow-lg ${
-                isSaving 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-gradient-to-r from-brand-green to-brand-blue text-white hover:from-brand-green hover:to-brand-blue hover:scale-105'
-              }`}
+            <div 
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              className="inline-block"
             >
-              {isSaving ? '⏳ Saving...' : '💾 Save Changes'}
-            </button>
+              <button 
+                type="button"
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  e.stopPropagation(); 
+                  e.stopImmediatePropagation();
+                  handleSaveProfile(e); 
+                }}
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                disabled={isSaving}
+                className={`font-mali font-bold py-4 px-12 rounded-xl transition-all duration-300 transform shadow-lg ${
+                  isSaving 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-brand-green to-brand-blue text-white hover:from-brand-green hover:to-brand-blue hover:scale-105'
+                }`}
+              >
+                {isSaving ? '⏳ Saving...' : '💾 Save Changes'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
       
       <Footer onNavigate={onNavigate} />
+      
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg font-mali font-bold text-white ${
+          notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        }`}>
+          <div className="flex items-center gap-2">
+            <span>{notification.type === 'success' ? '✅' : '❌'}</span>
+            <span>{notification.message}</span>
+            <button 
+              onClick={() => setNotification(null)}
+              className="ml-2 text-white hover:text-gray-200"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
