@@ -3656,6 +3656,15 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       
       const success = await vpsDataStore.updateUser(user.id, updateData);
       if (success) {
+        // Update the local user object to reflect changes in UI immediately
+        const updatedUser = { ...user, ...updateData };
+        
+        // If there's a callback to update the parent component's user state, call it
+        if (onNavigate) {
+          // Force a re-render by navigating to the same section
+          onNavigate('admin-profile');
+        }
+        
         setToast({message: 'Profile updated successfully!', type: 'success'});
         setTimeout(() => setToast(null), 3000);
         
@@ -3666,6 +3675,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           newPassword: '',
           confirmPassword: ''
         }));
+        
+        // Reload data to ensure all components get the updated user info
+        await loadRealData();
       } else {
         setToast({message: 'Failed to update profile. Please try again.', type: 'error'});
         setTimeout(() => setToast(null), 3000);
