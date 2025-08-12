@@ -575,14 +575,7 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
                   />
                 </div>
                 
-                <Button
-                  isIconOnly
-                  variant="ghost"
-                  className="text-white"
-                  onClick={toggleFullscreen}
-                >
-                  {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
-                </Button>
+
               </div>
             </div>
           </div>
