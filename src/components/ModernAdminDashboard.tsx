@@ -2593,7 +2593,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       <Card className="bg-white border border-gray-200">
         <CardHeader className="border-b border-gray-200 p-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 w-full">
-            <h3 className="text-lg font-semibold text-gray-900">Video Library ({videos.filter(v => v.type !== 'audio' && v.category !== 'Audio Lessons' && v.category !== 'audio').length})</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Video Library ({videos.length})</h3>
             <div className="flex gap-2">
               <Input
                 placeholder="Search videos..."
@@ -4497,7 +4497,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           category: 'Audio Lessons',
           type: 'audio',
           audioUrl: audioForm.audioUrl, // Keep the actual URL (blob or regular)
-          thumbnail: audioForm.thumbnail || 'https://via.placeholder.com/300x200?text=Audio+Lesson',
+          thumbnail: audioForm.thumbnail || `https://via.placeholder.com/300x200/3b82f6/ffffff?text=Audio-${Date.now()}`,
           duration: audioForm.duration,
           tags: audioForm.tags ? audioForm.tags.split(',').map(tag => tag.trim()) : [],
           aiTags: audioForm.aiTags,
@@ -5051,7 +5051,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         price: pp1Form.price,
         category: 'PP1 Program',
         type: 'program',
-        thumbnail: pp1Form.coverImage || 'https://via.placeholder.com/300x200?text=PP1+Content',
+        thumbnail: pp1Form.coverImage || `https://via.placeholder.com/300x200/10b981/ffffff?text=PP1-${Date.now()}`,
         videoUrl: pp1Form.contentUrl,
         duration: pp1Form.duration,
         tags: pp1Form.tags ? pp1Form.tags.split(',').map(tag => tag.trim()) : [],
@@ -5363,7 +5363,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         price: pp2Form.price,
         category: 'PP2 Program',
         type: 'program',
-        thumbnail: pp2Form.coverImage || 'https://via.placeholder.com/300x200?text=PP2+Content',
+        thumbnail: pp2Form.coverImage || `https://via.placeholder.com/300x200/6366f1/ffffff?text=PP2-${Date.now()}`,
         videoUrl: pp2Form.contentUrl,
         duration: pp2Form.duration,
         tags: pp2Form.tags ? pp2Form.tags.split(',').map(tag => tag.trim()) : [],
