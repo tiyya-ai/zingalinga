@@ -166,7 +166,11 @@ export const renderAddPackage = (
   setPackageForm: (form: any) => void, 
   onSavePackage: () => void,
   setActiveSection: (section: string) => void
-) => (
+) => {
+  console.log('🎯 renderAddPackage called with onSavePackage:', typeof onSavePackage);
+  console.log('📝 Current packageForm:', packageForm);
+  
+  return (
   <div className="space-y-6">
     <PageHeader 
       title="Add New Package" 
@@ -329,7 +333,11 @@ export const renderAddPackage = (
         <div className="space-y-3">
           <Button 
             className="w-full bg-purple-600 text-white hover:bg-purple-700 h-12 text-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            onPress={onSavePackage}
+            onPress={() => {
+              console.log('🔘 Create Package button clicked!');
+              console.log('📋 Form data:', packageForm);
+              onSavePackage();
+            }}
             startContent={<Plus className="h-5 w-5" />}
             isDisabled={!packageForm.name.trim()}
           >
@@ -340,6 +348,7 @@ export const renderAddPackage = (
     </div>
   </div>
 );
+};
 
 export const renderLearningPackages = (setActiveSection: (section: string) => void) => (
   <div className="space-y-6">

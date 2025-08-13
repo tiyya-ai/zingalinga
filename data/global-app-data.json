@@ -129,51 +129,6 @@
         "advanced",
         "bb2"
       ]
-    },
-    {
-      "id": "bb2_lesson_002",
-      "title": "BB2 - Math Problem Solving",
-      "description": "Learn addition and subtraction through fun problem-solving games",
-      "price": 15.99,
-      "category": "PP2 Program",
-      "type": "video",
-      "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-      "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-      "duration": "22:20",
-      "estimatedDuration": "22:20",
-      "createdAt": "2025-01-20T10:00:00.000Z",
-      "isActive": true,
-      "isVisible": true,
-      "rating": 4.8,
-      "ageRange": "5-8 years",
-      "tags": [
-        "math",
-        "addition",
-        "subtraction",
-        "bb2"
-      ]
-    },
-    {
-      "id": "pp1_1755077255031",
-      "title": "ujj",
-      "description": "Description (HTML supported)",
-      "price": 50,
-      "category": "PP1 Program",
-      "type": "program",
-      "thumbnail": "https://via.placeholder.com/300x200?text=PP1+Content",
-      "videoUrl": "",
-      "duration": "15",
-      "tags": [],
-      "isActive": true,
-      "isVisible": true,
-      "createdAt": "2025-08-13T09:27:35.031Z",
-      "updatedAt": "2025-08-13T09:27:35.039Z",
-      "rating": 0,
-      "totalRatings": 0,
-      "features": [],
-      "fullContent": [],
-      "difficulty": "beginner",
-      "audioUrl": ""
     }
   ],
   "purchases": [
@@ -226,9 +181,9 @@
   "flaggedContent": [],
   "accessLogs": [],
   "uploadQueue": [],
-  "lastUpdated": "2025-08-13T10:31:55.717Z",
+  "lastUpdated": "2025-08-13T14:36:29.575Z",
   "lastLoaded": "2025-01-20T10:00:00.000Z",
   "packages": [],
-  "lastSaved": "2025-08-13T10:31:55.738Z",
+  "lastSaved": "2025-08-13T14:36:29.650Z",
   "savedVideos": []
 }

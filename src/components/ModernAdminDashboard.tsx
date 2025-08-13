@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
 import {
@@ -100,6 +100,7 @@ import { vpsDataStore } from '../utils/vpsDataStore';
 import { UserManagement } from './UserManagement';
 import { Module } from '../types';
 import { SuccessModal } from './SuccessModal';
+import { renderAddPackage as renderAddPackageComponent, renderAllPackages as renderAllPackagesComponent, renderLearningPackages as renderLearningPackagesComponent } from './ModernAdminDashboardPackages';
 
 const AdminSuccessModal = ({ isOpen, onClose, message }: { isOpen: boolean; onClose: () => void; message: string }) => (
   <Modal isOpen={isOpen} onClose={onClose} size="sm" backdrop="blur">
@@ -353,12 +354,14 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       const realSubscriptions = await vpsDataStore.getSubscriptions();
       const realNotifications = await vpsDataStore.getNotifications();
       const realScheduledContent = await vpsDataStore.getScheduledContent();
+      const realContentBundles = data.contentBundles || [];
       
       setCategories(realCategories);
       setComments(realComments);
       setSubscriptions(realSubscriptions);
       setNotifications(realNotifications);
       setScheduledContent(realScheduledContent);
+      setContentBundles(realContentBundles);
 
       // Set real users data
       setUsers(realUsers.map(user => ({
@@ -1562,6 +1565,19 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     coverImage: ''
   });
   const [editingPackage, setEditingPackage] = useState<any>(null);
+  
+  // Bundle form state
+  const [bundleForm, setBundleForm] = useState({
+    name: '',
+    description: '',
+    price: 0,
+    discount: 0,
+    category: 'mixed',
+    coverImage: '',
+    selectedVideos: [] as string[],
+    isActive: true
+  });
+  const [editingBundle, setEditingBundle] = useState<any>(null);
   
   // PP1 and PP2 form states
   const [pp1Form, setPP1Form] = useState({
@@ -5639,13 +5655,36 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         <Card className="bg-white border border-gray-200">
           <CardHeader><h3 className="text-lg font-semibold">Bundle Details</h3></CardHeader>
           <CardBody className="space-y-4">
-            <Input placeholder="Bundle Name" />
-            <Textarea placeholder="Bundle Description" />
+            <Input 
+              placeholder="Bundle Name" 
+              value={bundleForm.name}
+              onChange={(e) => setBundleForm({...bundleForm, name: e.target.value})}
+            />
+            <Textarea 
+              placeholder="Bundle Description" 
+              value={bundleForm.description}
+              onChange={(e) => setBundleForm({...bundleForm, description: e.target.value})}
+            />
             <div className="grid grid-cols-2 gap-4">
-              <Input type="number" placeholder="Bundle Price" startContent={<DollarSign className="h-4 w-4" />} />
-              <Input type="number" placeholder="Discount %" />
+              <Input 
+                type="number" 
+                placeholder="Bundle Price" 
+                value={bundleForm.price.toString()}
+                onChange={(e) => setBundleForm({...bundleForm, price: parseFloat(e.target.value) || 0})}
+                startContent={<DollarSign className="h-4 w-4" />} 
+              />
+              <Input 
+                type="number" 
+                placeholder="Discount %" 
+                value={bundleForm.discount.toString()}
+                onChange={(e) => setBundleForm({...bundleForm, discount: parseFloat(e.target.value) || 0})}
+              />
             </div>
-            <Select placeholder="Bundle Category">
+            <Select 
+              placeholder="Bundle Category"
+              selectedKeys={bundleForm.category ? [bundleForm.category] : []}
+              onSelectionChange={(keys) => setBundleForm({...bundleForm, category: Array.from(keys)[0] as string})}>
+
               <SelectItem key="mixed">Mixed Content</SelectItem>
               <SelectItem key="audio-only">Audio Only</SelectItem>
               <SelectItem key="video-only">Video Only</SelectItem>
@@ -5685,7 +5724,76 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 startContent={<ImageIcon className="h-4 w-4 text-blue-500" />}
               />
             </div>
-            <Button className="w-full mt-4 bg-gray-900 text-white" startContent={<Layers className="h-4 w-4" />}>Create Bundle</Button>
+            <Button 
+              className="w-full mt-4 bg-gray-900 text-white" 
+              startContent={<Layers className="h-4 w-4" />}
+              onPress={async () => {
+                // Validate form
+                if (!bundleForm.name.trim()) {
+                  setToast({message: 'Please enter a bundle name', type: 'error'});
+                  setTimeout(() => setToast(null), 3000);
+                  return;
+                }
+                
+                if (bundleForm.price <= 0) {
+                  setToast({message: 'Please enter a valid price', type: 'error'});
+                  setTimeout(() => setToast(null), 3000);
+                  return;
+                }
+                
+                const newBundle = {
+                  id: `bundle_${Date.now()}`,
+                  name: bundleForm.name.trim(),
+                  description: bundleForm.description.trim(),
+                  price: bundleForm.price,
+                  discount: bundleForm.discount,
+                  category: bundleForm.category,
+                  coverImage: bundleForm.coverImage,
+                  selectedVideos: bundleForm.selectedVideos,
+                  isActive: bundleForm.isActive,
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString()
+                };
+                
+                try {
+                  // Save to VPS data store
+                  const currentData = await vpsDataStore.loadData();
+                  const updatedData = {
+                    ...currentData,
+                    contentBundles: [...(currentData.contentBundles || []), newBundle]
+                  };
+                  
+                  const success = await vpsDataStore.saveData(updatedData);
+                  if (success) {
+                    setContentBundles(prev => [...prev, newBundle]);
+                    setToast({message: 'Content bundle created successfully!', type: 'success'});
+                    setTimeout(() => setToast(null), 3000);
+                    
+                    // Reset form
+                    setBundleForm({
+                      name: '',
+                      description: '',
+                      price: 0,
+                      discount: 0,
+                      category: 'mixed',
+                      coverImage: '',
+                      selectedVideos: [],
+                      isActive: true
+                    });
+                    
+                    setActiveSection('content-bundles');
+                  } else {
+                    throw new Error('Failed to save to data store');
+                  }
+                } catch (error) {
+                  console.error('Failed to create bundle:', error);
+                  setToast({message: 'Failed to create bundle. Please try again.', type: 'error'});
+                  setTimeout(() => setToast(null), 3000);
+                }
+              }}
+            >
+              Create Bundle
+            </Button>
           </CardBody>
         </Card>
       </div>
@@ -5713,12 +5821,85 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         </CardHeader>
         <CardBody>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {contentBundles.map((bundle) => (
+              <div key={bundle.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3 mb-3">
+                  <Layers className="h-8 w-8 text-purple-500" />
+                  <div>
+                    <h4 className="font-semibold text-gray-900">{bundle.name}</h4>
+                    <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">{bundle.category}</span>
+                  </div>
+                </div>
+                <p className="text-gray-600 text-sm mb-3">{bundle.description}</p>
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-green-600 font-semibold">${bundle.price}</span>
+                  {bundle.discount > 0 && (
+                    <span className="text-orange-600 text-sm">{bundle.discount}% off</span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="light"
+                    className="hover:bg-blue-50 transition-colors"
+                    onPress={() => {
+                      setEditingBundle(bundle);
+                      setBundleForm({
+                        name: bundle.name,
+                        description: bundle.description,
+                        price: bundle.price,
+                        discount: bundle.discount || 0,
+                        category: bundle.category,
+                        coverImage: bundle.coverImage || '',
+                        selectedVideos: bundle.selectedVideos || [],
+                        isActive: bundle.isActive
+                      });
+                      setActiveSection('create-bundle');
+                    }}
+                  >
+                    <Edit className="h-4 w-4 text-blue-600" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="light" 
+                    className="hover:bg-red-50 transition-colors"
+                    onPress={async () => {
+                      if (confirm(`Delete bundle "${bundle.name}"?`)) {
+                        try {
+                          const currentData = await vpsDataStore.loadData();
+                          const updatedBundles = (currentData.contentBundles || []).filter(b => b.id !== bundle.id);
+                          const updatedData = { ...currentData, contentBundles: updatedBundles };
+                          
+                          const success = await vpsDataStore.saveData(updatedData);
+                          if (success) {
+                            setContentBundles(updatedBundles);
+                            setToast({message: 'Bundle deleted successfully!', type: 'success'});
+                            setTimeout(() => setToast(null), 3000);
+                          }
+                        } catch (error) {
+                          setToast({message: 'Failed to delete bundle', type: 'error'});
+                          setTimeout(() => setToast(null), 3000);
+                        }
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-600" />
+                  </Button>
+                </div>
+              </div>
+            ))}
             {contentBundles.length === 0 && (
               <div className="col-span-full text-center py-12">
                 <Layers className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No bundles yet</h3>
                 <p className="text-gray-600 mb-4">Create your first content bundle to offer discounted packages.</p>
-
+                <Button 
+                  color="primary"
+                  startContent={<Plus className="h-4 w-4" />}
+                  onPress={() => setActiveSection('create-bundle')}
+                >
+                  Create First Bundle
+                </Button>
               </div>
             )}
           </div>
@@ -7601,16 +7782,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   // Package render functions
   const renderAllPackages = () => {
-    const { renderAllPackages: renderPackagesComponent } = require('./ModernAdminDashboardPackages');
-    return renderPackagesComponent(packages, handleDeletePackage, formatCurrency, setActiveSection);
+    return renderAllPackagesComponent(packages, handleDeletePackage, formatCurrency, setActiveSection);
   };
 
   const renderAddPackage = () => {
-    const { renderAddPackage: renderAddPackageComponent } = require('./ModernAdminDashboardPackages');
     return renderAddPackageComponent(packageForm, setPackageForm, handleSavePackage, setActiveSection);
   };
 
   const renderLearningPackages = () => {
-    const { renderLearningPackages: renderLearningPackagesComponent } = require('./ModernAdminDashboardPackages');
     return renderLearningPackagesComponent(setActiveSection);
   };
