@@ -1580,6 +1580,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [editingBundle, setEditingBundle] = useState<any>(null);
   
   // PP1 and PP2 form states
+  const [editingPP1, setEditingPP1] = useState<Module | null>(null);
+  const [editingPP2, setEditingPP2] = useState<Module | null>(null);
+  
   const [pp1Form, setPP1Form] = useState({
     title: '',
     description: '',
@@ -4325,7 +4328,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       variant="light"
                       className="hover:bg-blue-50 transition-colors"
                       onPress={() => {
-                        setEditingVideo(program);
+                        setEditingPP1(program);
                         setPP1Form({
                           title: program.title,
                           description: program.description || '',
@@ -4418,7 +4421,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       variant="light"
                       className="hover:bg-blue-50 transition-colors"
                       onPress={() => {
-                        setEditingVideo(program);
+                        setEditingPP2(program);
                         setPP2Form({
                           title: program.title,
                           description: program.description || '',
