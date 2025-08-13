@@ -3049,12 +3049,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       return;
     }
     
-    // Prevent renaming core program categories
-    if (oldCategory === 'PP1 Program') {
-      alert('Cannot rename core program category (PP1 Program)');
-      setEditingCategory(null);
-      return;
-    }
+
     
     try {
       // Update category in data store
@@ -3181,29 +3176,19 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                                 size="sm" 
                                 variant="light" 
                                 className="hover:bg-blue-50"
-                                isDisabled={category === 'PP1 Program'}
                                 onPress={() => {
-                                  if (category === 'PP1 Program') {
-                                    setToast({message: 'Cannot rename core program category', type: 'error'});
-                                    setTimeout(() => setToast(null), 3000);
-                                    return;
-                                  }
                                   setEditingCategory(category);
                                   setEditCategoryValue(category);
                                 }}
                               >
-                                <Edit className={`h-4 w-4 ${category === 'PP1 Program' ? 'text-gray-400' : 'text-blue-600'}`} />
+                                <Edit className="h-4 w-4 text-blue-600" />
                               </Button>
                               <Button 
                                 size="sm" 
                                 variant="light" 
                                 className="hover:bg-red-50"
                                 onPress={async () => {
-                                  // Prevent deletion of core program category
-                                  if (category === 'PP1 Program') {
-                                    alert('Cannot delete core program category (PP1 Program)');
-                                    return;
-                                  }
+
                                   
                                   // Check if category has videos
                                   const videosInCategory = videos.filter(v => v.category === category);

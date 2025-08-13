@@ -101,18 +101,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
             Fun learning for kids ages 1-6
           </p>
 
-          {/* Features highlight */}
-          <div className="flex flex-wrap justify-center gap-3 sm:gap-6 mb-12">
-            <div className="bg-white rounded-full px-3 sm:px-6 py-2 sm:py-3 shadow-lg">
-              <span className="text-brand-green font-mali font-bold text-xs sm:text-sm">🎵 Audio Adventures</span>
-            </div>
-            <div className="bg-white rounded-full px-3 sm:px-6 py-2 sm:py-3 shadow-lg">
-              <span className="text-brand-blue font-mali font-bold text-xs sm:text-sm">🎬 Video Stories</span>
-            </div>
-            <div className="bg-white rounded-full px-3 sm:px-6 py-2 sm:py-3 shadow-lg">
-              <span className="text-brand-pink font-mali font-bold text-xs sm:text-sm">🎮 Interactive Games</span>
-            </div>
-          </div>
+
           
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center px-4">
             <button 
