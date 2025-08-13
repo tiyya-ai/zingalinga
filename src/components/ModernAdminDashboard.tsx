@@ -1794,9 +1794,19 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     }
     if (url.includes('vimeo.com')) {
       const videoId = url.split('vimeo.com/')[1]?.split('?')[0];
-      return `https://player.vimeo.com/video/${videoId}`;
+      return `https://player.vimeo.com/video/${videoId}?autoplay=0&loop=0`;
     }
     return url;
+  };
+
+  const getVimeoThumbnail = async (videoId: string) => {
+    try {
+      const response = await fetch(`https://vimeo.com/api/v2/video/${videoId}.json`);
+      const data = await response.json();
+      return data[0]?.thumbnail_large || '';
+    } catch {
+      return '';
+    }
   };
 
   const handleSaveVideo = async () => {
@@ -2019,7 +2029,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const getVideoTypeIcon = (videoType: string) => {
     switch (videoType) {
       case 'youtube': return <Youtube className="h-4 w-4 text-red-500" />;
-      case 'vimeo': return <Video className="h-4 w-4 text-blue-600" />;
+      case 'vimeo': return <div className="w-4 h-4 bg-blue-600 rounded text-white text-xs flex items-center justify-center font-bold">V</div>;
       default: return <Upload className="h-4 w-4 text-gray-500" />;
     }
   };
