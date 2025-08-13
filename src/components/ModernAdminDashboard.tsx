@@ -155,7 +155,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [uploadQueueSearch, setUploadQueueSearch] = useState('');
   const [accessLogs, setAccessLogs] = useState<any[]>([]);
   const [childrenProfiles, setChildrenProfiles] = useState<any[]>([]);
-  const [categories, setCategories] = useState<string[]>(['Uncategorized', 'PP1 Program', 'PP2 Program', 'Audio Lessons', 'Video Lessons']);
+  const [categories, setCategories] = useState<string[]>(['Uncategorized', 'PP1 Program', 'Audio Lessons', 'Video Lessons']);
   const [contentBundles, setContentBundles] = useState<any[]>([]);
   const [userProgress, setUserProgress] = useState<any[]>([]);
   const [newCategory, setNewCategory] = useState('');
@@ -574,8 +574,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       color: 'text-purple-600',
       children: [
         { id: 'audio-lessons', label: 'Audio Lessons', icon: <Headphones className="h-4 w-4" /> },
+
         { id: 'pp1-program', label: 'PP1 Program', icon: <BookOpen className="h-4 w-4" /> },
-        { id: 'pp2-program', label: 'PP2 Program', icon: <BookOpen className="h-4 w-4" /> },
         { id: 'content-bundles', label: 'Content Bundles', icon: <Layers className="h-4 w-4" /> }
       ]
     },
@@ -1579,22 +1579,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   });
   const [editingBundle, setEditingBundle] = useState<any>(null);
   
-  // PP1 and PP2 form states
+  // PP1 form state
   const [editingPP1, setEditingPP1] = useState<Module | null>(null);
-  const [editingPP2, setEditingPP2] = useState<Module | null>(null);
   
   const [pp1Form, setPP1Form] = useState({
-    title: '',
-    description: '',
-    price: 0,
-    contentType: 'text',
-    coverImage: '',
-    contentUrl: '',
-    duration: '',
-    tags: ''
-  });
-  
-  const [pp2Form, setPP2Form] = useState({
     title: '',
     description: '',
     price: 0,
@@ -3062,8 +3050,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     }
     
     // Prevent renaming core program categories
-    if (oldCategory === 'PP1 Program' || oldCategory === 'PP2 Program') {
-      alert('Cannot rename core program categories (PP1 Program, PP2 Program)');
+    if (oldCategory === 'PP1 Program') {
+      alert('Cannot rename core program category (PP1 Program)');
       setEditingCategory(null);
       return;
     }
@@ -3193,21 +3181,27 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                                 size="sm" 
                                 variant="light" 
                                 className="hover:bg-blue-50"
+                                isDisabled={category === 'PP1 Program'}
                                 onPress={() => {
+                                  if (category === 'PP1 Program') {
+                                    setToast({message: 'Cannot rename core program category', type: 'error'});
+                                    setTimeout(() => setToast(null), 3000);
+                                    return;
+                                  }
                                   setEditingCategory(category);
                                   setEditCategoryValue(category);
                                 }}
                               >
-                                <Edit className="h-4 w-4 text-blue-600" />
+                                <Edit className={`h-4 w-4 ${category === 'PP1 Program' ? 'text-gray-400' : 'text-blue-600'}`} />
                               </Button>
                               <Button 
                                 size="sm" 
                                 variant="light" 
                                 className="hover:bg-red-50"
                                 onPress={async () => {
-                                  // Prevent deletion of core program categories
-                                  if (category === 'PP1 Program' || category === 'PP2 Program') {
-                                    alert('Cannot delete core program categories (PP1 Program, PP2 Program)');
+                                  // Prevent deletion of core program category
+                                  if (category === 'PP1 Program') {
+                                    alert('Cannot delete core program category (PP1 Program)');
                                     return;
                                   }
                                   
@@ -4287,10 +4281,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     </div>
   );
 
+
+
   const renderPP1Program = () => (
     <div className="space-y-6">
       <PageHeader 
-        title="PP1 Program (Beginner Level)" 
+        title="PP1 Program" 
         actions={
           <Button 
             className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
@@ -4311,10 +4307,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             {videos.filter(v => v.category === 'PP1 Program').map((program) => (
               <div key={program.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-3 mb-3">
-                  <BookOpen className="h-8 w-8 text-green-500" />
+                  <BookOpen className="h-8 w-8 text-purple-500" />
                   <div>
                     <h4 className="font-semibold text-gray-900">{program.title}</h4>
-                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Beginner</span>
+                    <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">Program</span>
                   </div>
                 </div>
                 <p className="text-gray-600 text-sm mb-3">{program.description}</p>
@@ -4387,115 +4383,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   onPress={() => setActiveSection('add-pp1-content')}
                 >
                   Add First PP1 Content
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardBody>
-      </Card>
-    </div>
-  );
-
-  const renderPP2Program = () => (
-    <div className="space-y-6">
-      <PageHeader 
-        title="PP2 Program (Advanced Level)" 
-        actions={
-          <Button 
-            className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
-            startContent={<Plus className="h-4 w-4" />}
-            onPress={() => setActiveSection('add-pp2-content')}
-          >
-            Add PP2 Content
-          </Button>
-        }
-      />
-      
-      <Card className="bg-white border border-gray-200">
-        <CardHeader className="border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">PP2 Program Content ({videos.filter(v => v.category === 'PP2 Program').length})</h3>
-        </CardHeader>
-        <CardBody>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {videos.filter(v => v.category === 'PP2 Program').map((program) => (
-              <div key={program.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-3 mb-3">
-                  <BookOpen className="h-8 w-8 text-purple-500" />
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{program.title}</h4>
-                    <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">Advanced</span>
-                  </div>
-                </div>
-                <p className="text-gray-600 text-sm mb-3">{program.description}</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-green-600 font-semibold">${program.price}</span>
-                  <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="light"
-                      className="hover:bg-blue-50 transition-colors"
-                      onPress={() => {
-                        setEditingPP2(program);
-                        setPP2Form({
-                          title: program.title,
-                          description: program.description || '',
-                          price: program.price || 0,
-                          contentType: (program as any).contentType || 'text',
-                          coverImage: program.thumbnail || '',
-                          contentUrl: program.videoUrl || '',
-                          duration: (program as any).duration || '',
-                          tags: Array.isArray((program as any).tags) ? (program as any).tags.join(', ') : (program as any).tags || ''
-                        });
-                        setActiveSection('add-pp2-content');
-                      }}
-                      aria-label={`Edit PP2 program ${program.title}`}
-                    >
-                      <Edit className="h-4 w-4 text-blue-600" />
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="light" 
-                      className="hover:bg-red-50 transition-colors"
-                      onPress={async () => {
-                        if (confirm(`Remove "${program.title}" from PP2 Program? The video will remain in your library.`)) {
-                          try {
-                            // Instead of deleting, change category to 'Uncategorized'
-                            const updatedVideo = { ...program, category: 'Uncategorized' };
-                            const success = await vpsDataStore.updateProduct(updatedVideo);
-                            if (success) {
-                              vpsDataStore.clearMemoryCache();
-                              await loadRealData(true);
-                              setToast({message: 'Video removed from PP2 Program!', type: 'success'});
-                              setTimeout(() => setToast(null), 3000);
-                            } else {
-                              setToast({message: 'Failed to remove from PP2 Program', type: 'error'});
-                              setTimeout(() => setToast(null), 3000);
-                            }
-                          } catch (error) {
-                            setToast({message: 'Error removing from PP2 Program', type: 'error'});
-                            setTimeout(() => setToast(null), 3000);
-                          }
-                        }
-                      }}
-                      aria-label={`Remove PP2 program ${program.title}`}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-600" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {videos.filter(v => v.category === 'PP2 Program').length === 0 && (
-              <div className="col-span-full text-center py-12">
-                <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No PP2 content yet</h3>
-                <p className="text-gray-600 mb-4">Create your first PP2 program content.</p>
-                <Button 
-                  color="primary"
-                  startContent={<Plus className="h-4 w-4" />}
-                  onPress={() => setActiveSection('add-pp2-content')}
-                >
-                  Add First PP2 Content
                 </Button>
               </div>
             )}

@@ -89,7 +89,7 @@
       "title": "BB1 - Numbers 1-5",
       "description": "Count from 1 to 5 with colorful animations and interactive exercises",
       "price": 12.99,
-      "category": "PP1 Program",
+      "category": "Uncategorized",
       "type": "video",
       "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
       "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -105,7 +105,12 @@
         "counting",
         "basic",
         "bb1"
-      ]
+      ],
+      "ageGroup": "3-5 years",
+      "videoType": "youtube",
+      "language": "English",
+      "updatedAt": "2025-08-13T20:49:16.286Z",
+      "audioUrl": ""
     },
     {
       "id": "bb2_lesson_001",
@@ -181,9 +186,9 @@
   "flaggedContent": [],
   "accessLogs": [],
   "uploadQueue": [],
-  "lastUpdated": "2025-08-13T14:36:29.575Z",
+  "lastUpdated": "2025-08-13T20:49:16.286Z",
   "lastLoaded": "2025-01-20T10:00:00.000Z",
   "packages": [],
-  "lastSaved": "2025-08-13T14:36:29.650Z",
+  "lastSaved": "2025-08-13T20:49:16.310Z",
   "savedVideos": []
 }

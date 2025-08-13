@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Input, Button } from '@nextui-org/react';
-import { Link } from 'lucide-react';
+import { Link, Plus } from 'lucide-react';
 import { convertGoogleDriveUrl, isGoogleDriveUrl } from '../utils/googleDriveUtils';
 
 interface SimpleVideoUploaderProps {
@@ -383,6 +383,30 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
               )}
             </div>
 
+            
+            {/* Auto-processed message for YouTube/Vimeo */}
+            {(urlPreview?.includes('youtube.com/embed') || urlPreview?.includes('player.vimeo.com') || urlPreview?.includes('drive.google.com')) && (
+              <div className="flex justify-center mt-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+                  <p className="text-sm text-green-700 font-medium">✓ Video automatically processed and ready to use</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Use This Video Button - only for direct video files */}
+            {urlPreview && !urlPreview.includes('youtube.com/embed') && !urlPreview.includes('player.vimeo.com') && !urlPreview.includes('drive.google.com') && (
+              <div className="flex justify-center mt-4">
+                <Button 
+                  color="primary"
+                  size="lg"
+                  onPress={handleUrlSubmit}
+                  className="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-8"
+                  startContent={<Plus className="h-4 w-4" />}
+                >
+                  Use This Video
+                </Button>
+              </div>
+            )}
           </div>
         )}
         <div className="flex justify-between items-center">
