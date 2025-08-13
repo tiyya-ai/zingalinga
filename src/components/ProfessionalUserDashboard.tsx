@@ -288,7 +288,7 @@ export default function ProfessionalUserDashboard({
         id: module.id,
         title: module.title || 'Untitled Video',
         thumbnail: thumbnail,
-        duration: module.duration || '5:00',
+        duration: (module as any).duration || module.duration || (module as any).estimatedDuration || '5:00',
         description: module.description || '',
         videoUrl: videoUrl,
         category: module.category || 'Videos',
@@ -742,7 +742,7 @@ export default function ProfessionalUserDashboard({
                           id: module.id,
                           title: module.title || 'Untitled Video',
                           thumbnail: thumbnail || '',
-                          duration: module.duration || '5:00',
+                          duration: (module as any).duration || module.duration || (module as any).estimatedDuration || '5:00',
                           description: module.description || '',
                           videoUrl: module.videoUrl || '',
                           category: module.category || 'Videos',
@@ -782,7 +782,7 @@ export default function ProfessionalUserDashboard({
                       <div className="text-2xl mb-2">🎬</div>
                       <div className="text-sm">No videos yet</div>
                       <button 
-                        onClick={() => setActiveTab('all-videos')}
+                        onClick={() => setActiveTab('store')}
                         className="text-yellow-400 hover:text-yellow-300 text-xs mt-1"
                       >
                         Add Videos
@@ -804,7 +804,15 @@ export default function ProfessionalUserDashboard({
                     <div className="text-purple-200 text-xs">Videos</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-400">{localPurchases.filter(p => p.userId === user?.id).length * 5}m</div>
+                    <div className="text-2xl font-bold text-green-400">{(() => {
+                      const userVideos = allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id));
+                      const totalMinutes = userVideos.reduce((total, video) => {
+                        const duration = video.duration || '5:00';
+                        const [minutes, seconds] = duration.split(':').map(Number);
+                        return total + (minutes || 0) + ((seconds || 0) / 60);
+                      }, 0);
+                      return Math.round(totalMinutes);
+                    })()}m</div>
                     <div className="text-purple-200 text-xs">Watch Time</div>
                   </div>
                   <div className="text-center">
@@ -812,7 +820,15 @@ export default function ProfessionalUserDashboard({
                     <div className="text-purple-200 text-xs">Purchases</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-yellow-400">{Math.floor(localPurchases.filter(p => p.userId === user?.id).length / 2)}</div>
+                    <div className="text-2xl font-bold text-yellow-400">{(() => {
+                      const userPurchases = localPurchases.filter(p => p.userId === user?.id).length;
+                      let achievements = 0;
+                      if (userPurchases >= 1) achievements++; // First purchase
+                      if (userPurchases >= 3) achievements++; // Regular buyer
+                      if (userPurchases >= 5) achievements++; // Collector
+                      if (userPurchases >= 10) achievements++; // Super collector
+                      return achievements;
+                    })()}</div>
                     <div className="text-purple-200 text-xs">Achievements</div>
                   </div>
                 </div>
@@ -905,7 +921,7 @@ export default function ProfessionalUserDashboard({
                                   id: content.id,
                                   title: content.title,
                                   thumbnail: content.thumbnail || '',
-                                  duration: content.duration || '5:00',
+                                  duration: (content as any).duration || content.duration || (content as any).estimatedDuration || '5:00',
                                   description: content.description || '',
                                   videoUrl: content.videoUrl || '',
                                   category: content.category || 'Videos',
@@ -1084,7 +1100,7 @@ export default function ProfessionalUserDashboard({
                                     id: content.id,
                                     title: content.title,
                                     thumbnail: content.thumbnail || '',
-                                    duration: content.duration || '5:00',
+                                    duration: (content as any).duration || content.duration || (content as any).estimatedDuration || '5:00',
                                     description: content.description || '',
                                     videoUrl: content.videoUrl || '',
                                     category: content.category || 'Videos',
@@ -3070,7 +3086,7 @@ export default function ProfessionalUserDashboard({
                   <div className="flex-1">
                     <p className="text-gray-300 text-sm mb-2 line-clamp-3 sm:line-clamp-none">{selectedVideo.description}</p>
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400">
-                      <span>⏱️ {selectedVideo.duration}</span>
+                      <span>⏱️ {selectedVideo.duration || '0:00'}</span>
                       <span>•</span>
                       <span>📂 {selectedVideo.category}</span>
                       {selectedVideo.rating && (

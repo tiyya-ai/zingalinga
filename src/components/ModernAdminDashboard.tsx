@@ -3188,8 +3188,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                                 variant="light" 
                                 className="hover:bg-red-50"
                                 onPress={async () => {
-
-                                  
                                   // Check if category has videos
                                   const videosInCategory = videos.filter(v => v.category === category);
                                   if (videosInCategory.length > 0) {
