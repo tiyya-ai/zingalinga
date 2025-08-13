@@ -4204,8 +4204,26 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <div className="flex justify-between items-center">
                   <span className="text-green-600 font-semibold">${lesson.price}</span>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="light"><Edit className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="light" className="hover:bg-red-50"><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                    <Button 
+                      size="sm" 
+                      variant="light"
+                      className="hover:bg-blue-50 transition-colors"
+                      onPress={() => handleEditVideo(lesson)}
+                    >
+                      <Edit className="h-4 w-4 text-blue-600" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="light" 
+                      className="hover:bg-red-50 transition-colors"
+                      onPress={() => {
+                        if (confirm(`Are you sure you want to delete "${lesson.title}"? This action cannot be undone.`)) {
+                          handleDeleteVideo(lesson.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -7248,8 +7266,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 value="Zinga Linga" 
                 className="w-full"
                 classNames={{
-                  input: "bg-gray-50",
-                  inputWrapper: "bg-gray-50 border-gray-200"
+                  input: "bg-white",
+                  inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
                 }}
               />
             </div>
@@ -7260,11 +7278,34 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 type="email"
                 className="w-full"
                 classNames={{
-                  input: "bg-gray-50",
-                  inputWrapper: "bg-gray-50 border-gray-200"
+                  input: "bg-white",
+                  inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
                 }}
               />
             </div>
+            <Button 
+              className="w-full mt-4 bg-blue-600 text-white hover:bg-blue-700"
+              onPress={async () => {
+                try {
+                  const success = await vpsDataStore.updateSettings({
+                    platformName: 'Zinga Linga',
+                    contactEmail: 'admin@zingalinga.com',
+                    updatedAt: new Date().toISOString()
+                  });
+                  if (success) {
+                    setToast({message: 'Settings saved successfully!', type: 'success'});
+                    setTimeout(() => setToast(null), 3000);
+                  } else {
+                    throw new Error('Failed to save');
+                  }
+                } catch (error) {
+                  setToast({message: 'Failed to save settings', type: 'error'});
+                  setTimeout(() => setToast(null), 3000);
+                }
+              }}
+            >
+              Save Settings
+            </Button>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Default Language</label>
               <Select 

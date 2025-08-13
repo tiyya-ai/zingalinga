@@ -135,6 +135,11 @@ export const renderAllPackages = (
                       size="sm" 
                       variant="light"
                       className="hover:bg-blue-50 transition-colors"
+                      onPress={() => {
+                        // Edit package functionality - navigate to edit form
+                        console.log('Edit package:', pkg.id);
+                        // This would need to be passed from parent component
+                      }}
                     >
                       <Edit className="h-4 w-4 text-blue-600" />
                     </Button>
