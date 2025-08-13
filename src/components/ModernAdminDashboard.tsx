@@ -2019,6 +2019,26 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       }
       
       console.log('ðŸŽ‰ Video save process completed successfully');
+      // Reset form after successful creation (not for edits)
+      if (!editingVideo) {
+        setVideoForm({
+          title: '',
+          description: '',
+          price: 0,
+          category: '',
+          rating: 0,
+          thumbnail: '',
+          videoUrl: '',
+          duration: '',
+          ageGroup: '',
+          videoType: 'educational',
+          language: 'english',
+          tags: '',
+          status: 'active'
+        });
+        setEditingVideo(null);
+      }
+      
       // Force immediate reload to show new video
       await loadRealData();
       setActiveSection('all-videos');
