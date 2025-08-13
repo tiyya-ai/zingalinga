@@ -2631,9 +2631,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-16">
                   <input 
                     type="checkbox" 
-                    checked={selectedVideos.length === videos.filter(v => v.type !== 'audio' && v.category !== 'Audio Lessons' && v.category !== 'audio').length && videos.filter(v => v.type !== 'audio' && v.category !== 'Audio Lessons' && v.category !== 'audio').length > 0}
+                    checked={selectedVideos.length === videos.length && videos.length > 0}
                     onChange={(e) => {
-                      const videoList = videos.filter(v => v.type !== 'audio' && v.category !== 'Audio Lessons' && v.category !== 'audio');
+                      const videoList = videos;
                       if (e.target.checked) {
                         setSelectedVideos(videoList.map(v => v.id));
                       } else {
@@ -2651,7 +2651,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               </TableHeader>
               <TableBody emptyContent="No videos found">
                 {videos
-                  .filter(video => video.type !== 'audio' && video.category !== 'Audio Lessons' && video.category !== 'audio')
                   .filter(video => {
                     const matchesSearch = videoSearchTerm === '' || 
                       video.title.toLowerCase().includes(videoSearchTerm.toLowerCase()) ||
@@ -2891,11 +2890,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                           if (confirm(`Are you sure you want to delete user "${user.name}"? This action cannot be undone.`)) {
                             const success = await vpsDataStore.deleteUser(user.id);
                             if (success) {
-                              const updatedUsers = await vpsDataStore.getUsers();
-                              setUsers(updatedUsers);
-                              alert('- User deleted successfully!');
+                              vpsDataStore.clearMemoryCache();
+                              await loadRealData(true);
+                              setToast({message: 'User deleted successfully!', type: 'success'});
+                              setTimeout(() => setToast(null), 3000);
                             } else {
-                              alert('- Failed to delete user');
+                              setToast({message: 'Failed to delete user', type: 'error'});
+                              setTimeout(() => setToast(null), 3000);
                             }
                           }
                         }}
@@ -3470,34 +3471,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                           if (confirm(`Delete order #${order.id.toString().slice(-6)}?`)) {
                             const success = await vpsDataStore.deleteOrder(order.id);
                             if (success) {
-                              const updatedOrders = await vpsDataStore.getOrders();
-                              const convertedOrders = updatedOrders.map(purchase => {
-                                const user = users.find(u => u.id === purchase.userId);
-                                const video = videos.find(v => v.id === purchase.moduleId);
-                                return {
-                                  id: purchase.id,
-                                  customer: {
-                                    name: user?.name || 'Unknown User',
-                                    email: user?.email || 'unknown@email.com',
-                                    avatar: user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'UN'
-                                  },
-                                  item: {
-                                    name: video?.title || 'Unknown Product',
-                                    count: 1,
-                                    type: 'video'
-                                  },
-                                  amount: purchase.amount || video?.price || 0,
-                                  status: purchase.status || 'completed',
-                                  orderType: 'Video Purchase',
-                                  date: new Date(purchase.createdAt || purchase.purchaseDate || Date.now()),
-                                  paymentMethod: purchase.paymentMethod || 'Credit Card',
-                                  transactionId: purchase.transactionId || purchase.id
-                                };
-                              });
-                              setOrders(convertedOrders);
-                              alert('Order deleted successfully!');
+                              vpsDataStore.clearMemoryCache();
+                              await loadRealData(true);
+                              setToast({message: 'Order deleted successfully!', type: 'success'});
+                              setTimeout(() => setToast(null), 3000);
                             } else {
-                              alert('Failed to delete order');
+                              setToast({message: 'Failed to delete order', type: 'error'});
+                              setTimeout(() => setToast(null), 3000);
                             }
                           }
                         }}
@@ -4649,7 +4629,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     try {
       const success = await vpsDataStore.deletePackage(packageId);
       if (success) {
-        await loadPackages(); // Reload packages
+        vpsDataStore.clearMemoryCache();
+        await loadRealData(true);
         setToast({message: 'Package deleted successfully!', type: 'success'});
         setTimeout(() => setToast(null), 3000);
       } else {
@@ -5891,7 +5872,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                           
                           const success = await vpsDataStore.saveData(updatedData);
                           if (success) {
-                            setContentBundles(updatedBundles);
+                            vpsDataStore.clearMemoryCache();
+                            await loadRealData(true);
                             setToast({message: 'Bundle deleted successfully!', type: 'success'});
                             setTimeout(() => setToast(null), 3000);
                           }
