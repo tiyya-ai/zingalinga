@@ -36,13 +36,13 @@
     {
       "id": "admin-1",
       "email": "admin@zingalinga.com",
-      "name": "Admin",
+      "name": "Admin User",
       "role": "user",
       "purchasedModules": [],
       "totalSpent": 0,
       "createdAt": "2025-01-20T10:00:00.000Z",
       "lastLogin": "2025-01-20T10:00:00.000Z",
-      "updatedAt": "2025-08-13T10:09:37.449Z"
+      "updatedAt": "2025-08-13T10:31:55.712Z"
     }
   ],
   "modules": [
@@ -226,9 +226,9 @@
   "flaggedContent": [],
   "accessLogs": [],
   "uploadQueue": [],
-  "lastUpdated": "2025-08-13T10:09:37.452Z",
+  "lastUpdated": "2025-08-13T10:31:55.717Z",
   "lastLoaded": "2025-01-20T10:00:00.000Z",
   "packages": [],
-  "lastSaved": "2025-08-13T10:09:52.116Z",
+  "lastSaved": "2025-08-13T10:31:55.738Z",
   "savedVideos": []
 }
