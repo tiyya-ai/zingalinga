@@ -604,7 +604,7 @@ export default function ProfessionalUserDashboard({
               { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
               { id: 'pp1-program', label: '📚 BB1', count: allContent.filter(c => c.category === 'PP1 Program').length },
               { id: 'pp2-program', label: '📖 BB2', count: allContent.filter(c => c.category === 'PP2 Program').length },
-              { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length },
+              { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
               { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => !localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed')).length },
               { id: 'packages', label: '📦 Packages', count: null },
               { id: 'playlist', label: '📋 Playlist', count: playlist.length },
@@ -636,7 +636,7 @@ export default function ProfessionalUserDashboard({
                 { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
                 { id: 'pp1-program', label: '📚 BB1', count: allContent.filter(c => c.category === 'PP1 Program').length },
                 { id: 'pp2-program', label: '📖 BB2', count: allContent.filter(c => c.category === 'PP2 Program').length },
-                { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length },
+                { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
                 { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => 
                   !localPurchases.some(purchase => 
                     purchase.moduleId === item.id && 
@@ -698,7 +698,7 @@ export default function ProfessionalUserDashboard({
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-emerald-400 flex items-center">
                     <span className="mr-2">🎬</span>
-                    My Videos ({allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length})
+                    My Videos ({allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length})
                   </h3>
                   <button 
                     onClick={() => setActiveTab('videos')}
@@ -708,7 +708,7 @@ export default function ProfessionalUserDashboard({
                   </button>
                 </div>
                 <div className="space-y-3">
-                  {allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).slice(0, 3).map(module => {
+                  {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).slice(0, 3).map(module => {
                     let thumbnail = module.thumbnail || '';
                     if (module.thumbnail && typeof module.thumbnail === 'object' && 'type' in module.thumbnail) {
                       thumbnail = URL.createObjectURL(module.thumbnail as File as unknown as File);
@@ -767,7 +767,7 @@ export default function ProfessionalUserDashboard({
                       </div>
                     );
                   })}
-                  {allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length === 0 && (
+                  {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length === 0 && (
                     <div className="text-center py-4 text-purple-200">
                       <div className="text-2xl mb-2">🎬</div>
                       <div className="text-sm">No videos yet</div>

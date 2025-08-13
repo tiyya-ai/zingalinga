@@ -155,7 +155,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [uploadQueueSearch, setUploadQueueSearch] = useState('');
   const [accessLogs, setAccessLogs] = useState<any[]>([]);
   const [childrenProfiles, setChildrenProfiles] = useState<any[]>([]);
-  const [categories, setCategories] = useState<string[]>(['PP1 Program', 'PP2 Program']);
+  const [categories, setCategories] = useState<string[]>(['Uncategorized', 'PP1 Program', 'PP2 Program', 'Audio Lessons', 'Video Lessons']);
   const [contentBundles, setContentBundles] = useState<any[]>([]);
   const [userProgress, setUserProgress] = useState<any[]>([]);
   const [newCategory, setNewCategory] = useState('');
@@ -568,18 +568,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       ]
     },
     {
-      id: 'videos',
-      label: 'Video Management',
-      icon: <Video className="h-5 w-5" />,
-      color: 'text-green-600',
-      children: [
-        { id: 'all-videos', label: 'All Videos', icon: <Folder className="h-4 w-4" /> },
-        { id: 'add-video', label: 'Add New', icon: <Plus className="h-4 w-4" /> },
-        { id: 'categories', label: 'Categories', icon: <Tag className="h-4 w-4" /> },
-        { id: 'upload-queue', label: 'Upload Queue', icon: <Upload className="h-4 w-4" />, badge: uploadQueue.length > 0 ? uploadQueue.length.toString() : undefined }
-      ]
-    },
-    {
       id: 'content',
       label: 'Content Categories',
       icon: <BookOpen className="h-5 w-5" />,
@@ -589,6 +577,18 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         { id: 'pp1-program', label: 'PP1 Program', icon: <BookOpen className="h-4 w-4" /> },
         { id: 'pp2-program', label: 'PP2 Program', icon: <BookOpen className="h-4 w-4" /> },
         { id: 'content-bundles', label: 'Content Bundles', icon: <Layers className="h-4 w-4" /> }
+      ]
+    },
+    {
+      id: 'videos',
+      label: 'Video Management',
+      icon: <Video className="h-5 w-5" />,
+      color: 'text-green-600',
+      children: [
+        { id: 'all-videos', label: 'All Videos', icon: <Folder className="h-4 w-4" /> },
+        { id: 'add-video', label: 'Add New', icon: <Plus className="h-4 w-4" /> },
+        { id: 'categories', label: 'Categories', icon: <Tag className="h-4 w-4" /> },
+        { id: 'upload-queue', label: 'Upload Queue', icon: <Upload className="h-4 w-4" />, badge: uploadQueue.length > 0 ? uploadQueue.length.toString() : undefined }
       ]
     },
     {
@@ -1745,7 +1745,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       title: '',
       description: '',
       price: 0,
-      category: categories.length > 0 ? categories[0] : '',
+      category: '', // Don't auto-select category - force user to choose
       rating: 0,
       ageGroup: '3-8 years',
       duration: '',
@@ -3045,6 +3045,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       return;
     }
     
+    // Prevent renaming core program categories
+    if (oldCategory === 'PP1 Program' || oldCategory === 'PP2 Program') {
+      alert('Cannot rename core program categories (PP1 Program, PP2 Program)');
+      setEditingCategory(null);
+      return;
+    }
+    
     try {
       // Update category in data store
       const success = await vpsDataStore.updateCategory(oldCategory, newCategory.trim());
@@ -3182,11 +3189,33 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                                 variant="light" 
                                 className="hover:bg-red-50"
                                 onPress={async () => {
+                                  // Prevent deletion of core program categories
+                                  if (category === 'PP1 Program' || category === 'PP2 Program') {
+                                    alert('Cannot delete core program categories (PP1 Program, PP2 Program)');
+                                    return;
+                                  }
+                                  
+                                  // Check if category has videos
+                                  const videosInCategory = videos.filter(v => v.category === category);
+                                  if (videosInCategory.length > 0) {
+                                    const moveVideos = confirm(`This category has ${videosInCategory.length} videos. Do you want to move them to "Uncategorized" before deleting the category?`);
+                                    if (moveVideos) {
+                                      // Move videos to Uncategorized
+                                      for (const video of videosInCategory) {
+                                        await vpsDataStore.updateProduct({ ...video, category: 'Uncategorized' });
+                                      }
+                                    } else {
+                                      return; // Cancel deletion
+                                    }
+                                  }
+                                  
                                   if (confirm(`Delete category "${category}"?`)) {
                                     const success = await vpsDataStore.deleteCategory(category);
                                     if (success) {
                                       const updatedCategories = await vpsDataStore.getCategories();
                                       setCategories(updatedCategories);
+                                      // Reload videos to reflect changes
+                                      await loadRealData(true);
                                     } else {
                                       alert('Failed to delete category');
                                     }
