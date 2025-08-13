@@ -530,8 +530,18 @@ export default function ProfessionalUserDashboard({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-xl font-bold text-emerald-100">Z</span>
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+                <img 
+                  src="https://zingalinga.io/zinga%20linga%20logo.png" 
+                  alt="Zinga Linga Logo" 
+                  className="w-full h-full object-contain p-1"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                />
+                <span className="text-xl font-bold text-emerald-100" style={{ display: 'none' }}>Z</span>
               </div>
               <div className="text-center sm:text-left">
                 <h1 className="text-xl font-bold text-white hidden sm:block">Zinga Linga</h1>
@@ -602,8 +612,8 @@ export default function ProfessionalUserDashboard({
               { id: 'dashboard', label: '🏠 Home', count: null },
               { id: 'all-content', label: '📚 Content', count: allContent.length },
               { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
-              { id: 'pp1-program', label: '📚 BB1', count: allContent.filter(c => c.category === 'PP1 Program').length },
-              { id: 'pp2-program', label: '📖 BB2', count: allContent.filter(c => c.category === 'PP2 Program').length },
+              { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
+              { id: 'pp2-program', label: '📖 PP2', count: allContent.filter(c => c.category === 'PP2 Program').length },
               { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
               { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => !localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed')).length },
               { id: 'packages', label: '📦 Packages', count: null },
@@ -634,8 +644,8 @@ export default function ProfessionalUserDashboard({
                 { id: 'dashboard', label: '🏠 Home', count: null },
                 { id: 'all-content', label: '📚 Content', count: allContent.length },
                 { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
-                { id: 'pp1-program', label: '📚 BB1', count: allContent.filter(c => c.category === 'PP1 Program').length },
-                { id: 'pp2-program', label: '📖 BB2', count: allContent.filter(c => c.category === 'PP2 Program').length },
+                { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
+                { id: 'pp2-program', label: '📖 PP2', count: allContent.filter(c => c.category === 'PP2 Program').length },
                 { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
                 { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => 
                   !localPurchases.some(purchase => 
@@ -2435,8 +2445,18 @@ export default function ProfessionalUserDashboard({
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center space-x-4 mb-4">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                  <span className="text-xl font-mali font-bold text-brand-green">Z</span>
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden">
+                  <img 
+                    src="https://zingalinga.io/zinga%20linga%20logo.png" 
+                    alt="Zinga Linga Logo" 
+                    className="w-full h-full object-contain p-1"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                      if (fallback) fallback.style.display = 'flex';
+                    }}
+                  />
+                  <span className="text-xl font-mali font-bold text-brand-green" style={{ display: 'none' }}>Z</span>
                 </div>
                 <div>
                   <h3 className="text-white font-mali font-bold text-xl">Zinga Linga</h3>

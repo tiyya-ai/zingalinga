@@ -68,7 +68,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
           <div className="mb-8 flex justify-center">
             <button onClick={() => window.location.href = '/'} className="focus:outline-none">
               <img 
-                src="/zinga-linga-logo.png" 
+                src="https://zingalinga.io/zinga%20linga%20logo.png" 
                 alt="Zinga Linga Logo" 
                 className="h-40 w-auto drop-shadow-2xl hover:scale-105 transition-transform duration-300 cursor-pointer"
               />
