@@ -2063,6 +2063,20 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     }
   };
 
+  const handleDeleteAudio = async (audioId: string) => {
+    const success = await vpsDataStore.deleteProduct(audioId);
+    if (success) {
+      // Force clear cache and full data refresh to sync admin/user views
+      vpsDataStore.clearMemoryCache();
+      await loadRealData(true);
+      setToast({message: 'Audio lesson deleted successfully!', type: 'success'});
+      setTimeout(() => setToast(null), 3000);
+    } else {
+      setToast({message: 'Failed to delete audio lesson', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
   const getVideoTypeIcon = (videoType: string) => {
     switch (videoType) {
       case 'youtube': return <Youtube className="h-4 w-4 text-red-500" />;
@@ -4170,7 +4184,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                             className="w-8 h-8 bg-red-50 hover:bg-red-100 rounded flex items-center justify-center transition-colors"
                             onPress={() => {
                               if (confirm(`Are you sure you want to delete "${lesson.title}"? This action cannot be undone.`)) {
-                                handleDeleteVideo(lesson.id);
+                                handleDeleteAudio(lesson.id);
                               }
                             }}
                             aria-label={`Delete audio lesson ${lesson.title}`}
@@ -4248,7 +4262,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       className="hover:bg-red-50 transition-colors"
                       onPress={() => {
                         if (confirm(`Are you sure you want to delete "${lesson.title}"? This action cannot be undone.`)) {
-                          handleDeleteVideo(lesson.id);
+                          handleDeleteAudio(lesson.id);
                         }
                       }}
                     >
