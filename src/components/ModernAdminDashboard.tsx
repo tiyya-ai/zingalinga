@@ -2022,25 +2022,23 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       }
       
       console.log('ðŸŽ‰ Video save process completed successfully');
-      // Reset form after successful creation (not for edits)
-      if (!editingVideo) {
-        setVideoForm({
-          title: '',
-          description: '',
-          price: 0,
-          category: '',
-          rating: 0,
-          thumbnail: '',
-          videoUrl: '',
-          duration: '',
-          ageGroup: '',
-          videoType: 'educational',
-          language: 'english',
-          tags: '',
-          status: 'active'
-        });
-        setEditingVideo(null);
-      }
+      // Reset form after successful save
+      setVideoForm({
+        title: '',
+        description: '',
+        price: 0,
+        category: '',
+        rating: 0,
+        thumbnail: '',
+        videoUrl: '',
+        duration: '',
+        ageGroup: '3-8 years',
+        videoType: 'youtube',
+        language: 'English',
+        tags: '',
+        status: 'active'
+      });
+      setEditingVideo(null);
       
       // Force immediate reload to show new video
       await loadRealData();
@@ -4349,12 +4347,28 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       size="sm" 
                       variant="light" 
                       className="hover:bg-red-50 transition-colors"
-                      onPress={() => {
-                        if (confirm(`Are you sure you want to delete "${program.title}"? This action cannot be undone.`)) {
-                          handleDeleteVideo(program.id);
+                      onPress={async () => {
+                        if (confirm(`Remove "${program.title}" from PP1 Program? The video will remain in your library.`)) {
+                          try {
+                            // Instead of deleting, change category to 'Uncategorized'
+                            const updatedVideo = { ...program, category: 'Uncategorized' };
+                            const success = await vpsDataStore.updateProduct(updatedVideo);
+                            if (success) {
+                              vpsDataStore.clearMemoryCache();
+                              await loadRealData(true);
+                              setToast({message: 'Video removed from PP1 Program!', type: 'success'});
+                              setTimeout(() => setToast(null), 3000);
+                            } else {
+                              setToast({message: 'Failed to remove from PP1 Program', type: 'error'});
+                              setTimeout(() => setToast(null), 3000);
+                            }
+                          } catch (error) {
+                            setToast({message: 'Error removing from PP1 Program', type: 'error'});
+                            setTimeout(() => setToast(null), 3000);
+                          }
                         }
                       }}
-                      aria-label={`Delete PP1 program ${program.title}`}
+                      aria-label={`Remove PP1 program ${program.title}`}
                     >
                       <Trash2 className="h-4 w-4 text-red-600" />
                     </Button>
@@ -4442,12 +4456,28 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       size="sm" 
                       variant="light" 
                       className="hover:bg-red-50 transition-colors"
-                      onPress={() => {
-                        if (confirm(`Are you sure you want to delete "${program.title}"? This action cannot be undone.`)) {
-                          handleDeleteVideo(program.id);
+                      onPress={async () => {
+                        if (confirm(`Remove "${program.title}" from PP2 Program? The video will remain in your library.`)) {
+                          try {
+                            // Instead of deleting, change category to 'Uncategorized'
+                            const updatedVideo = { ...program, category: 'Uncategorized' };
+                            const success = await vpsDataStore.updateProduct(updatedVideo);
+                            if (success) {
+                              vpsDataStore.clearMemoryCache();
+                              await loadRealData(true);
+                              setToast({message: 'Video removed from PP2 Program!', type: 'success'});
+                              setTimeout(() => setToast(null), 3000);
+                            } else {
+                              setToast({message: 'Failed to remove from PP2 Program', type: 'error'});
+                              setTimeout(() => setToast(null), 3000);
+                            }
+                          } catch (error) {
+                            setToast({message: 'Error removing from PP2 Program', type: 'error'});
+                            setTimeout(() => setToast(null), 3000);
+                          }
                         }
                       }}
-                      aria-label={`Delete PP2 program ${program.title}`}
+                      aria-label={`Remove PP2 program ${program.title}`}
                     >
                       <Trash2 className="h-4 w-4 text-red-600" />
                     </Button>

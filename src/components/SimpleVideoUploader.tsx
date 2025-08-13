@@ -111,13 +111,28 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         setUrlPreview(`https://www.youtube.com/embed/${youtubeId}`);
         setUrlThumbnail(`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`);
         
-        // Try to get video info but don't auto-upload
+        // Auto-process YouTube video
         const videoInfo = await fetchYouTubeVideoInfo(youtubeId);
         console.log('YouTube video info loaded:', videoInfo.title);
+        
+        onVideoUploaded({
+          title: videoInfo.title,
+          videoUrl: processedUrl,
+          duration: videoInfo.duration,
+          thumbnail: `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`
+        });
       } else if (vimeoId) {
         setUrlPreview(`https://player.vimeo.com/video/${vimeoId}`);
         setUrlThumbnail(`https://vumbnail.com/${vimeoId}.jpg`);
         console.log('Vimeo video preview set');
+        
+        // Auto-process Vimeo video
+        onVideoUploaded({
+          title: 'Vimeo Video',
+          videoUrl: processedUrl,
+          duration: '5:00',
+          thumbnail: `https://vumbnail.com/${vimeoId}.jpg`
+        });
       } else if (googleDriveId) {
         console.log('Setting Google Drive preview for ID:', googleDriveId);
         const previewUrl = `https://drive.google.com/file/d/${googleDriveId}/preview`;
@@ -132,13 +147,20 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         ];
         
         let thumbnailFound = false;
+        const defaultThumbnail = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGY4NWY0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Hb29nbGUgRHJpdmUgVmlkZW88L3RleHQ+PC9zdmc+';
         
         const tryThumbnail = (index = 0) => {
           if (index >= thumbnailUrls.length || thumbnailFound) {
-            // All failed, use default
+            // All failed, use default and auto-process
             console.log('All Google Drive thumbnail methods failed, using default');
-            const defaultThumbnail = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGY4NWY0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Hb29nbGUgRHJpdmUgVmlkZW88L3RleHQ+PC9zdmc+';
             setUrlThumbnail(defaultThumbnail);
+            
+            onVideoUploaded({
+              title: 'Google Drive Video',
+              videoUrl: processedUrl,
+              duration: '5:00',
+              thumbnail: defaultThumbnail
+            });
             return;
           }
           
@@ -147,6 +169,14 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
             console.log(`Google Drive thumbnail loaded successfully with method ${index + 1}:`, thumbnailUrls[index]);
             thumbnailFound = true;
             setUrlThumbnail(thumbnailUrls[index]);
+            
+            // Auto-process Google Drive video
+            onVideoUploaded({
+              title: 'Google Drive Video',
+              videoUrl: processedUrl,
+              duration: '5:00',
+              thumbnail: thumbnailUrls[index]
+            });
           };
           img.onerror = () => {
             console.log(`Thumbnail method ${index + 1} failed:`, thumbnailUrls[index]);
@@ -159,6 +189,30 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
       } else if (url.match(/\.(mp4|webm|ogg)$/i)) {
         setUrlPreview(url);
         console.log('Direct video file detected');
+        
+        // Auto-process direct video file
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.onloadedmetadata = () => {
+          const duration = video.duration;
+          const minutes = Math.floor(duration / 60);
+          const seconds = Math.floor(duration % 60);
+          const videoDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+          
+          onVideoUploaded({
+            title: 'Video',
+            videoUrl: processedUrl,
+            duration: videoDuration
+          });
+        };
+        video.onerror = () => {
+          onVideoUploaded({
+            title: 'Video',
+            videoUrl: processedUrl,
+            duration: '5:00'
+          });
+        };
+        video.src = url;
       } else {
         setUrlPreview(null);
         setUrlThumbnail(null);
@@ -333,16 +387,6 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         )}
         <div className="flex justify-between items-center">
           <p className="text-xs text-gray-500">Supports YouTube, Vimeo, Google Drive, and direct video links</p>
-          {urlPreview && (
-            <Button 
-              size="sm"
-              color="primary"
-              onPress={handleUrlSubmit}
-              className="ml-2"
-            >
-              Use This Video
-            </Button>
-          )}
         </div>
       </div>
     </div>
