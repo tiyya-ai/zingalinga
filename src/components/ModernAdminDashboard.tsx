@@ -2627,7 +2627,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       <Card className="bg-white border border-gray-200">
         <CardHeader className="border-b border-gray-200 p-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 w-full">
-            <h3 className="text-lg font-semibold text-gray-900">Video Library ({videos.length})</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Video Library ({videos.filter(v => v.category !== 'Audio Lessons' && v.type !== 'audio').length})</h3>
             <div className="flex gap-2">
               <Input
                 placeholder="Search videos..."
@@ -2665,9 +2665,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-16">
                   <input 
                     type="checkbox" 
-                    checked={selectedVideos.length === videos.length && videos.length > 0}
+                    checked={selectedVideos.length === videos.filter(v => v.category !== 'Audio Lessons' && v.type !== 'audio').length && videos.filter(v => v.category !== 'Audio Lessons' && v.type !== 'audio').length > 0}
                     onChange={(e) => {
-                      const videoList = videos;
+                      const videoList = videos.filter(v => v.category !== 'Audio Lessons' && v.type !== 'audio');
                       if (e.target.checked) {
                         setSelectedVideos(videoList.map(v => v.id));
                       } else {
@@ -2685,6 +2685,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               </TableHeader>
               <TableBody emptyContent="No videos found">
                 {videos
+                  .filter(video => video.category !== 'Audio Lessons' && video.type !== 'audio')
                   .filter(video => {
                     const matchesSearch = videoSearchTerm === '' || 
                       video.title.toLowerCase().includes(videoSearchTerm.toLowerCase()) ||
