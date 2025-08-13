@@ -155,7 +155,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [uploadQueueSearch, setUploadQueueSearch] = useState('');
   const [accessLogs, setAccessLogs] = useState<any[]>([]);
   const [childrenProfiles, setChildrenProfiles] = useState<any[]>([]);
-  const [categories, setCategories] = useState<string[]>(['Audio Lessons', 'PP1 Program', 'PP2 Program']);
+  const [categories, setCategories] = useState<string[]>(['PP1 Program', 'PP2 Program']);
   const [contentBundles, setContentBundles] = useState<any[]>([]);
   const [userProgress, setUserProgress] = useState<any[]>([]);
   const [newCategory, setNewCategory] = useState('');
