@@ -2032,8 +2032,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const handleDeleteVideo = async (videoId: string) => {
     const success = await vpsDataStore.deleteProduct(videoId);
     if (success) {
-      // Force reload from data store
-      await loadRealData();
+      // Force clear cache and full data refresh to sync admin/user views
+      vpsDataStore.clearMemoryCache();
+      await loadRealData(true);
       setToast({message: 'Video deleted successfully!', type: 'success'});
       setTimeout(() => setToast(null), 3000);
     } else {
@@ -2545,19 +2546,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         title="All Videos" 
         actions={
           <div className="flex gap-2">
-            <Button 
-              variant="flat"
-              className="bg-gray-100 text-gray-700 hover:bg-gray-200"
-              onPress={async () => {
-                setToast({message: 'Refreshing video data...', type: 'info'});
-                setTimeout(() => setToast(null), 1000);
-                await loadRealData(true);
-                setToast({message: 'Video data refreshed successfully!', type: 'success'});
-                setTimeout(() => setToast(null), 3000);
-              }}
-            >
-              Refresh Data
-            </Button>
             {selectedVideos.length > 0 && (
               <div className="flex gap-2">
                 <Button 
