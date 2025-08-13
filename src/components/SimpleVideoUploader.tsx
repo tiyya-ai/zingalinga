@@ -111,26 +111,13 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         setUrlPreview(`https://www.youtube.com/embed/${youtubeId}`);
         setUrlThumbnail(`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`);
         
-        // Try to get video info
+        // Try to get video info but don't auto-upload
         const videoInfo = await fetchYouTubeVideoInfo(youtubeId);
-        
-        // Auto-populate video data for YouTube
-        onVideoUploaded({
-          title: title || videoInfo.title,
-          videoUrl: processedUrl,
-          duration: videoInfo.duration,
-          thumbnail: `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`
-        });
+        console.log('YouTube video info loaded:', videoInfo.title);
       } else if (vimeoId) {
         setUrlPreview(`https://player.vimeo.com/video/${vimeoId}`);
         setUrlThumbnail(`https://vumbnail.com/${vimeoId}.jpg`);
-        // Auto-populate video data for Vimeo
-        onVideoUploaded({
-          title: title || 'Vimeo Video',
-          videoUrl: processedUrl,
-          duration: '5:00',
-          thumbnail: `https://vumbnail.com/${vimeoId}.jpg`
-        });
+        console.log('Vimeo video preview set');
       } else if (googleDriveId) {
         console.log('Setting Google Drive preview for ID:', googleDriveId);
         const previewUrl = `https://drive.google.com/file/d/${googleDriveId}/preview`;
@@ -152,12 +139,6 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
             console.log('All Google Drive thumbnail methods failed, using default');
             const defaultThumbnail = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGY4NWY0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Hb29nbGUgRHJpdmUgVmlkZW88L3RleHQ+PC9zdmc+';
             setUrlThumbnail(defaultThumbnail);
-            onVideoUploaded({
-              title: title || 'Google Drive Video',
-              videoUrl: processedUrl,
-              duration: '5:00',
-              thumbnail: defaultThumbnail
-            });
             return;
           }
           
@@ -166,12 +147,6 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
             console.log(`Google Drive thumbnail loaded successfully with method ${index + 1}:`, thumbnailUrls[index]);
             thumbnailFound = true;
             setUrlThumbnail(thumbnailUrls[index]);
-            onVideoUploaded({
-              title: title || 'Google Drive Video',
-              videoUrl: processedUrl,
-              duration: '5:00',
-              thumbnail: thumbnailUrls[index]
-            });
           };
           img.onerror = () => {
             console.log(`Thumbnail method ${index + 1} failed:`, thumbnailUrls[index]);
@@ -183,38 +158,11 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         tryThumbnail();
       } else if (url.match(/\.(mp4|webm|ogg)$/i)) {
         setUrlPreview(url);
-        // For direct video files, try to get duration from video element
-        const video = document.createElement('video');
-        video.preload = 'metadata';
-        video.onloadedmetadata = () => {
-          const duration = video.duration;
-          const minutes = Math.floor(duration / 60);
-          const seconds = Math.floor(duration % 60);
-          const formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-          
-          onVideoUploaded({
-            title: title || 'Video',
-            videoUrl: processedUrl,
-            duration: formattedDuration
-          });
-        };
-        video.onerror = () => {
-          onVideoUploaded({
-            title: title || 'Video',
-            videoUrl: processedUrl,
-            duration: '5:00'
-          });
-        };
-        video.src = url;
+        console.log('Direct video file detected');
       } else {
         setUrlPreview(null);
         setUrlThumbnail(null);
-        // For other URLs, set a default duration
-        onVideoUploaded({
-          title: title || 'Video',
-          videoUrl: processedUrl,
-          duration: '5:00'
-        });
+        console.log('Unknown URL format');
       }
     } else {
       setUrlPreview(null);
@@ -246,19 +194,39 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
   const handleUrlSubmit = async () => {
     if (!videoUrl.trim()) return;
     
+    // Convert Google Drive URLs to direct links
+    let processedUrl = videoUrl;
+    if (isGoogleDriveUrl(videoUrl)) {
+      const driveResult = convertGoogleDriveUrl(videoUrl);
+      if (driveResult.directUrl !== videoUrl) {
+        processedUrl = driveResult.directUrl;
+      }
+    }
+    
     let videoTitle = title.trim();
     let videoDuration = '5:00';
+    let videoThumbnail = urlThumbnail;
     
-    const youtubeId = getYouTubeVideoId(videoUrl);
-    const vimeoId = getVimeoVideoId(videoUrl);
+    const youtubeId = getYouTubeVideoId(processedUrl);
+    const vimeoId = getVimeoVideoId(processedUrl);
+    const googleDriveId = getGoogleDriveVideoId(processedUrl);
     
     if (youtubeId) {
       const videoInfo = await fetchYouTubeVideoInfo(youtubeId);
       videoTitle = videoTitle || videoInfo.title;
       videoDuration = videoInfo.duration;
+      videoThumbnail = videoThumbnail || `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`;
     } else if (vimeoId) {
       videoTitle = videoTitle || 'Vimeo Video';
       videoDuration = '5:00';
+      videoThumbnail = videoThumbnail || `https://vumbnail.com/${vimeoId}.jpg`;
+    } else if (googleDriveId) {
+      videoTitle = videoTitle || 'Google Drive Video';
+      videoDuration = '5:00';
+      // Use existing thumbnail or default
+      if (!videoThumbnail) {
+        videoThumbnail = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGY4NWY0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Hb29nbGUgRHJpdmUgVmlkZW88L3RleHQ+PC9zdmc+';
+      }
     } else if (videoUrl.match(/\.(mp4|webm|ogg)$/i)) {
       videoTitle = videoTitle || 'Video';
       // Try to get duration from video element
@@ -269,18 +237,37 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         const minutes = Math.floor(duration / 60);
         const seconds = Math.floor(duration % 60);
         videoDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Call onVideoUploaded with the correct duration
+        onVideoUploaded({
+          title: videoTitle,
+          videoUrl: processedUrl,
+          duration: videoDuration,
+          thumbnail: videoThumbnail || undefined
+        });
+      };
+      video.onerror = () => {
+        // Fallback if video metadata can't be loaded
+        onVideoUploaded({
+          title: videoTitle,
+          videoUrl: processedUrl,
+          duration: '5:00',
+          thumbnail: videoThumbnail || undefined
+        });
       };
       video.src = videoUrl;
+      return; // Exit early since we'll call onVideoUploaded in the callback
     } else {
       videoTitle = videoTitle || 'Video';
       videoDuration = '5:00';
     }
     
+    // Call onVideoUploaded for non-direct video files
     onVideoUploaded({
       title: videoTitle,
-      videoUrl: videoUrl,
+      videoUrl: processedUrl,
       duration: videoDuration,
-      thumbnail: urlThumbnail || undefined
+      thumbnail: videoThumbnail || undefined
     });
     
     // Clear form after successful submission
@@ -346,6 +333,16 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         )}
         <div className="flex justify-between items-center">
           <p className="text-xs text-gray-500">Supports YouTube, Vimeo, Google Drive, and direct video links</p>
+          {urlPreview && (
+            <Button 
+              size="sm"
+              color="primary"
+              onPress={handleUrlSubmit}
+              className="ml-2"
+            >
+              Use This Video
+            </Button>
+          )}
         </div>
       </div>
     </div>
