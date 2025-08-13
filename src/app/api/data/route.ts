@@ -50,6 +50,7 @@ function getDefaultData() {
     purchases: [],
     contentFiles: [],
     uploadQueue: [],
+    packages: [],
     settings: {
       siteName: 'Zinga Linga',
       defaultLanguage: 'en',

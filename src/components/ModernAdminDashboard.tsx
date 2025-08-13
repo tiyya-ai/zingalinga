@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
 import {
@@ -100,6 +100,23 @@ import { vpsDataStore } from '../utils/vpsDataStore';
 import { UserManagement } from './UserManagement';
 import { Module } from '../types';
 import { SuccessModal } from './SuccessModal';
+
+const AdminSuccessModal = ({ isOpen, onClose, message }: { isOpen: boolean; onClose: () => void; message: string }) => (
+  <Modal isOpen={isOpen} onClose={onClose} size="sm" backdrop="blur">
+    <ModalContent>
+      <ModalBody className="p-8 text-center">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <CheckCircle className="h-10 w-10 text-green-600" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Success!</h3>
+        <p className="text-gray-600">{message}</p>
+      </ModalBody>
+      <ModalFooter className="justify-center">
+        <Button color="success" onPress={onClose}>OK</Button>
+      </ModalFooter>
+    </ModalContent>
+  </Modal>
+);
 import SimpleVideoUploader from './SimpleVideoUploader';
 
 interface ModernAdminDashboardProps {
@@ -153,6 +170,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [adminSuccessModal, setAdminSuccessModal] = useState({ isOpen: false, message: '' });
   const [notifications, setNotifications] = useState<any[]>([]);
 
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
@@ -259,7 +277,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       const data = await vpsDataStore.loadData();
       const packageData = data.packages || [];
       setPackages(packageData);
-      console.log('📦 Loaded packages:', packageData.length);
+      console.log('ðŸ“¦ Loaded packages:', packageData.length);
     } catch (error) {
       console.error('Failed to load packages:', error);
       setPackages([]);
@@ -371,7 +389,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         };
       });
       
-      console.log(`🎬 Loaded ${processedVideos.length} videos for display`);
+      console.log(`ðŸŽ¬ Loaded ${processedVideos.length} videos for display`);
       setVideos(processedVideos);
 
       // Convert real purchases to orders format
@@ -755,6 +773,20 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   dateOfBirth: '',
                   subscription: 'free'
                 });
+              } else if (item.id === 'add-package') {
+                setEditingPackage(null);
+                setPackageForm({
+                  name: '',
+                  icon: '',
+                  description: '',
+                  price: 0,
+                  type: 'subscription',
+                  features: '',
+                  isActive: true,
+                  isPopular: false,
+                  coverImage: ''
+                });
+                setActiveSection(item.id);
               } else {
                 setActiveSection(item.id);
               }
@@ -1610,6 +1642,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     isPopular: false,
     coverImage: ''
   });
+  const [editingPackage, setEditingPackage] = useState<any>(null);
   
   // PP1 and PP2 form states
   const [pp1Form, setPP1Form] = useState({
@@ -1708,7 +1741,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   };
 
   const handleEditVideo = (video: Module) => {
-    console.log('🎬 Editing video:', { id: video.id, title: video.title, hasVideoUrl: !!video.videoUrl, hasThumbnail: !!video.thumbnail });
+    console.log('ðŸŽ¬ Editing video:', { id: video.id, title: video.title, hasVideoUrl: !!video.videoUrl, hasThumbnail: !!video.thumbnail });
     setEditingVideo(video);
     
     // Determine video type based on URL and existing videoType
@@ -1720,10 +1753,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         videoType = 'vimeo';
       } else if (video.videoUrl.startsWith('data:')) {
         videoType = 'upload';
-        console.log('📹 Detected base64 uploaded video');
+        console.log('ðŸ“¹ Detected base64 uploaded video');
       } else if (video.videoUrl.startsWith('blob:')) {
         videoType = 'upload';
-        console.log('📹 Detected blob uploaded video');
+        console.log('ðŸ“¹ Detected blob uploaded video');
       } else if (video.videoUrl.startsWith('http')) {
         videoType = 'external';
       } else {
@@ -1758,7 +1791,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     
     setVideoForm(formData);
     
-    console.log('✅ Video form populated:', {
+    console.log('âœ… Video form populated:', {
       title: formData.title,
       videoType: formData.videoType,
       hasVideoUrl: !!formData.videoUrl,
@@ -1812,19 +1845,19 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         return;
       }
       
-      console.log('🖼️ Processing thumbnail image:', file.name, 'Size:', (file.size / (1024 * 1024)).toFixed(1), 'MB');
+      console.log('ðŸ–¼ï¸ Processing thumbnail image:', file.name, 'Size:', (file.size / (1024 * 1024)).toFixed(1), 'MB');
       
       // Convert to base64 for permanent storage
       const reader = new FileReader();
       reader.onload = (e) => {
         const base64Image = e.target?.result as string;
-        console.log('✅ Thumbnail converted to base64, length:', base64Image.length);
+        console.log('âœ… Thumbnail converted to base64, length:', base64Image.length);
         setVideoForm(prev => ({ ...prev, thumbnail: base64Image }));
-        console.log('💾 Thumbnail form updated with base64 data');
+        console.log('ðŸ’¾ Thumbnail form updated with base64 data');
       };
       
       reader.onerror = () => {
-        console.error('❌ Failed to read thumbnail file');
+        console.error('âŒ Failed to read thumbnail file');
         setToast({message: 'Failed to read image file', type: 'error'});
         setTimeout(() => setToast(null), 3000);
       };
@@ -1849,7 +1882,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const handleSaveVideo = async () => {
     try {
-      console.log('🎬 Starting video save process:', { 
+      console.log('ðŸŽ¬ Starting video save process:', { 
         editing: !!editingVideo, 
         title: videoForm.title, 
         videoUrl: videoForm.videoUrl?.substring(0, 50),
@@ -1877,7 +1910,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       let persistentVideoUrl = videoForm.videoUrl;
       let persistentThumbnail = videoForm.thumbnail;
       
-      console.log('🔄 Processing media URLs for persistence...');
+      console.log('ðŸ”„ Processing media URLs for persistence...');
       console.log('Video URL type:', videoForm.videoUrl?.substring(0, 20));
       console.log('Thumbnail URL type:', videoForm.thumbnail?.substring(0, 20));
       
@@ -1885,7 +1918,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       if (videoForm.videoUrl) {
         if (videoForm.videoUrl.startsWith('blob:')) {
           try {
-            console.log('📹 Converting video blob to base64...');
+            console.log('ðŸ“¹ Converting video blob to base64...');
             const response = await fetch(videoForm.videoUrl);
             const blob = await response.blob();
             const reader = new FileReader();
@@ -1893,13 +1926,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               reader.onload = () => resolve(reader.result as string);
               reader.readAsDataURL(blob);
             });
-            console.log('✅ Video blob converted to base64');
+            console.log('âœ… Video blob converted to base64');
           } catch (error) {
-            console.error('❌ Failed to convert video blob to base64:', error);
+            console.error('âŒ Failed to convert video blob to base64:', error);
           }
         } else {
           // Preserve base64, YouTube, Vimeo, and external URLs as-is
-          console.log('✅ Preserving existing video URL format');
+          console.log('âœ… Preserving existing video URL format');
           persistentVideoUrl = videoForm.videoUrl;
         }
       }
@@ -1907,7 +1940,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       if (videoForm.thumbnail) {
         if (videoForm.thumbnail.startsWith('blob:')) {
           try {
-            console.log('🖼️ Converting thumbnail blob to base64...');
+            console.log('ðŸ–¼ï¸ Converting thumbnail blob to base64...');
             const response = await fetch(videoForm.thumbnail);
             const blob = await response.blob();
             const reader = new FileReader();
@@ -1915,21 +1948,21 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               reader.onload = () => resolve(reader.result as string);
               reader.readAsDataURL(blob);
             });
-            console.log('✅ Thumbnail blob converted to base64');
+            console.log('âœ… Thumbnail blob converted to base64');
           } catch (error) {
-            console.error('❌ Failed to convert thumbnail blob to base64:', error);
+            console.error('âŒ Failed to convert thumbnail blob to base64:', error);
           }
         } else {
           // Preserve base64 and external URLs as-is
-          console.log('✅ Preserving existing thumbnail URL format');
+          console.log('âœ… Preserving existing thumbnail URL format');
           persistentThumbnail = videoForm.thumbnail;
         }
       }
       
-      console.log('💾 Final URLs - Video:', persistentVideoUrl?.substring(0, 50), 'Thumbnail:', persistentThumbnail?.substring(0, 50));
+      console.log('ðŸ’¾ Final URLs - Video:', persistentVideoUrl?.substring(0, 50), 'Thumbnail:', persistentThumbnail?.substring(0, 50));
       
       if (editingVideo) {
-        console.log('📝 Updating existing video...');
+        console.log('ðŸ“ Updating existing video...');
         const updatedVideo = { 
           ...editingVideo, 
           title: videoForm.title,
@@ -1951,10 +1984,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           updatedAt: new Date().toISOString()
         };
         
-        console.log('💾 Saving updated video to data store...');
+        console.log('ðŸ’¾ Saving updated video to data store...');
         const success = await vpsDataStore.updateProduct(updatedVideo);
         if (success) {
-          console.log('✅ Video updated in data store');
+          console.log('âœ… Video updated in data store');
           vpsDataStore.clearMemoryCache();
           // Reload videos from data store to ensure sync
           const updatedVideos = await vpsDataStore.getProducts();
@@ -1962,13 +1995,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           setToast({message: 'Video updated successfully!', type: 'success'});
           setTimeout(() => setToast(null), 3000);
         } else {
-          console.log('❌ Failed to update video in data store');
+          console.log('âŒ Failed to update video in data store');
           setToast({message: 'Failed to update video. Please try again.', type: 'error'});
           setTimeout(() => setToast(null), 3000);
           return;
         }
       } else {
-        console.log('🆕 Creating new video...');
+        console.log('ðŸ†• Creating new video...');
         const newVideo: Module = {
           id: `video_${Date.now()}`,
           title: videoForm.title,
@@ -1991,12 +2024,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           updatedAt: new Date().toISOString()
         };
         
-        console.log('💾 Saving new video to data store...');
+        console.log('ðŸ’¾ Saving new video to data store...');
         let success = await vpsDataStore.addProduct(newVideo);
         
         // If failed due to large file, save metadata only
         if (!success && newVideo.videoUrl.startsWith('data:')) {
-          console.log('🔄 Large file detected, saving metadata only');
+          console.log('ðŸ”„ Large file detected, saving metadata only');
           const lightVideo = {
             ...newVideo,
             videoUrl: '', // Remove video data but keep metadata
@@ -2006,24 +2039,24 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           };
           success = await vpsDataStore.addProduct(lightVideo);
           if (success) {
-            console.log('✅ Video metadata saved successfully');
+            console.log('âœ… Video metadata saved successfully');
           }
         }
         
         if (success) {
-          console.log('✅ Video created in data store');
-          console.log('🔍 Verifying save - checking if video exists in data store...');
+          console.log('âœ… Video created in data store');
+          console.log('ðŸ” Verifying save - checking if video exists in data store...');
           vpsDataStore.clearMemoryCache();
           // Reload videos from data store to ensure sync
           const updatedVideos = await vpsDataStore.getProducts();
-          console.log('📊 Total videos after save:', updatedVideos.length);
+          console.log('ðŸ“Š Total videos after save:', updatedVideos.length);
           const savedVideo = updatedVideos.find(v => v.id === newVideo.id);
-          console.log('🔍 Video found in data store:', savedVideo ? 'YES' : 'NO');
+          console.log('ðŸ” Video found in data store:', savedVideo ? 'YES' : 'NO');
           setVideos(updatedVideos);
           setToast({message: savedVideo ? 'Video saved successfully!' : 'Video may not have saved properly', type: savedVideo ? 'success' : 'warning'});
           setTimeout(() => setToast(null), 3000);
         } else {
-          console.log('❌ Failed to create video in data store');
+          console.log('âŒ Failed to create video in data store');
           setToast({message: 'Failed to save. Try YouTube URL instead.', type: 'error'});
           setTimeout(() => setToast(null), 3000);
           return;
@@ -2033,19 +2066,19 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       // Clean up blob URLs after successful save
       if (videoForm.videoUrl.startsWith('blob:')) {
         URL.revokeObjectURL(videoForm.videoUrl);
-        console.log('🧹 Cleaned up video blob URL');
+        console.log('ðŸ§¹ Cleaned up video blob URL');
       }
       if (videoForm.thumbnail && videoForm.thumbnail.startsWith('blob:')) {
         URL.revokeObjectURL(videoForm.thumbnail);
-        console.log('🧹 Cleaned up thumbnail blob URL');
+        console.log('ðŸ§¹ Cleaned up thumbnail blob URL');
       }
       
-      console.log('🎉 Video save process completed successfully');
+      console.log('ðŸŽ‰ Video save process completed successfully');
       // Force immediate reload to show new video
       await loadRealData();
       setActiveSection('all-videos');
     } catch (error) {
-      console.error('❌ Failed to save video:', error);
+      console.error('âŒ Failed to save video:', error);
       setToast({message: 'Failed to save video. Please try again.', type: 'error'});
       setTimeout(() => setToast(null), 3000);
     }
@@ -3612,7 +3645,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const handleUpdateProfile = async () => {
     try {
-      console.log('🔄 Starting profile update...', { 
+      console.log('ðŸ”„ Starting profile update...', { 
         name: profileForm.name, 
         email: profileForm.email,
         userId: user?.id,
@@ -3663,15 +3696,15 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         updateData.password = profileForm.newPassword.trim();
       }
       
-      console.log('💾 Updating user with data:', updateData);
+      console.log('ðŸ’¾ Updating user with data:', updateData);
       
       const success = await vpsDataStore.updateUser(user.id, updateData);
       
-      console.log('✅ Update result:', success);
+      console.log('âœ… Update result:', success);
       
       if (success) {
         // Show success message immediately
-        alert('✅ Profile updated successfully!');
+        setAdminSuccessModal({ isOpen: true, message: 'Profile updated successfully!' });
         setToast({message: 'Profile updated successfully!', type: 'success'});
         setTimeout(() => setToast(null), 5000);
         
@@ -3684,19 +3717,19 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         }));
         
         // Force reload of user data
-        console.log('🔄 Reloading user data...');
+        console.log('ðŸ”„ Reloading user data...');
         await loadRealData();
         
-        console.log('🎉 Profile update completed successfully!');
+        console.log('ðŸŽ‰ Profile update completed successfully!');
       } else {
-        console.error('❌ Profile update failed');
-        alert('❌ Failed to update profile. Please check your information and try again.');
+        console.error('âŒ Profile update failed');
+        alert('âŒ Failed to update profile. Please check your information and try again.');
         setToast({message: 'Failed to update profile. Please check your information and try again.', type: 'error'});
         setTimeout(() => setToast(null), 3000);
       }
     } catch (error) {
-      console.error('❌ Profile update error:', error);
-      alert('❌ An error occurred while updating your profile. Please try again.');
+      console.error('âŒ Profile update error:', error);
+      alert('âŒ An error occurred while updating your profile. Please try again.');
       setToast({message: 'An error occurred while updating your profile. Please try again.', type: 'error'});
       setTimeout(() => setToast(null), 3000);
     }
@@ -4561,6 +4594,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   // Package management functions
   const handleSavePackage = async () => {
     try {
+      console.log('ðŸ“¦ Starting package save process:', packageForm.name);
+      
       if (!packageForm.name.trim()) {
         setToast({message: 'Please enter a package name', type: 'error'});
         setTimeout(() => setToast(null), 3000);
@@ -4569,23 +4604,26 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       
       const packageData = {
         id: `package_${Date.now()}`,
-        name: packageForm.name,
-        icon: packageForm.icon,
-        description: packageForm.description,
+        name: packageForm.name.trim(),
+        icon: packageForm.icon || 'ðŸ“¦',
+        description: packageForm.description.trim(),
         price: packageForm.price,
         type: packageForm.type,
-        features: packageForm.features.split(',').map(f => f.trim()).filter(f => f),
+        features: packageForm.features ? packageForm.features.split(',').map(f => f.trim()) : [],
         isActive: packageForm.isActive,
         isPopular: packageForm.isPopular,
         coverImage: packageForm.coverImage,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
       
+      console.log('ðŸ’¾ Saving package to data store:', packageData);
       const success = await vpsDataStore.addPackage(packageData);
+      
       if (success) {
-        await loadPackages(); // Reload packages
-        setToast({message: 'Package created successfully!', type: 'success'});
-        setTimeout(() => setToast(null), 3000);
+        console.log('âœ… Package saved successfully');
+        // Reload packages from data store
+        await loadPackages();
         
         // Reset form
         setPackageForm({
@@ -4599,17 +4637,40 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           isPopular: false,
           coverImage: ''
         });
+        setEditingPackage(null);
         
+        setToast({message: 'Package created successfully!', type: 'success'});
+        setTimeout(() => setToast(null), 3000);
+        
+        // Navigate back to packages list
         setActiveSection('all-packages');
       } else {
-        setToast({message: 'Failed to create package', type: 'error'});
+        console.log('âŒ Failed to save package');
+        setToast({message: 'Failed to create package. Package name may already exist.', type: 'error'});
         setTimeout(() => setToast(null), 3000);
       }
     } catch (error) {
-      console.error('Failed to save package:', error);
-      setToast({message: 'Failed to save package', type: 'error'});
+      console.error('âŒ Error saving package:', error);
+      setToast({message: 'An error occurred while saving the package.', type: 'error'});
       setTimeout(() => setToast(null), 3000);
     }
+  };
+  
+  const handleEditPackage = (pkg: any) => {
+    console.log('📦 Editing package:', pkg.name);
+    setPackageForm({
+      name: pkg.name || '',
+      icon: pkg.icon || '',
+      description: pkg.description || '',
+      price: pkg.price || 0,
+      type: pkg.type || 'subscription',
+      features: Array.isArray(pkg.features) ? pkg.features.join(', ') : pkg.features || '',
+      isActive: pkg.isActive !== undefined ? pkg.isActive : true,
+      isPopular: pkg.isPopular !== undefined ? pkg.isPopular : false,
+      coverImage: pkg.coverImage || ''
+    });
+    setEditingPackage(pkg);
+    setActiveSection('add-package');
   };
 
   const handleDeletePackage = async (packageId: string) => {
@@ -5720,12 +5781,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <Layers className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No bundles yet</h3>
                 <p className="text-gray-600 mb-4">Create your first content bundle to offer discounted packages.</p>
-                <Button 
-                  className="bg-gray-900 text-white hover:bg-gray-800"
-                  startContent={<Plus className="h-4 w-4" />}
-                >
-                  Create Bundle
-                </Button>
+
               </div>
             )}
           </div>
@@ -6432,7 +6488,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   <span className="text-sm text-gray-600">{pkg.isActive ? 'Active' : 'Inactive'}</span>
                 </div>
                 <div className="flex gap-1">
-                  <Button size="sm" variant="light" className="hover:bg-blue-50">
+                  <Button size="sm" variant="light" className="hover:bg-blue-50" onPress={() => handleEditPackage(pkg)}>
                     <Edit className="w-4 h-4 text-blue-600" />
                   </Button>
                   <Button size="sm" variant="light" className="hover:bg-red-50">
@@ -6465,7 +6521,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const renderAddPackage = () => (
     <div className="space-y-6">
       <PageHeader 
-        title="Add New Package" 
+        title={editingPackage ? `Edit Package: ${editingPackage.name}` : "Add New Package"} 
         actions={
           <Button 
             variant="flat" 
@@ -6694,7 +6750,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               }}
               isDisabled={!packageForm.name.trim()}
             >
-              Create Package
+              {editingPackage ? 'Update Package' : 'Create Package'}
             </Button>
           </div>
         </div>
@@ -7595,7 +7651,29 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         title="Success!"
         message="Video created successfully!"
       />
+      
+      <AdminSuccessModal
+        isOpen={adminSuccessModal.isOpen}
+        onClose={() => setAdminSuccessModal({ isOpen: false, message: '' })}
+        message={adminSuccessModal.message}
+      />
       </div>
     </Suspense>
   );
 }
+
+  // Package render functions
+  const renderAllPackages = () => {
+    const { renderAllPackages: renderPackagesComponent } = require('./ModernAdminDashboardPackages');
+    return renderPackagesComponent(packages, handleDeletePackage, formatCurrency, setActiveSection);
+  };
+
+  const renderAddPackage = () => {
+    const { renderAddPackage: renderAddPackageComponent } = require('./ModernAdminDashboardPackages');
+    return renderAddPackageComponent(packageForm, setPackageForm, handleSavePackage, setActiveSection);
+  };
+
+  const renderLearningPackages = () => {
+    const { renderLearningPackages: renderLearningPackagesComponent } = require('./ModernAdminDashboardPackages');
+    return renderLearningPackagesComponent(setActiveSection);
+  };

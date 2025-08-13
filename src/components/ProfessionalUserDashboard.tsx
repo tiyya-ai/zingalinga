@@ -386,17 +386,18 @@ export default function ProfessionalUserDashboard({
 
   // Get content icons and colors for new content types
   const getContentIcon = (type: string, category: string) => {
-
+    if (category === 'Audio Lessons') return '🎧';
     if (category === 'Video Lessons') return '🎬';
     if (category === 'PP1 Program') return '📚';
     if (category === 'PP2 Program') return '📖';
     if (type === 'video' || !type) return '🎬';
+    if (type === 'audio') return '🎧';
     return '📄';
   };
 
   const getContentColor = (category: string) => {
     switch (category) {
-
+      case 'Audio Lessons': return 'from-blue-500 to-blue-600';
       case 'Video Lessons': return 'from-green-500 to-green-600';
       case 'PP1 Program': return 'from-orange-500 to-orange-600';
       case 'PP2 Program': return 'from-purple-500 to-purple-600';
@@ -601,8 +602,8 @@ export default function ProfessionalUserDashboard({
               { id: 'dashboard', label: '🏠 Home', count: null },
               { id: 'all-content', label: '📚 Content', count: allContent.length },
               { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
-              { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
-              { id: 'pp2-program', label: '📖 PP2', count: allContent.filter(c => c.category === 'PP2 Program').length },
+              { id: 'pp1-program', label: '📚 BB1', count: allContent.filter(c => c.category === 'PP1 Program').length },
+              { id: 'pp2-program', label: '📖 BB2', count: allContent.filter(c => c.category === 'PP2 Program').length },
               { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length },
               { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => !localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed')).length },
               { id: 'packages', label: '📦 Packages', count: null },
@@ -633,8 +634,8 @@ export default function ProfessionalUserDashboard({
                 { id: 'dashboard', label: '🏠 Home', count: null },
                 { id: 'all-content', label: '📚 Content', count: allContent.length },
                 { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
-                { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
-                { id: 'pp2-program', label: '📖 PP2', count: allContent.filter(c => c.category === 'PP2 Program').length },
+                { id: 'pp1-program', label: '📚 BB1', count: allContent.filter(c => c.category === 'PP1 Program').length },
+                { id: 'pp2-program', label: '📖 BB2', count: allContent.filter(c => c.category === 'PP2 Program').length },
                 { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length },
                 { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => 
                   !localPurchases.some(purchase => 
@@ -991,21 +992,33 @@ export default function ProfessionalUserDashboard({
         )}
 
         {/* Category-specific tabs */}
-        {['audio-lessons', 'video-lessons', 'pp1-program', 'pp2-program'].map(tabId => (
-          activeTab === tabId && (
+        {['audio-lessons', 'video-lessons', 'pp1-program', 'pp2-program'].map(tabId => {
+          // Map tab IDs to proper category names
+          const categoryMap: { [key: string]: string } = {
+            'audio-lessons': 'Audio Lessons',
+            'video-lessons': 'Video Lessons', 
+            'pp1-program': 'PP1 Program',
+            'pp2-program': 'PP2 Program'
+          };
+          
+          const categoryName = categoryMap[tabId];
+          const filteredContent = allContent.filter(content => content.category === categoryName);
+          
+          return activeTab === tabId && (
             <section key={tabId} className="space-y-6">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
-                  <span className="mr-2">{getContentIcon('', tabId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '))}</span>
-                  {tabId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                  <span className="mr-2">{getContentIcon('', categoryName)}</span>
+                  {categoryName}
                 </h2>
-                <p className="text-purple-200">Specialized {tabId.split('-').join(' ')} content for your learning journey</p>
+                <p className="text-purple-200">Specialized {categoryName.toLowerCase()} content for your learning journey</p>
+                <div className="mt-2 text-sm text-purple-300">
+                  {filteredContent.length} items available
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {allContent.filter(content => 
-                  content.category === tabId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
-                ).map((content) => {
+                {filteredContent.map((content) => {
                   const isPurchased = localPurchases.some(purchase => 
                     purchase.moduleId === content.id && 
                     purchase.userId === user?.id && 
@@ -1180,16 +1193,21 @@ export default function ProfessionalUserDashboard({
                 })}
               </div>
               
-              {allContent.filter(c => c.category === tabId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')).length === 0 && (
+              {filteredContent.length === 0 && (
                 <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-                  <div className="text-6xl mb-4">{getContentIcon('', tabId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '))}</div>
-                  <div className="text-white text-xl mb-2">No {tabId.split('-').join(' ')} available</div>
-                  <div className="text-purple-200 text-sm">Check back later for new content</div>
+                  <div className="text-6xl mb-4">{getContentIcon('', categoryName)}</div>
+                  <div className="text-white text-xl mb-2">No {categoryName} available</div>
+                  <div className="text-purple-200 text-sm mb-4">Check back later for new content</div>
+                  {user?.role === 'admin' && (
+                    <div className="text-yellow-400 text-sm">
+                      💡 Admin tip: Add content with category "{categoryName}" to populate this section
+                    </div>
+                  )}
                 </div>
               )}
             </section>
-          )
-        ))}
+          );
+        })}
 
         {/* Videos Tab (Legacy) */}
         {activeTab === 'videos' && (

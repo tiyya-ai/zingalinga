@@ -69,7 +69,7 @@ class VPSDataStore {
 
   clearMemoryCache() {
     this.memoryData = null;
-
+    console.log('🧹 Memory cache cleared');
   }
 
   // Get default data structure
@@ -137,12 +137,18 @@ class VPSDataStore {
       const response = await fetch('/api/data');
       if (response.ok) {
         const data = await response.json();
-        // Ensure packages array exists
+        // Ensure all required arrays exist
         if (!data.packages) {
           data.packages = [];
         }
+        if (!data.categories) {
+          data.categories = ['Audio Lessons', 'PP1 Program', 'PP2 Program'];
+        }
+        if (!data.savedVideos) {
+          data.savedVideos = [];
+        }
         this.memoryData = data;
-        console.log('✅ Data loaded from API');
+        console.log('✅ Data loaded from API with', data.packages?.length || 0, 'packages');
         return data;
       }
     } catch (error) {

@@ -32,6 +32,17 @@
       "totalSpent": 0,
       "createdAt": "2025-01-20T10:00:00.000Z",
       "lastLogin": "2025-01-20T10:00:00.000Z"
+    },
+    {
+      "id": "admin-1",
+      "email": "admin@zingalinga.com",
+      "name": "Admin",
+      "role": "user",
+      "purchasedModules": [],
+      "totalSpent": 0,
+      "createdAt": "2025-01-20T10:00:00.000Z",
+      "lastLogin": "2025-01-20T10:00:00.000Z",
+      "updatedAt": "2025-08-13T10:09:37.449Z"
     }
   ],
   "modules": [
@@ -49,9 +60,134 @@
       "isActive": true,
       "rating": 4.5,
       "ageRange": "3-8 years"
+    },
+    {
+      "id": "bb1_lesson_001",
+      "title": "BB1 - Basic Letters A-E",
+      "description": "Learn the first 5 letters of the alphabet with fun activities and songs",
+      "price": 12.99,
+      "category": "PP1 Program",
+      "type": "video",
+      "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+      "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "duration": "20:15",
+      "estimatedDuration": "20:15",
+      "createdAt": "2025-01-20T10:00:00.000Z",
+      "isActive": true,
+      "isVisible": true,
+      "rating": 4.8,
+      "ageRange": "3-5 years",
+      "tags": [
+        "letters",
+        "alphabet",
+        "basic",
+        "bb1"
+      ]
+    },
+    {
+      "id": "bb1_lesson_002",
+      "title": "BB1 - Numbers 1-5",
+      "description": "Count from 1 to 5 with colorful animations and interactive exercises",
+      "price": 12.99,
+      "category": "PP1 Program",
+      "type": "video",
+      "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+      "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "duration": "18:30",
+      "estimatedDuration": "18:30",
+      "createdAt": "2025-01-20T10:00:00.000Z",
+      "isActive": true,
+      "isVisible": true,
+      "rating": 4.7,
+      "ageRange": "3-5 years",
+      "tags": [
+        "numbers",
+        "counting",
+        "basic",
+        "bb1"
+      ]
+    },
+    {
+      "id": "bb2_lesson_001",
+      "title": "BB2 - Advanced Reading Skills",
+      "description": "Develop reading comprehension with story-based learning activities",
+      "price": 15.99,
+      "category": "PP2 Program",
+      "type": "video",
+      "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+      "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "duration": "25:45",
+      "estimatedDuration": "25:45",
+      "createdAt": "2025-01-20T10:00:00.000Z",
+      "isActive": true,
+      "isVisible": true,
+      "rating": 4.9,
+      "ageRange": "5-8 years",
+      "tags": [
+        "reading",
+        "comprehension",
+        "advanced",
+        "bb2"
+      ]
+    },
+    {
+      "id": "bb2_lesson_002",
+      "title": "BB2 - Math Problem Solving",
+      "description": "Learn addition and subtraction through fun problem-solving games",
+      "price": 15.99,
+      "category": "PP2 Program",
+      "type": "video",
+      "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+      "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "duration": "22:20",
+      "estimatedDuration": "22:20",
+      "createdAt": "2025-01-20T10:00:00.000Z",
+      "isActive": true,
+      "isVisible": true,
+      "rating": 4.8,
+      "ageRange": "5-8 years",
+      "tags": [
+        "math",
+        "addition",
+        "subtraction",
+        "bb2"
+      ]
+    },
+    {
+      "id": "pp1_1755077255031",
+      "title": "ujj",
+      "description": "Description (HTML supported)",
+      "price": 50,
+      "category": "PP1 Program",
+      "type": "program",
+      "thumbnail": "https://via.placeholder.com/300x200?text=PP1+Content",
+      "videoUrl": "",
+      "duration": "15",
+      "tags": [],
+      "isActive": true,
+      "isVisible": true,
+      "createdAt": "2025-08-13T09:27:35.031Z",
+      "updatedAt": "2025-08-13T09:27:35.039Z",
+      "rating": 0,
+      "totalRatings": 0,
+      "features": [],
+      "fullContent": [],
+      "difficulty": "beginner",
+      "audioUrl": ""
     }
   ],
-  "purchases": [],
+  "purchases": [
+    {
+      "id": "purchase_pp1_1755077255031_user-1",
+      "userId": "user-1",
+      "moduleId": "pp1_1755077255031",
+      "purchaseDate": "2025-08-13T09:28:09.935Z",
+      "amount": 0,
+      "status": "completed",
+      "type": "video",
+      "createdAt": "2025-08-13T09:28:10.019Z"
+    }
+  ],
   "contentFiles": [],
   "settings": {
     "platform": {
@@ -75,7 +211,13 @@
       "multiLanguage": false
     }
   },
-  "categories": ["Audio Lessons", "PP1 Program", "PP2 Program", "education", "entertainment"],
+  "categories": [
+    "Audio Lessons",
+    "PP1 Program",
+    "PP2 Program",
+    "education",
+    "entertainment"
+  ],
   "comments": [],
   "subscriptions": [],
   "transactions": [],
@@ -84,6 +226,9 @@
   "flaggedContent": [],
   "accessLogs": [],
   "uploadQueue": [],
-  "lastUpdated": "2025-01-20T10:00:00.000Z",
-  "lastLoaded": "2025-01-20T10:00:00.000Z"
+  "lastUpdated": "2025-08-13T10:09:37.452Z",
+  "lastLoaded": "2025-01-20T10:00:00.000Z",
+  "packages": [],
+  "lastSaved": "2025-08-13T10:09:52.116Z",
+  "savedVideos": []
 }
