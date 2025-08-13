@@ -48,6 +48,7 @@ interface AppData {
   scheduledContent?: any[];
   flaggedContent?: any[];
   accessLogs?: any[];
+  packages?: any[];
   lastUpdated?: string;
   lastLoaded?: string;
 }
@@ -99,6 +100,7 @@ class VPSDataStore {
       scheduledContent: [],
       flaggedContent: [],
       accessLogs: [],
+      packages: [], // Initialize empty packages array
       settings: this.getDefaultSettings(),
       lastUpdated: new Date().toISOString(),
       lastLoaded: new Date().toISOString()
@@ -135,6 +137,10 @@ class VPSDataStore {
       const response = await fetch('/api/data');
       if (response.ok) {
         const data = await response.json();
+        // Ensure packages array exists
+        if (!data.packages) {
+          data.packages = [];
+        }
         this.memoryData = data;
         console.log('✅ Data loaded from API');
         return data;
@@ -950,6 +956,96 @@ class VPSDataStore {
       count: this.videoMemoryCache.size,
       totalSize: Math.round(totalSize / (1024 * 1024)) // Size in MB
     };
+  }
+
+  // Package management methods
+  async getPackages(): Promise<any[]> {
+    try {
+      const data = await this.loadData();
+      const packages = data.packages || [];
+      console.log('📦 Retrieved packages:', packages.length);
+      return packages;
+    } catch (error) {
+      console.error('Error getting packages:', error);
+      return [];
+    }
+  }
+
+  async addPackage(packageData: any): Promise<boolean> {
+    try {
+      console.log('📦 Adding package:', packageData.name);
+      const data = await this.loadData();
+      
+      // Check if package with same name already exists
+      const existingPackage = data.packages?.find(p => p.name === packageData.name);
+      if (existingPackage) {
+        console.log('❌ Package with same name already exists');
+        return false;
+      }
+      
+      const newPackage = {
+        ...packageData,
+        id: packageData.id || `package_${Date.now()}`,
+        createdAt: packageData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isActive: packageData.isActive !== undefined ? packageData.isActive : true
+      };
+      
+      data.packages = data.packages || [];
+      data.packages.push(newPackage);
+      
+      console.log('💾 Saving package to data store...');
+      const success = await this.saveData(data);
+      console.log(success ? '✅ Package saved successfully' : '❌ Package save failed');
+      return success;
+    } catch (error) {
+      console.error('❌ Error adding package:', error);
+      return false;
+    }
+  }
+
+  async updatePackage(updatedPackage: any): Promise<boolean> {
+    try {
+      console.log('🔄 Updating package:', updatedPackage.id);
+      const data = await this.loadData();
+      data.packages = data.packages || [];
+      const index = data.packages.findIndex(p => p.id === updatedPackage.id);
+      if (index !== -1) {
+        data.packages[index] = {
+          ...data.packages[index],
+          ...updatedPackage,
+          updatedAt: new Date().toISOString()
+        };
+        const success = await this.saveData(data);
+        console.log(success ? '✅ Package updated successfully' : '❌ Package update failed');
+        return success;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error updating package:', error);
+      return false;
+    }
+  }
+
+  async deletePackage(packageId: string): Promise<boolean> {
+    try {
+      console.log('🗑️ Deleting package:', packageId);
+      const data = await this.loadData();
+      data.packages = data.packages || [];
+      const originalLength = data.packages.length;
+      data.packages = data.packages.filter(p => p.id !== packageId);
+      
+      if (data.packages.length < originalLength) {
+        const success = await this.saveData(data);
+        console.log(success ? '✅ Package deleted successfully' : '❌ Package delete failed');
+        return success;
+      }
+      console.log('❌ Package not found');
+      return false;
+    } catch (error) {
+      console.error('Error deleting package:', error);
+      return false;
+    }
   }
 }
 

@@ -522,18 +522,19 @@ export default function ProfessionalUserDashboard({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 font-mali">
+
       {/* Enhanced Header */}
-      <header className="bg-gradient-to-r from-purple-800 via-blue-800 to-indigo-800 shadow-2xl border-b border-purple-500/30">
+      <header className="bg-white/10 backdrop-blur-xl border-b border-white/20 shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-xl sm:text-2xl font-bold text-purple-900">Z</span>
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-xl font-bold text-emerald-100">Z</span>
               </div>
               <div className="text-center sm:text-left">
-                <h1 className="text-xl sm:text-2xl font-bold text-white hidden sm:block">Zinga Linga</h1>
-                <p className="text-purple-200 text-xs sm:text-sm hidden md:block">Educational Entertainment Platform for Kids</p>
+                <h1 className="text-xl font-bold text-white hidden sm:block">Zinga Linga</h1>
+                <p className="text-emerald-100 text-xs hidden md:block">Educational Entertainment Platform for Kids</p>
               </div>
             </div>
             
@@ -558,8 +559,8 @@ export default function ProfessionalUserDashboard({
                       }}
                     />
                   ) : null}
-                  <div className="w-full h-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center" style={{ display: user?.avatar && user.avatar.trim() ? 'none' : 'flex' }}>
-                    <span className="text-purple-900 font-bold text-xs">{(user?.name || 'U').charAt(0).toUpperCase()}</span>
+                  <div className="w-full h-full bg-gradient-to-r from-brand-green to-brand-blue flex items-center justify-center" style={{ display: user?.avatar && user.avatar.trim() ? 'none' : 'flex' }}>
+                    <span className="text-white font-mali font-bold text-xs">{(user?.name || 'U').charAt(0).toUpperCase()}</span>
                   </div>
                 </div>
               </button>
@@ -572,7 +573,7 @@ export default function ProfessionalUserDashboard({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z" />
                 </svg>
                 {cartItems.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-yellow-400 text-purple-900 text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                  <span className="absolute -top-2 -right-2 bg-brand-red text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-mali font-bold">
                     {cartItems.length}
                   </span>
                 )}
@@ -581,7 +582,7 @@ export default function ProfessionalUserDashboard({
 
               <button 
                 onClick={() => onLogout && onLogout()}
-                className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-3 py-2 sm:px-4 rounded-lg transition-all duration-200 font-medium shadow-lg text-sm"
+                className="bg-gradient-to-r from-brand-red to-brand-pink hover:from-red-600 hover:to-pink-600 text-white px-3 py-2 sm:px-4 rounded-lg transition-all duration-200 font-mali font-medium shadow-lg text-sm"
               >
                 <span className="hidden sm:inline">Logout</span>
                 <span className="sm:hidden">Exit</span>
@@ -591,7 +592,7 @@ export default function ProfessionalUserDashboard({
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
 
         {/* Quick Actions Bar */}
         <div className="md:hidden mb-4">
@@ -600,12 +601,12 @@ export default function ProfessionalUserDashboard({
               { id: 'dashboard', label: '🏠 Home', count: null },
               { id: 'all-content', label: '📚 Content', count: allContent.length },
               { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
+              { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
+              { id: 'pp2-program', label: '📖 PP2', count: allContent.filter(c => c.category === 'PP2 Program').length },
               { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length },
               { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => !localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed')).length },
               { id: 'packages', label: '📦 Packages', count: null },
               { id: 'playlist', label: '📋 Playlist', count: playlist.length },
-              { id: 'saved-list', label: '💾 Saved', count: savedVideosList.length },
-              { id: 'orders', label: '📋 Orders', count: localPurchases.filter(p => p.userId === user?.id).length },
               { id: 'profile', label: '👤 Profile', count: null }
             ].map(tab => (
               <button
@@ -632,6 +633,8 @@ export default function ProfessionalUserDashboard({
                 { id: 'dashboard', label: '🏠 Home', count: null },
                 { id: 'all-content', label: '📚 Content', count: allContent.length },
                 { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
+                { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
+                { id: 'pp2-program', label: '📖 PP2', count: allContent.filter(c => c.category === 'PP2 Program').length },
                 { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length },
                 { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => 
                   !localPurchases.some(purchase => 
@@ -641,9 +644,7 @@ export default function ProfessionalUserDashboard({
                   )
                 ).length },
                 { id: 'packages', label: '📦 Packages', count: null },
-                { id: 'playlist', label: '📋 Playlist', count: playlist.length },
-            { id: 'saved-list', label: '💾 Saved', count: savedVideosList.length },
-                { id: 'orders', label: '📋 Orders', count: localPurchases.filter(p => p.userId === user?.id).length }
+                { id: 'playlist', label: '📋 Playlist', count: playlist.length }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -674,17 +675,17 @@ export default function ProfessionalUserDashboard({
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
             {/* Welcome Section */}
-            <div className="bg-gradient-to-r from-purple-800/50 to-blue-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/30">
+            <div className="bg-gradient-to-r from-emerald-500/30 to-teal-500/30 backdrop-blur-sm rounded-2xl p-6 border border-emerald-400/50 shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-white mb-1">
                     Welcome, {user?.name || 'Explorer'}! 🌟
                   </h2>
-                  <p className="text-purple-200">Ready for learning adventures</p>
+                  <p className="text-white">Ready for learning adventures</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-400">1</div>
-                  <div className="text-purple-200 text-sm">Level</div>
+                  <div className="text-2xl font-bold text-pink-400">1</div>
+                  <div className="text-pink-300 text-sm">Level</div>
                 </div>
               </div>
             </div>
@@ -692,15 +693,15 @@ export default function ProfessionalUserDashboard({
             {/* My Content Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* My Videos */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+              <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 border border-white/20 shadow-2xl">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white flex items-center">
+                  <h3 className="text-lg font-bold text-emerald-400 flex items-center">
                     <span className="mr-2">🎬</span>
                     My Videos ({allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id)).length})
                   </h3>
                   <button 
                     onClick={() => setActiveTab('videos')}
-                    className="text-yellow-400 hover:text-yellow-300 text-sm"
+                    className="text-brand-red hover:text-brand-pink text-sm font-mali"
                   >
                     View All →
                   </button>
@@ -781,8 +782,8 @@ export default function ProfessionalUserDashboard({
               </div>
 
               {/* Quick Stats */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center">
+              <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 border border-white/20 shadow-2xl">
+                <h3 className="text-lg font-bold text-teal-400 mb-4 flex items-center">
                   <span className="mr-2">📊</span>
                   Your Progress
                 </h3>
@@ -811,34 +812,34 @@ export default function ProfessionalUserDashboard({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <button 
                 onClick={() => setActiveTab('all-content')}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white p-4 rounded-xl transition-all duration-200 text-center group"
+                className="bg-gradient-to-r from-brand-green to-brand-blue hover:from-green-600 hover:to-blue-600 text-white p-4 rounded-xl transition-all duration-200 text-center group shadow-lg"
               >
                 <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">📚</div>
-                <div className="font-bold text-sm">All Content</div>
+                <div className="font-mali font-bold text-sm">All Content</div>
               </button>
               
               <button 
                 onClick={() => setActiveTab('audio-lessons')}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-4 rounded-xl transition-all duration-200 text-center group"
+                className="bg-gradient-to-r from-brand-yellow to-brand-red hover:from-yellow-500 hover:to-red-500 text-white p-4 rounded-xl transition-all duration-200 text-center group shadow-lg"
               >
                 <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">🎧</div>
-                <div className="font-bold text-sm">Audio</div>
+                <div className="font-mali font-bold text-sm">Audio</div>
               </button>
               
               <button 
                 onClick={() => setActiveTab('store')}
-                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white p-4 rounded-xl transition-all duration-200 text-center group"
+                className="bg-gradient-to-r from-brand-red to-brand-pink hover:from-red-600 hover:to-pink-600 text-white p-4 rounded-xl transition-all duration-200 text-center group shadow-lg"
               >
                 <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">🛍️</div>
-                <div className="font-bold text-sm">Store</div>
+                <div className="font-mali font-bold text-sm">Store</div>
               </button>
               
               <button 
                 onClick={() => setActiveTab('videos')}
-                className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white p-4 rounded-xl transition-all duration-200 text-center group"
+                className="bg-gradient-to-r from-brand-blue to-brand-green hover:from-blue-600 hover:to-green-600 text-white p-4 rounded-xl transition-all duration-200 text-center group shadow-lg"
               >
                 <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">🎬</div>
-                <div className="font-bold text-sm">My Videos</div>
+                <div className="font-mali font-bold text-sm">My Videos</div>
               </button>
             </div>
           </div>
@@ -846,18 +847,17 @@ export default function ProfessionalUserDashboard({
 
         {/* All Content Tab */}
         {activeTab === 'all-content' && (
-          <section className="space-y-6">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+          <section className="space-y-6 relative">
+            
+            <div className="bg-purple-800/60 backdrop-blur-sm rounded-xl p-6 border border-purple-600/50 shadow-lg relative z-10">
+              <h2 className="text-2xl font-bold text-emerald-400 mb-4 flex items-center">
                 <span className="mr-2">📚</span>
                 All Learning Content
               </h2>
-              <p className="text-purple-200">Browse all available content types - Audio, Video, Programs & More</p>
-              
-
+              <p className="text-white">Browse all available content types - Audio, Video, Programs & More</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
               {allContent.map((content) => {
                 const isPurchased = localPurchases.some(purchase => 
                   purchase.moduleId === content.id && 
@@ -981,10 +981,10 @@ export default function ProfessionalUserDashboard({
             </div>
             
             {allContent.length === 0 && (
-              <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+              <div className="text-center py-12 bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-700 shadow-lg">
                 <div className="text-6xl mb-4">📚</div>
-                <div className="text-white text-xl mb-2">No content available</div>
-                <div className="text-purple-200 text-sm">Admin needs to add content through the admin panel</div>
+                <div className="text-brand-yellow text-xl mb-2 font-mali font-bold">No content available</div>
+                <div className="text-gray-300 text-sm font-mali">Admin needs to add content through the admin panel</div>
               </div>
             )}
           </section>
@@ -2412,20 +2412,20 @@ export default function ProfessionalUserDashboard({
       )}
 
       {/* Enhanced Footer */}
-      <footer className="bg-gradient-to-r from-purple-800 via-blue-800 to-indigo-800 mt-16 border-t border-purple-500/30">
+      <footer className="bg-black/20 backdrop-blur-xl mt-16 border-t border-white/20 shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center space-x-4 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                  <span className="text-xl font-bold text-purple-900">Z</span>
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                  <span className="text-xl font-mali font-bold text-brand-green">Z</span>
                 </div>
                 <div>
-                  <h3 className="text-white font-bold text-xl">Zinga Linga</h3>
-                  <p className="text-purple-200 text-sm">Educational Entertainment Platform for Kids</p>
+                  <h3 className="text-white font-mali font-bold text-xl">Zinga Linga</h3>
+                  <p className="text-yellow-100 text-sm font-mali">Educational Entertainment Platform for Kids</p>
                 </div>
               </div>
-              <p className="text-purple-200 text-sm mb-4">
+              <p className="text-yellow-100 text-sm mb-4 font-mali">
                 We believe learning should be fun and exciting. Join our educational adventures with Kiki and Tano.
               </p>
               <div className="flex space-x-4">
@@ -2442,7 +2442,7 @@ export default function ProfessionalUserDashboard({
             </div>
             
             <div>
-              <h4 className="text-white font-bold mb-4">Quick Links</h4>
+              <h4 className="text-white font-mali font-bold mb-4">Quick Links</h4>
               <div className="space-y-2">
                 {[
                   { label: 'Home', action: () => setActiveTab('dashboard') },
@@ -2453,7 +2453,7 @@ export default function ProfessionalUserDashboard({
                   <button
                     key={link.label}
                     onClick={link.action}
-                    className="block text-purple-200 hover:text-yellow-400 transition-colors text-sm"
+                    className="block text-yellow-100 hover:text-brand-yellow transition-colors text-sm font-mali"
                   >
                     {link.label}
                   </button>
@@ -2462,36 +2462,36 @@ export default function ProfessionalUserDashboard({
             </div>
             
             <div>
-              <h4 className="text-white font-bold mb-4">Your Stats</h4>
+              <h4 className="text-white font-mali font-bold mb-4">Your Stats</h4>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between text-purple-200">
+                <div className="flex justify-between text-yellow-100 font-mali">
                   <span>Level:</span>
-                  <span className="text-yellow-400 font-bold">{Math.floor(localPurchases.filter(p => p.userId === user?.id).length / 3) + 1}</span>
+                  <span className="text-brand-yellow font-bold">{Math.floor(localPurchases.filter(p => p.userId === user?.id).length / 3) + 1}</span>
                 </div>
-                <div className="flex justify-between text-purple-200">
+                <div className="flex justify-between text-yellow-100 font-mali">
                   <span>Videos:</span>
-                  <span className="text-yellow-400 font-bold">{localPurchases.filter(p => p.userId === user?.id).length}</span>
+                  <span className="text-brand-yellow font-bold">{localPurchases.filter(p => p.userId === user?.id).length}</span>
                 </div>
-                <div className="flex justify-between text-purple-200">
+                <div className="flex justify-between text-yellow-100 font-mali">
                   <span>Purchases:</span>
-                  <span className="text-yellow-400 font-bold">{localPurchases.filter(p => p.userId === user?.id).length}</span>
+                  <span className="text-brand-yellow font-bold">{localPurchases.filter(p => p.userId === user?.id).length}</span>
                 </div>
               </div>
             </div>
           </div>
           
-          <div className="border-t border-purple-500/30 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <div className="text-purple-200 text-sm">
+          <div className="border-t border-orange-200/30 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <div className="text-yellow-100 text-sm font-mali">
               © 2024 Zinga Linga. All rights reserved.
             </div>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <button className="text-purple-200 hover:text-yellow-400 transition-colors text-sm">
+              <button className="text-yellow-100 hover:text-brand-yellow transition-colors text-sm font-mali">
                 Privacy Policy
               </button>
-              <button className="text-purple-200 hover:text-yellow-400 transition-colors text-sm">
+              <button className="text-yellow-100 hover:text-brand-yellow transition-colors text-sm font-mali">
                 Terms of Service
               </button>
-              <button className="text-purple-200 hover:text-yellow-400 transition-colors text-sm">
+              <button className="text-yellow-100 hover:text-brand-yellow transition-colors text-sm font-mali">
                 Contact Us
               </button>
             </div>

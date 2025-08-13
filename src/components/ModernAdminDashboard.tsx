@@ -253,6 +253,24 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     loadExistingLogo();
   }, []);
 
+  // Load packages from data store
+  const loadPackages = async () => {
+    try {
+      const data = await vpsDataStore.loadData();
+      const packageData = data.packages || [];
+      setPackages(packageData);
+      console.log('📦 Loaded packages:', packageData.length);
+    } catch (error) {
+      console.error('Failed to load packages:', error);
+      setPackages([]);
+    }
+  };
+
+  // Initialize packages loading
+  useEffect(() => {
+    loadPackages();
+  }, []);
+
   // Load existing admin logo from settings
   const loadExistingLogo = async () => {
     try {
@@ -2606,9 +2624,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 onSelectionChange={(keys) => setVideoCategoryFilter(Array.from(keys)[0] as string)}
                 className="w-40"
                 placeholder="Category"
-                items={[{key: 'all', label: 'All Categories'}, ...categories.map(cat => ({key: cat, label: cat}))]}
               >
-                {(item) => <SelectItem key={item.key}>{item.label}</SelectItem>}
+                <SelectItem key="all">All Categories</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat}>{cat}</SelectItem>
+                ))}
               </Select>
             </div>
           </div>
@@ -4251,8 +4271,41 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <div className="flex justify-between items-center">
                   <span className="text-green-600 font-semibold">${program.price}</span>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="light"><Edit className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="light" className="hover:bg-red-50"><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                    <Button 
+                      size="sm" 
+                      variant="light"
+                      className="hover:bg-blue-50 transition-colors"
+                      onPress={() => {
+                        setEditingVideo(program);
+                        setPP1Form({
+                          title: program.title,
+                          description: program.description || '',
+                          price: program.price || 0,
+                          contentType: (program as any).contentType || 'text',
+                          coverImage: program.thumbnail || '',
+                          contentUrl: program.videoUrl || '',
+                          duration: (program as any).duration || '',
+                          tags: Array.isArray((program as any).tags) ? (program as any).tags.join(', ') : (program as any).tags || ''
+                        });
+                        setActiveSection('add-pp1-content');
+                      }}
+                      aria-label={`Edit PP1 program ${program.title}`}
+                    >
+                      <Edit className="h-4 w-4 text-blue-600" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="light" 
+                      className="hover:bg-red-50 transition-colors"
+                      onPress={() => {
+                        if (confirm(`Are you sure you want to delete "${program.title}"? This action cannot be undone.`)) {
+                          handleDeleteVideo(program.id);
+                        }
+                      }}
+                      aria-label={`Delete PP1 program ${program.title}`}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -4262,6 +4315,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No PP1 content yet</h3>
                 <p className="text-gray-600 mb-4">Create your first PP1 program content.</p>
+                <Button 
+                  color="primary"
+                  startContent={<Plus className="h-4 w-4" />}
+                  onPress={() => setActiveSection('add-pp1-content')}
+                >
+                  Add First PP1 Content
+                </Button>
               </div>
             )}
           </div>
@@ -4304,8 +4364,41 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <div className="flex justify-between items-center">
                   <span className="text-green-600 font-semibold">${program.price}</span>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="light"><Edit className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="light" className="hover:bg-red-50"><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                    <Button 
+                      size="sm" 
+                      variant="light"
+                      className="hover:bg-blue-50 transition-colors"
+                      onPress={() => {
+                        setEditingVideo(program);
+                        setPP2Form({
+                          title: program.title,
+                          description: program.description || '',
+                          price: program.price || 0,
+                          contentType: (program as any).contentType || 'text',
+                          coverImage: program.thumbnail || '',
+                          contentUrl: program.videoUrl || '',
+                          duration: (program as any).duration || '',
+                          tags: Array.isArray((program as any).tags) ? (program as any).tags.join(', ') : (program as any).tags || ''
+                        });
+                        setActiveSection('add-pp2-content');
+                      }}
+                      aria-label={`Edit PP2 program ${program.title}`}
+                    >
+                      <Edit className="h-4 w-4 text-blue-600" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="light" 
+                      className="hover:bg-red-50 transition-colors"
+                      onPress={() => {
+                        if (confirm(`Are you sure you want to delete "${program.title}"? This action cannot be undone.`)) {
+                          handleDeleteVideo(program.id);
+                        }
+                      }}
+                      aria-label={`Delete PP2 program ${program.title}`}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -4315,6 +4408,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No PP2 content yet</h3>
                 <p className="text-gray-600 mb-4">Create your first PP2 program content.</p>
+                <Button 
+                  color="primary"
+                  startContent={<Plus className="h-4 w-4" />}
+                  onPress={() => setActiveSection('add-pp2-content')}
+                >
+                  Add First PP2 Content
+                </Button>
               </div>
             )}
           </div>
@@ -4455,6 +4555,78 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     } catch (error) {
       console.error('- Failed to save audio lesson:', error);
       alert('Failed to save audio lesson. Please try again.');
+    }
+  };
+
+  // Package management functions
+  const handleSavePackage = async () => {
+    try {
+      if (!packageForm.name.trim()) {
+        setToast({message: 'Please enter a package name', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
+        return;
+      }
+      
+      const packageData = {
+        id: `package_${Date.now()}`,
+        name: packageForm.name,
+        icon: packageForm.icon,
+        description: packageForm.description,
+        price: packageForm.price,
+        type: packageForm.type,
+        features: packageForm.features.split(',').map(f => f.trim()).filter(f => f),
+        isActive: packageForm.isActive,
+        isPopular: packageForm.isPopular,
+        coverImage: packageForm.coverImage,
+        createdAt: new Date().toISOString()
+      };
+      
+      const success = await vpsDataStore.addPackage(packageData);
+      if (success) {
+        await loadPackages(); // Reload packages
+        setToast({message: 'Package created successfully!', type: 'success'});
+        setTimeout(() => setToast(null), 3000);
+        
+        // Reset form
+        setPackageForm({
+          name: '',
+          icon: '',
+          description: '',
+          price: 0,
+          type: 'subscription',
+          features: '',
+          isActive: true,
+          isPopular: false,
+          coverImage: ''
+        });
+        
+        setActiveSection('all-packages');
+      } else {
+        setToast({message: 'Failed to create package', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
+      }
+    } catch (error) {
+      console.error('Failed to save package:', error);
+      setToast({message: 'Failed to save package', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  const handleDeletePackage = async (packageId: string) => {
+    try {
+      const success = await vpsDataStore.deletePackage(packageId);
+      if (success) {
+        await loadPackages(); // Reload packages
+        setToast({message: 'Package deleted successfully!', type: 'success'});
+        setTimeout(() => setToast(null), 3000);
+      } else {
+        setToast({message: 'Failed to delete package', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
+      }
+    } catch (error) {
+      console.error('Failed to delete package:', error);
+      setToast({message: 'Failed to delete package', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
