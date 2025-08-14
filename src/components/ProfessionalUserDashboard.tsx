@@ -99,12 +99,19 @@ export default function ProfessionalUserDashboard({
   const [showFilters, setShowFilters] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [userStats, setUserStats] = useState<UserStats>({
-    watchTime: 0,
-    videosWatched: 0,
-    purchasedItems: 0,
+    watchTime: localPurchases.filter(p => p.userId === user?.id).reduce((total, purchase) => {
+      const video = allModules.find(m => m.id === purchase.moduleId);
+      if (video?.duration) {
+        const [minutes, seconds] = video.duration.split(':').map(Number);
+        return total + (minutes || 0) + ((seconds || 0) / 60);
+      }
+      return total + 5; // Default 5 minutes if no duration
+    }, 0),
+    videosWatched: localPurchases.filter(p => p.userId === user?.id).length,
+    purchasedItems: localPurchases.filter(p => p.userId === user?.id).length,
     favoriteVideos: 0,
     achievements: [],
-    level: 1
+    level: Math.min(5, Math.floor(localPurchases.filter(p => p.userId === user?.id).length / 2) + 1)
   });
   const [newVideoCount, setNewVideoCount] = useState(0);
   const [showNewVideoAlert, setShowNewVideoAlert] = useState(false);
@@ -143,10 +150,37 @@ export default function ProfessionalUserDashboard({
     };
   }, [setUser]);
 
-  // Update local purchases when prop changes
+  // Update local purchases and user stats when prop changes
   useEffect(() => {
     setLocalPurchases(purchases);
-  }, [purchases]);
+    
+    // Update user stats based on real data
+    const userPurchases = purchases.filter(p => p.userId === user?.id);
+    const totalWatchTime = userPurchases.reduce((total, purchase) => {
+      const video = allModules.find(m => m.id === purchase.moduleId);
+      if (video?.duration) {
+        const [minutes, seconds] = video.duration.split(':').map(Number);
+        return total + (minutes || 0) + ((seconds || 0) / 60);
+      }
+      return total + 5; // Default 5 minutes if no duration
+    }, 0);
+    
+    const achievements = [];
+    if (userPurchases.length >= 1) achievements.push('first-purchase');
+    if (userPurchases.length >= 5) achievements.push('video-lover');
+    if (userPurchases.length >= 10) achievements.push('collector');
+    if (totalWatchTime >= 50) achievements.push('time-master');
+    if (userPurchases.length > 0) achievements.push('explorer');
+    
+    setUserStats({
+      watchTime: totalWatchTime,
+      videosWatched: userPurchases.length,
+      purchasedItems: userPurchases.length,
+      favoriteVideos: 0,
+      achievements: achievements,
+      level: Math.min(5, Math.floor(userPurchases.length / 2) + 1)
+    });
+  }, [purchases, user?.id, allModules]);
 
   // Update live modules when prop changes and clear cache
   useEffect(() => {
@@ -158,11 +192,13 @@ export default function ProfessionalUserDashboard({
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Always clear cache to ensure fresh data
+        // FORCE clear all caches to ensure fresh data
         vpsDataStore.clearMemoryCache();
+        localStorage.removeItem('zinga-linga-app-data-cache');
+        localStorage.removeItem('zinga-linga-app-data');
         
         // Force fresh data load from API/VPS
-        const vpsData = await vpsDataStore.loadData();
+        const vpsData = await vpsDataStore.loadData(true);
         
         if (vpsData.modules) {
           setLiveModules(vpsData.modules);
@@ -186,22 +222,25 @@ export default function ProfessionalUserDashboard({
       const handleVisibilityChange = () => {
         if (!document.hidden) {
           vpsDataStore.clearMemoryCache();
+          localStorage.removeItem('zinga-linga-app-data-cache');
           loadData();
         }
       };
       const handleFocus = () => {
         vpsDataStore.clearMemoryCache();
+        localStorage.removeItem('zinga-linga-app-data-cache');
         loadData();
       };
       
       document.addEventListener('visibilitychange', handleVisibilityChange);
       window.addEventListener('focus', handleFocus);
       
-      // Auto-sync every 5 seconds for real-time updates
+      // Auto-sync every 3 seconds for real-time updates
       const interval = setInterval(() => {
         vpsDataStore.clearMemoryCache();
+        localStorage.removeItem('zinga-linga-app-data-cache');
         loadData();
-      }, 5000);
+      }, 3000);
       
       return () => {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -694,10 +733,7 @@ export default function ProfessionalUserDashboard({
                   </h2>
                   <p className="text-white">Ready for learning adventures</p>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-pink-400">1</div>
-                  <div className="text-pink-300 text-sm">Level</div>
-                </div>
+
               </div>
             </div>
 
@@ -800,35 +836,19 @@ export default function ProfessionalUserDashboard({
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-400">{localPurchases.filter(p => p.userId === user?.id).length}</div>
+                    <div className="text-2xl font-bold text-blue-400">{userStats.videosWatched}</div>
                     <div className="text-purple-200 text-xs">Videos</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-400">{(() => {
-                      const userVideos = allModules.filter(module => module && (module.type === 'video' || !module.type) && isItemPurchased(module.id));
-                      const totalMinutes = userVideos.reduce((total, video) => {
-                        const duration = video.duration || '5:00';
-                        const [minutes, seconds] = duration.split(':').map(Number);
-                        return total + (minutes || 0) + ((seconds || 0) / 60);
-                      }, 0);
-                      return Math.round(totalMinutes);
-                    })()}m</div>
+                    <div className="text-2xl font-bold text-green-400">{Math.round(userStats.watchTime)}m</div>
                     <div className="text-purple-200 text-xs">Watch Time</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-400">{localPurchases.filter(p => p.userId === user?.id).length}</div>
+                    <div className="text-2xl font-bold text-orange-400">{userStats.purchasedItems}</div>
                     <div className="text-purple-200 text-xs">Purchases</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-yellow-400">{(() => {
-                      const userPurchases = localPurchases.filter(p => p.userId === user?.id).length;
-                      let achievements = 0;
-                      if (userPurchases >= 1) achievements++; // First purchase
-                      if (userPurchases >= 3) achievements++; // Regular buyer
-                      if (userPurchases >= 5) achievements++; // Collector
-                      if (userPurchases >= 10) achievements++; // Super collector
-                      return achievements;
-                    })()}</div>
+                    <div className="text-2xl font-bold text-yellow-400">{userStats.achievements.length}</div>
                     <div className="text-purple-200 text-xs">Achievements</div>
                   </div>
                 </div>
@@ -2121,8 +2141,8 @@ export default function ProfessionalUserDashboard({
                   <h1 className="text-4xl font-bold mb-2">{user?.name || 'User'}</h1>
                   <p className="text-white/80 text-lg mb-4">{user?.email}</p>
                   <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
-                    <span className="bg-white/20 px-4 py-2 rounded-full text-sm font-semibold">🏆 Premium Member</span>
-                    <span className="bg-white/20 px-4 py-2 rounded-full text-sm font-semibold">💎 Level {Math.floor((localPurchases.filter(p => p.userId === user?.id).length) / 3) + 1}</span>
+                    <span className="bg-white/20 px-4 py-2 rounded-full text-sm font-semibold">🏆 Level {userStats.level}</span>
+
                     <span className="bg-white/20 px-4 py-2 rounded-full text-sm font-semibold">🎬 {localPurchases.filter(p => p.userId === user?.id).length} Videos</span>
                   </div>
                 </div>
@@ -2153,8 +2173,8 @@ export default function ProfessionalUserDashboard({
                   </div>
                   <span className="text-blue-100 text-sm font-semibold">JOINED</span>
                 </div>
-                <div className="text-2xl font-bold">{user?.createdAt ? new Date(user.createdAt).getFullYear() : new Date().getFullYear()}</div>
-                <div className="text-blue-100 text-sm">Member</div>
+                <div className="text-2xl font-bold">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'New'}</div>
+                <div className="text-blue-100 text-sm">Joined</div>
               </div>
               
               <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
@@ -2164,7 +2184,7 @@ export default function ProfessionalUserDashboard({
                   </div>
                   <span className="text-green-100 text-sm font-semibold">VIDEOS</span>
                 </div>
-                <div className="text-2xl font-bold">{localPurchases.filter(p => p.userId === user?.id).length}</div>
+                <div className="text-2xl font-bold">{userStats.videosWatched}</div>
                 <div className="text-green-100 text-sm">Owned</div>
               </div>
               
@@ -2186,8 +2206,8 @@ export default function ProfessionalUserDashboard({
                   </div>
                   <span className="text-orange-100 text-sm font-semibold">STATUS</span>
                 </div>
-                <div className="text-2xl font-bold">Active</div>
-                <div className="text-orange-100 text-sm">Verified</div>
+                <div className="text-2xl font-bold">Lv.{userStats.level}</div>
+                <div className="text-orange-100 text-sm">Level</div>
               </div>
             </div>
             
@@ -2350,7 +2370,7 @@ export default function ProfessionalUserDashboard({
                 { 
                   id: 'first-video', 
                   title: 'First Video', 
-                  description: 'Watched your first video', 
+                  description: 'Purchased your first video', 
                   icon: '🎬', 
                   unlocked: userStats.videosWatched > 0,
                   progress: Math.min(userStats.videosWatched, 1),
@@ -2359,11 +2379,11 @@ export default function ProfessionalUserDashboard({
                 { 
                   id: 'video-lover', 
                   title: 'Video Lover', 
-                  description: 'Watched 10 videos', 
+                  description: 'Own 5 videos', 
                   icon: '📺', 
-                  unlocked: userStats.videosWatched >= 10,
-                  progress: Math.min(userStats.videosWatched, 10),
-                  total: 10
+                  unlocked: userStats.videosWatched >= 5,
+                  progress: Math.min(userStats.videosWatched, 5),
+                  total: 5
                 },
                 { 
                   id: 'first-purchase', 
@@ -2377,28 +2397,28 @@ export default function ProfessionalUserDashboard({
                 { 
                   id: 'collector', 
                   title: 'Collector', 
-                  description: 'Purchased 5 products', 
+                  description: 'Own 10 videos', 
                   icon: '🎁', 
-                  unlocked: userStats.purchasedItems >= 5,
-                  progress: Math.min(userStats.purchasedItems, 5),
-                  total: 5
+                  unlocked: userStats.purchasedItems >= 10,
+                  progress: Math.min(userStats.purchasedItems, 10),
+                  total: 10
                 },
                 { 
                   id: 'time-master', 
-                  title: 'Time Master', 
-                  description: 'Watched 100 minutes of content', 
+                  title: 'Content Master', 
+                  description: 'Own 50+ minutes of content', 
                   icon: '⏰', 
-                  unlocked: userStats.watchTime >= 100,
-                  progress: Math.min(userStats.watchTime, 100),
-                  total: 100
+                  unlocked: userStats.watchTime >= 50,
+                  progress: Math.min(userStats.watchTime, 50),
+                  total: 50
                 },
                 { 
                   id: 'explorer', 
                   title: 'Explorer', 
-                  description: 'Visited all sections of the platform', 
+                  description: 'Explore the platform', 
                   icon: '🗺️', 
-                  unlocked: true,
-                  progress: 1,
+                  unlocked: userStats.purchasedItems > 0,
+                  progress: userStats.purchasedItems > 0 ? 1 : 0,
                   total: 1
                 }
               ].map(achievement => (
@@ -2518,10 +2538,7 @@ export default function ProfessionalUserDashboard({
             <div>
               <h4 className="text-white font-mali font-bold mb-4">Your Stats</h4>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between text-yellow-100 font-mali">
-                  <span>Level:</span>
-                  <span className="text-brand-yellow font-bold">{Math.floor(localPurchases.filter(p => p.userId === user?.id).length / 3) + 1}</span>
-                </div>
+
                 <div className="flex justify-between text-yellow-100 font-mali">
                   <span>Videos:</span>
                   <span className="text-brand-yellow font-bold">{localPurchases.filter(p => p.userId === user?.id).length}</span>
