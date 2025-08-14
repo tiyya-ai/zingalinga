@@ -1,18 +1,44 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: false,
+  swcMinify: true,
   experimental: {
-    suppressHydrationWarning: true
+    appDir: true,
   },
   images: {
-    domains: ['localhost', 'via.placeholder.com'],
+    domains: ['localhost'],
     unoptimized: true
   },
-  eslint: {
-    ignoreDuringBuilds: true,
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    };
+    return config;
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  }
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin',
+          },
+        ],
+      },
+    ];
+  },
 }
 
-export default nextConfig
+module.exports = nextConfig

@@ -26,9 +26,17 @@ jobs:
       run: npm run build
       env:
         CI: false
+        NODE_ENV: production
+    
+    - name: Run tests
+      run: npm test -- --passWithNoTests
+      env:
+        CI: true
     
     - name: Deploy to production
       if: github.ref == 'refs/heads/main'
       run: |
         echo "🚀 Deploying Zinga Linga Platform to production..."
         echo "✅ Build completed successfully"
+        echo "✅ Tests passed"
+        echo "✅ Ready for deployment to zingalinga.io"
