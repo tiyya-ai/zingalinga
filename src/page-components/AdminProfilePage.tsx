@@ -114,7 +114,6 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
     if (event) {
       event.preventDefault();
       event.stopPropagation();
-      event.stopImmediatePropagation();
     }
     
     // Prevent any potential navigation
