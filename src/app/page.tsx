@@ -15,21 +15,11 @@ export default function RootPage() {
   const [user, setUser] = useState<User | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Check if we're coming from a logout (no delay needed)
-    const urlParams = new URLSearchParams(window.location.search);
-    const fromLogout = urlParams.get('logout') === 'true';
-    
-    if (fromLogout) {
-      // Clear the URL parameter
-      window.history.replaceState({}, document.title, window.location.pathname);
-      setIsLoading(false);
-      return;
-    }
-
     try {
+      if (typeof window === 'undefined') return;
       const session = authManager.getCurrentSession();
       if (session && authManager.isSessionValid(session)) {
         setUser(session.user);
@@ -42,9 +32,8 @@ export default function RootPage() {
         return;
       }
     } catch (error) {
-      // Handle error silently
+      console.error('Session check error:', error);
     }
-    setIsLoading(false);
   }, []);
 
   const handleLogin = async (userData: User) => {

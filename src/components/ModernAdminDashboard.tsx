@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -7216,7 +7216,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu className="w-80">
-                  {[...notifications.slice(0, 5).map((notification) => (
+                  {notifications.slice(0, 5).map((notification) => (
                     <DropdownItem key={notification.id} className="p-3">
                       <div className="flex items-start space-x-3">
                         <div className={`w-2 h-2 rounded-full mt-2 ${
@@ -7230,13 +7230,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         </div>
                       </div>
                     </DropdownItem>
-                  )),
+                  ))}
                   <DropdownItem key="view-all" className="border-t" onPress={() => setActiveSection('notifications')}>
                     <div className="text-center py-2">
                       <span className="text-sm font-medium text-blue-600">View All Notifications</span>
                     </div>
                   </DropdownItem>
-                  ]}
                 </DropdownMenu>
               </Dropdown>
               

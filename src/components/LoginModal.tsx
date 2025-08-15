@@ -237,21 +237,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             console.log('💾 Session created for:', user.email, 'Role:', user.role);
             
             setSuccess('Welcome back! Redirecting...');
-            setTimeout(() => {
-              const { password: _, ...userWithoutPassword } = user;
-              const completeUser = {
-                ...userWithoutPassword,
-                purchasedModules: (userWithoutPassword as any).purchasedModules || [],
-                totalSpent: (userWithoutPassword as any).totalSpent || 0
-              };
-              onLogin(completeUser as UserType);
-              onClose();
-              resetForm();
-              // Clear guest account info after successful login
-              localStorage.removeItem('guestAccountEmail');
-              localStorage.removeItem('guestAccountName');
-              localStorage.removeItem('purchasedItems');
-            }, 1000);
+            const { password: _, ...userWithoutPassword } = user;
+            const completeUser = {
+              ...userWithoutPassword,
+              purchasedModules: (userWithoutPassword as any).purchasedModules || [],
+              totalSpent: (userWithoutPassword as any).totalSpent || 0
+            };
+            onLogin(completeUser as UserType);
+            onClose();
+            resetForm();
+            // Clear guest account info after successful login
+            localStorage.removeItem('guestAccountEmail');
+            localStorage.removeItem('guestAccountName');
+            localStorage.removeItem('purchasedItems');
           } catch (error) {
             console.error('Error creating session:', error);
             setError('Login failed. Please try again.');
