@@ -146,15 +146,16 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
     }
   };
 
-  const handleSeek = (value: number[]) => {
+  const handleSeek = (value: number | number[]) => {
+    const seekTime = Array.isArray(value) ? value[0] : value;
     if (audioRef.current) {
-      audioRef.current.currentTime = value[0];
-      setCurrentTime(value[0]);
+      audioRef.current.currentTime = seekTime;
+      setCurrentTime(seekTime);
     }
   };
 
-  const handleVolumeChange = (value: number[]) => {
-    const newVolume = value[0];
+  const handleVolumeChange = (value: number | number[]) => {
+    const newVolume = Array.isArray(value) ? value[0] : value;
     setVolume(newVolume);
     if (audioRef.current) {
       audioRef.current.volume = newVolume;
