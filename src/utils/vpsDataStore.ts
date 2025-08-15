@@ -1,6 +1,6 @@
 // File-based Data Store
 import { User, Module, Purchase, ContentFile } from '../types';
-import { modules as defaultModules } from '../data/modules';
+// Removed defaultModules import to prevent fallback to hardcoded videos
 
 interface UploadQueueItem {
   id: string;
@@ -87,7 +87,7 @@ class VPSDataStore {
           lastLogin: new Date().toISOString()
         }
       ],
-      modules: [...defaultModules],
+      modules: [],
       purchases: [],
       contentFiles: [],
       uploadQueue: [],
