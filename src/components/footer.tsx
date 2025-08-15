@@ -48,9 +48,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </div>
             
             <p className="text-gray-300 mb-6 leading-relaxed font-mali">
-              Join Kiki and Tano on magical African alphabet adventures! 
+              Join Kiki and Tano on Magical Alphabet Adventures! 
               Fun, educational, and culturally rich learning experiences 
-              for children ages 1-6.
+              for children ages 3-6.
             </p>
 
             {/* Trust Badges */}
@@ -142,7 +142,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <ul className="space-y-3">
               {[
                 { name: 'Privacy Policy', page: 'privacy' },
-                { name: 'Terms of Service', page: 'terms' },
+                { name: 'Terms and Conditions', page: 'terms' },
                 { name: 'Refund Policy', page: 'refund' },
                 { name: 'COPPA Compliance', page: 'coppa' },
                 { name: 'Help Center', page: 'help' },

@@ -266,7 +266,7 @@ const COPPACompliancePage: React.FC<COPPACompliancePageProps> = ({ onBack, onNav
               onClick={() => onNavigate('terms')}
               className="bg-brand-blue text-white px-6 py-3 rounded-full font-mali font-bold hover:bg-blue-600 transition-colors"
             >
-              Terms of Service
+              Terms and Conditions
             </button>
             <button 
               onClick={() => onNavigate('contact')}

@@ -2751,7 +2751,7 @@ export default function ProfessionalUserDashboard({
                 Privacy Policy
               </button>
               <button className="text-yellow-100 hover:text-brand-yellow transition-colors text-sm font-mali">
-                Terms of Service
+                Terms and Conditions
               </button>
               <button className="text-yellow-100 hover:text-brand-yellow transition-colors text-sm font-mali">
                 Contact Us

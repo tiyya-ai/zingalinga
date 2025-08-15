@@ -94,11 +94,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
           </div>
           
           <h1 className="text-2xl sm:text-3xl md:text-5xl font-mali font-bold text-brand-green mb-6 drop-shadow-sm leading-tight">
-            African Alphabet Adventures
+            Magical Alphabet Adventures
           </h1>
           
           <p className="text-lg sm:text-xl md:text-2xl font-mali text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Fun learning for kids ages 1-6
+            Fun learning for kids ages 3-6
           </p>
 
 
@@ -139,7 +139,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
               Learning Adventures
             </h2>
             <p className="text-lg sm:text-xl md:text-2xl font-mali text-gray-700 mb-8">
-              Discover the magic of learning with Kiki & Tano
+              Discover the magic of foundational learning with Kiki & Tano
             </p>
             <div className="w-24 h-1 bg-gradient-to-r from-brand-yellow to-brand-red mx-auto rounded-full" suppressHydrationWarning></div>
           </div>
@@ -157,9 +157,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
                 <div className="bg-white/20 rounded-full p-4 w-fit mb-6">
                   <BookOpen className="w-8 h-8" />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-mali font-bold mb-3 sm:mb-4">Audio Adventures</h3>
+                <h3 className="text-xl sm:text-2xl font-mali font-bold mb-3 sm:mb-4">Audio Stories</h3>
                 <p className="font-mali text-yellow-100 leading-relaxed text-sm sm:text-base">
-                  Join Kiki on musical journeys through the African alphabet.
+                  Watch Kiki & Tano explore the Magical Alphabet Kingdom.
                 </p>
               </div>
             </div>
@@ -175,9 +175,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
                 <div className="bg-white/20 rounded-full p-4 w-fit mb-6">
                   <Video className="w-8 h-8" />
                 </div>
-                <h3 className="text-2xl font-mali font-bold mb-4">Video Safaris</h3>
+                <h3 className="text-2xl font-mali font-bold mb-4">Animated Adventures</h3>
                 <p className="font-mali text-blue-100 leading-relaxed">
-                  Watch Tano explore the jungle with animated alphabet animals.
+                  Watch Kiki & Tano explore the Magical Alphabet Kingdom.
                 </p>
               </div>
             </div>
@@ -194,9 +194,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
                 <div className="bg-white/20 rounded-full p-4 w-fit mb-6">
                   <Globe className="w-8 h-8" />
                 </div>
-                <h3 className="text-2xl font-mali font-bold mb-4">African Culture</h3>
+                <h3 className="text-2xl font-mali font-bold mb-4">Zingalinga Bookie</h3>
                 <p className="font-mali text-green-100 leading-relaxed">
-                  Learn letters through beautiful African animals and stories.
+                  Your 100% offline Zingalinga literacy tutor.
                 </p>
               </div>
             </div>
@@ -288,7 +288,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
                   <ShoppingCart className="w-5 h-5" />
                   Start Exploring - $30/year
                 </button>
-                <p className="font-mali text-gray-500 text-sm mt-3">Annual subscription • Works 100% offline</p>
+                <p className="font-mali text-gray-500 text-sm mt-3">Annual subscription</p>
               </div>
             </div>
 
@@ -334,7 +334,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
                   <ShoppingCart className="w-5 h-5" />
                   Start Adventure - $45/year
                 </button>
-                <p className="font-mali text-gray-500 text-sm mt-3">Annual subscription • Works 100% offline</p>
+                <p className="font-mali text-gray-500 text-sm mt-3">Annual subscription</p>
               </div>
             </div>
 
@@ -355,7 +355,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
                 </div>
                 <div className="flex items-start gap-3 text-gray-700">
                   <div className="w-2 h-2 bg-brand-yellow rounded-full mt-2"></div>
-                  <span className="font-mali text-sm">150 Sing-along phonics - turn travel time into learning time</span>
+                  <span className="font-mali text-sm">125 Sing-along phonics - turn travel time into learning time</span>
                 </div>
                 <div className="flex items-start gap-3 text-gray-700">
                   <div className="w-2 h-2 bg-brand-yellow rounded-full mt-2"></div>
@@ -366,13 +366,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
               <div className="text-center">
                 <div className="text-4xl font-mali font-bold text-brand-yellow mb-4">$80</div>
                 <button 
-                  onClick={() => handleBuyNow('roadtripper')}
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-mali font-bold py-4 px-8 rounded-2xl hover:from-orange-600 hover:to-orange-700 transform hover:scale-105 transition-all duration-300 shadow-lg flex items-center justify-center gap-3"
+                  disabled
+                  className="w-full bg-gray-400 text-white font-mali font-bold py-4 px-8 rounded-2xl cursor-not-allowed shadow-lg flex items-center justify-center gap-3"
                 >
-                  <ShoppingCart className="w-5 h-5" />
-                  Get Roadtripper - $80
+                  Coming Soon
                 </button>
-                <p className="font-mali text-gray-500 text-sm mt-3">One-time purchase • Works 100% offline</p>
+                <p className="font-mali text-gray-500 text-sm mt-3">One-time purchase</p>
               </div>
             </div>
 
@@ -419,7 +418,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
                   <ShoppingCart className="w-5 h-5" />
                   Get Bookie Pack - $60
                 </button>
-                <p className="font-mali text-gray-500 text-sm mt-3">Physical device • Interactive learning</p>
+                <p className="font-mali text-gray-500 text-sm mt-3">Physical device • Works 100% offline</p>
               </div>
             </div>
           </div>
@@ -428,7 +427,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
           <div className="text-center">
             <div className="bg-gradient-to-r from-green-500 to-blue-500 rounded-3xl p-8 text-white shadow-2xl">
               <h3 className="text-3xl font-mali font-bold mb-4">
-                All packages work 100% offline – learning magic wherever you go! ✨
+                Zingalinga Bookie works 100% offline – learning magic wherever you go! ✨
               </h3>
               <p className="text-xl font-mali mb-6">
                 "Choose your adventure and watch your little one bloom!" 🌱
@@ -438,8 +437,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section id="contact" className="py-20 px-4 bg-gradient-to-br from-white via-blue-50 to-purple-50 relative">
+      {/* Zingalinga Bookie Section */}
+      <section id="bookie" className="py-20 px-4 bg-gradient-to-br from-white via-blue-50 to-purple-50 relative">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-10 left-10 w-32 h-32 bg-brand-blue/10 rounded-full animate-pulse"></div>
           <div className="absolute bottom-20 right-20 w-24 h-24 bg-brand-yellow/20 rounded-full animate-bounce"></div>
@@ -449,118 +448,98 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="text-center mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-5xl font-mali font-bold text-brand-green mb-4">
-              Get in Touch
+              Zingalinga Bookie
             </h2>
             <p className="text-lg sm:text-xl md:text-2xl font-mali text-gray-700 mb-8">
-              Have questions? We'd love to hear from you!
+              The physical device for young learners to learn each lesson offline
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-            {/* Contact Form */}
+            {/* Bookie Features */}
             <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-100">
               <h3 className="text-xl sm:text-2xl font-mali font-bold text-brand-green mb-4 sm:mb-6">
-                Send us a Message
+                Key Features
               </h3>
               
-              <form className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    placeholder="Parent's Name"
-                    className="w-full p-3 sm:p-4 border border-gray-200 rounded-lg sm:rounded-xl font-mali focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all text-sm sm:text-base"
-                  />
-                  <input
-                    type="email"
-                    placeholder="Email Address"
-                    className="w-full p-4 border border-gray-200 rounded-xl font-mali focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all"
-                  />
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="bg-brand-green/10 rounded-full p-3 mt-1">
+                    <BookOpen className="w-6 h-6 text-brand-green" />
+                  </div>
+                  <div>
+                    <h4 className="font-mali font-bold text-gray-800 mb-2">PP1 and PP2 Equivalent</h4>
+                    <p className="font-mali text-gray-600">Fully aligned literacy product for comprehensive learning</p>
+                  </div>
                 </div>
                 
-                <input
-                  type="text"
-                  placeholder="Child's Age (Optional)"
-                  className="w-full p-4 border border-gray-200 rounded-xl font-mali focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all"
-                />
-                
-                <select className="w-full p-4 border border-gray-200 rounded-xl font-mali focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all">
-                  <option>What can we help you with?</option>
-                  <option>General Questions</option>
-                  <option>Technical Support</option>
-                  <option>Billing & Purchases</option>
-                  <option>Educational Content</option>
-                  <option>Partnership Opportunities</option>
-                </select>
-                
-                <textarea
-                  placeholder="Your Message"
-                  rows={5}
-                  className="w-full p-4 border border-gray-200 rounded-xl font-mali focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all resize-none"
-                ></textarea>
-                
-                <button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-brand-green to-brand-blue text-white font-mali font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg sm:rounded-xl hover:from-brand-green hover:to-brand-blue transform hover:scale-105 transition-all duration-300 shadow-lg text-sm sm:text-base"
-                >
-                  Send Message
-                </button>
-              </form>
-            </div>
-
-            {/* Contact Information */}
-            <div className="space-y-8">
-              {/* Contact Details */}
-              <div className="bg-gradient-to-br from-brand-yellow to-brand-red rounded-3xl p-8 text-white">
-                <h3 className="text-2xl font-mali font-bold mb-6">
-                  Contact Information
-                </h3>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="bg-white/20 rounded-full p-3">
-                      <Mail className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="font-mali font-bold">Email Us</p>
-                      <p className="font-mali text-yellow-100">hello@zingalinga.com</p>
-                    </div>
+                <div className="flex items-start gap-4">
+                  <div className="bg-brand-blue/10 rounded-full p-3 mt-1">
+                    <Globe className="w-6 h-6 text-brand-blue" />
                   </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <div className="bg-white/20 rounded-full p-3">
-                      <Phone className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="font-mali font-bold">Call Us</p>
-                      <p className="font-mali text-yellow-100">+1 (555) 123-KIDS</p>
-                    </div>
+                  <div>
+                    <h4 className="font-mali font-bold text-gray-800 mb-2">Learn Anywhere, Anytime</h4>
+                    <p className="font-mali text-gray-600">Learn through stories wherever you go, no internet required</p>
                   </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <div className="bg-white/20 rounded-full p-3">
-                      <MapPin className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="font-mali font-bold">Visit Us</p>
-                      <p className="font-mali text-yellow-100">Educational Excellence Center</p>
-                    </div>
+                </div>
+                
+                <div className="flex items-start gap-4">
+                  <div className="bg-brand-yellow/10 rounded-full p-3 mt-1">
+                    <Play className="w-6 h-6 text-brand-yellow" />
+                  </div>
+                  <div>
+                    <h4 className="font-mali font-bold text-gray-800 mb-2">4-Day Battery Life</h4>
+                    <p className="font-mali text-gray-600">Battery lasts for 4 days when fully utilized</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-4">
+                  <div className="bg-brand-pink/10 rounded-full p-3 mt-1">
+                    <Video className="w-6 h-6 text-brand-pink" />
+                  </div>
+                  <div>
+                    <h4 className="font-mali font-bold text-gray-800 mb-2">Interactive Screen</h4>
+                    <p className="font-mali text-gray-600">Engaging interactive screen with 20+ interactive lessons</p>
                   </div>
                 </div>
               </div>
+            </div>
 
-
-
-              {/* Response Time */}
-              <div className="bg-gradient-to-br from-brand-blue to-brand-pink rounded-3xl p-6 text-white text-center">
+            {/* Bookie Images */}
+            <div className="space-y-8">
+              <div className="grid grid-cols-2 gap-4">
+                {/* Placeholder for Bookie images - will be updated when images are available */}
+                <div className="bg-gradient-to-br from-brand-green to-brand-blue rounded-2xl p-8 text-white text-center">
+                  <div className="text-4xl mb-4">📚</div>
+                  <p className="font-mali font-bold">Bookie Black Open</p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-brand-yellow to-brand-red rounded-2xl p-8 text-white text-center">
+                  <div className="text-4xl mb-4">📖</div>
+                  <p className="font-mali font-bold">Bookie White Open</p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-brand-pink to-brand-purple rounded-2xl p-8 text-white text-center">
+                  <div className="text-4xl mb-4">📓</div>
+                  <p className="font-mali font-bold">Black & White Open</p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-brand-blue to-brand-green rounded-2xl p-8 text-white text-center">
+                  <div className="text-4xl mb-4">📔</div>
+                  <p className="font-mali font-bold">Black & White Top</p>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl p-6 text-white text-center">
                 <h4 className="font-mali font-bold text-lg mb-2">
-                  We're Here to Help!
+                  Perfect for Young Learners!
                 </h4>
-                <p className="font-mali text-blue-100">
-                  Average response time: 2-4 hours
+                <p className="font-mali text-purple-100">
+                  Designed specifically for offline learning experiences
                 </p>
                 <div className="flex items-center justify-center gap-2 mt-3">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-mali">Online now</span>
+                  <span className="text-sm font-mali">100% Offline</span>
                 </div>
               </div>
             </div>

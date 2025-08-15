@@ -310,7 +310,7 @@ const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack, onNavigate, onLoginCl
               onClick={() => onNavigate('terms')}
               className="bg-brand-green text-white px-6 py-3 rounded-full font-mali font-bold hover:bg-green-600 transition-colors"
             >
-              View Terms of Service
+              View Terms and Conditions
             </button>
             <button 
               onClick={() => onNavigate('coppa')}

@@ -91,11 +91,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
           </div>
           
           <h1 className="text-2xl sm:text-3xl md:text-5xl font-mali font-bold text-brand-green mb-6 drop-shadow-sm leading-tight">
-            African Alphabet Adventures
+            Magical Alphabet Adventures
           </h1>
           
           <p className="text-lg sm:text-xl md:text-2xl font-mali text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Fun, educational, and culturally rich learning experiences for children ages 1-6
+            Fun, educational, and culturally rich learning experiences for children ages 3-6
           </p>
 
           {/* Features highlight */}

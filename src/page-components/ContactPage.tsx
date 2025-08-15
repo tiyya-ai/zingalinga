@@ -44,78 +44,35 @@ const ContactPage: React.FC<ContactPageProps> = ({ onBack, onNavigate, onLoginCl
             </div>
           </div>
           
-          <div className="grid lg:grid-cols-3 gap-8 mb-12">
-            {/* Contact Information */}
-            <div className="lg:col-span-1 space-y-6">
-              <div className="bg-white rounded-2xl shadow-xl p-8">
-                <h2 className="text-2xl font-mali font-bold text-brand-green mb-6">Get in Touch</h2>
-                
-                <div className="space-y-6">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-brand-blue/10 rounded-full p-3">
-                      <Mail className="w-6 h-6 text-brand-blue" />
-                    </div>
-                    <div>
-                      <h3 className="font-mali font-bold text-gray-800">Email Us</h3>
-                      <p className="font-mali text-gray-600">hello@zingalinga.com</p>
-                      <p className="font-mali text-sm text-gray-500">We reply within 2-4 hours</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-4">
-                    <div className="bg-brand-green/10 rounded-full p-3">
-                      <Phone className="w-6 h-6 text-brand-green" />
-                    </div>
-                    <div>
-                      <h3 className="font-mali font-bold text-gray-800">Call Us</h3>
-                      <p className="font-mali text-gray-600">+1 (555) 123-KIDS</p>
-                      <p className="font-mali text-sm text-gray-500">Mon-Fri, 9AM-6PM EST</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-4">
-                    <div className="bg-brand-pink/10 rounded-full p-3">
-                      <MapPin className="w-6 h-6 text-brand-pink" />
-                    </div>
-                    <div>
-                      <h3 className="font-mali font-bold text-gray-800">Visit Us</h3>
-                      <p className="font-mali text-gray-600">Educational Excellence Center</p>
-                      <p className="font-mali text-sm text-gray-500">By appointment only</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Help */}
-              <div className="bg-white rounded-2xl shadow-xl p-8">
-                <h3 className="text-xl font-mali font-bold text-brand-green mb-4">
-                  Quick Help
-                </h3>
-                
-                <div className="space-y-3">
-                  {[
-                    'How to access content?',
-                    'Billing questions',
-                    'Technical support',
-                    'Age recommendations',
-                    'Refund policy'
-                  ].map((item, index) => (
-                    <button
-                      key={index}
-                      className="w-full text-left p-3 rounded-xl hover:bg-gray-50 transition-colors font-mali text-gray-700 hover:text-brand-green flex items-center gap-3"
-                    >
-                      <HelpCircle className="w-4 h-4" />
-                      {item}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+          {/* Quick Help Section */}
+          <div className="bg-white rounded-2xl shadow-xl p-8 mb-12">
+            <h2 className="text-3xl font-mali font-bold text-brand-green mb-8 text-center">Quick Help</h2>
             
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                'How to access content?',
+                'Billing questions',
+                'Technical support',
+                'Age recommendations',
+                'Refund policy',
+                'Account management'
+              ].map((item, index) => (
+                <button
+                  key={index}
+                  className="p-4 rounded-xl hover:bg-gray-50 transition-colors font-mali text-gray-700 hover:text-brand-green flex items-center gap-3 border border-gray-200 hover:border-brand-green"
+                >
+                  <HelpCircle className="w-5 h-5" />
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-1 gap-8 mb-12">
             {/* Contact Form */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-1">
               <div className="bg-white rounded-2xl shadow-xl p-8">
-                <h2 className="text-3xl font-mali font-bold text-brand-green mb-8">Send us a Message</h2>
+                <h2 className="text-3xl font-mali font-bold text-brand-green mb-8">Contact Form</h2>
                 
                 <form className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
