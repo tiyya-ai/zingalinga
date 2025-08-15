@@ -13,7 +13,7 @@ jobs:
       with:
         host: 109.199.106.28
         username: root
-        key: ${{ secrets.VPS_SSH_KEY }}
+        password: ${{ secrets.VPS_PASSWORD }}
         script: |
           mkdir -p /var/www/update
           echo "Auto-deployment triggered at $(date)"
