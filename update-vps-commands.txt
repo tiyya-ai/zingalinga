@@ -1,0 +1,27 @@
+SSH into your VPS and run these commands:
+
+# 1. Navigate to project directory
+cd /var/www/zingalinga
+
+# 2. Check current status
+git status
+git log --oneline -3
+
+# 3. Pull latest changes
+git pull origin main
+
+# 4. Install dependencies
+npm install
+
+# 5. Build project
+npm run build
+
+# 6. Restart application
+pm2 restart all
+
+# 7. Check if running
+pm2 status
+
+If pm2 doesn't work, try:
+sudo systemctl restart nginx
+sudo systemctl restart your-app-service
