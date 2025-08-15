@@ -7395,5 +7395,3 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     </div>
   );
 }
-
-
