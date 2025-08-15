@@ -82,7 +82,7 @@ export function getGoogleDriveEmbedUrl(url: string): string {
  * Checks if a URL is a Google Drive link
  */
 export function isGoogleDriveUrl(url: string): boolean {
-  return url && (
+  return Boolean(url) && (
     url.includes('drive.google.com') || 
     url.includes('docs.google.com')
   );
