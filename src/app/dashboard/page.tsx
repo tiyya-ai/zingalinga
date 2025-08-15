@@ -11,30 +11,31 @@ const ProfessionalUserDashboard = dynamic(() => import('../../components/Profess
 });
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const session = authManager.getCurrentSession();
-        if (session && authManager.isSessionValid(session) && session.user.role !== 'admin') {
-          vpsDataStore.setCurrentUser(session.user);
-          return session.user;
-        }
-      } catch (error) {
-        // Handle error silently
-      }
-    }
-    return null;
-  });
-  
+  const [user, setUser] = useState<User | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [contentFiles, setContentFiles] = useState<ContentFile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!user && typeof window !== 'undefined') {
+    try {
+      const session = authManager.getCurrentSession();
+      if (session && authManager.isSessionValid(session) && session.user.role !== 'admin') {
+        vpsDataStore.setCurrentUser(session.user);
+        setUser(session.user);
+      } else {
+        window.location.href = '/';
+        return;
+      }
+    } catch (error) {
       window.location.href = '/';
       return;
     }
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
     
     if (user) {
       // Load data after user is confirmed
@@ -77,7 +78,8 @@ export default function DashboardPage() {
     authManager.logout();
     // Clear any intervals or timeouts
     vpsDataStore.clearMemoryCache();
-    window.location.href = '/';
+    // Redirect with logout parameter to avoid loading screen
+    window.location.href = '/?logout=true';
   };
 
   const handlePurchase = async (moduleId: string) => {
@@ -111,8 +113,15 @@ export default function DashboardPage() {
     }
   };
 
-  if (!user) {
-    return null;
+  if (isLoading || !user) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

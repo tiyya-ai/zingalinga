@@ -322,15 +322,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         URL.revokeObjectURL(videoForm.thumbnail);
       }
     };
-  }, [videoForm.videoUrl, videoForm.thumbnail]);ffect(() => {
-    return () => {
-      if (videoForm.videoUrl && videoForm.videoUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(videoForm.videoUrl);
-      }
-      if (videoForm.thumbnail && videoForm.thumbnail.startsWith('blob:')) {
-        URL.revokeObjectURL(videoForm.thumbnail);
-      }
-    };
   }, [videoForm.videoUrl, videoForm.thumbnail]);
 
   const loadRealData = async (skipCache = false) => {

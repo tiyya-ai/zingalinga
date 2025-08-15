@@ -71,7 +71,7 @@ export default function ProfessionalUserDashboard({
   onPurchase,
   setUser
 }: ProfessionalUserDashboardProps) {
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(true);
   const [localPurchases, setLocalPurchases] = useState<Purchase[]>(purchases);
   const [liveModules, setLiveModules] = useState<Module[]>(modules);
   const [savedCategories, setSavedCategories] = useState<string[]>([]);
@@ -99,20 +99,40 @@ export default function ProfessionalUserDashboard({
   const [showFilters, setShowFilters] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [userStats, setUserStats] = useState<UserStats>({
-    watchTime: localPurchases.filter(p => p.userId === user?.id).reduce((total, purchase) => {
-      const video = allModules.find(m => m.id === purchase.moduleId);
-      if (video?.duration) {
-        const [minutes, seconds] = video.duration.split(':').map(Number);
-        return total + (minutes || 0) + ((seconds || 0) / 60);
-      }
-      return total + 5; // Default 5 minutes if no duration
-    }, 0),
-    videosWatched: localPurchases.filter(p => p.userId === user?.id).length,
-    purchasedItems: localPurchases.filter(p => p.userId === user?.id).length,
+    watchTime: 0,
+    videosWatched: 0,
+    purchasedItems: 0,
     favoriteVideos: 0,
     achievements: [],
-    level: Math.min(5, Math.floor(localPurchases.filter(p => p.userId === user?.id).length / 2) + 1)
+    level: 1
   });
+
+  // Convert admin modules to store items (all videos as purchasable content)
+  const allModules = liveModules.length > 0 ? liveModules : modules; // Use props if liveModules is empty
+
+  // Initialize user stats after allModules is available
+  useEffect(() => {
+    if (allModules && allModules.length > 0) {
+      const userPurchases = localPurchases.filter(p => p.userId === user?.id);
+      const totalWatchTime = userPurchases.reduce((total, purchase) => {
+        const video = allModules.find(m => m.id === purchase.moduleId);
+        if (video?.duration) {
+          const [minutes, seconds] = video.duration.split(':').map(Number);
+          return total + (minutes || 0) + ((seconds || 0) / 60);
+        }
+        return total + 5;
+      }, 0);
+      
+      setUserStats({
+        watchTime: totalWatchTime,
+        videosWatched: userPurchases.length,
+        purchasedItems: userPurchases.length,
+        favoriteVideos: 0,
+        achievements: [],
+        level: Math.min(5, Math.floor(userPurchases.length / 2) + 1)
+      });
+    }
+  }, [allModules, localPurchases, user?.id]);
   const [newVideoCount, setNewVideoCount] = useState(0);
   const [showNewVideoAlert, setShowNewVideoAlert] = useState(false);
 
@@ -125,7 +145,7 @@ export default function ProfessionalUserDashboard({
 
 
   useEffect(() => {
-    setMounted(true);
+    // setMounted(true); // Already true
     
     // Mobile detection
     const checkMobile = () => {
@@ -253,19 +273,9 @@ export default function ProfessionalUserDashboard({
 
 
   if (!mounted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-white text-xl">Loading...</div>
-        </div>
-      </div>
-    );
+    return null;
   }
   
-  // Convert admin modules to store items (all videos as purchasable content)
-  const allModules = liveModules.length > 0 ? liveModules : modules; // Use props if liveModules is empty
-  
-
   
   // Convert admin modules to videos with proper URL handling first
   const adminVideos: Video[] = allModules
@@ -631,7 +641,17 @@ export default function ProfessionalUserDashboard({
               
 
               <button 
-                onClick={() => onLogout && onLogout()}
+                onClick={() => {
+                  if (onLogout) {
+                    onLogout();
+                  } else {
+                    // Fallback logout if onLogout is not provided
+                    if (typeof window !== 'undefined') {
+                      localStorage.removeItem('zinga-linga-session');
+                      window.location.href = '/?logout=true';
+                    }
+                  }
+                }}
                 className="bg-gradient-to-r from-brand-red to-brand-pink hover:from-red-600 hover:to-pink-600 text-white px-3 py-2 sm:px-4 rounded-lg transition-all duration-200 font-mali font-medium shadow-lg text-sm"
               >
                 <span className="hidden sm:inline">Logout</span>
@@ -652,7 +672,6 @@ export default function ProfessionalUserDashboard({
               { id: 'all-content', label: '📚 Content', count: allContent.length },
               { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
               { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
-              { id: 'pp2-program', label: '📖 PP2', count: allContent.filter(c => c.category === 'PP2 Program').length },
               { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
               { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => !localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed')).length },
               { id: 'packages', label: '📦 Packages', count: null },
@@ -684,7 +703,6 @@ export default function ProfessionalUserDashboard({
                 { id: 'all-content', label: '📚 Content', count: allContent.length },
                 { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
                 { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
-                { id: 'pp2-program', label: '📖 PP2', count: allContent.filter(c => c.category === 'PP2 Program').length },
                 { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
                 { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => 
                   !localPurchases.some(purchase => 
@@ -1038,13 +1056,13 @@ export default function ProfessionalUserDashboard({
         )}
 
         {/* Category-specific tabs */}
-        {['audio-lessons', 'video-lessons', 'pp1-program', 'pp2-program'].map(tabId => {
+        {['audio-lessons', 'video-lessons', 'pp1-program'].map(tabId => {
           // Map tab IDs to proper category names
           const categoryMap: { [key: string]: string } = {
             'audio-lessons': 'Audio Lessons',
             'video-lessons': 'Video Lessons', 
             'pp1-program': 'PP1 Program',
-            'pp2-program': 'PP2 Program'
+
           };
           
           const categoryName = categoryMap[tabId];
