@@ -359,7 +359,7 @@ const AdminProfilePage: React.FC<AdminProfilePageProps> = ({ onBack, onNavigate 
                 onClick={(e) => { 
                   e.preventDefault(); 
                   e.stopPropagation(); 
-                  e.stopImmediatePropagation();
+                  (e as any).stopImmediatePropagation?.();
                   handleSaveProfile(e); 
                 }}
                 onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}

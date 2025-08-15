@@ -337,7 +337,7 @@ export default function ProfessionalUserDashboard({
         id: module.id,
         title: module.title || 'Untitled Video',
         thumbnail: thumbnail,
-        duration: (module as any).duration || module.duration || (module as any).estimatedDuration || '5:00',
+        duration: module.duration || (module as any).duration || (module as any).estimatedDuration || '',
         description: module.description || '',
         videoUrl: videoUrl,
         category: module.category || 'Videos',
@@ -405,8 +405,13 @@ export default function ProfessionalUserDashboard({
   const isItemPurchased = (itemId: string) => {
     if (!user?.id) return false;
     
-    // Check multiple sources for purchase verification
-    const hasPurchase = localPurchases.some(purchase => 
+    // Get unique purchases only
+    const uniquePurchases = localPurchases.filter((purchase, index, self) => 
+      index === self.findIndex(p => p.moduleId === purchase.moduleId && p.userId === purchase.userId)
+    );
+    
+    // Check if purchased
+    const hasPurchase = uniquePurchases.some(purchase => 
       purchase.moduleId === itemId && 
       purchase.userId === user.id && 
       purchase.status === 'completed'
@@ -415,18 +420,7 @@ export default function ProfessionalUserDashboard({
     // Also check user's purchased modules list
     const inUserList = user.purchasedModules?.includes(itemId) || false;
     
-    // Check localStorage as fallback
-    let hasLocalPurchase = false;
-    try {
-      const localUserPurchases = JSON.parse(localStorage.getItem(`user_purchases_${user.id}`) || '[]');
-      hasLocalPurchase = localUserPurchases.some((p: any) => 
-        p.moduleId === itemId && p.status === 'completed'
-      );
-    } catch (error) {
-      console.error('Error checking localStorage purchases:', error);
-    }
-    
-    return hasPurchase || inUserList || hasLocalPurchase;
+    return hasPurchase || inUserList;
   };
 
 
@@ -796,7 +790,7 @@ export default function ProfessionalUserDashboard({
                           id: module.id,
                           title: module.title || 'Untitled Video',
                           thumbnail: thumbnail || '',
-                          duration: (module as any).duration || module.duration || (module as any).estimatedDuration || '5:00',
+                          duration: module.duration || (module as any).duration || (module as any).estimatedDuration || '',
                           description: module.description || '',
                           videoUrl: module.videoUrl || '',
                           category: module.category || 'Videos',
@@ -826,7 +820,7 @@ export default function ProfessionalUserDashboard({
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-white font-medium truncate">{module.title || 'Untitled Video'}</div>
-                          <div className="text-purple-200 text-xs">{module.duration || '5:00'}</div>
+                          <div className="text-purple-200 text-xs">{module.duration || ''}</div>
                         </div>
                       </div>
                     );
@@ -949,35 +943,103 @@ export default function ProfessionalUserDashboard({
                         ) : null}
 
                         
-                        {/* Play icon for videos */}
-                        {(content.type === 'video' || !content.type) && isPurchased && (
+                        {/* Play icon for all content types */}
+                        {isPurchased && (
                           <div 
                             className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors group-hover:bg-black/30 cursor-pointer"
                             onClick={() => {
                               if (content && content.id) {
-                                const video = {
-                                  id: content.id,
-                                  title: content.title,
-                                  thumbnail: content.thumbnail || '',
-                                  duration: (content as any).duration || content.duration || (content as any).estimatedDuration || '5:00',
-                                  description: content.description || '',
-                                  videoUrl: content.videoUrl || '',
-                                  category: content.category || 'Videos',
-                                  isPremium: content.isPremium || false,
-                                  price: content.price || 0,
-                                  rating: (content as any).rating,
-                                  views: (content as any).views,
-                                  tags: (content as any).tags,
-                                  isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
-                                };
-                                playVideo(video);
+                                if (content.category === 'Audio Lessons' || content.type === 'audio') {
+                                  let audioUrl = content.audioUrl || content.videoUrl;
+                                  let audioFile = null;
+                                  
+                                  if (content.audioUrl && typeof content.audioUrl === 'object' && 'type' in content.audioUrl) {
+                                    audioUrl = URL.createObjectURL(content.audioUrl as unknown as File);
+                                    audioFile = content.audioUrl;
+                                  } else if (content.videoUrl && typeof content.videoUrl === 'object' && 'type' in content.videoUrl) {
+                                    audioUrl = URL.createObjectURL(content.videoUrl as unknown as File);
+                                    audioFile = content.videoUrl;
+                                  }
+                                  
+                                  if (audioUrl) {
+                                    setSelectedAudio({
+                                      ...content,
+                                      audioUrl: audioUrl,
+                                      audioFile: audioFile
+                                    });
+                                    setShowAudioModal(true);
+                                  } else {
+                                    alert('⚠️ Audio file not available.');
+                                  }
+                                } else if (content.category === 'PP1 Program') {
+                                  if (content.videoUrl) {
+                                    const video = {
+                                      id: content.id,
+                                      title: content.title,
+                                      thumbnail: content.thumbnail || '',
+                                      duration: content.duration || '5:00',
+                                      description: content.description || '',
+                                      videoUrl: content.videoUrl || '',
+                                      category: content.category || 'PP1 Program',
+                                      isPremium: content.isPremium || false,
+                                      price: content.price || 0,
+                                      rating: (content as any).rating,
+                                      views: (content as any).views,
+                                      tags: (content as any).tags,
+                                      isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
+                                    };
+                                    playVideo(video);
+                                  } else if (content.audioUrl) {
+                                    let audioUrl = content.audioUrl;
+                                    let audioFile = null;
+                                    
+                                    if (content.audioUrl && typeof content.audioUrl === 'object' && 'type' in content.audioUrl) {
+                                      audioUrl = URL.createObjectURL(content.audioUrl as unknown as File);
+                                      audioFile = content.audioUrl;
+                                    }
+                                    
+                                    setSelectedAudio({
+                                      ...content,
+                                      audioUrl: audioUrl,
+                                      audioFile: audioFile
+                                    });
+                                    setShowAudioModal(true);
+                                  } else {
+                                    alert(`✅ You own this ${content.category}! Content is now accessible.`);
+                                  }
+                                } else {
+                                  const video = {
+                                    id: content.id,
+                                    title: content.title,
+                                    thumbnail: content.thumbnail || '',
+                                    duration: (content as any).duration || content.duration || (content as any).estimatedDuration || '5:00',
+                                    description: content.description || '',
+                                    videoUrl: content.videoUrl || '',
+                                    category: content.category || 'Videos',
+                                    isPremium: content.isPremium || false,
+                                    price: content.price || 0,
+                                    rating: (content as any).rating,
+                                    views: (content as any).views,
+                                    tags: (content as any).tags,
+                                    isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
+                                  };
+                                  playVideo(video);
+                                }
                               }
                             }}
                           >
                             <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/30 backdrop-blur-sm group-hover:scale-110 transition-all duration-300">
-                              <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z"/>
-                              </svg>
+                              {content.category === 'Audio Lessons' || content.type === 'audio' ? (
+                                <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                                </svg>
+                              ) : content.category === 'PP1 Program' ? (
+                                <span className="text-white text-2xl">📚</span>
+                              ) : (
+                                <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z"/>
+                                </svg>
+                              )}
                             </div>
                           </div>
                         )}
@@ -1133,6 +1195,43 @@ export default function ProfessionalUserDashboard({
                                   } else {
                                     alert('⚠️ Audio file not available.');
                                   }
+                                } else if (content.category === 'PP1 Program') {
+                                  // Handle PP1 Program content
+                                  if (content.videoUrl) {
+                                    const video = {
+                                      id: content.id,
+                                      title: content.title,
+                                      thumbnail: content.thumbnail || '',
+                                      duration: content.duration || '5:00',
+                                      description: content.description || '',
+                                      videoUrl: content.videoUrl || '',
+                                      category: content.category || 'PP1 Program',
+                                      isPremium: content.isPremium || false,
+                                      price: content.price || 0,
+                                      rating: (content as any).rating,
+                                      views: (content as any).views,
+                                      tags: (content as any).tags,
+                                      isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
+                                    };
+                                    playVideo(video);
+                                  } else if (content.audioUrl) {
+                                    let audioUrl = content.audioUrl;
+                                    let audioFile = null;
+                                    
+                                    if (content.audioUrl && typeof content.audioUrl === 'object' && 'type' in content.audioUrl) {
+                                      audioUrl = URL.createObjectURL(content.audioUrl as unknown as File);
+                                      audioFile = content.audioUrl;
+                                    }
+                                    
+                                    setSelectedAudio({
+                                      ...content,
+                                      audioUrl: audioUrl,
+                                      audioFile: audioFile
+                                    });
+                                    setShowAudioModal(true);
+                                  } else {
+                                    alert(`✅ You own this ${content.category}! Content is now accessible.`);
+                                  }
                                 } else if (content.type === 'video' || !content.type) {
                                   const video = {
                                     id: content.id,
@@ -1168,9 +1267,11 @@ export default function ProfessionalUserDashboard({
                           )}
                         </div>
                         
-                        <div className="absolute top-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-sm font-medium">
-                          ${content.price || 0}
-                        </div>
+                        {!isPurchased && (
+                          <div className="absolute top-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-sm font-medium">
+                            ${content.price || 0}
+                          </div>
+                        )}
                         
                         {!isPurchased && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/60">
@@ -1217,7 +1318,7 @@ export default function ProfessionalUserDashboard({
                                   id: content.id,
                                   title: content.title,
                                   thumbnail: content.thumbnail || '',
-                                  duration: content.duration || '5:00',
+                                  duration: content.duration || '',
                                   description: content.description || '',
                                   videoUrl: content.videoUrl || '',
                                   category: content.category || 'Videos',
@@ -1229,6 +1330,43 @@ export default function ProfessionalUserDashboard({
                                   isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
                                 };
                                 playVideo(video);
+                              } else if (content.category === 'PP1 Program') {
+                                // Handle PP1 Program content
+                                if (content.videoUrl) {
+                                  const video = {
+                                    id: content.id,
+                                    title: content.title,
+                                    thumbnail: content.thumbnail || '',
+                                    duration: content.duration || '5:00',
+                                    description: content.description || '',
+                                    videoUrl: content.videoUrl || '',
+                                    category: content.category || 'PP1 Program',
+                                    isPremium: content.isPremium || false,
+                                    price: content.price || 0,
+                                    rating: (content as any).rating,
+                                    views: (content as any).views,
+                                    tags: (content as any).tags,
+                                    isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
+                                  };
+                                  playVideo(video);
+                                } else if (content.audioUrl) {
+                                  let audioUrl = content.audioUrl;
+                                  let audioFile = null;
+                                  
+                                  if (content.audioUrl && typeof content.audioUrl === 'object' && 'type' in content.audioUrl) {
+                                    audioUrl = URL.createObjectURL(content.audioUrl as unknown as File);
+                                    audioFile = content.audioUrl;
+                                  }
+                                  
+                                  setSelectedAudio({
+                                    ...content,
+                                    audioUrl: audioUrl,
+                                    audioFile: audioFile
+                                  });
+                                  setShowAudioModal(true);
+                                } else {
+                                  alert(`✅ You own this ${content.category}! Content is now accessible.`);
+                                }
                               } else {
                                 alert(`✅ You own this ${content.category}! Content access available.`);
                               }
@@ -1423,7 +1561,7 @@ export default function ProfessionalUserDashboard({
                                 id: module.id,
                                 title: module.title || 'Untitled Video',
                                 thumbnail: thumbnail || '',
-                                duration: module.duration || '5:00',
+                                duration: module.duration || '',
                                 description: module.description || '',
                                 videoUrl: module.videoUrl || '',
                                 category: module.category || 'Videos',
@@ -1452,9 +1590,11 @@ export default function ProfessionalUserDashboard({
                         </div>
                       )}
                       
-                      <div className="absolute bottom-2 right-2 bg-purple-600/90 text-white px-2 py-1 rounded-md text-xs font-medium backdrop-blur-sm">
-                        {module.duration || '5:00'}
-                      </div>
+                      {module.duration && (
+                        <div className="absolute bottom-2 right-2 bg-purple-600/90 text-white px-2 py-1 rounded-md text-xs font-medium backdrop-blur-sm">
+                          {module.duration}
+                        </div>
+                      )}
                       
 
                       
@@ -1759,7 +1899,7 @@ export default function ProfessionalUserDashboard({
                       
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <span className="text-gray-400 text-xs">⏱️ 5:00</span>
+                          {/* Duration removed - no fake times */}
                         </div>
                         
                         {cartItems.includes(item.id) ? (
@@ -1805,13 +1945,24 @@ export default function ProfessionalUserDashboard({
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
                 <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                   <span className="mr-2">🎬</span>
-                  Purchased Videos ({localPurchases.filter(p => p.userId === user?.id).length})
+                  Purchased Videos ({localPurchases.filter((p, index, self) => 
+                    p.userId === user?.id && 
+                    displayVideos.some(v => v.id === p.moduleId) &&
+                    index === self.findIndex(purchase => purchase.moduleId === p.moduleId && purchase.userId === p.userId)
+                  ).length})
                 </h3>
                 <div className="space-y-3">
-                  {localPurchases.filter(p => p.userId === user?.id).slice(0, 3).map(purchase => {
+                  {localPurchases
+                    .filter((p, index, self) => 
+                      p.userId === user?.id && 
+                      displayVideos.some(v => v.id === p.moduleId) &&
+                      index === self.findIndex(purchase => purchase.moduleId === p.moduleId && purchase.userId === p.userId)
+                    )
+                    .slice(0, 3)
+                    .map((purchase, index) => {
                     const video = displayVideos.find(v => v && v.id === purchase.moduleId);
                     return video ? (
-                      <div key={purchase.id} className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer" onClick={() => playVideo(video)}>
+                      <div key={`${purchase.id}-${index}-${purchase.moduleId}`} className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer" onClick={() => playVideo(video)}>
                         <div className="w-16 h-12 rounded overflow-hidden bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
                           {video.thumbnail && video.thumbnail.trim() ? (
                             <img 
@@ -1837,7 +1988,11 @@ export default function ProfessionalUserDashboard({
                       </div>
                     ) : null;
                   })}
-                  {localPurchases.filter(p => p.userId === user?.id).length === 0 && (
+                  {localPurchases.filter((p, index, self) => 
+                    p.userId === user?.id && 
+                    displayVideos.some(v => v.id === p.moduleId) &&
+                    index === self.findIndex(purchase => purchase.moduleId === p.moduleId && purchase.userId === p.userId)
+                  ).length === 0 && (
                     <div className="text-center py-8 text-purple-200">
                       <div className="text-4xl mb-2">🎬</div>
                       <div>No videos purchased yet</div>
@@ -1855,24 +2010,40 @@ export default function ProfessionalUserDashboard({
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
                 <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                   <span className="mr-2">🛍️</span>
-                  All Purchases ({localPurchases.length})
+                  All Purchases ({localPurchases.filter((p, index, self) => 
+                    p.userId === user?.id &&
+                    index === self.findIndex(purchase => purchase.moduleId === p.moduleId && purchase.userId === p.userId)
+                  ).length})
                 </h3>
                 <div className="space-y-3">
-                  {localPurchases.filter(p => p.type !== 'video').slice(0, 3).map(purchase => (
-                    <div key={purchase.id} className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg">
-                      <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center text-white font-bold">
-                        🛍️
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-white font-medium">Product #{purchase.moduleId}</div>
-                        <div className="text-purple-200 text-sm">Purchased on {new Date(purchase.purchaseDate).toLocaleDateString()}</div>
-                      </div>
-                      <div className="text-yellow-400 font-bold">${purchase.amount}</div>
-                    </div>
-                  ))}
-                  {localPurchases.filter(p => p.type !== 'video').length === 0 && (
+                  {localPurchases
+                    .filter((p, index, self) => 
+                      p.userId === user?.id &&
+                      index === self.findIndex(purchase => purchase.moduleId === p.moduleId && purchase.userId === p.userId)
+                    )
+                    .slice(0, 3)
+                    .map(purchase => {
+                      const video = displayVideos.find(v => v && v.id === purchase.moduleId);
+                      return (
+                        <div key={purchase.id} className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg">
+                          <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center text-white font-bold">
+                            {video ? '🎬' : '🛍️'}
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-white font-medium">{video?.title || `Product #${purchase.moduleId}`}</div>
+                            <div className="text-purple-200 text-sm">Purchased on {new Date(purchase.purchaseDate).toLocaleDateString()}</div>
+                          </div>
+                          <div className="text-yellow-400 font-bold">${purchase.amount}</div>
+                        </div>
+                      );
+                    })}
+                  {localPurchases.filter((p, index, self) => 
+                    p.userId === user?.id &&
+                    index === self.findIndex(purchase => purchase.moduleId === p.moduleId && purchase.userId === p.userId)
+                  ).length === 0 && (
                     <div className="text-center py-8 text-purple-200">
-                      All purchases are videos
+                      <div className="text-4xl mb-2">🛍️</div>
+                      <div>No purchases yet</div>
                     </div>
                   )}
                 </div>
@@ -1930,9 +2101,11 @@ export default function ProfessionalUserDashboard({
                         ${video.price || 0}
                       </div>
                       
-                      <div className="absolute bottom-2 right-2 bg-purple-600/90 text-white px-2 py-1 rounded-md text-xs font-medium backdrop-blur-sm">
-                        {video.duration || '5:00'}
-                      </div>
+                      {video.duration && (
+                        <div className="absolute bottom-2 right-2 bg-purple-600/90 text-white px-2 py-1 rounded-md text-xs font-medium backdrop-blur-sm">
+                          {video.duration}
+                        </div>
+                      )}
                     </div>
                     
                     <div className="p-4">
@@ -2915,21 +3088,38 @@ export default function ProfessionalUserDashboard({
                 <button 
                   onClick={async () => {
                     try {
-                      const newPurchases = cartItems.map(itemId => ({
-                        id: `purchase_${itemId}_${user?.id || 'user_1'}`,
-                        userId: user?.id || 'user_1',
-                        moduleId: itemId,
-                        purchaseDate: new Date().toISOString(),
-                        amount: storeItems.find(item => item.id === itemId)?.price || 0,
-                        status: 'completed' as const,
-                        type: 'video' as const
-                      }));
+                      const timestamp = Date.now();
+                      const newPurchases = [];
                       
-                      for (const purchase of newPurchases) {
-                        await vpsDataStore.addPurchase(purchase);
+                      for (const itemId of cartItems) {
+                        // Check if already purchased
+                        const alreadyPurchased = localPurchases.some(p => 
+                          p.moduleId === itemId && 
+                          p.userId === user?.id && 
+                          p.status === 'completed'
+                        );
+                        
+                        if (!alreadyPurchased) {
+                          const purchase = {
+                            id: `purchase_${timestamp}_${itemId}_${user?.id || 'user_1'}`,
+                            userId: user?.id || 'user_1',
+                            moduleId: itemId,
+                            purchaseDate: new Date().toISOString(),
+                            amount: storeItems.find(item => item.id === itemId)?.price || 0,
+                            status: 'completed' as const,
+                            type: 'video' as const
+                          };
+                          newPurchases.push(purchase);
+                        }
                       }
                       
-                      setLocalPurchases([...localPurchases, ...newPurchases]);
+                      if (newPurchases.length > 0) {
+                        for (const purchase of newPurchases) {
+                          await vpsDataStore.addPurchase(purchase);
+                        }
+                        setLocalPurchases([...localPurchases, ...newPurchases]);
+                      }
+                      
                       setCartItems([]);
                       setShowCheckout(false);
                       setShowThankYou(true);
@@ -3121,7 +3311,7 @@ export default function ProfessionalUserDashboard({
                   <div className="flex-1">
                     <p className="text-gray-300 text-sm mb-2 line-clamp-3 sm:line-clamp-none">{selectedVideo.description}</p>
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400">
-                      <span>⏱️ {selectedVideo.duration || '0:00'}</span>
+                      {selectedVideo.duration && <span>⏱️ {selectedVideo.duration}</span>}
                       <span>•</span>
                       <span>📂 {selectedVideo.category}</span>
                       {selectedVideo.rating && (

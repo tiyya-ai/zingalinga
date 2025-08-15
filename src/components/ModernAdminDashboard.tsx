@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardBody,
@@ -229,7 +229,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   }, [users, orders, comments]);
 
 
-  const [dataLoaded, setDataLoaded] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(true);
   const [analyticsActiveTab, setAnalyticsActiveTab] = useState('overview');
 
   const [dashboardStats, setDashboardStats] = useState({
@@ -239,6 +239,24 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     totalRevenue: 0,
     conversionRate: 0
   });
+
+  // Update dashboard stats when data changes
+  useEffect(() => {
+    const totalRevenue = orders.reduce((sum, order) => sum + order.amount, 0);
+    const activeUsers = users.filter(user => {
+      const lastLogin = new Date(user.lastLogin || user.createdAt);
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      return lastLogin >= oneWeekAgo;
+    }).length;
+
+    setDashboardStats({
+      totalUsers: users.length,
+      activeUsers: activeUsers,
+      totalVideos: videos.length,
+      totalRevenue: totalRevenue,
+      conversionRate: users.length > 0 ? (orders.length / users.length) * 100 : 0
+    });
+  }, [users, videos, orders]);
 
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
@@ -270,7 +288,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       const data = await vpsDataStore.loadData();
       const packageData = data.packages || [];
       setPackages(packageData);
-      console.log('ðŸ“¦ Loaded packages:', packageData.length);
+      console.log('Ã°Å¸â€œÂ¦ Loaded packages:', packageData.length);
     } catch (error) {
       console.error('Failed to load packages:', error);
       setPackages([]);
@@ -286,8 +304,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const loadExistingLogo = async () => {
     try {
       const settings = await vpsDataStore.getSettings();
-      if (settings.adminLogo) {
-        setLogoFile(settings.adminLogo);
+      if ((settings as any).adminLogo) {
+        setLogoFile((settings as any).adminLogo);
       }
     } catch (error) {
       console.error('Failed to load existing admin logo:', error);
@@ -347,14 +365,14 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       const realSubscriptions = await vpsDataStore.getSubscriptions();
       const realNotifications = await vpsDataStore.getNotifications();
       const realScheduledContent = await vpsDataStore.getScheduledContent();
-      const realContentBundles = data.contentBundles || [];
+      const realContentBundles = (data as any).contentBundles || [];
       
       // Load categories from VPS or use defaults
       setCategories(realCategories.length > 0 ? realCategories : ['Uncategorized']);
       
       // Load age groups from VPS settings or use defaults
       const settings = await vpsDataStore.getSettings();
-      const savedAgeGroups = settings.ageGroups || ['3-5 years', '3-8 years', '6-12 years', 'All ages'];
+      const savedAgeGroups = (settings as any).ageGroups || ['3-5 years', '3-8 years', '6-12 years', 'All ages'];
       setAgeGroups(savedAgeGroups);
       
       setComments(realComments);
@@ -390,7 +408,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         };
       });
       
-      console.log(`ðŸŽ¬ Loaded ${processedVideos.length} videos for display`);
+      console.log(`Ã°Å¸Å½Â¬ Loaded ${processedVideos.length} videos for display`);
       setVideos(processedVideos);
 
       // Convert real purchases to orders format
@@ -424,27 +442,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       // Set real upload queue
       setUploadQueue(realUploadQueue || []);
 
-      // Update dashboard stats with real data only
-      const totalRevenue = convertedOrders.reduce((sum, order) => sum + order.amount, 0);
-      const activeUsers = realUsers.filter(user => {
-        const lastLogin = new Date(user.lastLogin || user.createdAt);
-        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        return lastLogin >= oneWeekAgo;
-      }).length;
-
-      // Force update with actual counts
-      const actualVideoCount = processedVideos.length;
-      const actualUserCount = realUsers.length;
-      
-      setDashboardStats({
-        totalUsers: actualUserCount,
-        activeUsers: activeUsers,
-        totalVideos: actualVideoCount,
-        totalRevenue: totalRevenue,
-        conversionRate: actualUserCount > 0 ? (convertedOrders.length / actualUserCount) * 100 : 0
-      });
-      
-      console.log('VPS Dashboard stats updated:', { users: actualUserCount, videos: actualVideoCount });
+      // Dashboard stats are now calculated automatically in useEffect
+      console.log('VPS Data loaded:', { users: realUsers.length, videos: processedVideos.length, orders: convertedOrders.length });
 
       // Generate real activity feed
       const activities: any[] = [];
@@ -894,8 +893,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           </CardHeader>
           <CardBody>
             <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-center space-x-4 p-4 hover:bg-gray-50 rounded-xl transition-colors">
+              {recentActivities.map((activity, index) => (
+                <div key={`${activity.id}-${index}`} className="flex items-center space-x-4 p-4 hover:bg-gray-50 rounded-xl transition-colors">
                   <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-medium">{activity.avatar.charAt(0).toUpperCase()}</span>
                   </div>
@@ -930,7 +929,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       ? (videos.reduce((sum, video) => sum + (video.rating || 0), 0) / videos.length).toFixed(1)
       : '0.0';
 
-    const totalShares = orders.reduce((sum, order) => sum + Math.floor(Math.random() * 3), 0);
+    const totalShares = orders.reduce((sum, order) => sum + Math.floor(order.amount / 10), 0);
     const completionRate = videos.length > 0 ? Math.min(95, 70 + (orders.length / videos.length) * 10) : 0;
 
     const videoPerformanceData = videos.map(video => {
@@ -959,7 +958,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     
     const userEngagementData = {
       totalSessions: orders.length + users.length,
-      avgSessionDuration: `${Math.floor(4 + (orders.length / users.length || 0) * 2)}m ${Math.floor(Math.random() * 60)}s`,
+      avgSessionDuration: `${Math.floor(4 + (orders.length / users.length || 0) * 2)}m ${Math.floor((orders.length * 15) % 60)}s`,
       bounceRate: Math.max(15, 50 - (orders.length / users.length || 0) * 20),
       returnVisitors: orders.length > 0 ? Math.floor(users.length * 0.4) : 0,
       newUsers: newUsers
@@ -1008,7 +1007,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               <Button 
                 variant="flat" 
                 startContent={<RotateCcw className="h-4 w-4" />}
-                onPress={loadRealData}
+                onPress={() => loadRealData()}
                 className="bg-green-50 text-green-600 hover:bg-green-100"
               >
                 Refresh Data
@@ -1639,7 +1638,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   };
 
   const handleEditVideo = (video: Module) => {
-    console.log('ðŸŽ¬ Editing video:', { id: video.id, title: video.title, hasVideoUrl: !!video.videoUrl, hasThumbnail: !!video.thumbnail });
+    console.log('Ã°Å¸Å½Â¬ Editing video:', { id: video.id, title: video.title, hasVideoUrl: !!video.videoUrl, hasThumbnail: !!video.thumbnail });
     setEditingVideo(video);
     
     // Determine video type based on URL and existing videoType
@@ -1651,10 +1650,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         videoType = 'vimeo';
       } else if (video.videoUrl.startsWith('data:')) {
         videoType = 'upload';
-        console.log('ðŸ“¹ Detected base64 uploaded video');
+        console.log('Ã°Å¸â€œÂ¹ Detected base64 uploaded video');
       } else if (video.videoUrl.startsWith('blob:')) {
         videoType = 'upload';
-        console.log('ðŸ“¹ Detected blob uploaded video');
+        console.log('Ã°Å¸â€œÂ¹ Detected blob uploaded video');
       } else if (video.videoUrl.startsWith('http')) {
         videoType = 'external';
       } else {
@@ -1689,7 +1688,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     
     setVideoForm(formData);
     
-    console.log('âœ… Video form populated:', {
+    console.log('Ã¢Å“â€¦ Video form populated:', {
       title: formData.title,
       videoType: formData.videoType,
       hasVideoUrl: !!formData.videoUrl,
@@ -1743,19 +1742,19 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         return;
       }
       
-      console.log('ðŸ–¼ï¸ Processing thumbnail image:', file.name, 'Size:', (file.size / (1024 * 1024)).toFixed(1), 'MB');
+      console.log('Ã°Å¸â€“Â¼Ã¯Â¸Â Processing thumbnail image:', file.name, 'Size:', (file.size / (1024 * 1024)).toFixed(1), 'MB');
       
       // Convert to base64 for permanent storage
       const reader = new FileReader();
       reader.onload = (e) => {
         const base64Image = e.target?.result as string;
-        console.log('âœ… Thumbnail converted to base64, length:', base64Image.length);
+        console.log('Ã¢Å“â€¦ Thumbnail converted to base64, length:', base64Image.length);
         setVideoForm(prev => ({ ...prev, thumbnail: base64Image }));
-        console.log('ðŸ’¾ Thumbnail form updated with base64 data');
+        console.log('Ã°Å¸â€™Â¾ Thumbnail form updated with base64 data');
       };
       
       reader.onerror = () => {
-        console.error('âŒ Failed to read thumbnail file');
+        console.error('Ã¢ÂÅ’ Failed to read thumbnail file');
         setToast({message: 'Failed to read image file', type: 'error'});
         setTimeout(() => setToast(null), 3000);
       };
@@ -1790,7 +1789,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const handleSaveVideo = async () => {
     try {
-      console.log('ðŸŽ¬ Starting video save process:', { 
+      console.log('Ã°Å¸Å½Â¬ Starting video save process:', { 
         editing: !!editingVideo, 
         title: videoForm.title, 
         videoUrl: videoForm.videoUrl?.substring(0, 50),
@@ -1818,7 +1817,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       let persistentVideoUrl = videoForm.videoUrl;
       let persistentThumbnail = videoForm.thumbnail;
       
-      console.log('ðŸ”„ Processing media URLs for persistence...');
+      console.log('Ã°Å¸â€â€ž Processing media URLs for persistence...');
       console.log('Video URL type:', videoForm.videoUrl?.substring(0, 20));
       console.log('Thumbnail URL type:', videoForm.thumbnail?.substring(0, 20));
       
@@ -1826,7 +1825,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       if (videoForm.videoUrl) {
         if (videoForm.videoUrl.startsWith('blob:')) {
           try {
-            console.log('ðŸ“¹ Converting video blob to base64...');
+            console.log('Ã°Å¸â€œÂ¹ Converting video blob to base64...');
             const response = await fetch(videoForm.videoUrl);
             const blob = await response.blob();
             const reader = new FileReader();
@@ -1834,13 +1833,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               reader.onload = () => resolve(reader.result as string);
               reader.readAsDataURL(blob);
             });
-            console.log('âœ… Video blob converted to base64');
+            console.log('Ã¢Å“â€¦ Video blob converted to base64');
           } catch (error) {
-            console.error('âŒ Failed to convert video blob to base64:', error);
+            console.error('Ã¢ÂÅ’ Failed to convert video blob to base64:', error);
           }
         } else {
           // Preserve base64, YouTube, Vimeo, and external URLs as-is
-          console.log('âœ… Preserving existing video URL format');
+          console.log('Ã¢Å“â€¦ Preserving existing video URL format');
           persistentVideoUrl = videoForm.videoUrl;
         }
       }
@@ -1848,7 +1847,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       if (videoForm.thumbnail) {
         if (videoForm.thumbnail.startsWith('blob:')) {
           try {
-            console.log('ðŸ–¼ï¸ Converting thumbnail blob to base64...');
+            console.log('Ã°Å¸â€“Â¼Ã¯Â¸Â Converting thumbnail blob to base64...');
             const response = await fetch(videoForm.thumbnail);
             const blob = await response.blob();
             const reader = new FileReader();
@@ -1856,21 +1855,21 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               reader.onload = () => resolve(reader.result as string);
               reader.readAsDataURL(blob);
             });
-            console.log('âœ… Thumbnail blob converted to base64');
+            console.log('Ã¢Å“â€¦ Thumbnail blob converted to base64');
           } catch (error) {
-            console.error('âŒ Failed to convert thumbnail blob to base64:', error);
+            console.error('Ã¢ÂÅ’ Failed to convert thumbnail blob to base64:', error);
           }
         } else {
           // Preserve base64 and external URLs as-is
-          console.log('âœ… Preserving existing thumbnail URL format');
+          console.log('Ã¢Å“â€¦ Preserving existing thumbnail URL format');
           persistentThumbnail = videoForm.thumbnail;
         }
       }
       
-      console.log('ðŸ’¾ Final URLs - Video:', persistentVideoUrl?.substring(0, 50), 'Thumbnail:', persistentThumbnail?.substring(0, 50));
+      console.log('Ã°Å¸â€™Â¾ Final URLs - Video:', persistentVideoUrl?.substring(0, 50), 'Thumbnail:', persistentThumbnail?.substring(0, 50));
       
       if (editingVideo) {
-        console.log('ðŸ“ Updating existing video...');
+        console.log('Ã°Å¸â€œÂ Updating existing video...');
         const updatedVideo = { 
           ...editingVideo, 
           title: videoForm.title,
@@ -1882,20 +1881,17 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           videoUrl: persistentVideoUrl,
           duration: videoForm.duration,
           estimatedDuration: videoForm.duration,
-          ageGroup: videoForm.ageGroup,
           ageRange: videoForm.ageGroup,
-          videoType: videoForm.videoType,
-          language: videoForm.language,
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
           isActive: videoForm.status === 'active',
           isVisible: videoForm.status === 'active',
           updatedAt: new Date().toISOString()
         };
         
-        console.log('ðŸ’¾ Saving updated video to data store...');
+        console.log('Ã°Å¸â€™Â¾ Saving updated video to data store...');
         const success = await vpsDataStore.updateProduct(updatedVideo);
         if (success) {
-          console.log('âœ… Video updated in data store');
+          console.log('Ã¢Å“â€¦ Video updated in data store');
           vpsDataStore.clearMemoryCache();
           // Reload videos from data store to ensure sync
           const updatedVideos = await vpsDataStore.getProducts();
@@ -1903,13 +1899,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           setToast({message: 'Video updated successfully!', type: 'success'});
           setTimeout(() => setToast(null), 3000);
         } else {
-          console.log('âŒ Failed to update video in data store');
+          console.log('Ã¢ÂÅ’ Failed to update video in data store');
           setToast({message: 'Failed to update video. Please try again.', type: 'error'});
           setTimeout(() => setToast(null), 3000);
           return;
         }
       } else {
-        console.log('ðŸ†• Creating new video...');
+        console.log('Ã°Å¸â€ â€¢ Creating new video...');
         const newVideo: Module = {
           id: `video_${Date.now()}`,
           title: videoForm.title,
@@ -1921,10 +1917,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           videoUrl: persistentVideoUrl,
           duration: videoForm.duration,
           estimatedDuration: videoForm.duration,
-          ageGroup: videoForm.ageGroup,
           ageRange: videoForm.ageGroup,
-          videoType: videoForm.videoType,
-          language: videoForm.language,
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
           isActive: videoForm.status === 'active',
           isVisible: videoForm.status === 'active',
@@ -1932,39 +1925,39 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           updatedAt: new Date().toISOString()
         };
         
-        console.log('ðŸ’¾ Saving new video to data store...');
+        console.log('Ã°Å¸â€™Â¾ Saving new video to data store...');
         let success = await vpsDataStore.addProduct(newVideo);
         
         // If failed due to large file, save metadata only
-        if (!success && newVideo.videoUrl.startsWith('data:')) {
-          console.log('ðŸ”„ Large file detected, saving metadata only');
+        if (!success && newVideo.videoUrl?.startsWith('data:')) {
+          console.log('Ã°Å¸â€â€ž Large file detected, saving metadata only');
           const lightVideo = {
             ...newVideo,
             videoUrl: '', // Remove video data but keep metadata
-            thumbnail: newVideo.thumbnail?.length > 10000 ? '' : newVideo.thumbnail, // Keep small thumbnails
+            thumbnail: (newVideo.thumbnail && newVideo.thumbnail.length > 10000) ? '' : newVideo.thumbnail, // Keep small thumbnails
             originalVideoSize: `${(newVideo.videoUrl.length / 1024 / 1024).toFixed(1)}MB`,
             videoStatus: 'metadata_only'
           };
           success = await vpsDataStore.addProduct(lightVideo);
           if (success) {
-            console.log('âœ… Video metadata saved successfully');
+            console.log('Ã¢Å“â€¦ Video metadata saved successfully');
           }
         }
         
         if (success) {
-          console.log('âœ… Video created in data store');
-          console.log('ðŸ” Verifying save - checking if video exists in data store...');
+          console.log('Ã¢Å“â€¦ Video created in data store');
+          console.log('Ã°Å¸â€Â Verifying save - checking if video exists in data store...');
           vpsDataStore.clearMemoryCache();
           // Reload videos from data store to ensure sync
           const updatedVideos = await vpsDataStore.getProducts();
-          console.log('ðŸ“Š Total videos after save:', updatedVideos.length);
+          console.log('Ã°Å¸â€œÅ  Total videos after save:', updatedVideos.length);
           const savedVideo = updatedVideos.find(v => v.id === newVideo.id);
-          console.log('ðŸ” Video found in data store:', savedVideo ? 'YES' : 'NO');
+          console.log('Ã°Å¸â€Â Video found in data store:', savedVideo ? 'YES' : 'NO');
           setVideos(updatedVideos);
-          setToast({message: savedVideo ? 'Video saved successfully!' : 'Video may not have saved properly', type: savedVideo ? 'success' : 'warning'});
+          setToast({message: savedVideo ? 'Video saved successfully!' : 'Video may not have saved properly', type: savedVideo ? 'success' : 'info'});
           setTimeout(() => setToast(null), 3000);
         } else {
-          console.log('âŒ Failed to create video in data store');
+          console.log('Ã¢ÂÅ’ Failed to create video in data store');
           setToast({message: 'Failed to save. Try YouTube URL instead.', type: 'error'});
           setTimeout(() => setToast(null), 3000);
           return;
@@ -1974,14 +1967,14 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       // Clean up blob URLs after successful save
       if (videoForm.videoUrl.startsWith('blob:')) {
         URL.revokeObjectURL(videoForm.videoUrl);
-        console.log('ðŸ§¹ Cleaned up video blob URL');
+        console.log('Ã°Å¸Â§Â¹ Cleaned up video blob URL');
       }
       if (videoForm.thumbnail && videoForm.thumbnail.startsWith('blob:')) {
         URL.revokeObjectURL(videoForm.thumbnail);
-        console.log('ðŸ§¹ Cleaned up thumbnail blob URL');
+        console.log('Ã°Å¸Â§Â¹ Cleaned up thumbnail blob URL');
       }
       
-      console.log('ðŸŽ‰ Video save process completed successfully');
+      console.log('Ã°Å¸Å½â€° Video save process completed successfully');
       // Reset form after successful save
       setVideoForm({
         title: '',
@@ -2006,7 +1999,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       await loadRealData(true);
       setActiveSection('all-videos');
     } catch (error) {
-      console.error('âŒ Failed to save video:', error);
+      console.error('Ã¢ÂÅ’ Failed to save video:', error);
       setToast({message: 'Failed to save video. Please try again.', type: 'error'});
       setTimeout(() => setToast(null), 3000);
     }
@@ -2217,7 +2210,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       if (newAgeGroup.trim() && !ageGroups.includes(newAgeGroup.trim())) {
                         const updatedAgeGroups = [...ageGroups, newAgeGroup.trim()];
                         setAgeGroups(updatedAgeGroups);
-                        await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups });
+                        await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups } as any);
                         setNewAgeGroup('');
                       }
                     }}
@@ -2235,7 +2228,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     if (e.key === 'Enter' && newAgeGroup.trim() && !ageGroups.includes(newAgeGroup.trim())) {
                       const updatedAgeGroups = [...ageGroups, newAgeGroup.trim()];
                       setAgeGroups(updatedAgeGroups);
-                      await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups });
+                      await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups } as any);
                       setNewAgeGroup('');
                     }
                   }}
@@ -2615,10 +2608,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 className="w-40"
                 placeholder="Category"
               >
-                <SelectItem key="all">All Categories</SelectItem>
-                {categories.map((cat) => (
+                {[<SelectItem key="all">All Categories</SelectItem>, ...categories.map((cat) => 
                   <SelectItem key={cat}>{cat}</SelectItem>
-                ))}
+                )]}
               </Select>
             </div>
           </div>
@@ -3601,7 +3593,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const handleUpdateProfile = async () => {
     try {
-      console.log('ðŸ”„ Starting profile update...', { 
+      console.log('Ã°Å¸â€â€ž Starting profile update...', { 
         name: profileForm.name, 
         email: profileForm.email,
         userId: user?.id,
@@ -3652,11 +3644,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         updateData.password = profileForm.newPassword.trim();
       }
       
-      console.log('ðŸ’¾ Updating user with data:', updateData);
+      console.log('Ã°Å¸â€™Â¾ Updating user with data:', updateData);
       
       const success = await vpsDataStore.updateUser(user.id, updateData);
       
-      console.log('âœ… Update result:', success);
+      console.log('Ã¢Å“â€¦ Update result:', success);
       
       if (success) {
         // Show success message immediately
@@ -3673,19 +3665,19 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         }));
         
         // Force reload of user data
-        console.log('ðŸ”„ Reloading user data...');
+        console.log('Ã°Å¸â€â€ž Reloading user data...');
         await loadRealData();
         
-        console.log('ðŸŽ‰ Profile update completed successfully!');
+        console.log('Ã°Å¸Å½â€° Profile update completed successfully!');
       } else {
-        console.error('âŒ Profile update failed');
-        alert('âŒ Failed to update profile. Please check your information and try again.');
+        console.error('Ã¢ÂÅ’ Profile update failed');
+        alert('Ã¢ÂÅ’ Failed to update profile. Please check your information and try again.');
         setToast({message: 'Failed to update profile. Please check your information and try again.', type: 'error'});
         setTimeout(() => setToast(null), 3000);
       }
     } catch (error) {
-      console.error('âŒ Profile update error:', error);
-      alert('âŒ An error occurred while updating your profile. Please try again.');
+      console.error('Ã¢ÂÅ’ Profile update error:', error);
+      alert('Ã¢ÂÅ’ An error occurred while updating your profile. Please try again.');
       setToast({message: 'An error occurred while updating your profile. Please try again.', type: 'error'});
       setTimeout(() => setToast(null), 3000);
     }
@@ -3728,7 +3720,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           const success = await vpsDataStore.updateSettings({
             adminLogo: base64Logo,
             adminLogoUpdatedAt: new Date().toISOString()
-          });
+          } as any);
           
           if (success) {
             setLogoFile(base64Logo);
@@ -3806,7 +3798,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         color="danger"
                         onPress={async () => {
                           setLogoFile(null);
-                          await vpsDataStore.updateSettings({ adminLogo: null });
+                          await vpsDataStore.updateSettings({ adminLogo: null } as any);
                           setToast({message: 'Admin logo removed successfully!', type: 'success'});
                           setTimeout(() => setToast(null), 3000);
                         }}
@@ -4493,7 +4485,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   // Package management functions
   const handleSavePackage = async () => {
     try {
-      console.log('ðŸ“¦ Starting package save process:', packageForm.name);
+      console.log('Ã°Å¸â€œÂ¦ Starting package save process:', packageForm.name);
       
       if (!packageForm.name.trim()) {
         setToast({message: 'Please enter a package name', type: 'error'});
@@ -4504,7 +4496,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       const packageData = {
         id: `package_${Date.now()}`,
         name: packageForm.name.trim(),
-        icon: packageForm.icon || 'ðŸ“¦',
+        icon: packageForm.icon || 'Ã°Å¸â€œÂ¦',
         description: packageForm.description.trim(),
         price: packageForm.price,
         type: packageForm.type,
@@ -4516,11 +4508,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         updatedAt: new Date().toISOString()
       };
       
-      console.log('ðŸ’¾ Saving package to data store:', packageData);
+      console.log('Ã°Å¸â€™Â¾ Saving package to data store:', packageData);
       const success = await vpsDataStore.addPackage(packageData);
       
       if (success) {
-        console.log('âœ… Package saved successfully');
+        console.log('Ã¢Å“â€¦ Package saved successfully');
         // Reload packages from data store
         await loadPackages();
         
@@ -4544,19 +4536,19 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         // Navigate back to packages list
         setActiveSection('all-packages');
       } else {
-        console.log('âŒ Failed to save package');
+        console.log('Ã¢ÂÅ’ Failed to save package');
         setToast({message: 'Failed to create package. Package name may already exist.', type: 'error'});
         setTimeout(() => setToast(null), 3000);
       }
     } catch (error) {
-      console.error('âŒ Error saving package:', error);
+      console.error('Ã¢ÂÅ’ Error saving package:', error);
       setToast({message: 'An error occurred while saving the package.', type: 'error'});
       setTimeout(() => setToast(null), 3000);
     }
   };
   
   const handleEditPackage = (pkg: any) => {
-    console.log('📦 Editing package:', pkg.name);
+    console.log('ðŸ“¦ Editing package:', pkg.name);
     setPackageForm({
       name: pkg.name || '',
       icon: pkg.icon || '',
@@ -5293,27 +5285,27 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           return;
         }
         const imageUrl = URL.createObjectURL(file);
-        setPP2Form(prev => ({ ...prev, coverImage: imageUrl }));
+        setPP1Form(prev => ({ ...prev, coverImage: imageUrl }));
       }
     };
 
     const handleSavePP2Content = async () => {
-      if (!pp2Form.title.trim()) {
+      if (!pp1Form.title.trim()) {
         alert('Please enter a title');
         return;
       }
       
       const newContent: Module = {
         id: `pp2_${Date.now()}`,
-        title: pp2Form.title,
-        description: pp2Form.description,
-        price: pp2Form.price,
-        category: 'PP2 Program',
+        title: pp1Form.title,
+        description: pp1Form.description,
+        price: pp1Form.price,
+        category: 'PP1 Program',
         type: 'program',
-        thumbnail: pp2Form.coverImage || `https://via.placeholder.com/300x200/6366f1/ffffff?text=PP2-${Date.now()}`,
-        videoUrl: pp2Form.contentUrl,
-        duration: pp2Form.duration,
-        tags: pp2Form.tags ? pp2Form.tags.split(',').map(tag => tag.trim()) : [],
+        thumbnail: pp1Form.coverImage || `https://via.placeholder.com/300x200/6366f1/ffffff?text=PP2-${Date.now()}`,
+        videoUrl: pp1Form.contentUrl,
+        duration: pp1Form.duration,
+        tags: pp1Form.tags ? pp1Form.tags.split(',').map(tag => tag.trim()) : [],
 
         isActive: true,
         isVisible: true,
@@ -5333,7 +5325,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     return (
       <div className="space-y-6">
         <PageHeader 
-          title="Add PP2 Content" 
+          title="Add PP1 Content" 
           actions={
             <Button 
               variant="flat" 
@@ -5357,8 +5349,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Title *</label>
                   <Input
-                    value={pp2Form.title}
-                    onChange={(e) => setPP2Form({ ...pp2Form, title: e.target.value })}
+                    value={pp1Form.title}
+                    onChange={(e) => setPP1Form({ ...pp1Form, title: e.target.value })}
                     placeholder="Enter PP2 content title"
                     classNames={{
                       input: "bg-white",
@@ -5369,8 +5361,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Description (HTML supported)</label>
                   <textarea
-                    value={pp2Form.description}
-                    onChange={(e) => setPP2Form({ ...pp2Form, description: e.target.value })}
+                    value={pp1Form.description}
+                    onChange={(e) => setPP1Form({ ...pp1Form, description: e.target.value })}
                     placeholder="Describe the PP2 content. You can use HTML tags like <b>bold</b>, <i>italic</i>, <br> for line breaks, <p>paragraphs</p>, etc."
                     rows={6}
                     className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-0 focus:border-purple-500 hover:border-purple-400 transition-all duration-200 resize-none font-mono text-sm"
@@ -5384,8 +5376,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     <label className="text-sm font-medium text-gray-700">Price *</label>
                     <Input
                       type="number"
-                      value={pp2Form.price.toString()}
-                      onChange={(e) => setPP2Form({ ...pp2Form, price: parseFloat(e.target.value) || 0 })}
+                      value={pp1Form.price.toString()}
+                      onChange={(e) => setPP1Form({ ...pp1Form, price: parseFloat(e.target.value) || 0 })}
                       placeholder="0.00"
                       startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
                       classNames={{
@@ -5397,10 +5389,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">Content Type</label>
                     <Select
-                      selectedKeys={[pp2Form.contentType]}
+                      selectedKeys={[pp1Form.contentType]}
                       onSelectionChange={(keys) => {
                         const selected = Array.from(keys)[0] as string;
-                        setPP2Form({ ...pp2Form, contentType: selected });
+                        setPP1Form({ ...pp1Form, contentType: selected });
                       }}
                       classNames={{
                         trigger: "bg-white border-gray-300 hover:border-purple-400 focus:border-purple-500"
@@ -5424,11 +5416,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               </CardHeader>
               <CardBody className="space-y-4">
                 <div className="border-2 border-dashed border-purple-300 rounded-xl p-6 text-center hover:border-purple-500 transition-all duration-300 bg-purple-50/30">
-                  {pp2Form.coverImage ? (
+                  {pp1Form.coverImage ? (
                     <div className="space-y-4">
                       <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden max-w-xs mx-auto shadow-lg">
                         <img 
-                          src={pp2Form.coverImage || undefined} 
+                          src={pp1Form.coverImage || undefined} 
                           alt="Cover preview" 
                           className="w-full h-full object-cover"
                         />
@@ -5441,7 +5433,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         size="sm" 
                         variant="flat" 
                         color="warning"
-                        onPress={() => setPP2Form({ ...pp2Form, coverImage: '' })}
+                        onPress={() => setPP1Form({ ...pp1Form, coverImage: '' })}
                         startContent={<X className="h-4 w-4" />}
                       >
                         Remove Image
@@ -5479,8 +5471,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Or paste image URL</label>
                   <Input
-                    value={pp2Form.coverImage}
-                    onChange={(e) => setPP2Form({ ...pp2Form, coverImage: e.target.value })}
+                    value={pp1Form.coverImage}
+                    onChange={(e) => setPP1Form({ ...pp1Form, coverImage: e.target.value })}
                     placeholder="https://example.com/cover.jpg"
                     startContent={<ImageIcon className="h-4 w-4 text-purple-500" />}
                     classNames={{
@@ -5503,8 +5495,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Content URL</label>
                   <Input
-                    value={pp2Form.contentUrl}
-                    onChange={(e) => setPP2Form({ ...pp2Form, contentUrl: e.target.value })}
+                    value={pp1Form.contentUrl}
+                    onChange={(e) => setPP1Form({ ...pp1Form, contentUrl: e.target.value })}
                     placeholder="https://example.com/content.pdf"
                     startContent={<Link className="h-4 w-4 text-gray-400" />}
                     classNames={{
@@ -5516,8 +5508,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Duration/Length</label>
                   <Input
-                    value={pp2Form.duration}
-                    onChange={(e) => setPP2Form({ ...pp2Form, duration: e.target.value })}
+                    value={pp1Form.duration}
+                    onChange={(e) => setPP1Form({ ...pp1Form, duration: e.target.value })}
                     placeholder="45 minutes, 20 pages, etc."
                     startContent={<Clock className="h-4 w-4 text-gray-400" />}
                     classNames={{
@@ -5529,8 +5521,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Tags</label>
                   <Input
-                    value={pp2Form.tags}
-                    onChange={(e) => setPP2Form({ ...pp2Form, tags: e.target.value })}
+                    value={pp1Form.tags}
+                    onChange={(e) => setPP1Form({ ...pp1Form, tags: e.target.value })}
                     placeholder="advanced, writing, comprehension"
                     startContent={<Tag className="h-4 w-4 text-gray-400" />}
                     classNames={{
@@ -5550,7 +5542,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               <CardBody>
                 <div className="border-2 border-dashed border-purple-300 rounded-xl p-8 text-center hover:border-purple-500 transition-all duration-300 bg-purple-50/30">
                   <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <p className="font-semibold text-gray-900 mb-2">Upload PP2 Content Files</p>
+                  <p className="font-semibold text-gray-900 mb-2">Upload PP1 Content Files</p>
                   <p className="text-sm text-gray-600 mb-4">PDF, DOC, images, or other advanced educational materials</p>
                   <Button 
                     className="bg-purple-600 hover:bg-purple-700 text-white" 
@@ -5568,9 +5560,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 className="w-full bg-gray-900 text-white hover:bg-gray-800 h-12 text-lg font-semibold"
                 onPress={handleSavePP2Content}
                 startContent={<Plus className="h-5 w-5" />}
-                isDisabled={!pp2Form.title.trim()}
+                isDisabled={!pp1Form.title.trim()}
               >
-                Create PP2 Content
+                Create PP1 Content
               </Button>
             </div>
 
@@ -5579,7 +5571,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               <CardBody className="p-4">
                 <h4 className="text-sm font-semibold text-purple-900 mb-2 flex items-center">
                   <HelpCircle className="h-4 w-4 mr-2" />
-                  PP2 Content Tips
+                  PP1 Content Tips
                 </h4>
                 <ul className="text-xs text-purple-800 space-y-1">
                   <li>- PP2 is for advanced level students</li>
@@ -5707,8 +5699,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   const currentData = await vpsDataStore.loadData();
                   const updatedData = {
                     ...currentData,
-                    contentBundles: [...(currentData.contentBundles || []), newBundle]
-                  };
+                    contentBundles: [...((currentData as any).contentBundles || []), newBundle]
+                  } as any;
                   
                   const success = await vpsDataStore.saveData(updatedData);
                   if (success) {
@@ -5814,8 +5806,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       if (confirm(`Delete bundle "${bundle.name}"?`)) {
                         try {
                           const currentData = await vpsDataStore.loadData();
-                          const updatedBundles = (currentData.contentBundles || []).filter(b => b.id !== bundle.id);
-                          const updatedData = { ...currentData, contentBundles: updatedBundles };
+                          const updatedBundles = ((currentData as any).contentBundles || []).filter((b: any) => b.id !== bundle.id);
+                          const updatedData = { ...currentData, contentBundles: updatedBundles } as any;
                           
                           const success = await vpsDataStore.saveData(updatedData);
                           if (success) {
@@ -6052,7 +6044,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               size="sm" 
               variant="flat" 
               startContent={<RotateCcw className="h-4 w-4" />}
-              onPress={loadRealData}
+              onPress={() => loadRealData()}
               className="bg-blue-50 text-blue-600 hover:bg-blue-100"
             >
               Refresh
@@ -6495,334 +6487,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     }
   };
 
-  const renderAllPackages = () => (
-    <div className="space-y-6">
-      <PageHeader 
-        title="Learning Packages" 
-        actions={
-          <Button 
-            className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
-            startContent={<Plus className="h-4 w-4" />}
-            onPress={() => setActiveSection('add-package')}
-          >
-            Add New Package
-          </Button>
-        }
-      />
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {packages.map((pkg) => (
-          <Card key={pkg.id} className="bg-white border border-gray-200 hover:shadow-lg transition-shadow">
-            <CardBody className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">{pkg.icon}</span>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{pkg.name}</h3>
-                    <p className="text-sm text-gray-500">{pkg.type === 'subscription' ? 'Annual' : 'One-time'}</p>
-                  </div>
-                </div>
-                {pkg.isPopular && (
-                  <Chip size="sm" color="danger" variant="flat">Popular</Chip>
-                )}
-              </div>
-              
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">{pkg.description}</p>
-              
-              <div className="text-2xl font-bold text-gray-900 mb-4">
-                ${pkg.price}{pkg.type === 'subscription' ? '/year' : ''}
-              </div>
-              
-              <div className="mb-4">
-                <h4 className="font-medium text-gray-900 mb-2">Features:</h4>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  {pkg.features.slice(0, 3).map((feature: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <CheckCircle className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span className="line-clamp-1">{feature}</span>
-                    </li>
-                  ))}
-                  {pkg.features.length > 3 && (
-                    <li className="text-xs text-gray-400">+{pkg.features.length - 3} more</li>
-                  )}
-                </ul>
-              </div>
-              
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${pkg.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                  <span className="text-sm text-gray-600">{pkg.isActive ? 'Active' : 'Inactive'}</span>
-                </div>
-                <div className="flex gap-1">
-                  <Button size="sm" variant="light" className="hover:bg-blue-50" onPress={() => handleEditPackage(pkg)}>
-                    <Edit className="w-4 h-4 text-blue-600" />
-                  </Button>
-                  <Button size="sm" variant="light" className="hover:bg-red-50">
-                    <Trash2 className="w-4 h-4 text-red-600" />
-                  </Button>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        ))}
-        
-        {packages.length === 0 && (
-          <div className="col-span-full text-center py-12">
-            <PackageIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No packages yet</h3>
-            <p className="text-gray-600 mb-6">Create your first learning package to get started.</p>
-            <Button 
-              className="bg-gray-900 text-white hover:bg-gray-800"
-              startContent={<Plus className="h-4 w-4" />}
-              onPress={() => setActiveSection('add-package')}
-            >
-              Add Package
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
 
-  const renderAddPackage = () => (
-    <div className="space-y-6">
-      <PageHeader 
-        title={editingPackage ? `Edit Package: ${editingPackage.name}` : "Add New Package"} 
-        actions={
-          <Button 
-            variant="flat" 
-            onPress={() => setActiveSection('all-packages')}
-            className="bg-gray-100 text-gray-700 hover:bg-gray-200"
-            startContent={<X className="h-4 w-4" />}
-          >
-            Cancel
-          </Button>
-        }
-      />
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card className="bg-white border border-gray-200">
-            <CardHeader className="border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Package Details</h3>
-            </CardHeader>
-            <CardBody className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Package Name</label>
-                  <Input 
-                    value={packageForm.name}
-                    onChange={(e) => setPackageForm({...packageForm, name: e.target.value})}
-                    placeholder="Explorer Pack" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Icon</label>
-                  <Input 
-                    value={packageForm.icon}
-                    onChange={(e) => setPackageForm({...packageForm, icon: e.target.value})}
-                    placeholder="-" 
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description (HTML supported)</label>
-                <textarea
-                  value={packageForm.description}
-                  onChange={(e) => setPackageForm({...packageForm, description: e.target.value})}
-                  placeholder="<p>Where Letters Come to Life!</p><br><b>Perfect for young learners</b>"
-                  rows={3}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-0 focus:border-blue-500 hover:border-blue-400 transition-all duration-200 resize-none font-mono text-sm"
-                />
-                <div className="text-xs text-gray-500 mt-1">
-                  HTML tags supported: &lt;b&gt;, &lt;i&gt;, &lt;u&gt;, &lt;br&gt;, &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Cover Image</label>
-                <div className="border-2 border-dashed border-blue-300 rounded-xl p-4 text-center hover:border-blue-500 transition-all duration-300 bg-blue-50/30">
-                  {packageForm.coverImage ? (
-                    <div className="space-y-3">
-                      <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden max-w-xs mx-auto">
-                        <img 
-                          src={packageForm.coverImage || undefined} 
-                          alt="Package cover" 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <Button 
-                        size="sm" 
-                        variant="flat" 
-                        color="warning"
-                        onPress={() => setPackageForm({...packageForm, coverImage: ''})}
-                        startContent={<X className="h-4 w-4" />}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <PackageIcon className="h-8 w-8 text-blue-500 mx-auto" />
-                      <p className="text-sm font-medium text-gray-900">Upload cover image</p>
-                      <Button 
-                        color="primary" 
-                        variant="flat"
-                        startContent={<Upload className="h-4 w-4" />}
-                        onPress={() => {
-                          const fileInput = document.getElementById('package-cover-input') as HTMLInputElement;
-                          fileInput?.click();
-                        }}
-                      >
-                        Choose Image
-                      </Button>
-                    </div>
-                  )}
-                  <input
-                    id="package-cover-input"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const imageUrl = URL.createObjectURL(file);
-                        setPackageForm({...packageForm, coverImage: imageUrl});
-                      }
-                    }}
-                    className="hidden"
-                  />
-                </div>
-                <Input
-                  className="mt-2"
-                  value={packageForm.coverImage}
-                  onChange={(e) => setPackageForm({...packageForm, coverImage: e.target.value})}
-                  placeholder="Or paste image URL"
-                  startContent={<ImageIcon className="h-4 w-4 text-blue-500" />}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price</label>
-                  <Input 
-                    type="number" 
-                    value={packageForm.price.toString()}
-                    onChange={(e) => setPackageForm({...packageForm, price: parseFloat(e.target.value) || 0})}
-                    placeholder="30" 
-                    startContent={<DollarSign className="h-4 w-4" />} 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-                  <Select 
-                    selectedKeys={[packageForm.type]}
-                    onSelectionChange={(keys) => setPackageForm({...packageForm, type: Array.from(keys)[0] as string})}
-                    placeholder="Select type"
-                  >
-                    <SelectItem key="subscription" value="subscription">Subscription</SelectItem>
-                    <SelectItem key="one-time" value="one-time">One-time</SelectItem>
-                  </Select>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Features (HTML supported)</label>
-                <textarea
-                  value={packageForm.features}
-                  onChange={(e) => setPackageForm({...packageForm, features: e.target.value})}
-                  placeholder="<b>Letter Safari</b> with playful games<br><i>Magic Word Builder</i><br><strong>Phonics party</strong> activities"
-                  rows={6}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-0 focus:border-blue-500 hover:border-blue-400 transition-all duration-200 resize-none font-mono text-sm"
-                />
-                <div className="text-xs text-gray-500 mt-1">
-                  HTML tags supported: &lt;b&gt;, &lt;i&gt;, &lt;u&gt;, &lt;br&gt;, &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;li&gt;
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    isSelected={packageForm.isActive}
-                    onValueChange={(checked) => setPackageForm({...packageForm, isActive: checked})}
-                  />
-                  <label className="text-sm font-medium text-gray-700">Active</label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    isSelected={packageForm.isPopular}
-                    onValueChange={(checked) => setPackageForm({...packageForm, isPopular: checked})}
-                  />
-                  <label className="text-sm font-medium text-gray-700">Popular</label>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-        
-        <div>
-          <Card className="bg-white border border-gray-200">
-            <CardHeader className="border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Preview</h3>
-            </CardHeader>
-            <CardBody>
-              <div className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-2xl">-</span>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">Explorer Pack</h4>
-                    <p className="text-sm text-gray-500">Subscription</p>
-                  </div>
-                </div>
-                <p className="text-gray-600 text-sm mb-3">Where Letters Come to Life!</p>
-                <div className="text-2xl font-bold text-gray-900 mb-3">$30/year</div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <CheckCircle className="w-3 h-3 text-green-500" />
-                    <span>Letter Safari with playful games</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <CheckCircle className="w-3 h-3 text-green-500" />
-                    <span>Magic Word Builder</span>
-                  </div>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-          
-          <div className="mt-6">
-            <Button 
-              className="w-full bg-gray-900 text-white hover:bg-gray-800 h-12"
-              onPress={() => {
-                if (!packageForm.name.trim()) {
-                  alert('Please enter a package name');
-                  return;
-                }
-                const newPackage = {
-                  id: Date.now().toString(),
-                  name: packageForm.name,
-                  icon: packageForm.icon || '-',
-                  description: packageForm.description,
-                  price: packageForm.price,
-                  type: packageForm.type,
-                  features: packageForm.features.split('\n').filter(f => f.trim()),
-                  isActive: packageForm.isActive,
-                  isPopular: packageForm.isPopular,
-                  coverImage: packageForm.coverImage
-                };
-                setPackages(prev => [...prev, newPackage]);
-                alert('- Package created successfully!');
-                setActiveSection('all-packages');
-              }}
-              isDisabled={!packageForm.name.trim()}
-            >
-              {editingPackage ? 'Update Package' : 'Create Package'}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+
+
+
 
   const renderPackages = () => (
     <div className="space-y-6">
@@ -7003,7 +6671,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               >
                 <div className="text-center">
                   <BookOpen className="h-8 w-8 mx-auto mb-2" />
-                  <span className="text-sm font-semibold">PP2 Program</span>
+                  <span className="text-sm font-semibold">PP1 Program</span>
                   <span className="text-xs opacity-80 block">Advanced level</span>
                 </div>
               </Button>
@@ -7221,7 +6889,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     platformName: 'Zinga Linga',
                     contactEmail: 'admin@zingalinga.com',
                     updatedAt: new Date().toISOString()
-                  });
+                  } as any);
                   if (success) {
                     setToast({message: 'Settings saved successfully!', type: 'success'});
                     setTimeout(() => setToast(null), 3000);
@@ -7411,6 +7079,19 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     </div>
   );
 
+  // Package render functions
+  const renderAllPackages = () => {
+    return renderAllPackagesComponent(packages, handleDeletePackage, formatCurrency, setActiveSection);
+  };
+
+  const renderAddPackage = () => {
+    return renderAddPackageComponent(packageForm, setPackageForm, handleSavePackage, setActiveSection);
+  };
+
+  const renderLearningPackages = () => {
+    return renderLearningPackagesComponent(setActiveSection);
+  };
+
   const renderContent = () => {
     switch (activeSection) {
       case 'overview': return renderOverview();
@@ -7424,7 +7105,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       case 'add-video-lesson': return renderAddVideoLesson();
       case 'pp1-program': return renderPP1Program();
       case 'add-pp1-content': return renderAddPP1Content();
-      case 'pp2-program': return renderPP2Program();
+      case 'pp2-program': return renderPP1Program();
       case 'add-pp2-content': return renderAddPP2Content();
       case 'content-bundles': return renderContentBundles();
       case 'create-bundle': return renderCreateBundle();
@@ -7475,15 +7156,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
 
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Starting dashboard...</p>
-        </div>
-      </div>
-    }>
-      <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Modern Admin Header */}
       <header className="bg-gray-900 border-b border-gray-700 sticky top-0 z-50 shadow-sm">
         <div className="px-4 sm:px-6 lg:px-8">
@@ -7719,20 +7392,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         onClose={() => setAdminSuccessModal({ isOpen: false, message: '' })}
         message={adminSuccessModal.message}
       />
-      </div>
-    </Suspense>
+    </div>
   );
 }
 
-  // Package render functions
-  const renderAllPackages = () => {
-    return renderAllPackagesComponent(packages, handleDeletePackage, formatCurrency, setActiveSection);
-  };
 
-  const renderAddPackage = () => {
-    return renderAddPackageComponent(packageForm, setPackageForm, handleSavePackage, setActiveSection);
-  };
-
-  const renderLearningPackages = () => {
-    return renderLearningPackagesComponent(setActiveSection);
-  };

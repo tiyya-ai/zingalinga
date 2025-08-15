@@ -5,8 +5,8 @@ import { vpsDataStore } from '../utils/vpsDataStore';
 
 // Integration component to show how to use the new managers in ModernAdminDashboard
 export const ContentManagementIntegration = () => {
-  const [audioLessons, setAudioLessons] = useState([]);
-  const [pp1Modules, setPP1Modules] = useState([]);
+  const [audioLessons, setAudioLessons] = useState<any[]>([]);
+  const [pp1Modules, setPP1Modules] = useState<any[]>([]);
 
   // Load data on component mount
   useEffect(() => {
@@ -64,7 +64,7 @@ export const ContentManagementIntegration = () => {
   };
 
   // Audio Lessons handlers
-  const handleAddAudioLesson = async (lessonData) => {
+  const handleAddAudioLesson = async (lessonData: any) => {
     try {
       const newLesson = {
         id: `audio_${Date.now()}`,
@@ -89,7 +89,7 @@ export const ContentManagementIntegration = () => {
     }
   };
 
-  const handleUpdateAudioLesson = async (id, lessonData) => {
+  const handleUpdateAudioLesson = async (id: string, lessonData: any) => {
     try {
       const success = await vpsDataStore.updateProduct({
         id,
@@ -107,7 +107,7 @@ export const ContentManagementIntegration = () => {
     }
   };
 
-  const handleDeleteAudioLesson = async (id) => {
+  const handleDeleteAudioLesson = async (id: string) => {
     try {
       const success = await vpsDataStore.deleteProduct(id);
       if (success) {
@@ -122,7 +122,7 @@ export const ContentManagementIntegration = () => {
   };
 
   // PP1 Program handlers
-  const handleAddPP1Module = async (moduleData) => {
+  const handleAddPP1Module = async (moduleData: any) => {
     try {
       // In a real implementation, you'd store modules separately
       // For now, we'll create a placeholder product
@@ -152,7 +152,7 @@ export const ContentManagementIntegration = () => {
     }
   };
 
-  const handleUpdatePP1Module = async (id, moduleData) => {
+  const handleUpdatePP1Module = async (id: string, moduleData: any) => {
     try {
       const success = await vpsDataStore.updateProduct({
         id,
@@ -170,7 +170,7 @@ export const ContentManagementIntegration = () => {
     }
   };
 
-  const handleDeletePP1Module = async (id) => {
+  const handleDeletePP1Module = async (id: string) => {
     try {
       const success = await vpsDataStore.deleteProduct(id);
       if (success) {
@@ -184,7 +184,7 @@ export const ContentManagementIntegration = () => {
     }
   };
 
-  const handleAddPP1Lesson = async (moduleId, lessonData) => {
+  const handleAddPP1Lesson = async (moduleId: string, lessonData: any) => {
     try {
       const newLesson = {
         id: `pp1_lesson_${Date.now()}`,
@@ -215,7 +215,7 @@ export const ContentManagementIntegration = () => {
     }
   };
 
-  const handleUpdatePP1Lesson = async (moduleId, lessonId, lessonData) => {
+  const handleUpdatePP1Lesson = async (moduleId: string, lessonId: string, lessonData: any) => {
     try {
       const success = await vpsDataStore.updateProduct({
         id: lessonId,
@@ -233,7 +233,7 @@ export const ContentManagementIntegration = () => {
     }
   };
 
-  const handleDeletePP1Lesson = async (moduleId, lessonId) => {
+  const handleDeletePP1Lesson = async (moduleId: string, lessonId: string) => {
     try {
       const success = await vpsDataStore.deleteProduct(lessonId);
       if (success) {

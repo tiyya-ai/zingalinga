@@ -579,7 +579,7 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
                   <Slider
                     value={[currentTime]}
                     onChange={handleSeek}
-                    max={duration}
+                    maxValue={duration}
                     step={1}
                     className="w-full"
                     color="primary"
@@ -641,7 +641,7 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
                   <Slider
                     value={[isMuted ? 0 : volume]}
                     onChange={handleVolumeChange}
-                    max={1}
+                    maxValue={1}
                     step={0.1}
                     className="flex-1"
                     color="secondary"

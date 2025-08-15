@@ -418,7 +418,6 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
           <div 
             className="relative w-full h-64 md:h-96"
             onContextMenu={(e) => e.preventDefault()}
-            onSelectStart={(e) => e.preventDefault()}
             onDragStart={(e) => e.preventDefault()}
             style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
           >
@@ -447,7 +446,6 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
           <div 
             className="relative w-full h-64 md:h-96"
             onContextMenu={(e) => e.preventDefault()}
-            onSelectStart={(e) => e.preventDefault()}
             style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
           >
             {/* Overlay to block Google Drive buttons */}
@@ -729,7 +727,6 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
     >
       <div 
         onContextMenu={(e) => e.preventDefault()}
-        onSelectStart={(e) => e.preventDefault()}
         onDragStart={(e) => e.preventDefault()}
         style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
       >
