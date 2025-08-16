@@ -44,7 +44,9 @@ export const renderAllPackages = (
   packages: any[], 
   onDeletePackage: (id: string) => void, 
   formatCurrency: (amount: number) => string,
-  setActiveSection: (section: string) => void
+  setActiveSection: (section: string) => void,
+  onEditPackage?: (pkg: any) => void,
+  onPreviewPackage?: (pkg: any) => void
 ) => (
   <div className="space-y-6">
     <PageHeader 
@@ -71,7 +73,6 @@ export const renderAllPackages = (
             <TableColumn>TYPE</TableColumn>
             <TableColumn>PRICE</TableColumn>
             <TableColumn>STATUS</TableColumn>
-            <TableColumn>FEATURES</TableColumn>
             <TableColumn>ACTIONS</TableColumn>
           </TableHeader>
           <TableBody emptyContent="No packages found">
@@ -117,17 +118,18 @@ export const renderAllPackages = (
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="text-sm text-gray-600">
-                    {Array.isArray(pkg.features) ? pkg.features.slice(0, 2).join(', ') : 'No features'}
-                    {Array.isArray(pkg.features) && pkg.features.length > 2 && '...'}
-                  </div>
-                </TableCell>
-                <TableCell>
                   <div className="flex space-x-1">
                     <Button 
                       size="sm" 
                       variant="light"
                       className="hover:bg-blue-50 transition-colors"
+                      onPress={() => {
+                        if (onPreviewPackage) {
+                          onPreviewPackage(pkg);
+                        } else {
+                          alert(`Preview for "${pkg.name}"\n\nName: ${pkg.name}\nType: ${pkg.type}\nPrice: ${formatCurrency(pkg.price || 0)}\nDescription: ${pkg.description}\nStatus: ${pkg.isActive ? 'Active' : 'Inactive'}${pkg.isPopular ? ' (Popular)' : ''}`);
+                        }
+                      }}
                     >
                       <Eye className="h-4 w-4 text-blue-600" />
                     </Button>
@@ -136,9 +138,11 @@ export const renderAllPackages = (
                       variant="light"
                       className="hover:bg-blue-50 transition-colors"
                       onPress={() => {
-                        // Edit package functionality - navigate to edit form
-                        console.log('Edit package:', pkg.id);
-                        // This would need to be passed from parent component
+                        if (onEditPackage) {
+                          onEditPackage(pkg);
+                        } else {
+                          console.log('Edit package:', pkg.id);
+                        }
                       }}
                     >
                       <Edit className="h-4 w-4 text-blue-600" />
@@ -170,7 +174,8 @@ export const renderAddPackage = (
   packageForm: any, 
   setPackageForm: (form: any) => void, 
   onSavePackage: () => void,
-  setActiveSection: (section: string) => void
+  setActiveSection: (section: string) => void,
+  editingPackage?: any
 ) => {
   console.log('🎯 renderAddPackage called with onSavePackage:', typeof onSavePackage);
   console.log('📝 Current packageForm:', packageForm);
@@ -178,7 +183,7 @@ export const renderAddPackage = (
   return (
   <div className="space-y-6">
     <PageHeader 
-      title="Add New Package" 
+      title={editingPackage ? "Edit Package" : "Add New Package"} 
       actions={
         <Button 
           variant="flat" 
@@ -289,19 +294,6 @@ export const renderAddPackage = (
           </CardHeader>
           <CardBody className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Package Icon</label>
-              <Input
-                value={packageForm.icon}
-                onChange={(e) => setPackageForm({ ...packageForm, icon: e.target.value })}
-                placeholder="🎒 (emoji or icon)"
-                classNames={{
-                  input: "bg-white",
-                  inputWrapper: "bg-white border-gray-300 hover:border-purple-400 focus-within:border-purple-500"
-                }}
-              />
-            </div>
-            
-            <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Cover Image URL</label>
               <Input
                 value={packageForm.coverImage}
@@ -339,14 +331,14 @@ export const renderAddPackage = (
           <Button 
             className="w-full bg-purple-600 text-white hover:bg-purple-700 h-12 text-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             onPress={() => {
-              console.log('🔘 Create Package button clicked!');
+              console.log('🔘 Save Package button clicked!');
               console.log('📋 Form data:', packageForm);
               onSavePackage();
             }}
             startContent={<Plus className="h-5 w-5" />}
             isDisabled={!packageForm.name.trim()}
           >
-            Create Package
+            {editingPackage ? 'Update Package' : 'Create Package'}
           </Button>
         </div>
       </div>

@@ -167,6 +167,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [orderFilter, setOrderFilter] = useState('all');
   const [orderSearchTerm, setOrderSearchTerm] = useState('');
   const { isOpen: isOrderModalOpen, onOpen: onOrderModalOpen, onClose: onOrderModalClose } = useDisclosure();
+  const [selectedPackage, setSelectedPackage] = useState<any>(null);
+  const { isOpen: isPackagePreviewOpen, onOpen: onPackagePreviewOpen, onClose: onPackagePreviewClose } = useDisclosure();
   
 
 
@@ -680,7 +682,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 setEditingPackage(null);
                 setPackageForm({
                   name: '',
-                  icon: '',
+        
                   description: '',
                   price: 0,
                   type: 'subscription',
@@ -1526,7 +1528,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   // Package form state
   const [packageForm, setPackageForm] = useState({
     name: '',
-    icon: '',
     description: '',
     price: 0,
     type: 'subscription',
@@ -4483,9 +4484,31 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   };
 
   // Package management functions
+  const handleEditPackage = (pkg: any) => {
+    console.log('✏️ Editing package:', pkg);
+    setPackageForm({
+      name: pkg.name || '',
+      description: pkg.description || '',
+      price: pkg.price || 0,
+      type: pkg.type || 'subscription',
+      features: Array.isArray(pkg.features) ? pkg.features.join(', ') : (pkg.features || ''),
+      isActive: pkg.isActive !== undefined ? pkg.isActive : true,
+      isPopular: pkg.isPopular !== undefined ? pkg.isPopular : false,
+      coverImage: pkg.coverImage || ''
+    });
+    setEditingPackage(pkg);
+    setActiveSection('add-package');
+  };
+
+  const handlePreviewPackage = (pkg: any) => {
+    console.log('👁️ Previewing package:', pkg);
+    setSelectedPackage(pkg);
+    onPackagePreviewOpen();
+  };
+
   const handleSavePackage = async () => {
     try {
-      console.log('Ã°Å¸â€œÂ¦ Starting package save process:', packageForm.name);
+      console.log('📦 Starting package save process:', packageForm.name);
       
       if (!packageForm.name.trim()) {
         setToast({message: 'Please enter a package name', type: 'error'});
@@ -4494,9 +4517,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       }
       
       const packageData = {
-        id: `package_${Date.now()}`,
+        id: editingPackage ? editingPackage.id : `package_${Date.now()}`,
         name: packageForm.name.trim(),
-        icon: packageForm.icon || 'Ã°Å¸â€œÂ¦',
         description: packageForm.description.trim(),
         price: packageForm.price,
         type: packageForm.type,
@@ -4504,12 +4526,14 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         isActive: packageForm.isActive,
         isPopular: packageForm.isPopular,
         coverImage: packageForm.coverImage,
-        createdAt: new Date().toISOString(),
+        createdAt: editingPackage ? editingPackage.createdAt : new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
       
-      console.log('Ã°Å¸â€™Â¾ Saving package to data store:', packageData);
-      const success = await vpsDataStore.addPackage(packageData);
+      console.log('💾 Saving package to data store:', packageData);
+      const success = editingPackage 
+        ? await vpsDataStore.updatePackage(packageData)
+        : await vpsDataStore.addPackage(packageData);
       
       if (success) {
         console.log('Ã¢Å“â€¦ Package saved successfully');
@@ -4530,14 +4554,14 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         });
         setEditingPackage(null);
         
-        setToast({message: 'Package created successfully!', type: 'success'});
+        setToast({message: editingPackage ? 'Package updated successfully!' : 'Package created successfully!', type: 'success'});
         setTimeout(() => setToast(null), 3000);
         
         // Navigate back to packages list
         setActiveSection('all-packages');
       } else {
         console.log('Ã¢ÂÅ’ Failed to save package');
-        setToast({message: 'Failed to create package. Package name may already exist.', type: 'error'});
+        setToast({message: editingPackage ? 'Failed to update package.' : 'Failed to create package. Package name may already exist.', type: 'error'});
         setTimeout(() => setToast(null), 3000);
       }
     } catch (error) {
@@ -4545,23 +4569,6 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       setToast({message: 'An error occurred while saving the package.', type: 'error'});
       setTimeout(() => setToast(null), 3000);
     }
-  };
-  
-  const handleEditPackage = (pkg: any) => {
-    console.log('ðŸ“¦ Editing package:', pkg.name);
-    setPackageForm({
-      name: pkg.name || '',
-      icon: pkg.icon || '',
-      description: pkg.description || '',
-      price: pkg.price || 0,
-      type: pkg.type || 'subscription',
-      features: Array.isArray(pkg.features) ? pkg.features.join(', ') : pkg.features || '',
-      isActive: pkg.isActive !== undefined ? pkg.isActive : true,
-      isPopular: pkg.isPopular !== undefined ? pkg.isPopular : false,
-      coverImage: pkg.coverImage || ''
-    });
-    setEditingPackage(pkg);
-    setActiveSection('add-package');
   };
 
   const handleDeletePackage = async (packageId: string) => {
@@ -4577,11 +4584,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         setTimeout(() => setToast(null), 3000);
       }
     } catch (error) {
-      console.error('Failed to delete package:', error);
-      setToast({message: 'Failed to delete package', type: 'error'});
+      console.error('Error deleting package:', error);
+      setToast({message: 'An error occurred while deleting the package.', type: 'error'});
       setTimeout(() => setToast(null), 3000);
     }
   };
+
+  // Bundle management functions
 
   const renderAddAudioLesson = () => (
     <div className="space-y-6">
@@ -7081,11 +7090,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   // Package render functions
   const renderAllPackages = () => {
-    return renderAllPackagesComponent(packages, handleDeletePackage, formatCurrency, setActiveSection);
+    return renderAllPackagesComponent(packages, handleDeletePackage, formatCurrency, setActiveSection, handleEditPackage, handlePreviewPackage);
   };
 
   const renderAddPackage = () => {
-    return renderAddPackageComponent(packageForm, setPackageForm, handleSavePackage, setActiveSection);
+    return renderAddPackageComponent(packageForm, setPackageForm, handleSavePackage, setActiveSection, editingPackage);
   };
 
   const renderLearningPackages = () => {
@@ -7379,6 +7388,111 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           </div>
         </div>
       </div>
+      
+      {/* Package Preview Modal */}
+      <Modal isOpen={isPackagePreviewOpen} onClose={onPackagePreviewClose} size="2xl">
+        <ModalContent>
+          <ModalHeader>
+            <div className="flex items-center gap-3">
+              <PackageIcon className="h-6 w-6 text-purple-600" />
+              <div>
+                <h3 className="text-xl font-bold">Package Preview</h3>
+                <p className="text-sm text-gray-500">Package Details</p>
+              </div>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            {selectedPackage && (
+              <div className="space-y-6">
+                {/* Package Header */}
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900">{selectedPackage.name}</h4>
+                      <p className="text-sm text-gray-600 mt-1">{selectedPackage.type}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-purple-600">{formatCurrency(selectedPackage.price || 0)}</p>
+                      <div className="flex gap-2 mt-2">
+                        {selectedPackage.isActive && (
+                          <Chip size="sm" color="success" variant="flat">Active</Chip>
+                        )}
+                        {selectedPackage.isPopular && (
+                          <Chip size="sm" color="warning" variant="flat">Popular</Chip>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Package Description */}
+                <div>
+                  <h5 className="font-medium text-gray-900 mb-2">Description</h5>
+                  <p className="text-gray-600 leading-relaxed">
+                    {selectedPackage.description || 'No description available'}
+                  </p>
+                </div>
+                
+                {/* Package Features */}
+                <div>
+                  <h5 className="font-medium text-gray-900 mb-3">Features</h5>
+                  <div className="space-y-2">
+                    {Array.isArray(selectedPackage.features) ? (
+                      selectedPackage.features.map((feature: string, index: number) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                          <span className="text-gray-700">{feature}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <span className="text-gray-700">{selectedPackage.features || 'No features listed'}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Package Stats */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-sm font-medium text-gray-600">Status</p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {selectedPackage.isActive ? 'Active' : 'Inactive'}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-sm font-medium text-gray-600">Popularity</p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {selectedPackage.isPopular ? 'Popular' : 'Standard'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={onPackagePreviewClose}>
+              Close
+            </Button>
+            {selectedPackage && (
+              <Button 
+                color="primary" 
+                onPress={() => {
+                  onPackagePreviewClose();
+                  if (onEditPackage) {
+                    handleEditPackage(selectedPackage);
+                  }
+                }}
+                startContent={<Edit className="h-4 w-4" />}
+              >
+                Edit Package
+              </Button>
+            )}
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      
       {/* Success Modal */}
       <SuccessModal 
         isOpen={showSuccessModal}
