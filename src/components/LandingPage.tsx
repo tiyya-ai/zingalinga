@@ -509,40 +509,36 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
             <div className="space-y-8">
               <div className="grid grid-cols-2 gap-4">
                 {/* Actual Bookie Images */}
-                <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100 text-center">
+                <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
                   <img 
                     src="/Zingalinga bookie black open.jpg" 
                     alt="Zingalinga Bookie Black Open" 
-                    className="w-full h-48 object-cover rounded-xl mb-3"
+                    className="w-full h-48 object-cover rounded-xl"
                   />
-                  <p className="font-mali font-bold text-gray-800">Bookie Black Open</p>
                 </div>
                 
-                <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100 text-center">
+                <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
                   <img 
                     src="/Zingalinga bookie white open.jpg" 
                     alt="Zingalinga Bookie White Open" 
-                    className="w-full h-48 object-cover rounded-xl mb-3"
+                    className="w-full h-48 object-cover rounded-xl"
                   />
-                  <p className="font-mali font-bold text-gray-800">Bookie White Open</p>
                 </div>
                 
-                <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100 text-center">
+                <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
                   <img 
                     src="/Zigalinga bookie white and black open.jpg" 
                     alt="Zingalinga Bookie White and Black Open" 
-                    className="w-full h-48 object-cover rounded-xl mb-3"
+                    className="w-full h-48 object-cover rounded-xl"
                   />
-                  <p className="font-mali font-bold text-gray-800">Black & White Open</p>
                 </div>
                 
-                <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100 text-center">
+                <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
                   <img 
                     src="/Zingalinga bookie black and white on top.jpg" 
                     alt="Zingalinga Bookie Black and White on Top" 
-                    className="w-full h-48 object-cover rounded-xl mb-3"
+                    className="w-full h-48 object-cover rounded-xl"
                   />
-                  <p className="font-mali font-bold text-gray-800">Black & White Top</p>
                 </div>
               </div>
               
