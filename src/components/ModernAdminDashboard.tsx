@@ -742,7 +742,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 setEditingPackage(null);
                 setPackageForm({
                   name: '',
-        
+                  icon: '',
                   description: '',
                   price: 0,
                   type: 'subscription',
@@ -7021,7 +7021,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               </div>
             ) : filteredActivities.length === 0 ? (
               <div className="p-8 text-center">
-                <BarChart3 className="h-12 w-12 text-gray-400 mx-auto" />
+                <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Recent Activity</h3>
+                <p className="text-gray-500">There are no activities to display at the moment.</p>
               </div>
             ) : (
               <>
@@ -7032,9 +7034,19 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     const timeAgo = getTimeAgo(activity.timestamp);
                     return (
                       <div key={activity.id} className="p-4 hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center justify-center">
-                          <div className="p-3 rounded-lg" style={{ backgroundColor: activity.color + '20', color: activity.color }} title={`${activity.details} - ${timeAgo}`}>
-                            <IconComponent className="h-6 w-6" />
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                              <IconComponent className="h-4 w-4" style={{ color: activity.color || '#6B7280' }} />
+                            </div>
+                          </div>
+                          <div className="ml-4 flex-1">
+                            <p className="text-sm font-medium text-gray-900">
+                              {activity.details || activity.action || 'Activity occurred'}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {formattedTime} ({timeAgo})
+                            </p>
                           </div>
                         </div>
                       </div>
