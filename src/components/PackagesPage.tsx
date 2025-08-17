@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Star, Check, X } from 'lucide-react';
+import { ShoppingCart, Star, Check, X, Backpack, Rocket, Car, BookOpen } from 'lucide-react';
 import { CartModal } from './CartModal';
 import { useCart } from '../hooks/useCart';
 
@@ -65,12 +65,12 @@ export const PackagesPage: React.FC<PackagesPageProps> = ({ onBack }) => {
               <div className="w-24 h-1 bg-gradient-to-r from-yellow-400 to-red-500 mx-auto rounded-full"></div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
               {/* Explorer Pack */}
               <div className="bg-white rounded-3xl p-8 shadow-2xl transform hover:scale-105 transition-all duration-300 border border-gray-100">
                 <div className="text-center mb-6">
                   <div className="bg-gradient-to-br from-green-400 to-green-600 rounded-full p-6 w-fit mx-auto mb-4 shadow-lg">
-                    <span className="text-4xl">🎒</span>
+                    <Backpack className="w-12 h-12 text-white" />
                   </div>
                   <h3 className="text-3xl font-mali font-bold text-gray-800 mb-2">Explorer Pack</h3>
                   <p className="font-mali text-gray-600 text-lg mb-4">Where Letters Come to Life!</p>
@@ -120,7 +120,7 @@ export const PackagesPage: React.FC<PackagesPageProps> = ({ onBack }) => {
                 
                 <div className="text-center mb-6">
                   <div className="bg-gradient-to-br from-blue-400 to-blue-600 rounded-full p-6 w-fit mx-auto mb-4 shadow-lg">
-                    <span className="text-4xl">🚀</span>
+                    <Rocket className="w-12 h-12 text-white" />
                   </div>
                   <h3 className="text-3xl font-mali font-bold text-gray-800 mb-2">Adventurer Pack</h3>
                   <p className="font-mali text-gray-600 text-lg mb-4">Reading Superpowers Unlocked!</p>
@@ -162,7 +162,7 @@ export const PackagesPage: React.FC<PackagesPageProps> = ({ onBack }) => {
               <div className="bg-white rounded-3xl p-8 shadow-2xl transform hover:scale-105 transition-all duration-300 border border-gray-100">
                 <div className="text-center mb-6">
                   <div className="bg-gradient-to-br from-orange-400 to-orange-600 rounded-full p-6 w-fit mx-auto mb-4 shadow-lg">
-                    <span className="text-4xl">🚗</span>
+                    <Car className="w-12 h-12 text-white" />
                   </div>
                   <h3 className="text-3xl font-mali font-bold text-gray-800 mb-2">Roadtripper Pack</h3>
                   <p className="font-mali text-gray-600 text-lg mb-4">Learning On-The-Go!</p>
@@ -200,7 +200,7 @@ export const PackagesPage: React.FC<PackagesPageProps> = ({ onBack }) => {
               <div className="bg-white rounded-3xl p-8 shadow-2xl transform hover:scale-105 transition-all duration-300 border border-gray-100">
                 <div className="text-center mb-6">
                   <div className="bg-gradient-to-br from-purple-400 to-purple-600 rounded-full p-6 w-fit mx-auto mb-4 shadow-lg">
-                    <span className="text-4xl">📚</span>
+                    <BookOpen className="w-12 h-12 text-white" />
                   </div>
                   <h3 className="text-3xl font-mali font-bold text-gray-800 mb-2">Zingalinga Bookie Pack</h3>
                   <p className="font-mali text-gray-600 text-lg mb-4">Interactive Learning Device</p>

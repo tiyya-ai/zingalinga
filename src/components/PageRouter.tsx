@@ -62,6 +62,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
         setCurrentPage('contact');
       } else if (path === '/help') {
         setCurrentPage('help');
+
       } else if (path === '/admin') {
         setCurrentPage('admin');
       } else if (path === '/dashboard') {
@@ -85,6 +86,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
             // Non-admin trying to access admin page - redirect to dashboard
             window.history.replaceState({}, '', '/dashboard');
             setCurrentPage('dashboard');
+
           } else if (path === '/dashboard' && session.user.role === 'admin') {
             // Admin trying to access user dashboard - redirect to admin
             window.history.replaceState({}, '', '/admin');
@@ -322,6 +324,15 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
           setUser={setUser}
         />
       );
+
+    } else {
+      // Fallback for unauthorized access to protected pages
+      if (user.role === 'admin') {
+        handleNavigation('admin');
+      } else {
+        handleNavigation('dashboard');
+      }
+      return null;
     }
   }
 

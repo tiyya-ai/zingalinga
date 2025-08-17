@@ -231,6 +231,114 @@ class RealDataAnalytics {
       };
     }
   }
+
+  async getRecentActivity(): Promise<any[]> {
+    try {
+      const data = await vpsDataStore.loadData();
+      const activities: any[] = [];
+      
+      // Filter out demo/admin accounts
+      const realUsers = data.users.filter(user => 
+        !user.email.includes('admin@videostore.com') && 
+        !user.email.includes('parent@example.com') &&
+        !user.email.includes('@example.com') &&
+        user.id !== 'videoadmin_001' &&
+        user.id !== 'parent_001'
+      );
+      
+      const realUserIds = new Set(realUsers.map(u => u.id));
+      
+      // Add user registrations
+      realUsers.forEach(user => {
+        activities.push({
+          id: `user_${user.id}`,
+          type: 'user_registration',
+          user: user.name || 'New User',
+          action: 'User Registration',
+          details: `${user.name || 'New User'} joined the platform`,
+          timestamp: user.createdAt,
+          icon: '👤',
+          color: '#10B981'
+        });
+      });
+      
+      // Add user logins (from lastLogin)
+      realUsers.filter(user => user.lastLogin).forEach(user => {
+        activities.push({
+          id: `login_${user.id}`,
+          type: 'user_login',
+          user: user.name || 'User',
+          action: 'User Login',
+          details: `${user.name || 'User'} logged in`,
+          timestamp: user.lastLogin,
+          icon: '🔐',
+          color: '#3B82F6'
+        });
+      });
+      
+      // Add real purchases
+      const realPurchases = data.purchases.filter(purchase => 
+        realUserIds.has(purchase.userId)
+      );
+      
+      realPurchases.forEach(purchase => {
+        const user = realUsers.find(u => u.id === purchase.userId);
+        const module = data.modules.find(m => m.id === purchase.moduleId);
+        activities.push({
+          id: `purchase_${purchase.id}`,
+          type: 'purchase',
+          user: user?.name || 'User',
+          action: 'Content Purchase',
+          details: `${user?.name || 'User'} purchased "${module?.title || 'Content'}"`,
+          timestamp: purchase.purchaseDate || purchase.createdAt,
+          icon: '💰',
+          color: '#F59E0B'
+        });
+      });
+      
+      // Add content uploads from upload queue
+      if (data.uploadQueue) {
+        data.uploadQueue.filter(upload => upload.status === 'completed').forEach(upload => {
+          activities.push({
+            id: `upload_${upload.id}`,
+            type: 'content_upload',
+            user: 'Admin',
+            action: 'Content Upload',
+            details: `New content "${upload.title}" was uploaded`,
+            timestamp: upload.uploadedAt,
+            icon: '📹',
+            color: '#8B5CF6'
+          });
+        });
+      }
+      
+      // Add notifications as activities
+      if (data.notifications) {
+        data.notifications.slice(0, 5).forEach(notification => {
+          activities.push({
+            id: `notification_${notification.id}`,
+            type: 'notification',
+            user: 'System',
+            action: 'System Notification',
+            details: notification.message || notification.title || 'System notification',
+            timestamp: notification.createdAt,
+            icon: '🔔',
+            color: '#6B7280'
+          });
+        });
+      }
+      
+      // Sort by timestamp (most recent first) and limit to 10 items
+      return activities
+        .filter(activity => activity.timestamp)
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, 10);
+        
+    } catch (error) {
+      console.error('Error getting recent activity:', error);
+      return [];
+    }
+  }
 }
 
 export const realDataAnalytics = new RealDataAnalytics();

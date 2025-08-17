@@ -49,6 +49,7 @@ interface AppData {
   flaggedContent?: any[];
   accessLogs?: any[];
   packages?: any[];
+  bundles?: any[];
   lastUpdated?: string;
   lastLoaded?: string;
 }
@@ -101,6 +102,7 @@ class VPSDataStore {
       flaggedContent: [],
       accessLogs: [],
       packages: [], // Initialize empty packages array
+      bundles: [], // Initialize empty bundles array
       settings: this.getDefaultSettings(),
       lastUpdated: new Date().toISOString(),
       lastLoaded: new Date().toISOString()
@@ -1050,6 +1052,154 @@ class VPSDataStore {
       return false;
     } catch (error) {
       console.error('Error deleting package:', error);
+      return false;
+    }
+  }
+
+  // Bundle management methods
+  async getBundles(): Promise<any[]> {
+    try {
+      const data = await this.loadData();
+      const bundles = data.bundles || [];
+      console.log('📦 Retrieved bundles:', bundles.length);
+      return bundles;
+    } catch (error) {
+      console.error('Error getting bundles:', error);
+      return [];
+    }
+  }
+
+  async addBundle(bundleData: any): Promise<boolean> {
+    try {
+      console.log('📦 Adding bundle:', bundleData.name);
+      const data = await this.loadData();
+      
+      // Check if bundle with same name already exists
+      const existingBundle = data.bundles?.find(b => b.name === bundleData.name);
+      if (existingBundle) {
+        console.log('❌ Bundle with same name already exists');
+        return false;
+      }
+      
+      const newBundle = {
+        ...bundleData,
+        id: bundleData.id || `bundle_${Date.now()}`,
+        createdAt: bundleData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isActive: bundleData.isActive !== undefined ? bundleData.isActive : true
+      };
+      
+      data.bundles = data.bundles || [];
+      data.bundles.push(newBundle);
+      
+      console.log('💾 Saving bundle to data store...');
+      const success = await this.saveData(data);
+      console.log(success ? '✅ Bundle saved successfully' : '❌ Bundle save failed');
+      return success;
+    } catch (error) {
+      console.error('❌ Error adding bundle:', error);
+      return false;
+    }
+  }
+
+  async updateBundle(updatedBundle: any): Promise<boolean> {
+    try {
+      console.log('🔄 Updating bundle:', updatedBundle.id);
+      const data = await this.loadData();
+      data.bundles = data.bundles || [];
+      const index = data.bundles.findIndex(b => b.id === updatedBundle.id);
+      if (index !== -1) {
+        data.bundles[index] = {
+          ...data.bundles[index],
+          ...updatedBundle,
+          updatedAt: new Date().toISOString()
+        };
+        const success = await this.saveData(data);
+        console.log(success ? '✅ Bundle updated successfully' : '❌ Bundle update failed');
+        return success;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error updating bundle:', error);
+      return false;
+    }
+  }
+
+  async deleteBundle(bundleId: string): Promise<boolean> {
+    try {
+      console.log('🗑️ Deleting bundle:', bundleId);
+      const data = await this.loadData();
+      data.bundles = data.bundles || [];
+      const originalLength = data.bundles.length;
+      data.bundles = data.bundles.filter(b => b.id !== bundleId);
+      
+      if (data.bundles.length < originalLength) {
+        const success = await this.saveData(data);
+        console.log(success ? '✅ Bundle deleted successfully' : '❌ Bundle delete failed');
+        return success;
+      }
+      console.log('❌ Bundle not found');
+      return false;
+    } catch (error) {
+      console.error('Error deleting bundle:', error);
+      return false;
+    }
+  }
+
+  // Bundle purchase method
+  async purchaseBundle(userId: string, bundleId: string): Promise<boolean> {
+    try {
+      console.log('🛒 Processing bundle purchase:', { userId, bundleId });
+      const data = await this.loadData();
+      
+      // Get the bundle
+      const bundle = data.bundles?.find(b => b.id === bundleId);
+      if (!bundle) {
+        console.log('❌ Bundle not found');
+        return false;
+      }
+      
+      // Create purchase record for the bundle
+      const bundlePurchase = {
+        id: `purchase_${Date.now()}_bundle`,
+        userId,
+        moduleId: bundleId,
+        bundleId,
+        purchaseDate: new Date().toISOString(),
+        amount: bundle.price || 0,
+        status: 'completed' as const,
+        type: 'bundle' as const
+      };
+      
+      // Create individual purchase records for each content item in the bundle
+      const contentPurchases = (bundle.contentIds || []).map((contentId: string, index: number) => ({
+        id: `purchase_${Date.now()}_${index}`,
+        userId,
+        moduleId: contentId,
+        bundleId,
+        purchaseDate: new Date().toISOString(),
+        amount: 0, // Individual items are free when purchased as part of bundle
+        status: 'completed' as const,
+        type: 'video' as const
+      }));
+      
+      // Add all purchases
+      data.purchases = data.purchases || [];
+      data.purchases.push(bundlePurchase, ...contentPurchases);
+      
+      // Update user's purchased modules
+      const user = data.users?.find(u => u.id === userId);
+      if (user) {
+        user.purchasedModules = user.purchasedModules || [];
+        user.purchasedModules.push(bundleId, ...(bundle.contentIds || []));
+        user.totalSpent = (user.totalSpent || 0) + (bundle.price || 0);
+      }
+      
+      const success = await this.saveData(data);
+      console.log(success ? '✅ Bundle purchase completed' : '❌ Bundle purchase failed');
+      return success;
+    } catch (error) {
+      console.error('❌ Error purchasing bundle:', error);
       return false;
     }
   }

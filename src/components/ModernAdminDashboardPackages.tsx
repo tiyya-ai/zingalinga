@@ -26,7 +26,8 @@ import {
   DollarSign,
   Star,
   Eye,
-  X
+  X,
+  Upload
 } from 'lucide-react';
 
 // Professional page header
@@ -294,9 +295,70 @@ export const renderAddPackage = (
           </CardHeader>
           <CardBody className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Cover Image URL</label>
+              <label className="text-sm font-medium text-gray-700">Package Media</label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-purple-400 transition-colors">
+                <input
+                  type="file"
+                  accept="image/*,video/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const result = event.target?.result as string;
+                        setPackageForm({ ...packageForm, coverImage: result });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="hidden"
+                  id="package-media-upload"
+                />
+                <label htmlFor="package-media-upload" className="cursor-pointer">
+                  <div className="flex flex-col items-center space-y-2">
+                    {packageForm.coverImage ? (
+                      <div className="w-full max-w-xs">
+                        {packageForm.coverImage.startsWith('data:video') ? (
+                          <video 
+                            src={packageForm.coverImage} 
+                            className="w-full h-24 object-cover rounded-lg"
+                            controls={false}
+                          />
+                        ) : (
+                          <img 
+                            src={packageForm.coverImage} 
+                            alt="Package preview" 
+                            className="w-full h-24 object-cover rounded-lg"
+                          />
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="h-8 w-8 text-gray-400" />
+                        <p className="text-sm text-gray-600">Click to upload image or video</p>
+                      </>
+                    )}
+                    <p className="text-xs text-gray-500">JPG, PNG, MP4, MOV up to 10MB</p>
+                  </div>
+                </label>
+              </div>
+              {packageForm.coverImage && (
+                <Button
+                  size="sm"
+                  variant="light"
+                  color="danger"
+                  onPress={() => setPackageForm({ ...packageForm, coverImage: '' })}
+                  className="w-full"
+                >
+                  Remove Media
+                </Button>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Or use URL instead</label>
               <Input
-                value={packageForm.coverImage}
+                value={packageForm.coverImage?.startsWith('http') ? packageForm.coverImage : ''}
                 onChange={(e) => setPackageForm({ ...packageForm, coverImage: e.target.value })}
                 placeholder="https://example.com/image.jpg"
                 classNames={{

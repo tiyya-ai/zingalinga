@@ -76,6 +76,7 @@ export default function ProfessionalUserDashboard({
   const [liveModules, setLiveModules] = useState<Module[]>(modules);
   const [savedCategories, setSavedCategories] = useState<string[]>([]);
   const [savedVideosList, setSavedVideosList] = useState<any[]>([]);
+  const [packages, setPackages] = useState<any[]>([]);
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [cartItems, setCartItems] = useState<string[]>([]);
@@ -223,6 +224,10 @@ export default function ProfessionalUserDashboard({
         if (vpsData.modules) {
           setLiveModules(vpsData.modules);
         }
+        
+        // Load packages from VPS
+        const packagesData = await vpsDataStore.getPackages();
+        setPackages(packagesData);
         
         // Load saved videos from VPS
         if (user?.id) {
@@ -668,7 +673,7 @@ export default function ProfessionalUserDashboard({
               { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
               { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
               { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => !localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed')).length },
-              { id: 'packages', label: '📦 Packages', count: null },
+              { id: 'packages', label: '📦 Packages', count: packages.length },
               { id: 'playlist', label: '📋 Playlist', count: playlist.length },
               { id: 'profile', label: '👤 Profile', count: null }
             ].map(tab => (
@@ -705,7 +710,7 @@ export default function ProfessionalUserDashboard({
                     purchase.status === 'completed'
                   )
                 ).length },
-                { id: 'packages', label: '📦 Packages', count: null },
+                { id: 'packages', label: '📦 Packages', count: packages.length },
                 { id: 'playlist', label: '📋 Playlist', count: playlist.length }
               ].map(tab => (
                 <button
@@ -2240,11 +2245,152 @@ export default function ProfessionalUserDashboard({
               <p className="text-purple-200">Discover bundled content packages with special pricing</p>
             </div>
             
-            <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-              <div className="text-6xl mb-4">📦</div>
-              <div className="text-white text-xl mb-2">Learning Packages Coming Soon</div>
-              <div className="text-purple-200 text-sm">We're preparing special bundled packages for you</div>
-            </div>
+            {packages.length === 0 ? (
+              <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+                <div className="text-6xl mb-4">📦</div>
+                <div className="text-white text-xl mb-2">No Packages Available</div>
+                <div className="text-purple-200 text-sm">Check back later for new learning packages</div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {packages.map((pkg) => {
+                  const isPurchased = localPurchases.some(purchase => 
+                    purchase.moduleId === pkg.id && 
+                    purchase.userId === user?.id && 
+                    purchase.status === 'completed'
+                  );
+                  
+                  return (
+                    <div key={pkg.id} className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300 group">
+                      {/* Package Image/Video */}
+                      <div className="relative h-48 bg-gradient-to-br from-purple-500 to-pink-600">
+                        {pkg.mediaUrl ? (
+                          pkg.mediaUrl.startsWith('data:video/') ? (
+                            <video 
+                              className="w-full h-full object-cover"
+                              poster={pkg.thumbnail || ''}
+                              muted
+                            >
+                              <source src={pkg.mediaUrl} type="video/mp4" />
+                            </video>
+                          ) : (
+                            <img 
+                              src={pkg.mediaUrl} 
+                              alt={pkg.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          )
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <span className="text-6xl">{pkg.icon || '📦'}</span>
+                          </div>
+                        )}
+                        
+                        {/* Package Type Badge */}
+                        <div className="absolute top-3 left-3">
+                          <span className="px-2 py-1 bg-black/50 text-white text-xs rounded-full backdrop-blur-sm">
+                            {pkg.type || 'Package'}
+                          </span>
+                        </div>
+                        
+                        {/* Popular Badge */}
+                        {pkg.isPopular && (
+                          <div className="absolute top-3 right-3">
+                            <span className="px-2 py-1 bg-yellow-500 text-black text-xs rounded-full font-semibold">
+                              ⭐ Popular
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Package Content */}
+                      <div className="p-6">
+                        <div className="flex items-start justify-between mb-3">
+                          <h3 className="text-lg font-bold text-white group-hover:text-purple-200 transition-colors">
+                            {pkg.name}
+                          </h3>
+                          <div className="text-right">
+                            <div className="text-xl font-bold text-green-400">
+                              ${pkg.price?.toFixed(2) || '0.00'}
+                            </div>
+                            {pkg.originalPrice && pkg.originalPrice > pkg.price && (
+                              <div className="text-sm text-gray-400 line-through">
+                                ${pkg.originalPrice.toFixed(2)}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <p className="text-purple-200 text-sm mb-4 line-clamp-2">
+                          {pkg.description || 'No description available'}
+                        </p>
+                        
+                        {/* Features */}
+                        {pkg.features && pkg.features.length > 0 && (
+                          <div className="mb-4">
+                            <div className="text-white text-sm font-semibold mb-2">Includes:</div>
+                            <ul className="text-purple-200 text-xs space-y-1">
+                              {pkg.features.slice(0, 3).map((feature, index) => (
+                                <li key={index} className="flex items-center">
+                                  <span className="w-1 h-1 bg-purple-400 rounded-full mr-2"></span>
+                                  {feature}
+                                </li>
+                              ))}
+                              {pkg.features.length > 3 && (
+                                <li className="text-purple-300 text-xs">+{pkg.features.length - 3} more...</li>
+                              )}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {/* Status */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center space-x-2">
+                            <span className={`w-2 h-2 rounded-full ${
+                              pkg.isActive ? 'bg-green-400' : 'bg-red-400'
+                            }`}></span>
+                            <span className="text-xs text-purple-200">
+                              {pkg.isActive ? 'Available' : 'Unavailable'}
+                            </span>
+                          </div>
+                          
+                          {isPurchased && (
+                            <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
+                              ✓ Purchased
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* Action Button */}
+                        <button
+                          onClick={() => {
+                            if (isPurchased) {
+                              // Navigate to package content or show access
+                              console.log('Access package:', pkg.id);
+                            } else if (onPurchase) {
+                              onPurchase(pkg.id);
+                            }
+                          }}
+                          disabled={!pkg.isActive}
+                          className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 ${
+                            isPurchased
+                              ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                              : pkg.isActive
+                              ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 shadow-lg hover:shadow-xl'
+                              : 'bg-gray-500/20 text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          {isPurchased ? 'Access Package' : pkg.isActive ? 'Purchase Package' : 'Unavailable'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </section>
         )}
 

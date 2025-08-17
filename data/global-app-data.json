@@ -28,7 +28,9 @@
       "password": "user123",
       "name": "User",
       "role": "user",
-      "purchasedModules": [],
+      "purchasedModules": [
+        "package_1755348635251"
+      ],
       "totalSpent": 0,
       "createdAt": "2025-01-20T10:00:00.000Z",
       "lastLogin": "2025-01-20T10:00:00.000Z"
@@ -176,6 +178,14 @@
       "status": "completed",
       "type": "video",
       "createdAt": "2025-08-15T06:12:31.047Z"
+    },
+    {
+      "id": "purchase_1755363224290_t1sq3980k",
+      "userId": "user-1",
+      "moduleId": "package_1755348635251",
+      "purchaseDate": "2025-08-16T16:53:44.290Z",
+      "amount": 0,
+      "status": "completed"
     }
   ],
   "contentFiles": [],
@@ -216,7 +226,7 @@
   "flaggedContent": [],
   "accessLogs": [],
   "uploadQueue": [],
-  "lastUpdated": "2025-08-16T14:12:10.076Z",
+  "lastUpdated": "2025-08-16T16:53:44.290Z",
   "lastLoaded": "2025-01-20T10:00:00.000Z",
   "packages": [
     {
@@ -235,6 +245,6 @@
       "updatedAt": "2025-08-16T14:12:10.076Z"
     }
   ],
-  "lastSaved": "2025-08-16T14:12:10.172Z",
+  "lastSaved": "2025-08-16T16:53:44.338Z",
   "savedVideos": []
 }

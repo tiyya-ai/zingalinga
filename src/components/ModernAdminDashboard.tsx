@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { realDataAnalytics } from '../utils/realDataAnalytics';
 import {
   Card,
   CardBody,
@@ -57,6 +58,7 @@ import {
   Tag,
   ShoppingCart,
   Package as PackageIcon,
+  Layers,
   CreditCard,
   Receipt,
   MessageSquare,
@@ -89,7 +91,6 @@ import {
   Zap,
   Target,
   Award,
-  Layers,
   Headphones,
   BookOpen,
   Monitor,
@@ -101,6 +102,7 @@ import { UserManagement } from './UserManagement';
 import { Module } from '../types';
 import { SuccessModal } from './SuccessModal';
 import { renderAddPackage as renderAddPackageComponent, renderAllPackages as renderAllPackagesComponent, renderLearningPackages as renderLearningPackagesComponent } from './ModernAdminDashboardPackages';
+import { renderAddBundle as renderAddBundleComponent, renderAllBundles as renderAllBundlesComponent } from './ModernAdminDashboardBundles';
 
 const AdminSuccessModal = ({ isOpen, onClose, message }: { isOpen: boolean; onClose: () => void; message: string }) => (
   <Modal isOpen={isOpen} onClose={onClose} size="sm" backdrop="blur">
@@ -261,6 +263,60 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   }, [users, videos, orders]);
 
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  
+  // State for Recent Activity page
+  const [recentActivityPageData, setRecentActivityPageData] = useState([]);
+  const [isRecentActivityLoading, setIsRecentActivityLoading] = useState(true);
+  
+  // State for Recent Activity filters and pagination
+  const [activityFilter, setActivityFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Load recent activities for main dashboard
+  useEffect(() => {
+    const loadMainDashboardActivity = async () => {
+      try {
+        const activities = await realDataAnalytics.getRecentActivity();
+        // Transform the data to match the expected format for the main dashboard
+        const transformedActivities = activities.map(activity => ({
+          id: activity.id,
+          message: activity.details,
+          time: new Date(activity.timestamp).toLocaleString(),
+          avatar: activity.user || 'System',
+          type: activity.type
+        }));
+        setRecentActivities(transformedActivities);
+      } catch (error) {
+        console.error('Error loading main dashboard activity:', error);
+        setRecentActivities([]);
+      }
+    };
+
+    loadMainDashboardActivity();
+  }, []);
+  
+  // Load recent activities for Recent Activity page
+  useEffect(() => {
+    const loadRecentActivityPage = async () => {
+      try {
+        setIsRecentActivityLoading(true);
+        const activities = await realDataAnalytics.getRecentActivity();
+        setRecentActivityPageData(activities);
+      } catch (error) {
+        console.error('Error loading recent activity page:', error);
+        setRecentActivityPageData([]);
+      } finally {
+        setIsRecentActivityLoading(false);
+      }
+    };
+
+    if (activeSection === 'recent-activity') {
+      loadRecentActivityPage();
+    }
+  }, [activeSection]);
+
 
   useEffect(() => {
     const checkMobile = () => {
@@ -483,12 +539,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         });
       });
 
-      // Sort by most recent and take top 4
+      // Sort by most recent and take top 10 for preview
       activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-      setRecentActivities(activities.slice(0, 4));
-
-
-
       setRecentActivities(activities);
 
 
@@ -581,7 +633,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       color: 'text-purple-600',
       children: [
         { id: 'all-packages', label: 'All Packages', icon: <PackageIcon className="h-4 w-4" /> },
-        { id: 'add-package', label: 'Add Package', icon: <Plus className="h-4 w-4" /> }
+        { id: 'add-package', label: 'Add Package', icon: <Plus className="h-4 w-4" /> },
+        { id: 'all-bundles', label: 'All Bundles', icon: <Layers className="h-4 w-4" /> },
+        { id: 'add-bundle', label: 'Add Bundle', icon: <Plus className="h-4 w-4" /> }
       ]
     },
     {
@@ -617,6 +671,12 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       label: 'Chat Support',
       icon: <MessageSquare className="h-5 w-5" />,
       color: 'text-blue-600'
+    },
+    {
+      id: 'recent-activity',
+      label: 'Recent Activity',
+      icon: <Clock className="h-5 w-5" />,
+      color: 'text-orange-600'
     },
     {
       id: 'admin-profile',
@@ -830,9 +890,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
             <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
           </CardHeader>
           <CardBody>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Button 
-                className="h-20 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="h-20 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
                 onPress={() => setActiveSection('add-video')}
               >
                 <div className="text-center">
@@ -841,48 +901,66 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 </div>
               </Button>
               <Button 
-                className="h-24 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="h-20 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
                 onPress={() => setActiveSection('categories')}
               >
                 <div className="text-center">
-                  <Tag className="h-8 w-8 mx-auto mb-2" />
-                  <span className="text-sm font-semibold">Content Categories</span>
+                  <Tag className="h-6 w-6 mx-auto mb-1" />
+                  <span className="text-xs font-semibold">Categories</span>
                 </div>
               </Button>
               <Button 
-                className="h-24 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="h-20 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
                 onPress={() => setActiveSection('all-videos')}
               >
                 <div className="text-center">
-                  <Video className="h-8 w-8 mx-auto mb-2" />
-                  <span className="text-sm font-semibold">Manage Videos ({dashboardStats.totalVideos})</span>
+                  <Video className="h-6 w-6 mx-auto mb-1" />
+                  <span className="text-xs font-semibold">Videos ({dashboardStats.totalVideos})</span>
                 </div>
               </Button>
               <Button 
-                className="h-24 bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="h-20 bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
                 onPress={() => setActiveSection('orders')}
               >
                 <div className="text-center">
-                  <ShoppingCart className="h-8 w-8 mx-auto mb-2" />
-                  <span className="text-sm font-semibold">View Orders</span>
+                  <ShoppingCart className="h-6 w-6 mx-auto mb-1" />
+                  <span className="text-xs font-semibold">Orders</span>
                 </div>
               </Button>
               <Button 
-                className="h-24 bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="h-20 bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
                 onPress={() => setActiveSection('all-users')}
               >
                 <div className="text-center">
-                  <Users className="h-8 w-8 mx-auto mb-2" />
-                  <span className="text-sm font-semibold">Manage Users</span>
+                  <Users className="h-6 w-6 mx-auto mb-1" />
+                  <span className="text-xs font-semibold">Users</span>
                 </div>
               </Button>
               <Button 
-                className="h-24 bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="h-20 bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
                 onPress={() => setActiveSection('settings')}
               >
                 <div className="text-center">
-                  <Settings className="h-8 w-8 mx-auto mb-2" />
-                  <span className="text-sm font-semibold">Settings</span>
+                  <Settings className="h-6 w-6 mx-auto mb-1" />
+                  <span className="text-xs font-semibold">Settings</span>
+                </div>
+              </Button>
+              <Button 
+                className="h-20 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white hover:from-yellow-600 hover:to-yellow-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
+                onPress={() => setActiveSection('audio-lessons')}
+              >
+                <div className="text-center">
+                  <Headphones className="h-6 w-6 mx-auto mb-1" />
+                  <span className="text-xs font-semibold">Audio BB1</span>
+                </div>
+              </Button>
+              <Button 
+                className="h-20 bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-600 hover:to-teal-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
+                onPress={() => setActiveSection('add-bundle')}
+              >
+                <div className="text-center">
+                  <Layers className="h-6 w-6 mx-auto mb-1" />
+                  <span className="text-xs font-semibold">Bundle</span>
                 </div>
               </Button>
             </div>
@@ -890,12 +968,20 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         </Card>
 
         <Card className="bg-white border border-gray-200">
-          <CardHeader className="pb-4 border-b border-gray-200">
+          <CardHeader className="pb-4 border-b border-gray-200 flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+            <Button
+              size="sm"
+              variant="flat"
+              className="text-blue-600 hover:text-blue-700"
+              onPress={() => setActiveSection('recent-activity')}
+            >
+              View All
+            </Button>
           </CardHeader>
           <CardBody>
             <div className="space-y-4">
-              {recentActivities.map((activity, index) => (
+              {recentActivities.slice(0, 10).map((activity, index) => (
                 <div key={`${activity.id}-${index}`} className="flex items-center space-x-4 p-4 hover:bg-gray-50 rounded-xl transition-colors">
                   <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-medium">{activity.avatar.charAt(0).toUpperCase()}</span>
@@ -912,6 +998,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   }`} />
                 </div>
               ))}
+              {recentActivities.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No recent activity</p>
+                </div>
+              )}
             </div>
           </CardBody>
         </Card>
@@ -1528,6 +1619,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   // Package form state
   const [packageForm, setPackageForm] = useState({
     name: '',
+    icon: '',
     description: '',
     price: 0,
     type: 'subscription',
@@ -3418,8 +3510,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                          order.customer.email.toLowerCase().includes(searchLower) ||
                          order.item.name.toLowerCase().includes(searchLower);
                 })
-                .map((order) => (
-                <TableRow key={order.id}>
+                .map((order, index) => (
+                <TableRow key={`${order.id}_${index}_${order.customer.email}_${order.date.getTime()}`}>
                   <TableCell>
                     <div className="font-mono text-sm">
                       #{order.id.toString().slice(-6)}
@@ -6819,6 +6911,215 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     </div>
   );
 
+  const renderRecentActivity = () => {
+    // Map activity types to icons
+    const getActivityIcon = (type) => {
+      switch (type) {
+        case 'user_registration': return Users;
+        case 'user_login': return Users;
+        case 'purchase': return ShoppingCart;
+        case 'content_upload': return Video;
+        case 'notification': return Bell;
+        default: return Settings;
+      }
+    };
+
+    // Filter activities based on search and filter
+    const filteredActivities = recentActivityPageData.filter(activity => {
+      const matchesFilter = activityFilter === 'all' || activity.type === activityFilter;
+      const matchesSearch = activity.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           activity.action.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesFilter && matchesSearch;
+    });
+
+    // Paginate activities
+    const totalPages = Math.ceil(filteredActivities.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedActivities = filteredActivities.slice(startIndex, startIndex + itemsPerPage);
+
+    // Get unique activity types for filter
+    const activityTypes = [...new Set(recentActivityPageData.map(a => a.type))];
+
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900 mb-1">Recent Activity</h1>
+            <div className="w-12 h-0.5 bg-gray-900"></div>
+            <p className="text-sm text-gray-600 mt-2">Monitor all system activities and user interactions</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="bordered"
+              startContent={<RotateCcw className="h-4 w-4" />}
+              onPress={() => {
+                const loadRecentActivityPage = async () => {
+                  setIsRecentActivityLoading(true);
+                  try {
+                    const activities = await realDataAnalytics.getRecentActivity();
+                    setRecentActivityPageData(activities);
+                  } catch (error) {
+                    console.error('Error loading recent activity page:', error);
+                    setRecentActivityPageData([]);
+                  } finally {
+                    setIsRecentActivityLoading(false);
+                  }
+                };
+                loadRecentActivityPage();
+              }}
+            >
+              Refresh
+            </Button>
+          </div>
+        </div>
+        
+        {/* Filters and Search */}
+        <Card className="bg-white border border-gray-200">
+          <CardBody className="p-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <Input
+                  placeholder="Search activities..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  startContent={<Search className="h-4 w-4 text-gray-400" />}
+                  className="max-w-sm"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Select
+                  placeholder="Filter by type"
+                  value={activityFilter}
+                  onChange={(e) => setActivityFilter(e.target.value)}
+                  className="min-w-[150px]"
+                >
+                  <SelectItem key="all" value="all">All Activities</SelectItem>
+                  {activityTypes.map(type => (
+                    <SelectItem key={type} value={type}>
+                      {type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </SelectItem>
+                  ))}
+                </Select>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+        
+        <Card className="bg-white border border-gray-200">
+          <CardHeader className="border-b border-gray-200">
+            <div className="flex justify-center items-center w-full">
+              <div className="p-2">
+                {/* Icons only - no text */}
+              </div>
+            </div>
+          </CardHeader>
+          <CardBody className="p-0">
+            {isRecentActivityLoading ? (
+              <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              </div>
+            ) : filteredActivities.length === 0 ? (
+              <div className="p-8 text-center">
+                <BarChart3 className="h-12 w-12 text-gray-400 mx-auto" />
+              </div>
+            ) : (
+              <>
+                <div className="divide-y divide-gray-100">
+                  {paginatedActivities.map((activity) => {
+                    const IconComponent = getActivityIcon(activity.type);
+                    const formattedTime = new Date(activity.timestamp).toLocaleString();
+                    const timeAgo = getTimeAgo(activity.timestamp);
+                    return (
+                      <div key={activity.id} className="p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center justify-center">
+                          <div className="p-3 rounded-lg" style={{ backgroundColor: activity.color + '20', color: activity.color }} title={`${activity.details} - ${timeAgo}`}>
+                            <IconComponent className="h-6 w-6" />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="p-4 border-t border-gray-200 bg-gray-50">
+                    <div className="flex justify-between items-center">
+                      <div></div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="bordered"
+                          isDisabled={currentPage === 1}
+                          onPress={() => setCurrentPage(currentPage - 1)}
+                        >
+                          ←
+                        </Button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            const page = i + 1;
+                            return (
+                              <Button
+                                key={page}
+                                size="sm"
+                                variant={currentPage === page ? "solid" : "bordered"}
+                                color={currentPage === page ? "primary" : "default"}
+                                onPress={() => setCurrentPage(page)}
+                                className="min-w-[40px]"
+                              >
+                                {page}
+                              </Button>
+                            );
+                          })}
+                          {totalPages > 5 && (
+                            <>
+                              <span className="text-gray-400 px-2">•••</span>
+                              <Button
+                                size="sm"
+                                variant={currentPage === totalPages ? "solid" : "bordered"}
+                                color={currentPage === totalPages ? "primary" : "default"}
+                                onPress={() => setCurrentPage(totalPages)}
+                                className="min-w-[40px]"
+                              >
+                                {totalPages}
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="bordered"
+                          isDisabled={currentPage === totalPages}
+                          onPress={() => setCurrentPage(currentPage + 1)}
+                        >
+                          →
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardBody>
+        </Card>
+      </div>
+    );
+  };
+
+  // Helper function to get time ago
+  const getTimeAgo = (timestamp) => {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - time) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    return time.toLocaleDateString();
+  };
+
   const renderNotifications = () => (
     <div className="space-y-6">
       <PageHeader title="All Notifications" />
@@ -7139,7 +7440,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       case 'flagged-content': return <div>Flagged Content - Feature coming soon</div>;
       case 'all-packages': return renderAllPackages();
       case 'add-package': return renderAddPackage();
+      case 'all-bundles': return renderAllBundles();
+      case 'add-bundle': return renderAddBundle();
       case 'notifications': return renderNotifications();
+      case 'recent-activity': return renderRecentActivity();
       case 'admin-profile': return renderAdminProfile();
       case 'settings': return renderSettings();
       default:
