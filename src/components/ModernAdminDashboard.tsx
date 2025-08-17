@@ -4580,6 +4580,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     console.log('✏️ Editing package:', pkg);
     setPackageForm({
       name: pkg.name || '',
+      icon: pkg.icon || '',
       description: pkg.description || '',
       price: pkg.price || 0,
       type: pkg.type || 'subscription',
@@ -6913,7 +6914,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const renderRecentActivity = () => {
     // Map activity types to icons
-    const getActivityIcon = (type) => {
+    const getActivityIcon = (type: string) => {
       switch (type) {
         case 'user_registration': return Users;
         case 'user_login': return Users;
@@ -6994,12 +6995,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   onChange={(e) => setActivityFilter(e.target.value)}
                   className="min-w-[150px]"
                 >
-                  <SelectItem key="all" value="all">All Activities</SelectItem>
-                  {activityTypes.map(type => (
+                  {[<SelectItem key="all" value="all">All Activities</SelectItem>, ...activityTypes.map((type: string) => 
                     <SelectItem key={type} value={type}>
                       {type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </SelectItem>
-                  ))}
+                  )]}
                 </Select>
               </div>
             </div>
@@ -7120,10 +7120,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   };
 
   // Helper function to get time ago
-  const getTimeAgo = (timestamp) => {
+  const getTimeAgo = (timestamp: string | Date) => {
     const now = new Date();
     const time = new Date(timestamp);
-    const diffInSeconds = Math.floor((now - time) / 1000);
+    const diffInSeconds = Math.floor((now.getTime() - time.getTime()) / 1000);
     
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
@@ -7412,6 +7412,86 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const renderLearningPackages = () => {
     return renderLearningPackagesComponent(setActiveSection);
+  };
+
+  // Bundle handlers
+  const handleDeleteBundle = (id: string) => {
+    setContentBundles(prev => prev.filter(bundle => bundle.id !== id));
+  };
+
+  const handleEditBundle = (bundle: any) => {
+    setEditingBundle(bundle);
+    setBundleForm({
+      name: bundle.name || '',
+      description: bundle.description || '',
+      price: bundle.price || 0,
+      discount: bundle.discount || 0,
+      category: bundle.category || 'mixed',
+      coverImage: bundle.coverImage || '',
+      selectedVideos: bundle.contentIds || [],
+      isActive: bundle.isActive !== false
+    });
+    setActiveSection('add-bundle');
+  };
+
+  const handlePreviewBundle = (bundle: any) => {
+    // Preview bundle functionality
+    console.log('Preview bundle:', bundle);
+  };
+
+  const handleSaveBundle = () => {
+    if (!bundleForm.name.trim()) {
+      alert('Please enter a bundle name');
+      return;
+    }
+
+    if (bundleForm.price <= 0) {
+      alert('Please enter a valid price');
+      return;
+    }
+
+    const bundleData = {
+      id: editingBundle?.id || `bundle_${Date.now()}`,
+      name: bundleForm.name,
+      description: bundleForm.description,
+      price: bundleForm.price,
+      discount: bundleForm.discount,
+      category: bundleForm.category,
+      coverImage: bundleForm.coverImage,
+      contentIds: bundleForm.selectedVideos,
+      isActive: bundleForm.isActive,
+      createdAt: editingBundle?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    if (editingBundle) {
+      setContentBundles(prev => prev.map(bundle => 
+        bundle.id === editingBundle.id ? bundleData : bundle
+      ));
+    } else {
+      setContentBundles(prev => [...prev, bundleData]);
+    }
+
+    setBundleForm({
+      name: '',
+      description: '',
+      price: 0,
+      discount: 0,
+      category: 'mixed',
+      coverImage: '',
+      selectedVideos: [],
+      isActive: true
+    });
+    setEditingBundle(null);
+    setActiveSection('all-bundles');
+  };
+
+  const renderAllBundles = () => {
+    return renderAllBundlesComponent(contentBundles, handleDeleteBundle, formatCurrency, setActiveSection, handleEditBundle, handlePreviewBundle);
+  };
+
+  const renderAddBundle = () => {
+    return renderAddBundleComponent(bundleForm, setBundleForm, handleSaveBundle, setActiveSection, editingBundle, videos);
   };
 
   const renderContent = () => {
@@ -7796,7 +7876,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 color="primary" 
                 onPress={() => {
                   onPackagePreviewClose();
-                  if (onEditPackage) {
+                  if (handleEditPackage) {
                     handleEditPackage(selectedPackage);
                   }
                 }}

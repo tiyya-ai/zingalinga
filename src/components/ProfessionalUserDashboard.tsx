@@ -2333,7 +2333,7 @@ export default function ProfessionalUserDashboard({
                           <div className="mb-4">
                             <div className="text-white text-sm font-semibold mb-2">Includes:</div>
                             <ul className="text-purple-200 text-xs space-y-1">
-                              {pkg.features.slice(0, 3).map((feature, index) => (
+                              {pkg.features.slice(0, 3).map((feature: string, index: number) => (
                                 <li key={index} className="flex items-center">
                                   <span className="w-1 h-1 bg-purple-400 rounded-full mr-2"></span>
                                   {feature}
