@@ -265,7 +265,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   
   // State for Recent Activity page
-  const [recentActivityPageData, setRecentActivityPageData] = useState([]);
+  const [recentActivityPageData, setRecentActivityPageData] = useState<any[]>([]);
   const [isRecentActivityLoading, setIsRecentActivityLoading] = useState(true);
   
   // State for Recent Activity filters and pagination
