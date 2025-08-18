@@ -609,9 +609,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       color: 'text-purple-600',
       children: [
         { id: 'audio-lessons', label: 'Audio Lessons', icon: <Headphones className="h-4 w-4" /> },
-
-        { id: 'pp1-program', label: 'PP1 Program', icon: <BookOpen className="h-4 w-4" /> },
-        { id: 'content-bundles', label: 'Content Bundles', icon: <Layers className="h-4 w-4" /> }
+        { id: 'pp1-program', label: 'PP1 Program', icon: <BookOpen className="h-4 w-4" /> }
       ]
     },
     {
@@ -634,8 +632,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       children: [
         { id: 'all-packages', label: 'All Packages', icon: <PackageIcon className="h-4 w-4" /> },
         { id: 'add-package', label: 'Add Package', icon: <Plus className="h-4 w-4" /> },
-        { id: 'all-bundles', label: 'All Bundles', icon: <Layers className="h-4 w-4" /> },
-        { id: 'add-bundle', label: 'Add Bundle', icon: <Plus className="h-4 w-4" /> }
+
       ]
     },
     {
@@ -749,7 +746,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   features: '',
                   isActive: true,
                   isPopular: false,
-                  coverImage: ''
+                  coverImage: '',
+                  contentIds: []
                 });
                 setActiveSection(item.id);
               } else {
@@ -956,7 +954,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               </Button>
               <Button 
                 className="h-20 bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-600 hover:to-teal-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
-                onPress={() => setActiveSection('add-bundle')}
+                onPress={() => setActiveSection('add-package')}
               >
                 <div className="text-center">
                   <Layers className="h-6 w-6 mx-auto mb-1" />
@@ -981,7 +979,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           </CardHeader>
           <CardBody>
             <div className="space-y-4">
-              {recentActivities.slice(0, 10).map((activity, index) => (
+              {recentActivities.slice(0, 15).map((activity, index) => (
                 <div key={`${activity.id}-${index}`} className="flex items-center space-x-4 p-4 hover:bg-gray-50 rounded-xl transition-colors">
                   <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-medium">{activity.avatar.charAt(0).toUpperCase()}</span>
@@ -1626,7 +1624,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     features: '',
     isActive: true,
     isPopular: false,
-    coverImage: ''
+    coverImage: '',
+    contentIds: []
   });
   const [editingPackage, setEditingPackage] = useState<any>(null);
   
@@ -2873,6 +2872,20 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           <div className="flex justify-between items-center w-full">
             <h3 className="text-lg font-semibold text-gray-900">All Users ({users.length})</h3>
             <div className="flex space-x-2">
+              <Button 
+                size="sm"
+                variant="flat"
+                className="bg-blue-50 text-blue-600 hover:bg-blue-100"
+                startContent={<RotateCcw className="h-4 w-4" />}
+                onPress={async () => {
+                  vpsDataStore.clearMemoryCache();
+                  await loadRealData(true);
+                  setToast({message: 'User data refreshed!', type: 'success'});
+                  setTimeout(() => setToast(null), 3000);
+                }}
+              >
+                Refresh
+              </Button>
               <Input
                 placeholder="Search users..."
                 value={userSearchTerm}
@@ -4587,7 +4600,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       features: Array.isArray(pkg.features) ? pkg.features.join(', ') : (pkg.features || ''),
       isActive: pkg.isActive !== undefined ? pkg.isActive : true,
       isPopular: pkg.isPopular !== undefined ? pkg.isPopular : false,
-      coverImage: pkg.coverImage || ''
+      coverImage: pkg.coverImage || '',
+      contentIds: pkg.contentIds || []
     });
     setEditingPackage(pkg);
     setActiveSection('add-package');
@@ -4619,6 +4633,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         isActive: packageForm.isActive,
         isPopular: packageForm.isPopular,
         coverImage: packageForm.coverImage,
+        contentIds: packageForm.contentIds || [],
         createdAt: editingPackage ? editingPackage.createdAt : new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -4643,9 +4658,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           features: '',
           isActive: true,
           isPopular: false,
-          coverImage: ''
+          coverImage: '',
+          contentIds: []
         });
         setEditingPackage(null);
+        setActiveSection('all-packages');
         
         setToast({message: editingPackage ? 'Package updated successfully!' : 'Package created successfully!', type: 'success'});
         setTimeout(() => setToast(null), 3000);
@@ -7407,92 +7424,16 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   };
 
   const renderAddPackage = () => {
-    return renderAddPackageComponent(packageForm, setPackageForm, handleSavePackage, setActiveSection, editingPackage);
+    return renderAddPackageComponent(packageForm, setPackageForm, handleSavePackage, setActiveSection, editingPackage, videos);
   };
 
   const renderLearningPackages = () => {
     return renderLearningPackagesComponent(setActiveSection);
   };
 
-  // Bundle handlers
-  const handleDeleteBundle = (id: string) => {
-    setContentBundles(prev => prev.filter(bundle => bundle.id !== id));
-  };
 
-  const handleEditBundle = (bundle: any) => {
-    setEditingBundle(bundle);
-    setBundleForm({
-      name: bundle.name || '',
-      description: bundle.description || '',
-      price: bundle.price || 0,
-      discount: bundle.discount || 0,
-      category: bundle.category || 'mixed',
-      coverImage: bundle.coverImage || '',
-      selectedVideos: bundle.contentIds || [],
-      isActive: bundle.isActive !== false
-    });
-    setActiveSection('add-bundle');
-  };
 
-  const handlePreviewBundle = (bundle: any) => {
-    // Preview bundle functionality
-    console.log('Preview bundle:', bundle);
-  };
 
-  const handleSaveBundle = () => {
-    if (!bundleForm.name.trim()) {
-      alert('Please enter a bundle name');
-      return;
-    }
-
-    if (bundleForm.price <= 0) {
-      alert('Please enter a valid price');
-      return;
-    }
-
-    const bundleData = {
-      id: editingBundle?.id || `bundle_${Date.now()}`,
-      name: bundleForm.name,
-      description: bundleForm.description,
-      price: bundleForm.price,
-      discount: bundleForm.discount,
-      category: bundleForm.category,
-      coverImage: bundleForm.coverImage,
-      contentIds: bundleForm.selectedVideos,
-      isActive: bundleForm.isActive,
-      createdAt: editingBundle?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    if (editingBundle) {
-      setContentBundles(prev => prev.map(bundle => 
-        bundle.id === editingBundle.id ? bundleData : bundle
-      ));
-    } else {
-      setContentBundles(prev => [...prev, bundleData]);
-    }
-
-    setBundleForm({
-      name: '',
-      description: '',
-      price: 0,
-      discount: 0,
-      category: 'mixed',
-      coverImage: '',
-      selectedVideos: [],
-      isActive: true
-    });
-    setEditingBundle(null);
-    setActiveSection('all-bundles');
-  };
-
-  const renderAllBundles = () => {
-    return renderAllBundlesComponent(contentBundles, handleDeleteBundle, formatCurrency, setActiveSection, handleEditBundle, handlePreviewBundle);
-  };
-
-  const renderAddBundle = () => {
-    return renderAddBundleComponent(bundleForm, setBundleForm, handleSaveBundle, setActiveSection, editingBundle, videos);
-  };
 
   const renderContent = () => {
     switch (activeSection) {
@@ -7509,8 +7450,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       case 'add-pp1-content': return renderAddPP1Content();
       case 'pp2-program': return renderPP1Program();
       case 'add-pp2-content': return renderAddPP2Content();
-      case 'content-bundles': return renderContentBundles();
-      case 'create-bundle': return renderCreateBundle();
+
       case 'categories': return renderCategoriesPage();
       case 'upload-queue': return renderUploadQueuePage();
       case 'packages': return renderPackages();
@@ -7532,8 +7472,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       case 'flagged-content': return <div>Flagged Content - Feature coming soon</div>;
       case 'all-packages': return renderAllPackages();
       case 'add-package': return renderAddPackage();
-      case 'all-bundles': return renderAllBundles();
-      case 'add-bundle': return renderAddBundle();
+
       case 'notifications': return renderNotifications();
       case 'recent-activity': return renderRecentActivity();
       case 'admin-profile': return renderAdminProfile();

@@ -49,6 +49,17 @@ export async function POST(request: NextRequest) {
 
     await writeFile(DATA_FILE, JSON.stringify(data, null, 2));
 
+    // Also save to VPS data endpoint
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/data`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    } catch (error) {
+      console.error('Failed to sync to VPS:', error);
+    }
+
     return NextResponse.json({
       success: true,
       user: {

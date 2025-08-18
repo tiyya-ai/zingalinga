@@ -136,6 +136,34 @@
         "advanced",
         "bb2"
       ]
+    },
+    {
+      "id": "audio_1755556710215",
+      "title": "iiui",
+      "description": "",
+      "price": 552,
+      "category": "Audio Lessons",
+      "type": "audio",
+      "audioUrl": "kjk",
+      "thumbnail": "/default-audio-thumbnail.png",
+      "duration": "",
+      "tags": [
+        "kk"
+      ],
+      "aiTags": [],
+      "accessLevel": "paid",
+      "hasPreview": false,
+      "previewUrl": "",
+      "isActive": true,
+      "isVisible": true,
+      "createdAt": "2025-08-18T22:38:30.215Z",
+      "updatedAt": "2025-08-18T22:38:30.223Z",
+      "rating": 0,
+      "totalRatings": 0,
+      "features": [],
+      "fullContent": [],
+      "difficulty": "beginner",
+      "videoUrl": ""
     }
   ],
   "purchases": [
@@ -226,7 +254,7 @@
   "flaggedContent": [],
   "accessLogs": [],
   "uploadQueue": [],
-  "lastUpdated": "2025-08-16T16:53:44.290Z",
+  "lastUpdated": "2025-08-18T22:39:48.772Z",
   "lastLoaded": "2025-01-20T10:00:00.000Z",
   "packages": [
     {
@@ -242,9 +270,12 @@
       "isPopular": true,
       "coverImage": "",
       "createdAt": "2025-08-16T12:50:35.251Z",
-      "updatedAt": "2025-08-16T14:12:10.076Z"
+      "updatedAt": "2025-08-18T22:39:48.772Z",
+      "contentIds": [
+        "sample_video_001"
+      ]
     }
   ],
-  "lastSaved": "2025-08-16T16:53:44.338Z",
+  "lastSaved": "2025-08-18T22:39:48.805Z",
   "savedVideos": []
 }

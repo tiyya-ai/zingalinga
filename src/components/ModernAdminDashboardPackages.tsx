@@ -27,7 +27,10 @@ import {
   Star,
   Eye,
   X,
-  Upload
+  Upload,
+  Video,
+  Headphones,
+  BookOpen
 } from 'lucide-react';
 
 // Professional page header
@@ -176,7 +179,8 @@ export const renderAddPackage = (
   setPackageForm: (form: any) => void, 
   onSavePackage: () => void,
   setActiveSection: (section: string) => void,
-  editingPackage?: any
+  editingPackage?: any,
+  availableContent?: any[]
 ) => {
   console.log('🎯 renderAddPackage called with onSavePackage:', typeof onSavePackage);
   console.log('📝 Current packageForm:', packageForm);
@@ -282,6 +286,132 @@ export const renderAddPackage = (
                 }}
               />
               <p className="text-xs text-gray-500">Separate features with commas</p>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Content Selection */}
+        <Card className="bg-white border border-gray-200">
+          <CardHeader className="border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Package Content</h3>
+          </CardHeader>
+          <CardBody className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Select Content Items</label>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Available Content */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Available Content (Click to select/deselect)</h4>
+                  <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg bg-white">
+                    {availableContent && availableContent.length > 0 ? (
+                      <div className="divide-y divide-gray-100">
+                        {availableContent.map((content) => {
+                          const isSelected = packageForm.contentIds?.includes(content.id);
+                          const contentType = content.category === 'Audio Lessons' || content.type === 'audio' ? 'audio' : 
+                                            content.category === 'PP1 Program' ? 'pp1' : 'video';
+                          
+                          return (
+                            <div key={content.id} className={`p-3 hover:bg-gray-50 cursor-pointer ${
+                              isSelected ? 'bg-purple-50 border-l-4 border-purple-500' : ''
+                            }`} onClick={() => {
+                              const currentIds = packageForm.contentIds || [];
+                              if (isSelected) {
+                                setPackageForm({ ...packageForm, contentIds: currentIds.filter(id => id !== content.id) });
+                              } else {
+                                setPackageForm({ ...packageForm, contentIds: [...currentIds, content.id] });
+                              }
+                            }}>
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                  contentType === 'audio' ? 'bg-green-100' :
+                                  contentType === 'pp1' ? 'bg-orange-100' : 'bg-blue-100'
+                                }`}>
+                                  {contentType === 'audio' ? (
+                                    <Headphones className="h-4 w-4 text-green-600" />
+                                  ) : contentType === 'pp1' ? (
+                                    <BookOpen className="h-4 w-4 text-orange-600" />
+                                  ) : (
+                                    <Video className="h-4 w-4 text-blue-600" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 truncate">{content.title}</p>
+                                  <p className="text-xs text-gray-500">{content.category}</p>
+                                </div>
+                                {isSelected ? (
+                                  <X className="h-4 w-4 text-purple-600" />
+                                ) : (
+                                  <Plus className="h-4 w-4 text-gray-400" />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="text-gray-400 text-3xl mb-2">📦</div>
+                        <p className="text-gray-500 text-sm">No content available</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Selected Content */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Selected Content ({packageForm.contentIds?.length || 0})</h4>
+                  <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg bg-white">
+                    {packageForm.contentIds && packageForm.contentIds.length > 0 ? (
+                      <div className="divide-y divide-gray-100">
+                        {packageForm.contentIds.map((contentId: string) => {
+                          const content = availableContent?.find(c => c.id === contentId);
+                          if (!content) return null;
+                          
+                          const contentType = content.category === 'Audio Lessons' || content.type === 'audio' ? 'audio' : 
+                                            content.category === 'PP1 Program' ? 'pp1' : 'video';
+                          
+                          return (
+                            <div key={contentId} className="p-3 hover:bg-gray-50">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                  contentType === 'audio' ? 'bg-green-100' :
+                                  contentType === 'pp1' ? 'bg-orange-100' : 'bg-blue-100'
+                                }`}>
+                                  {contentType === 'audio' ? (
+                                    <Headphones className="h-4 w-4 text-green-600" />
+                                  ) : contentType === 'pp1' ? (
+                                    <BookOpen className="h-4 w-4 text-orange-600" />
+                                  ) : (
+                                    <Video className="h-4 w-4 text-blue-600" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 truncate">{content.title}</p>
+                                  <p className="text-xs text-gray-500">{content.category}</p>
+                                </div>
+                                <button 
+                                  onClick={() => {
+                                    const currentIds = packageForm.contentIds || [];
+                                    setPackageForm({ ...packageForm, contentIds: currentIds.filter((id: string) => id !== contentId) });
+                                  }}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="text-gray-400 text-3xl mb-2">📋</div>
+                        <p className="text-gray-500 text-sm">No content selected</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </CardBody>
         </Card>
