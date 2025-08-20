@@ -895,7 +895,6 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                 setVideoForm({
                   title: '',
                   description: '',
-                  price: 0,
                   category: '',
                   rating: 0,
                   duration: '',
