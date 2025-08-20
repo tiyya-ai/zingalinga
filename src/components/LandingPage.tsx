@@ -170,7 +170,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
                 </div>
                 <h3 className="text-xl sm:text-2xl font-mali font-bold mb-3 sm:mb-4">Audio Stories</h3>
                 <p className="font-mali text-yellow-100 leading-relaxed text-sm sm:text-base">
-                  Listen to Kiko & Tano explore the Magical Alphabet Kingdom.
+                  Listen to Kiki & Tano explore the Magical Alphabet Kingdom.
                 </p>
               </div>
             </div>
