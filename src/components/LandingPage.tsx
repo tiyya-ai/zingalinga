@@ -101,39 +101,34 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
             Fun learning for kids ages 3-6
           </p>
 
+          <div className="flex justify-center px-4 mt-8">
+            <div className="aspect-video w-full max-w-2xl">
+              <iframe
+                src="https://player.vimeo.com/video/1109185849?autoplay=0&loop=0&title=0&byline=0&portrait=0"
+                className="w-full h-full rounded-2xl"
+                frameBorder="0"
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen
+                title="Zingalinga Demo Video"
+              ></iframe>
+            </div>
+          </div>
 
-          
-          <div className="flex flex-col lg:flex-row gap-6 justify-center items-center px-4">
-            <div className="flex flex-col sm:flex-row gap-4 items-center">
-              <button 
-                onClick={() => {
-                  const packagesSection = document.getElementById('modules');
-                  if (packagesSection) {
-                    packagesSection.scrollIntoView({ behavior: 'smooth' });
-                  } else if (onPackagesClick) {
-                    onPackagesClick();
-                  }
-                }}
-                className="w-full sm:w-auto bg-gradient-to-r from-brand-yellow to-brand-red text-white font-mali font-bold text-base sm:text-lg md:text-xl py-3 sm:py-4 md:py-5 px-6 sm:px-8 md:px-14 rounded-full hover:from-brand-yellow hover:to-brand-red transform hover:scale-110 transition-all duration-300 shadow-2xl flex items-center justify-center gap-2 sm:gap-3"
-              >
-                <Play className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                Start Adventure
-              </button>
-            </div>
-            
-            <div className="bg-white rounded-2xl p-4 shadow-2xl border border-gray-200">
-              <div className="aspect-video w-80 max-w-full">
-                <iframe
-                  src="https://player.vimeo.com/video/1109185849?autoplay=0&loop=0&title=0&byline=0&portrait=0"
-                  className="w-full h-full rounded-xl"
-                  frameBorder="0"
-                  allow="autoplay; fullscreen; picture-in-picture"
-                  allowFullScreen
-                  title="Zingalinga Demo Video"
-                ></iframe>
-              </div>
-              <p className="text-center font-mali text-gray-600 text-sm mt-2">Watch our demo!</p>
-            </div>
+          <div className="flex justify-center mt-12">
+            <button 
+              onClick={() => {
+                const packagesSection = document.getElementById('modules');
+                if (packagesSection) {
+                  packagesSection.scrollIntoView({ behavior: 'smooth' });
+                } else if (onPackagesClick) {
+                  onPackagesClick();
+                }
+              }}
+              className="bg-gradient-to-r from-brand-yellow to-brand-red text-white font-mali font-bold text-base sm:text-lg md:text-xl py-3 sm:py-4 md:py-5 px-6 sm:px-8 md:px-14 rounded-full hover:from-brand-yellow hover:to-brand-red transform hover:scale-110 transition-all duration-300 shadow-2xl flex items-center justify-center gap-2 sm:gap-3"
+            >
+              <Play className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+              Start Adventure
+            </button>
           </div>
         </div>
       </section>
