@@ -8,12 +8,16 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: Trigger VPS Deployment
+    - name: Deploy to VPS
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: 109.199.106.28
-        username: root
-        key: ${{ secrets.VPS_SSH_KEY }}
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        password: ${{ secrets.VPS_PASSWORD }}
         script: |
-          mkdir -p /var/www/update
-          echo "Deployment triggered at $(date)"
+          cd /var/www/zinga-linga || mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
+          git pull origin main || git clone https://github.com/tiyya-ai/zingalinga.git .
+          npm install
+          npm run build
+          pm2 restart zinga-linga || pm2 start npm --name "zinga-linga" -- start
+          echo "Deployment complete at $(date)"
