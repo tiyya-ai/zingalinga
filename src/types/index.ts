@@ -130,7 +130,7 @@ export interface Purchase {
   purchaseDate: string;
   createdAt?: string;
   completedAt?: string;
-  type?: 'video' | 'product' | 'bundle';
+  type?: 'video' | 'product' | 'bundle' | 'upgrade';
 }
 
 export interface Analytics {

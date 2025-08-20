@@ -839,24 +839,7 @@ class VPSDataStore {
     }
   }
 
-  async updatePackage(packageData: any): Promise<boolean> {
-    try {
-      const data = await this.loadData();
-      data.packages = data.packages || [];
-      const index = data.packages.findIndex(p => p.id === packageData.id);
-      
-      if (index !== -1) {
-        data.packages[index] = { ...data.packages[index], ...packageData, updatedAt: new Date().toISOString() };
-      } else {
-        data.packages.push({ ...packageData, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-      }
-      
-      return await this.saveData(data);
-    } catch (error) {
-      console.error('Error updating package:', error);
-      return false;
-    }
-  }
+
 
   // Categories management
   async getCategories(): Promise<string[]> {
@@ -1099,18 +1082,7 @@ class VPSDataStore {
     };
   }
 
-  // Package management methods
-  async getPackages(): Promise<any[]> {
-    try {
-      const data = await this.loadData();
-      const packages = data.packages || [];
-      console.log('📦 Retrieved packages:', packages.length);
-      return packages;
-    } catch (error) {
-      console.error('Error getting packages:', error);
-      return [];
-    }
-  }
+
 
   async addPackage(packageData: any): Promise<boolean> {
     try {

@@ -6,8 +6,9 @@ import { vpsDataStore } from '../utils/vpsDataStore';
 
 interface PackagesPageProps {
   currentUser?: any;
-  onLoginClick: () => void;
+  onLoginClick?: () => void;
   onPurchase?: (packageId: string) => void;
+  onBack?: () => void;
 }
 
 export const PackagesPage: React.FC<PackagesPageProps> = ({ 
@@ -56,7 +57,7 @@ export const PackagesPage: React.FC<PackagesPageProps> = ({
 
   const handlePurchase = (packageId: string) => {
     if (!currentUser) {
-      onLoginClick();
+      if (onLoginClick) onLoginClick();
       return;
     }
     
@@ -225,7 +226,7 @@ export const PackagesPage: React.FC<PackagesPageProps> = ({
             <p className="text-xl font-mali mb-6">
               Join thousands of families already exploring with Kiki and Tano!
             </p>
-            {!currentUser && (
+            {!currentUser && onLoginClick && (
               <button 
                 onClick={onLoginClick}
                 className="bg-white text-green-600 font-mali font-bold text-xl py-4 px-12 rounded-full hover:bg-gray-100 transform hover:scale-110 transition-all duration-300 shadow-2xl"
