@@ -26,9 +26,9 @@ jobs:
     - name: SSH and deploy
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: 109.199.106.28
-        username: root
-        password: Secureweb25
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        password: ${{ secrets.VPS_PASSWORD }}
         script: |
           cd /var/www/zinga-linga || mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
           git pull origin main || git clone https://github.com/${{ github.repository }} .
