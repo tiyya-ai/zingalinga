@@ -5,7 +5,6 @@ export interface UploadFormData {
   description: string;
   videoFile: File | null;
   category: string;
-  ageGroup: string;
   price: number;
 }
 
@@ -67,7 +66,6 @@ export const processRealUpload = async (
       price: formData.price,
       originalPrice: formData.price,
       category: formData.category,
-      ageRange: formData.ageGroup,
       videoUrl: videoUrl,
       thumbnail: thumbnailUrl,
       features: [],

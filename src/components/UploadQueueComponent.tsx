@@ -50,7 +50,6 @@ interface UploadForm {
   description: string;
   videoFile: File | null;
   category: string;
-  ageGroup: string;
   price: number;
 }
 
@@ -113,7 +112,6 @@ export default function UploadQueueComponent({
         price: formData.price,
         originalPrice: formData.price,
         category: formData.category,
-        ageRange: formData.ageGroup,
         videoUrl: videoUrl,
         thumbnail: thumbnailUrl,
         features: [],
@@ -197,7 +195,6 @@ export default function UploadQueueComponent({
       description: '',
       videoFile: null,
       category: 'educational',
-      ageGroup: '3-8 years',
       price: 0
     });
   };
@@ -221,7 +218,6 @@ export default function UploadQueueComponent({
         description: '',
         videoFile: null, // You'd need to store the original file
         category: 'educational',
-        ageGroup: '3-8 years',
         price: 0
       };
       processRealUpload(sanitizedUploadId, retryFormData);
@@ -393,28 +389,16 @@ export default function UploadQueueComponent({
                 value={uploadForm.description}
                 onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
               />
-              <div className="grid grid-cols-2 gap-4">
-                <Select
-                  label="Category"
-                  aria-label="Select video category"
-                  selectedKeys={[uploadForm.category]}
-                  onSelectionChange={(keys) => setUploadForm({ ...uploadForm, category: Array.from(keys)[0] as string })}
-                >
-                  <SelectItem key="educational" value="educational">Educational</SelectItem>
-                  <SelectItem key="entertainment" value="entertainment">Entertainment</SelectItem>
-                  <SelectItem key="interactive" value="interactive">Interactive</SelectItem>
-                </Select>
-                <Select
-                  label="Age Group"
-                  aria-label="Select target age group"
-                  selectedKeys={[uploadForm.ageGroup]}
-                  onSelectionChange={(keys) => setUploadForm({ ...uploadForm, ageGroup: Array.from(keys)[0] as string })}
-                >
-                  <SelectItem key="3-5 years" value="3-5 years">3-5 years</SelectItem>
-                  <SelectItem key="6-8 years" value="6-8 years">6-8 years</SelectItem>
-                  <SelectItem key="9-12 years" value="9-12 years">9-12 years</SelectItem>
-                </Select>
-              </div>
+              <Select
+                label="Category"
+                aria-label="Select video category"
+                selectedKeys={[uploadForm.category]}
+                onSelectionChange={(keys) => setUploadForm({ ...uploadForm, category: Array.from(keys)[0] as string })}
+              >
+                <SelectItem key="educational" value="educational">Educational</SelectItem>
+                <SelectItem key="entertainment" value="entertainment">Entertainment</SelectItem>
+                <SelectItem key="interactive" value="interactive">Interactive</SelectItem>
+              </Select>
               <Input
                 label="Price"
                 type="number"

@@ -60,8 +60,7 @@
       "estimatedDuration": "15:30",
       "createdAt": "2025-01-20T10:00:00.000Z",
       "isActive": true,
-      "rating": 4.5,
-      "ageRange": "3-8 years"
+      "rating": 4.5
     },
     {
       "id": "bb1_lesson_001",
@@ -78,7 +77,6 @@
       "isActive": true,
       "isVisible": true,
       "rating": 4.8,
-      "ageRange": "3-5 years",
       "tags": [
         "letters",
         "alphabet",
@@ -101,16 +99,13 @@
       "isActive": true,
       "isVisible": true,
       "rating": 4.7,
-      "ageRange": "3-5 years",
       "tags": [
         "numbers",
         "counting",
         "basic",
         "bb1"
       ],
-      "ageGroup": "3-5 years",
       "videoType": "youtube",
-      "language": "English",
       "updatedAt": "2025-08-13T20:49:16.286Z",
       "audioUrl": ""
     },
@@ -129,7 +124,6 @@
       "isActive": true,
       "isVisible": true,
       "rating": 4.9,
-      "ageRange": "5-8 years",
       "tags": [
         "reading",
         "comprehension",
@@ -188,10 +182,7 @@
       "fullContent": [],
       "difficulty": "beginner",
       "audioUrl": "",
-      "ageGroup": "6-12 years",
-      "videoType": "external",
-      "language": "English",
-      "ageRange": "9-21 Yeras"
+      "videoType": "external"
     }
   ],
   "purchases": [
