@@ -115,12 +115,12 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         // Auto-process YouTube video
         const videoInfo = await fetchYouTubeVideoInfo(youtubeId);
         console.log('YouTube video info loaded:', videoInfo.title);
-        setDetectedDuration(videoInfo.duration);
+        setDetectedDuration(videoInfo.duration || '5:00');
         
         onVideoUploaded({
           title: videoInfo.title,
           videoUrl: processedUrl,
-          duration: videoInfo.duration,
+          duration: videoInfo.duration || '5:00',
           thumbnail: `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`
         });
       } else if (vimeoId) {
@@ -128,6 +128,7 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         setUrlThumbnail(`https://vumbnail.com/${vimeoId}.jpg`);
         console.log('Vimeo video preview set');
         
+        let vimeoDuration = '5:00';
         // Auto-process Vimeo video with duration detection
         try {
           const vimeoResponse = await fetch(`https://vimeo.com/api/oembed.json?url=https://vimeo.com/${vimeoId}`);
@@ -136,8 +137,8 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
             if (vimeoData.duration) {
               const minutes = Math.floor(vimeoData.duration / 60);
               const seconds = vimeoData.duration % 60;
-              const duration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-              setDetectedDuration(duration);
+              vimeoDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+              setDetectedDuration(vimeoDuration);
             }
           }
         } catch (error) {
@@ -147,7 +148,7 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
         onVideoUploaded({
           title: 'Vimeo Video',
           videoUrl: processedUrl,
-          duration: detectedDuration || '',
+          duration: vimeoDuration,
           thumbnail: `https://vumbnail.com/${vimeoId}.jpg`
         });
       } else if (googleDriveId) {
@@ -230,10 +231,21 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
           onVideoUploaded({
             title: 'Video',
             videoUrl: processedUrl,
-            duration: '' // No fake duration
+            duration: '5:00' // Default duration
           });
         };
         video.src = url;
+      } else if (url.startsWith('http')) {
+        // Handle other external URLs
+        setUrlPreview(null);
+        setUrlThumbnail(null);
+        console.log('External URL detected, auto-processing');
+        
+        onVideoUploaded({
+          title: 'External Video',
+          videoUrl: processedUrl,
+          duration: '5:00'
+        });
       } else {
         setUrlPreview(null);
         setUrlThumbnail(null);
@@ -405,7 +417,7 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
             </div>
 
             
-            {/* Auto-processed message for YouTube/Vimeo */}
+            {/* Auto-processed message for YouTube/Vimeo/Google Drive */}
             {(urlPreview?.includes('youtube.com/embed') || urlPreview?.includes('player.vimeo.com') || urlPreview?.includes('drive.google.com')) && (
               <div className="flex justify-center mt-4">
                 <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2">
@@ -413,6 +425,17 @@ export default function SimpleVideoUploader({ onVideoUploaded, initialData }: Si
                   {detectedDuration && (
                     <p className="text-xs text-green-600 mt-1">⏱️ Duration: {detectedDuration}</p>
                   )}
+                  <p className="text-xs text-green-600 mt-1">You can now fill in the title, category, and other details to save your video.</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Processing message for external URLs */}
+            {videoUrl && !urlPreview && videoUrl.startsWith('http') && (
+              <div className="flex justify-center mt-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                  <p className="text-sm text-blue-700 font-medium">✓ External video URL processed</p>
+                  <p className="text-xs text-blue-600 mt-1">You can now fill in the title, category, and other details to save your video.</p>
                 </div>
               </div>
             )}

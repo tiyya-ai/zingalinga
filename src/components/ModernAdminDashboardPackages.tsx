@@ -316,7 +316,7 @@ export const renderAddPackage = (
                             }`} onClick={() => {
                               const currentIds = packageForm.contentIds || [];
                               if (isSelected) {
-                                setPackageForm({ ...packageForm, contentIds: currentIds.filter(id => id !== content.id) });
+                                setPackageForm({ ...packageForm, contentIds: currentIds.filter((id: string) => id !== content.id) });
                               } else {
                                 setPackageForm({ ...packageForm, contentIds: [...currentIds, content.id] });
                               }

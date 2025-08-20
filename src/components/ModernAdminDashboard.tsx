@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { realDataAnalytics } from '../utils/realDataAnalytics';
 import {
   Card,
@@ -101,6 +101,140 @@ import { vpsDataStore } from '../utils/vpsDataStore';
 import { UserManagement } from './UserManagement';
 import { Module } from '../types';
 import { SuccessModal } from './SuccessModal';
+
+// Type definitions
+interface Package {
+  id: string;
+  name: string;
+  price: number;
+  isActive: boolean;
+  icon?: string;
+  description?: string;
+  type?: string;
+  features?: string;
+  isPopular?: boolean;
+  coverImage?: string;
+  contentIds?: string[];
+}
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+  lastLogin?: string;
+  status: 'active' | 'inactive' | 'suspended';
+  role: 'user' | 'admin' | 'moderator';
+  country?: string;
+  location?: string;
+  avatar?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  subscription?: 'free' | 'basic' | 'premium' | 'family';
+  totalSpent?: number;
+}
+
+interface Order {
+  id: string;
+  amount: number;
+  date: Date;
+  customer: { name: string; email: string };
+  item: { name: string; count: number };
+  status: string;
+  paymentMethod: string;
+  transactionId: string;
+}
+
+interface Subscription {
+  id: string;
+  userId: string;
+  status: string;
+}
+
+interface Transaction {
+  id: string;
+  amount: number;
+  type: string;
+}
+
+interface Comment {
+  id: string;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
+interface FlaggedContent {
+  id: string;
+  type: string;
+  reason: string;
+}
+
+interface UploadItem {
+  id: string;
+  filename: string;
+  status: string;
+  title?: string;
+  name?: string;
+  category?: string;
+  progress?: number;
+  size?: number;
+  type?: string;
+  formData?: any;
+  videoUrl?: string;
+  localUrl?: string;
+}
+
+interface UploadQueueItem {
+  id: string;
+  filename: string;
+  status: string;
+  title?: string;
+  name?: string;
+  category?: string;
+  progress?: number;
+  size?: number;
+  type?: string;
+  formData?: any;
+  videoUrl?: string;
+  localUrl?: string;
+}
+
+interface AccessLog {
+  id: string;
+  userId: string;
+  action: string;
+  timestamp: string;
+}
+
+interface ChildProfile {
+  id: string;
+  name: string;
+  parentId: string;
+  age: number;
+  parentName: string;
+  progress: number;
+}
+
+interface ContentBundle {
+  id: string;
+  name: string;
+  items: string[];
+  description: string;
+  price: number;
+  discount: number;
+  category: string;
+  coverImage: string;
+  selectedVideos: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface UserProgress {
+  id: string;
+  userId: string;
+  moduleId: string;
+  progress: number;
+}
 import { renderAddPackage as renderAddPackageComponent, renderAllPackages as renderAllPackagesComponent, renderLearningPackages as renderLearningPackagesComponent } from './ModernAdminDashboardPackages';
 import { renderAddBundle as renderAddBundleComponent, renderAllBundles as renderAllBundlesComponent } from './ModernAdminDashboardBundles';
 
@@ -112,7 +246,7 @@ const AdminSuccessModal = ({ isOpen, onClose, message }: { isOpen: boolean; onCl
           <CheckCircle className="h-10 w-10 text-green-600" />
         </div>
         <h3 className="text-lg font-semibold text-gray-900 mb-2">Success!</h3>
-        <p className="text-gray-600">{message}</p>
+        <p className="text-gray-600">{message.replace(/<[^>]*>/g, '')}</p>
       </ModalBody>
       <ModalFooter className="justify-center">
         <Button color="success" onPress={onClose}>OK</Button>
@@ -122,8 +256,15 @@ const AdminSuccessModal = ({ isOpen, onClose, message }: { isOpen: boolean; onCl
 );
 import SimpleVideoUploader from './SimpleVideoUploader';
 
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 interface ModernAdminDashboardProps {
-  user: any;
+  currentUser: AdminUser;
   onLogout: () => void;
   onNavigate?: (page: string) => void;
 }
@@ -137,29 +278,29 @@ interface SidebarItem {
   color?: string;
 }
 
-export default function ModernAdminDashboard({ user, onLogout, onNavigate }: ModernAdminDashboardProps) {
+export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate }: ModernAdminDashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
   const [activeSection, setActiveSection] = useState('overview');
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
-  // Sample data states
+  // Data states with proper typing
   const [videos, setVideos] = useState<Module[]>([]);
-  const [packages, setPackages] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
-  const [subscriptions, setSubscriptions] = useState<any[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [comments, setComments] = useState<any[]>([]);
-  const [flaggedContent, setFlaggedContent] = useState<any[]>([]);
-  const [uploadQueue, setUploadQueue] = useState<any[]>([]);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [flaggedContent, setFlaggedContent] = useState<FlaggedContent[]>([]);
+  const [uploadQueue, setUploadQueue] = useState<UploadItem[]>([]);
   const [uploadQueueSearch, setUploadQueueSearch] = useState('');
-  const [accessLogs, setAccessLogs] = useState<any[]>([]);
-  const [childrenProfiles, setChildrenProfiles] = useState<any[]>([]);
+  const [accessLogs, setAccessLogs] = useState<AccessLog[]>([]);
+  const [childrenProfiles, setChildrenProfiles] = useState<ChildProfile[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [contentBundles, setContentBundles] = useState<any[]>([]);
-  const [userProgress, setUserProgress] = useState<any[]>([]);
+  const [contentBundles, setContentBundles] = useState<ContentBundle[]>([]);
+  const [userProgress, setUserProgress] = useState<UserProgress[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editCategoryValue, setEditCategoryValue] = useState('');
@@ -179,6 +320,18 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [notifications, setNotifications] = useState<any[]>([]);
 
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, message: string, onConfirm: () => void} | null>(null);
+
+  // Helper function to show toast notifications instead of alerts
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  // Helper function to show confirmation dialog instead of confirm()
+  const showConfirm = (message: string, onConfirm: () => void) => {
+    setConfirmDialog({ isOpen: true, message, onConfirm });
+  };
   
   // Generate real notifications
   useEffect(() => {
@@ -236,16 +389,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   const [dataLoaded, setDataLoaded] = useState(true);
   const [analyticsActiveTab, setAnalyticsActiveTab] = useState('overview');
 
-  const [dashboardStats, setDashboardStats] = useState({
-    totalUsers: 0,
-    activeUsers: 0,
-    totalVideos: 0,
-    totalRevenue: 0,
-    conversionRate: 0
-  });
-
-  // Update dashboard stats when data changes
-  useEffect(() => {
+  // Memoized dashboard stats calculation for performance
+  const dashboardStats = useMemo(() => {
     const totalRevenue = orders.reduce((sum, order) => sum + order.amount, 0);
     const activeUsers = users.filter(user => {
       const lastLogin = new Date(user.lastLogin || user.createdAt);
@@ -253,13 +398,13 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       return lastLogin >= oneWeekAgo;
     }).length;
 
-    setDashboardStats({
+    return {
       totalUsers: users.length,
       activeUsers: activeUsers,
       totalVideos: videos.length,
       totalRevenue: totalRevenue,
       conversionRate: users.length > 0 ? (orders.length / users.length) * 100 : 0
-    });
+    };
   }, [users, videos, orders]);
 
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
@@ -385,7 +530,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     videoType: 'upload',
     tags: '',
     language: 'English',
-    status: 'active'
+    status: 'active',
+    packageId: ''
   });
 
   // Cleanup blob URLs on unmount
@@ -444,9 +590,14 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         id: user.id,
         name: user.name || user.username || 'Unknown User',
         email: user.email,
-        role: user.role || 'user',
+        role: (user.role || 'user') as 'user' | 'admin' | 'moderator',
         createdAt: user.createdAt,
-        totalSpent: user.totalSpent || 0
+        totalSpent: user.totalSpent || 0,
+        status: (user.status || 'active') as 'active' | 'inactive' | 'suspended',
+        avatar: user.avatar,
+        phone: user.phone,
+        dateOfBirth: user.dateOfBirth,
+        subscription: (user.subscription as 'free' | 'basic' | 'premium' | 'family') || 'free'
       })));
 
       // Set real videos data with proper URL handling
@@ -498,7 +649,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       setOrders(convertedOrders);
 
       // Set real upload queue
-      setUploadQueue(realUploadQueue || []);
+      setUploadQueue((realUploadQueue || []).map((item: any) => ({
+        ...item,
+        filename: item.filename || item.name || item.title || 'Unknown'
+      } as UploadItem)));
 
       // Dashboard stats are now calculated automatically in useEffect
       console.log('VPS Data loaded:', { users: realUsers.length, videos: processedVideos.length, orders: convertedOrders.length });
@@ -735,6 +889,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   dateOfBirth: '',
                   subscription: 'free'
                 });
+              } else if (item.id === 'add-video') {
+                // Handle add video specifically
+                handleAddVideo();
               } else if (item.id === 'add-package') {
                 setEditingPackage(null);
                 setPackageForm({
@@ -836,7 +993,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-                Welcome back, {user?.name || 'Admin'}
+                Welcome back, {currentUser?.name || 'Admin'}
               </h1>
               <p className="text-gray-600">
                 Here's an overview of your platform's performance today.
@@ -1625,7 +1782,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     isActive: true,
     isPopular: false,
     coverImage: '',
-    contentIds: []
+    contentIds: [] as string[]
   });
   const [editingPackage, setEditingPackage] = useState<any>(null);
   
@@ -1667,7 +1824,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const handleScheduleContent = async () => {
     if (!scheduleForm.contentId || !scheduleForm.publishDate || !scheduleForm.publishTime) {
-      alert('Please fill in all scheduling fields');
+      showToast('Please fill in all scheduling fields', 'error');
       return;
     }
 
@@ -1681,7 +1838,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     if (success) {
       const updatedScheduled = await vpsDataStore.getScheduledContent();
       setScheduledContent(updatedScheduled);
-      alert('- Content scheduled successfully!');
+      showToast('Content scheduled successfully!', 'success');
       
       // Reset form
       setScheduleForm({
@@ -1691,7 +1848,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
         status: 'scheduled'
       });
     } else {
-      alert('- Failed to schedule content');
+      showToast('Failed to schedule content', 'error');
     }
   };
 
@@ -1700,9 +1857,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
     if (success) {
       const updatedScheduled = await vpsDataStore.getScheduledContent();
       setScheduledContent(updatedScheduled);
-      alert('- Schedule cancelled successfully!');
+      showToast('Schedule cancelled successfully!', 'success');
     } else {
-      alert('- Failed to cancel schedule');
+      showToast('Failed to cancel schedule', 'error');
     }
   };
 
@@ -1793,9 +1950,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   };
 
   const handleAddVideo = () => {
-    console.log('Adding new video'); // Debug log
+    console.log('🎬 Adding new video - resetting form and switching to add-video section');
     setEditingVideo(null);
-    setVideoForm({
+    
+    // Reset the video form completely
+    const resetForm = {
       title: '',
       description: '',
       price: 0,
@@ -1809,8 +1968,14 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       tags: '',
       language: 'English',
       status: 'active'
-    });
+    };
+    
+    setVideoForm(resetForm);
+    console.log('✅ Video form reset:', resetForm);
+    
+    // Switch to add video section
     setActiveSection('add-video');
+    console.log('✅ Active section set to: add-video');
   };
 
 
@@ -1876,6 +2041,28 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       return data[0]?.thumbnail_large || '';
     } catch {
       return '';
+    }
+  };
+
+  const updatePackageContent = async (packageId: string, videoId: string, action: 'add' | 'remove') => {
+    try {
+      const data = await vpsDataStore.loadData();
+      const packageIndex = data.packages?.findIndex(p => p.id === packageId);
+      
+      if (packageIndex !== undefined && packageIndex >= 0 && data.packages) {
+        const pkg = data.packages[packageIndex];
+        pkg.contentIds = pkg.contentIds || [];
+        
+        if (action === 'add' && !pkg.contentIds.includes(videoId)) {
+          pkg.contentIds.push(videoId);
+        } else if (action === 'remove') {
+          pkg.contentIds = pkg.contentIds.filter(id => id !== videoId);
+        }
+        
+        await vpsDataStore.updatePackage(pkg);
+      }
+    } catch (error) {
+      console.error('Error updating package content:', error);
     }
   };
 
@@ -1977,8 +2164,14 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
           isActive: videoForm.status === 'active',
           isVisible: videoForm.status === 'active',
+          packageId: videoForm.packageId || null,
           updatedAt: new Date().toISOString()
         };
+        
+        // Update package content if assigned
+        if (videoForm.packageId) {
+          await updatePackageContent(videoForm.packageId, editingVideo.id, 'add');
+        }
         
         console.log('Ã°Å¸â€™Â¾ Saving updated video to data store...');
         const success = await vpsDataStore.updateProduct(updatedVideo);
@@ -2013,9 +2206,15 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
           isActive: videoForm.status === 'active',
           isVisible: videoForm.status === 'active',
+          packageId: videoForm.packageId || null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
+        
+        // Update package content if assigned
+        if (videoForm.packageId) {
+          await updatePackageContent(videoForm.packageId, newVideo.id, 'add');
+        }
         
         console.log('Ã°Å¸â€™Â¾ Saving new video to data store...');
         let success = await vpsDataStore.addProduct(newVideo);
@@ -2137,8 +2336,17 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const renderEditVideo = () => (
     <div className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="flex items-center space-x-2">
+          <PackageIcon className="h-5 w-5 text-blue-600" />
+          <h3 className="font-semibold text-blue-800">Package Content Creation</h3>
+        </div>
+        <p className="text-blue-700 text-sm mt-1">
+          This video will be available for inclusion in learning packages. Videos are not sold individually.
+        </p>
+      </div>
       <PageHeader 
-        title={editingVideo ? `Edit Video: ${editingVideo.title}` : 'Add New Video'}
+        title={editingVideo ? `Edit Video: ${editingVideo.title}` : 'Add New Video Content'}
         actions={
           <div className="flex gap-2">
             {editingVideo && (
@@ -2193,7 +2401,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Price *</label>
+                  <label className="text-sm font-medium text-gray-700">Package Value *</label>
                   <Input
                     type="number"
                     value={videoForm.price.toString()}
@@ -2207,6 +2415,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                       inputWrapper: "bg-white border-2 border-gray-200 hover:border-blue-400 focus-within:border-blue-500 shadow-sm hover:shadow-md transition-all duration-200 flex items-center"
                     }}
                   />
+                  <p className="text-xs text-gray-500">Value when included in packages (not sold individually)</p>
 
                 </div>
                 <div className="space-y-2">
@@ -2509,7 +2718,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
               className="w-full bg-blue-600 text-white hover:bg-blue-700 h-12 text-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               onPress={handleSaveVideo}
               startContent={editingVideo ? <Edit className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-              isDisabled={!videoForm.title.trim() || !videoForm.category || !videoForm.videoUrl || !videoForm.duration.trim()}
+              isDisabled={!videoForm.title.trim() || !videoForm.category || !videoForm.videoUrl}
               aria-label={editingVideo ? 'Update video' : 'Create new video'}
             >
               {editingVideo ? 'Update Video' : 'Create Video'}
@@ -2541,10 +2750,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 Quick Tips
               </h4>
               <ul className="text-xs text-blue-800 space-y-1">
-                <li>- Use descriptive titles for better discoverability</li>
-                <li>- Add relevant tags separated by commas</li>
-                <li>- Upload high-quality videos for best user experience</li>
-                <li>- Thumbnails should be 1280x720 for best quality</li>
+                <li>- Videos are content for packages, not individual sales</li>
+                <li>- Set package value to help with pricing decisions</li>
+                <li>- Use descriptive titles for better package organization</li>
+                <li>- High-quality content increases package value</li>
               </ul>
             </CardBody>
           </Card>
@@ -2630,19 +2839,36 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
 
   const renderAllVideos = () => (
     <div className="space-y-6">
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <div className="flex items-center space-x-2">
+          <PackageIcon className="h-5 w-5 text-yellow-600" />
+          <h3 className="font-semibold text-yellow-800">Package-Only Sales Model</h3>
+        </div>
+        <p className="text-yellow-700 text-sm mt-1">
+          Videos are sold exclusively as packages. Individual video pricing is for package creation only.
+        </p>
+      </div>
       <PageHeader 
-        title="All Videos" 
+        title="All Videos (Package Content)" 
         actions={
           <div className="flex gap-2">
             {selectedVideos.length > 0 && (
               <div className="flex gap-2">
                 <Button 
-                  className="bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                  startContent={<DollarSign className="h-4 w-4" />}
-                  onPress={handleBulkPriceUpdate}
-                  aria-label={`Update price for ${selectedVideos.length} selected videos`}
+                  className="bg-purple-600 text-white hover:bg-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                  startContent={<PackageIcon className="h-4 w-4" />}
+                  onPress={() => {
+                    // Navigate to package creation with selected videos
+                    setPackageForm({
+                      ...packageForm,
+                      contentIds: selectedVideos,
+                      name: `Package with ${selectedVideos.length} videos`
+                    });
+                    setActiveSection('add-package');
+                  }}
+                  aria-label={`Create package with ${selectedVideos.length} selected videos`}
                 >
-                  Update Price ({selectedVideos.length})
+                  Create Package ({selectedVideos.length})
                 </Button>
                 <Button 
                   className="bg-purple-600 text-white hover:bg-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
@@ -2681,7 +2907,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       <Card className="bg-white border border-gray-200">
         <CardHeader className="border-b border-gray-200 p-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 w-full">
-            <h3 className="text-lg font-semibold text-gray-900">Video Library ({videos.filter(v => v.category !== 'Audio Lessons' && v.type !== 'audio').length})</h3>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Video Content Library ({videos.filter(v => v.category !== 'Audio Lessons' && v.type !== 'audio').length})</h3>
+              <p className="text-sm text-gray-600">Content for package creation - not sold individually</p>
+            </div>
             <div className="flex gap-2">
               <Input
                 placeholder="Search videos..."
@@ -2732,7 +2961,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 </TableColumn>
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-left w-2/5">TITLE</TableColumn>
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-1/6">CATEGORY</TableColumn>
-                <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-1/6">PRICE</TableColumn>
+                <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-1/6">PACKAGE VALUE</TableColumn>
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-1/6">RATING</TableColumn>
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-1/6">ACTIONS</TableColumn>
               </TableHeader>
@@ -2789,8 +3018,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         {video.category || 'Uncategorized'}
                       </Chip>
                     </TableCell>
-                    <TableCell className="py-4 px-6 text-center font-semibold text-gray-900">
-                      {formatCurrency(video.price || 0)}
+                    <TableCell className="py-4 px-6 text-center">
+                      <div className="text-center">
+                        <span className="font-semibold text-gray-900">{formatCurrency(video.price || 0)}</span>
+                        <p className="text-xs text-gray-500">Package component</p>
+                      </div>
                     </TableCell>
                     <TableCell className="py-4 px-6 text-center">
                       <div className="flex items-center justify-center space-x-1">
@@ -2976,7 +3208,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                             avatar: user.avatar || '',
                             phone: user.phone || '',
                             dateOfBirth: user.dateOfBirth || '',
-                            subscription: user.subscription || 'free'
+                            subscription: (user.subscription as 'free' | 'basic' | 'premium' | 'family') || 'free'
                           });
                           onUserModalOpen();
                         }}
@@ -3392,9 +3624,9 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                         size="sm" 
                         variant="light"
                         onPress={() => {
-                          if (item.videoUrl || item.localUrl) {
-                            const url = item.videoUrl || item.localUrl;
-                            if (url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('http')) {
+                          if (item.videoUrl || (item as any).localUrl) {
+                            const url = item.videoUrl || (item as any).localUrl;
+                            if (url && (url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('http'))) {
                               window.open(url, '_blank');
                             } else {
                               alert('Preview not available - invalid URL format');
@@ -3415,7 +3647,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                             const success = await vpsDataStore.removeFromUploadQueue(item.id);
                             if (success) {
                               const updatedQueue = await vpsDataStore.getUploadQueue();
-                              setUploadQueue(updatedQueue);
+                              setUploadQueue(updatedQueue.map((item: any) => ({ ...item, filename: item.filename || item.name || 'Unknown' } as UploadItem)));
                             } else {
                               alert('Failed to delete upload');
                             }
@@ -3688,21 +3920,21 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   
   // Initialize profile form when user data is available
   useEffect(() => {
-    if (user) {
+    if (currentUser) {
       setProfileForm(prev => ({
         ...prev,
-        name: user.name || 'Admin',
-        email: user.email || 'admin@example.com'
+        name: currentUser.name || 'Admin',
+        email: currentUser.email || 'admin@example.com'
       }));
     }
-  }, [user]);
+  }, [currentUser]);
 
   const handleUpdateProfile = async () => {
     try {
       console.log('Ã°Å¸â€â€ž Starting profile update...', { 
         name: profileForm.name, 
         email: profileForm.email,
-        userId: user?.id,
+        userId: currentUser?.id,
         hasNewPassword: !!profileForm.newPassword
       });
       
@@ -3733,7 +3965,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       }
       
       // Ensure we have a valid user ID
-      if (!user?.id) {
+      if (!currentUser?.id) {
         setToast({message: 'User ID not found. Please log in again.', type: 'error'});
         setTimeout(() => setToast(null), 3000);
         return;
@@ -3752,7 +3984,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
       
       console.log('Ã°Å¸â€™Â¾ Updating user with data:', updateData);
       
-      const success = await vpsDataStore.updateUser(user.id, updateData);
+      const success = await vpsDataStore.updateUser(currentUser.id, updateData);
       
       console.log('Ã¢Å“â€¦ Update result:', success);
       
@@ -4053,8 +4285,8 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
           onPress={() => {
             // Reset form to original values
             setProfileForm({
-              name: user?.name || 'Admin',
-              email: user?.email || 'admin@example.com',
+              name: currentUser?.name || 'Admin',
+              email: currentUser?.email || 'admin@example.com',
               currentPassword: '',
               newPassword: '',
               confirmPassword: ''
@@ -4589,7 +4821,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   };
 
   // Package management functions
-  const handleEditPackage = (pkg: any) => {
+  const handleEditPackage = (pkg: Package) => {
     console.log('✏️ Editing package:', pkg);
     setPackageForm({
       name: pkg.name || '',
@@ -5808,6 +6040,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                   category: bundleForm.category,
                   coverImage: bundleForm.coverImage,
                   selectedVideos: bundleForm.selectedVideos,
+                  items: bundleForm.selectedVideos,
                   isActive: bundleForm.isActive,
                   createdAt: new Date().toISOString(),
                   updatedAt: new Date().toISOString()
@@ -6491,18 +6724,18 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
   };
 
   // User Management Functions
-  const handleEditUser = (user: any) => {
-    setEditingUser(user);
+  const handleEditUser = (userToEdit: User) => {
+    setEditingUser(userToEdit);
     setUserForm({
-      name: user.name || '',
-      email: user.email || '',
+      name: userToEdit.name || '',
+      email: userToEdit.email || '',
       password: '',
-      role: user.role || 'user',
-      status: user.status || 'active',
-      avatar: user.avatar || '',
-      phone: user.phone || '',
-      dateOfBirth: user.dateOfBirth || '',
-      subscription: user.subscription || 'free'
+      role: userToEdit.role || 'user',
+      status: userToEdit.status || 'active',
+      avatar: userToEdit.avatar || '',
+      phone: userToEdit.phone || '',
+      dateOfBirth: userToEdit.dateOfBirth || '',
+      subscription: userToEdit.subscription || 'free'
     });
     setActiveSection('add-user');
   };
@@ -7589,10 +7822,10 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <DropdownTrigger>
                   <div className="flex items-center space-x-2 cursor-pointer hover:bg-gray-800 rounded-lg p-2 transition-colors admin-header-profile">
                     <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center profile-icon">
-                      <span className="text-white text-sm font-medium">{(user?.name || 'Admin').charAt(0).toUpperCase()}</span>
+                      <span className="text-white text-sm font-medium">{(currentUser?.name || 'Admin').charAt(0).toUpperCase()}</span>
                     </div>
                     <div className="hidden md:block text-left profile-text ml-1">
-                      <p className="text-sm font-semibold text-white">{user?.name || 'Admin'}</p>
+                      <p className="text-sm font-semibold text-white">{currentUser?.name || 'Admin'}</p>
                     </div>
                   </div>
                 </DropdownTrigger>
@@ -7664,11 +7897,11 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                 <div className="bg-slate-800/60 rounded-xl p-3 border border-slate-700/50 backdrop-blur-sm">
                   <div className="flex items-center space-x-3 mb-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                      <span className="text-white text-sm font-bold">{(user?.name || 'Admin').charAt(0).toUpperCase()}</span>
+                      <span className="text-white text-sm font-bold">{(currentUser?.name || 'Admin').charAt(0).toUpperCase()}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">{user?.name || 'Admin'}</p>
-                      <p className="text-xs text-slate-400 truncate">{user?.email || 'admin@example.com'}</p>
+                      <p className="text-sm font-semibold text-white truncate">{currentUser?.name || 'Admin'}</p>
+                      <p className="text-xs text-slate-400 truncate">{currentUser?.email || 'admin@example.com'}</p>
                     </div>
                   </div>
                   <Button 
@@ -7687,7 +7920,7 @@ export default function ModernAdminDashboard({ user, onLogout, onNavigate }: Mod
                     className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform group relative"
                     title="Disconnect"
                   >
-                    <span className="text-white text-sm font-bold group-hover:hidden">{(user?.name || 'Admin').charAt(0).toUpperCase()}</span>
+                    <span className="text-white text-sm font-bold group-hover:hidden">{(currentUser?.name || 'Admin').charAt(0).toUpperCase()}</span>
                     <LogOut className="h-4 w-4 text-white hidden group-hover:block" />
                   </button>
                 </div>

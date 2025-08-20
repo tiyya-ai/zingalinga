@@ -94,7 +94,7 @@ interface AgeGroup {
     sharingEnabled: boolean;
     profileCustomization: boolean;
   };
-  videoCount: number;
+  packageCount: number;
   activeUsers: number;
   createdAt: string;
   updatedAt: string;
@@ -153,6 +153,8 @@ export default function AgeGroupsParentalControl() {
   const [parentalControls, setParentalControls] = useState<ParentalControl[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('age-groups');
+  const [editingAgeGroup, setEditingAgeGroup] = useState<AgeGroup | null>(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   useEffect(() => {
     loadAgeGroups();
@@ -162,127 +164,154 @@ export default function AgeGroupsParentalControl() {
   const loadAgeGroups = async () => {
     try {
       setLoading(true);
+      const data = await vpsDataStore.loadData();
       
-      // Use a more defensive approach to avoid circular dependencies
-      let data;
-      try {
-        data = await vpsDataStore.loadData();
-      } catch (error) {
-        console.warn('Failed to load data, using defaults:', error);
-        data = { modules: [], users: [] };
+      // Load saved age groups or use defaults
+      const savedAgeGroups = data.ageGroups || [];
+      
+      if (savedAgeGroups.length === 0) {
+        // Initialize with default age groups
+        const defaultAgeGroups: AgeGroup[] = [
+          {
+            id: 'toddlers',
+            name: 'Toddlers',
+            minAge: 2,
+            maxAge: 4,
+            description: 'Simple, colorful content for early development',
+            color: 'pink',
+            icon: 'baby',
+            contentFilters: {
+              allowedCategories: ['colors', 'shapes', 'animals', 'music'],
+              blockedKeywords: ['scary', 'complex', 'advanced'],
+              maxVideoLength: 10,
+              requireApproval: true
+            },
+            timeRestrictions: {
+              dailyLimit: 30,
+              weeklyLimit: 180,
+              allowedHours: {
+                start: '09:00',
+                end: '17:00'
+              },
+              weekendExtension: 15
+            },
+            features: {
+              downloadEnabled: true,
+              commentsEnabled: false,
+              sharingEnabled: false,
+              profileCustomization: false
+            },
+            packageCount: (data.packages || []).filter(p => p.ageGroups?.includes('2-4') || p.targetAge?.includes('toddlers')).length || 2,
+            activeUsers: 12,
+            createdAt: new Date('2024-01-01').toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'preschool',
+            name: 'Preschool',
+            minAge: 3,
+            maxAge: 5,
+            description: 'Educational content for preschool learning',
+            color: 'blue',
+            icon: 'user',
+            contentFilters: {
+              allowedCategories: ['alphabet', 'numbers', 'colors', 'shapes', 'animals', 'music', 'stories'],
+              blockedKeywords: ['violence', 'scary', 'complex'],
+              maxVideoLength: 15,
+              requireApproval: false
+            },
+            timeRestrictions: {
+              dailyLimit: 60,
+              weeklyLimit: 360,
+              allowedHours: {
+                start: '08:00',
+                end: '18:00'
+              },
+              weekendExtension: 30
+            },
+            features: {
+              downloadEnabled: true,
+              commentsEnabled: false,
+              sharingEnabled: true,
+              profileCustomization: true
+            },
+            packageCount: (data.packages || []).filter(p => p.ageGroups?.includes('3-5') || p.targetAge?.includes('preschool')).length || 3,
+            activeUsers: 18,
+            createdAt: new Date('2024-01-01').toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ];
+        
+        // Save default age groups
+        await saveAgeGroups(defaultAgeGroups);
+        setAgeGroups(defaultAgeGroups);
+      } else {
+        setAgeGroups(savedAgeGroups);
       }
-      
-      const realAgeGroups: AgeGroup[] = [
-        {
-          id: 'toddlers',
-          name: 'Toddlers',
-          minAge: 2,
-          maxAge: 4,
-          description: 'Simple, colorful content for early development',
-          color: 'pink',
-          icon: 'baby',
-          contentFilters: {
-            allowedCategories: ['colors', 'shapes', 'animals', 'music'],
-            blockedKeywords: ['scary', 'complex', 'advanced'],
-            maxVideoLength: 10,
-            requireApproval: true
-          },
-          timeRestrictions: {
-            dailyLimit: 30,
-            weeklyLimit: 180,
-            allowedHours: {
-              start: '09:00',
-              end: '17:00'
-            },
-            weekendExtension: 15
-          },
-          features: {
-            downloadEnabled: true,
-            commentsEnabled: false,
-            sharingEnabled: false,
-            profileCustomization: false
-          },
-          videoCount: (data.modules || []).filter(m => m.ageRange?.includes('2-4') || m.ageRange?.includes('3-5')).length || 5,
-          activeUsers: 12,
-          createdAt: new Date('2024-01-01').toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'preschool',
-          name: 'Preschool',
-          minAge: 3,
-          maxAge: 5,
-          description: 'Educational content for preschool learning',
-          color: 'blue',
-          icon: 'user',
-          contentFilters: {
-            allowedCategories: ['alphabet', 'numbers', 'colors', 'shapes', 'animals', 'music', 'stories'],
-            blockedKeywords: ['violence', 'scary', 'complex'],
-            maxVideoLength: 15,
-            requireApproval: false
-          },
-          timeRestrictions: {
-            dailyLimit: 60,
-            weeklyLimit: 360,
-            allowedHours: {
-              start: '08:00',
-              end: '18:00'
-            },
-            weekendExtension: 30
-          },
-          features: {
-            downloadEnabled: true,
-            commentsEnabled: false,
-            sharingEnabled: true,
-            profileCustomization: true
-          },
-          videoCount: (data.modules || []).filter(m => m.ageRange?.includes('3-5') || m.ageRange?.includes('3-8')).length || 8,
-          activeUsers: 18,
-          createdAt: new Date('2024-01-01').toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ];
-
-      setAgeGroups(realAgeGroups);
     } catch (error) {
       console.error('Error loading age groups:', error);
-      // Fallback to default data
-      setAgeGroups([
-        {
-          id: 'toddlers',
-          name: 'Toddlers',
-          minAge: 2,
-          maxAge: 4,
-          description: 'Simple, colorful content for early development',
-          color: 'pink',
-          icon: 'baby',
-          contentFilters: {
-            allowedCategories: ['colors', 'shapes', 'animals', 'music'],
-            blockedKeywords: ['scary', 'complex', 'advanced'],
-            maxVideoLength: 10,
-            requireApproval: true
-          },
-          timeRestrictions: {
-            dailyLimit: 30,
-            weeklyLimit: 180,
-            allowedHours: {
-              start: '09:00',
-              end: '17:00'
-            },
-            weekendExtension: 15
-          },
-          features: {
-            downloadEnabled: true,
-            commentsEnabled: false,
-            sharingEnabled: false,
-            profileCustomization: false
-          },
-          videoCount: 5,
-          activeUsers: 12,
-          createdAt: new Date('2024-01-01').toISOString(),
+      setAgeGroups([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveAgeGroups = async (ageGroupsToSave: AgeGroup[]) => {
+    try {
+      const data = await vpsDataStore.loadData();
+      data.ageGroups = ageGroupsToSave;
+      await vpsDataStore.saveData(data);
+      return true;
+    } catch (error) {
+      console.error('Error saving age groups:', error);
+      return false;
+    }
+  };
+
+  const handleSaveAgeGroup = async (ageGroup: AgeGroup) => {
+    try {
+      setLoading(true);
+      let updatedAgeGroups;
+      
+      if (editingAgeGroup) {
+        // Update existing age group
+        updatedAgeGroups = ageGroups.map(ag => 
+          ag.id === ageGroup.id ? { ...ageGroup, updatedAt: new Date().toISOString() } : ag
+        );
+      } else {
+        // Add new age group
+        const newAgeGroup = {
+          ...ageGroup,
+          id: `age_group_${Date.now()}`,
+          createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
-        }
-      ]);
+        };
+        updatedAgeGroups = [...ageGroups, newAgeGroup];
+      }
+      
+      const success = await saveAgeGroups(updatedAgeGroups);
+      if (success) {
+        setAgeGroups(updatedAgeGroups);
+        setEditingAgeGroup(null);
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error saving age group:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAgeGroup = async (ageGroupId: string) => {
+    try {
+      setLoading(true);
+      const updatedAgeGroups = ageGroups.filter(ag => ag.id !== ageGroupId);
+      const success = await saveAgeGroups(updatedAgeGroups);
+      if (success) {
+        setAgeGroups(updatedAgeGroups);
+      }
+    } catch (error) {
+      console.error('Error deleting age group:', error);
     } finally {
       setLoading(false);
     }
@@ -423,7 +452,14 @@ export default function AgeGroupsParentalControl() {
           <h2 className="text-2xl font-bold">Age Groups Management</h2>
           <p className="text-gray-600">Configure age-appropriate content and restrictions</p>
         </div>
-        <Button color="primary" startContent={<Plus className="h-4 w-4" />}>
+        <Button 
+          color="primary" 
+          startContent={<Plus className="h-4 w-4" />}
+          onPress={() => {
+            setEditingAgeGroup(null);
+            onOpen();
+          }}
+        >
           Add Age Group
         </Button>
       </div>
@@ -443,10 +479,22 @@ export default function AgeGroupsParentalControl() {
                   </div>
                 </div>
                 <div className="flex space-x-1">
-                  <Button size="sm" variant="light">
+                  <Button 
+                    size="sm" 
+                    variant="light"
+                    onPress={() => {
+                      setEditingAgeGroup(ageGroup);
+                      onOpen();
+                    }}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="light" color="danger">
+                  <Button 
+                    size="sm" 
+                    variant="light" 
+                    color="danger"
+                    onPress={() => handleDeleteAgeGroup(ageGroup.id)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -457,8 +505,8 @@ export default function AgeGroupsParentalControl() {
               
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">Videos Available</span>
-                  <Chip color="primary" size="sm">{ageGroup.videoCount}</Chip>
+                  <span className="text-sm text-gray-500">Learning Packages</span>
+                  <Chip color="primary" size="sm">{ageGroup.packageCount}</Chip>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-500">Active Users</span>
@@ -589,6 +637,23 @@ export default function AgeGroupsParentalControl() {
     </div>
   );
 
+  const renderAgeGroupModal = () => (
+    <Modal isOpen={isOpen} onClose={onClose} size="2xl">
+      <ModalContent>
+        <ModalHeader>
+          {editingAgeGroup ? 'Edit Age Group' : 'Add New Age Group'}
+        </ModalHeader>
+        <ModalBody>
+          <AgeGroupForm 
+            ageGroup={editingAgeGroup}
+            onSave={handleSaveAgeGroup}
+            onCancel={onClose}
+          />
+        </ModalBody>
+      </ModalContent>
+    </Modal>
+  );
+
   return (
     <div className="space-y-6" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>
       <div className="flex justify-between items-center">
@@ -621,6 +686,162 @@ export default function AgeGroupsParentalControl() {
           {renderParentalControlsTab()}
         </Tab>
       </Tabs>
+      
+      {renderAgeGroupModal()}
+    </div>
+  );
+}
+
+// Age Group Form Component
+function AgeGroupForm({ ageGroup, onSave, onCancel }: {
+  ageGroup: AgeGroup | null;
+  onSave: (ageGroup: AgeGroup) => void;
+  onCancel: () => void;
+}) {
+  const [formData, setFormData] = useState<Partial<AgeGroup>>({});
+
+  // Reset form data when ageGroup prop changes
+  useEffect(() => {
+    setFormData({
+      name: ageGroup?.name || '',
+      minAge: ageGroup?.minAge || 2,
+      maxAge: ageGroup?.maxAge || 4,
+      description: ageGroup?.description || '',
+      color: ageGroup?.color || '',
+      icon: ageGroup?.icon || '',
+      contentFilters: ageGroup?.contentFilters || {
+        allowedCategories: [],
+        blockedKeywords: [],
+        maxVideoLength: 15,
+        requireApproval: false
+      },
+      timeRestrictions: ageGroup?.timeRestrictions || {
+        dailyLimit: 60,
+        weeklyLimit: 420,
+        allowedHours: {
+          start: '08:00',
+          end: '18:00'
+        },
+        weekendExtension: 30
+      },
+      features: ageGroup?.features || {
+        downloadEnabled: true,
+        commentsEnabled: false,
+        sharingEnabled: true,
+        profileCustomization: true
+      },
+      packageCount: ageGroup?.packageCount || 0,
+      activeUsers: ageGroup?.activeUsers || 0
+    });
+  }, [ageGroup]);
+
+  const handleSubmit = () => {
+    if (!formData.name || !formData.description || !formData.color) return;
+    
+    const ageGroupData: AgeGroup = {
+      id: ageGroup?.id || '',
+      name: formData.name,
+      minAge: formData.minAge!,
+      maxAge: formData.maxAge!,
+      description: formData.description,
+      color: formData.color!,
+      icon: formData.icon!,
+      contentFilters: formData.contentFilters!,
+      timeRestrictions: formData.timeRestrictions!,
+      features: formData.features!,
+      packageCount: formData.packageCount!,
+      activeUsers: formData.activeUsers!,
+      createdAt: ageGroup?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    onSave(ageGroupData);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          label="Name"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          placeholder="Enter age group name"
+        />
+        <Select
+          label="Color"
+          placeholder="Select a color"
+          selectedKeys={formData.color ? [formData.color] : []}
+          onSelectionChange={(keys) => setFormData({ ...formData, color: Array.from(keys)[0] as string })}
+        >
+          <SelectItem key="blue" value="blue">Blue</SelectItem>
+          <SelectItem key="pink" value="pink">Pink</SelectItem>
+          <SelectItem key="green" value="green">Green</SelectItem>
+          <SelectItem key="purple" value="purple">Purple</SelectItem>
+          <SelectItem key="orange" value="orange">Orange</SelectItem>
+        </Select>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          type="number"
+          label="Min Age"
+          value={formData.minAge?.toString()}
+          onChange={(e) => setFormData({ ...formData, minAge: parseInt(e.target.value) })}
+        />
+        <Input
+          type="number"
+          label="Max Age"
+          value={formData.maxAge?.toString()}
+          onChange={(e) => setFormData({ ...formData, maxAge: parseInt(e.target.value) })}
+        />
+      </div>
+      
+      <Textarea
+        label="Description"
+        value={formData.description}
+        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+        placeholder="Describe this age group"
+      />
+      
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          type="number"
+          label="Daily Limit (minutes)"
+          value={formData.timeRestrictions?.dailyLimit?.toString()}
+          onChange={(e) => setFormData({ 
+            ...formData, 
+            timeRestrictions: { 
+              ...formData.timeRestrictions!, 
+              dailyLimit: parseInt(e.target.value) 
+            }
+          })}
+        />
+        <Input
+          type="number"
+          label="Max Video Length (minutes)"
+          value={formData.contentFilters?.maxVideoLength?.toString()}
+          onChange={(e) => setFormData({ 
+            ...formData, 
+            contentFilters: { 
+              ...formData.contentFilters!, 
+              maxVideoLength: parseInt(e.target.value) 
+            }
+          })}
+        />
+      </div>
+      
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button variant="light" onPress={onCancel}>
+          Cancel
+        </Button>
+        <Button 
+          color="primary" 
+          onPress={handleSubmit}
+          isDisabled={!formData.name || !formData.description || !formData.color}
+        >
+          {ageGroup ? 'Update' : 'Create'} Age Group
+        </Button>
+      </div>
     </div>
   );
 }

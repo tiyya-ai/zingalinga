@@ -12,7 +12,7 @@ interface UploadQueueItem {
   uploadedAt: string;
   duration?: string;
   errorMessage?: string;
-  formData?: any;
+  formData?: FormData | Record<string, unknown>;
 }
 
 interface AppSettings {
@@ -50,6 +50,7 @@ interface AppData {
   accessLogs?: any[];
   packages?: any[];
   bundles?: any[];
+  ageGroups?: any[];
   lastUpdated?: string;
   lastLoaded?: string;
 }
@@ -101,12 +102,109 @@ class VPSDataStore {
       scheduledContent: [],
       flaggedContent: [],
       accessLogs: [],
-      packages: [], // Initialize empty packages array
+      packages: this.getDefaultPackages(), // Initialize with default packages
       bundles: [], // Initialize empty bundles array
+      ageGroups: [], // Initialize empty age groups array
       settings: this.getDefaultSettings(),
       lastUpdated: new Date().toISOString(),
       lastLoaded: new Date().toISOString()
     };
+  }
+
+  // Get default packages
+  getDefaultPackages(): any[] {
+    return [
+      {
+        id: 'explorer-pack',
+        name: 'Explorer Pack',
+        description: 'Where Letters Come to Life!',
+        price: 30,
+        type: 'subscription',
+        isActive: true,
+        isPopular: false,
+        icon: '🎒',
+        features: [
+          'Letter Safari with playful letter recognition games',
+          'Magic Word Builder to create fun words like a word wizard!',
+          'Phonics party - sing along to catchy letter sounds',
+          'Storytime with exciting tales role plays for children',
+          '15 Learning Quests - colorful lessons that feel like playtime'
+        ],
+        contentIds: [],
+        ageGroups: ['3-6'],
+        billingCycle: 'yearly',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'adventurer-pack',
+        name: 'Adventurer Pack',
+        description: 'Reading Superpowers Unlocked!',
+        price: 45,
+        type: 'subscription',
+        isActive: true,
+        isPopular: true,
+        icon: '🚀',
+        features: [
+          'Everything in Explorer Pack PLUS:',
+          'Word Architect: Build bigger, cooler words!',
+          '25 Learning Quests with more stories, more adventures',
+          '25 Gold Star Challenges to earn rewards after each lesson'
+        ],
+        contentIds: [],
+        ageGroups: ['3-6'],
+        billingCycle: 'yearly',
+        upgradeFrom: 'explorer-pack',
+        upgradePrice: 15,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'roadtripper-pack',
+        name: 'Roadtripper Pack',
+        description: 'Learning On-The-Go!',
+        price: 80,
+        type: 'one-time',
+        isActive: false,
+        isPopular: false,
+        icon: '🚗',
+        features: [
+          '125 Audio adventures, perfect for car rides & travel',
+          '125 Sing-along phonics - turn travel time into learning time',
+          'Story podcasts with African tales that spark imagination'
+        ],
+        contentIds: [],
+        ageGroups: ['3-6'],
+        billingCycle: 'one-time',
+        upgradeFrom: 'adventurer-pack',
+        upgradePrice: 35,
+        comingSoon: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'bookie-pack',
+        name: 'Zingalinga Bookie Pack',
+        description: 'Interactive Learning Device',
+        price: 60,
+        type: 'physical',
+        isActive: true,
+        isPopular: false,
+        icon: '📚',
+        features: [
+          'Fully aligned PP1 and PP2 equivalent literacy product',
+          'Learn through stories anywhere anytime',
+          'Battery that lasts 4 days when fully utilized',
+          'Interactive screen with 20+ interactive lessons'
+        ],
+        contentIds: [],
+        ageGroups: ['3-6'],
+        billingCycle: 'one-time',
+        isPhysical: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
   }
 
   // Get default settings
@@ -140,14 +238,17 @@ class VPSDataStore {
       if (response.ok) {
         const data = await response.json();
         // Ensure all required arrays exist
-        if (!data.packages) {
-          data.packages = [];
+        if (!data.packages || data.packages.length === 0) {
+          data.packages = this.getDefaultPackages();
         }
         if (!data.categories) {
           data.categories = ['Audio Lessons', 'PP1 Program', 'PP2 Program'];
         }
         if (!data.savedVideos) {
           data.savedVideos = [];
+        }
+        if (!data.ageGroups) {
+          data.ageGroups = [];
         }
         this.memoryData = data;
         console.log('✅ Data loaded from API with', data.packages?.length || 0, 'packages');
@@ -635,7 +736,7 @@ class VPSDataStore {
       const processedItem = { ...uploadItem };
       
       // If the item contains large base64 video data, store it separately
-      if (uploadItem.formData?.videoFile || (uploadItem as any).localUrl?.startsWith('data:video/')) {
+      if ((uploadItem.formData as any)?.videoFile || (uploadItem as any).localUrl?.startsWith('data:video/')) {
         const videoData = (uploadItem as any).localUrl || '';
         
         // Only store video metadata in the main queue, not the actual video data
@@ -644,7 +745,9 @@ class VPSDataStore {
           
           // Store only metadata in localStorage
           delete (processedItem as any).localUrl;
-          delete processedItem.formData?.videoFile;
+          if (processedItem.formData && typeof processedItem.formData === 'object') {
+            delete (processedItem.formData as any).videoFile;
+          }
           
           // Add a flag to indicate video is stored in memory
           (processedItem as any).hasLargeVideo = true;
@@ -1143,6 +1246,93 @@ class VPSDataStore {
     } catch (error) {
       console.error('Error deleting bundle:', error);
       return false;
+    }
+  }
+
+  // Package upgrade method
+  async upgradePackage(userId: string, fromPackageId: string, toPackageId: string): Promise<boolean> {
+    try {
+      console.log('🔄 Processing package upgrade:', { userId, fromPackageId, toPackageId });
+      const data = await this.loadData();
+      
+      // Get the target package
+      const toPackage = data.packages?.find(p => p.id === toPackageId);
+      if (!toPackage) {
+        console.log('❌ Target package not found');
+        return false;
+      }
+      
+      // Check if user has the from package
+      const userPurchases = data.purchases?.filter(p => p.userId === userId && p.moduleId === fromPackageId) || [];
+      if (userPurchases.length === 0) {
+        console.log('❌ User does not have the required package for upgrade');
+        return false;
+      }
+      
+      // Calculate upgrade price
+      const upgradePrice = toPackage.upgradePrice || (toPackage.price - (data.packages?.find(p => p.id === fromPackageId)?.price || 0));
+      
+      // Create upgrade purchase record
+      const upgradePurchase = {
+        id: `upgrade_${Date.now()}`,
+        userId,
+        moduleId: toPackageId,
+        packageId: toPackageId,
+        purchaseDate: new Date().toISOString(),
+        amount: upgradePrice,
+        status: 'completed' as const,
+        type: 'upgrade' as const,
+        upgradeFrom: fromPackageId
+      };
+      
+      data.purchases = data.purchases || [];
+      data.purchases.push(upgradePurchase);
+      
+      // Update user's purchased modules
+      const user = data.users?.find(u => u.id === userId);
+      if (user) {
+        user.purchasedModules = user.purchasedModules || [];
+        if (!user.purchasedModules.includes(toPackageId)) {
+          user.purchasedModules.push(toPackageId);
+        }
+        user.totalSpent = (user.totalSpent || 0) + upgradePrice;
+      }
+      
+      const success = await this.saveData(data);
+      console.log(success ? '✅ Package upgrade completed' : '❌ Package upgrade failed');
+      return success;
+    } catch (error) {
+      console.error('❌ Error upgrading package:', error);
+      return false;
+    }
+  }
+
+  // Check available upgrades for user
+  async getAvailableUpgrades(userId: string): Promise<any[]> {
+    try {
+      const data = await this.loadData();
+      const userPurchases = data.purchases?.filter(p => p.userId === userId) || [];
+      const userPackages = userPurchases.map(p => p.moduleId);
+      
+      const availableUpgrades = [];
+      
+      for (const userPackageId of userPackages) {
+        const upgradeOptions = data.packages?.filter(p => p.upgradeFrom === userPackageId && p.isActive) || [];
+        for (const upgrade of upgradeOptions) {
+          if (!userPackages.includes(upgrade.id)) {
+            availableUpgrades.push({
+              ...upgrade,
+              fromPackage: data.packages?.find(p => p.id === userPackageId),
+              upgradePrice: upgrade.upgradePrice || (upgrade.price - (data.packages?.find(p => p.id === userPackageId)?.price || 0))
+            });
+          }
+        }
+      }
+      
+      return availableUpgrades;
+    } catch (error) {
+      console.error('Error getting available upgrades:', error);
+      return [];
     }
   }
 

@@ -307,7 +307,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
     if (currentPage === 'admin' && user.role === 'admin') {
       return (
         <ModernAdminDashboard 
-          user={user} 
+          currentUser={user} 
           onLogout={handleLogout}
           onNavigate={handleNavigation}
         />

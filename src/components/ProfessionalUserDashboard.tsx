@@ -260,12 +260,10 @@ export default function ProfessionalUserDashboard({
       document.addEventListener('visibilitychange', handleVisibilityChange);
       window.addEventListener('focus', handleFocus);
       
-      // Auto-sync every 3 seconds for real-time updates
+      // Auto-sync every 30 seconds for updates
       const interval = setInterval(() => {
-        vpsDataStore.clearMemoryCache();
-        localStorage.removeItem('zinga-linga-app-data-cache');
         loadData();
-      }, 3000);
+      }, 30000);
       
       return () => {
         document.removeEventListener('visibilitychange', handleVisibilityChange);

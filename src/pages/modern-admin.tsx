@@ -19,7 +19,7 @@ export default function ModernAdminPage() {
   return (
     <div style={{ height: '100vh', overflow: 'hidden' }}>
       <ModernAdminDashboard 
-        user={user} 
+        currentUser={user} 
         onLogout={handleLogout} 
       />
     </div>

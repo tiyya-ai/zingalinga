@@ -119,7 +119,7 @@ export default function EnhancedUploadQueue({ loadVideos }: EnhancedUploadQueueP
     });
 
     // Start the real upload process
-    processRealUpload(uploadId, uploadForm, updateUploadQueueState, loadVideos);
+    processRealUpload(uploadId, uploadForm as any, updateUploadQueueState, loadVideos);
   };
 
   const updateUploadQueueState = (updateFn: (prev: UploadQueueItem[]) => UploadQueueItem[]) => {
@@ -144,7 +144,7 @@ export default function EnhancedUploadQueue({ loadVideos }: EnhancedUploadQueueP
       ));
 
       // Restart upload process
-      processRealUpload(uploadId, uploadItem.formData, updateUploadQueueState, loadVideos);
+      processRealUpload(uploadId, uploadItem.formData as any, updateUploadQueueState, loadVideos);
     }
   };
 

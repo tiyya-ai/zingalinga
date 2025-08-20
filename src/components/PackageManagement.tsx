@@ -169,8 +169,17 @@ export const renderAllPackages = ({ packages, onDeletePackage, formatCurrency }:
 
 export const renderAddPackage = ({ packageForm, setPackageForm, onSavePackage }: { packageForm: any, setPackageForm: (form: any) => void, onSavePackage: () => void }) => (
   <div className="space-y-6">
+    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <div className="flex items-center space-x-2">
+        <PackageIcon className="h-5 w-5 text-blue-600" />
+        <h3 className="font-semibold text-blue-800">Primary Sales Method</h3>
+      </div>
+      <p className="text-blue-700 text-sm mt-1">
+        Packages are the only way customers can purchase content. Individual videos are not sold separately.
+      </p>
+    </div>
     <PageHeader 
-      title="Add New Package" 
+      title="Create Learning Package" 
       actions={
         <Button 
           variant="flat" 
@@ -258,18 +267,29 @@ export const renderAddPackage = ({ packageForm, setPackageForm, onSavePackage }:
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Features</label>
+              <label className="text-sm font-medium text-gray-700">Package Features</label>
               <Textarea
                 value={packageForm.features}
                 onChange={(e) => setPackageForm({ ...packageForm, features: e.target.value })}
-                placeholder="Enter features separated by commas"
+                placeholder="Access to premium content, Offline downloads, Priority support"
                 rows={3}
                 classNames={{
                   input: "bg-white",
                   inputWrapper: "bg-white border-gray-300 hover:border-purple-400 focus-within:border-purple-500"
                 }}
               />
-              <p className="text-xs text-gray-500">Separate features with commas</p>
+              <p className="text-xs text-gray-500">Highlight what makes this package valuable</p>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Included Content</label>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-sm text-gray-600 mb-2">Select videos to include in this package:</p>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {/* This would be populated with available videos */}
+                  <p className="text-xs text-gray-500">Content selection will be available after basic package info is saved</p>
+                </div>
+              </div>
             </div>
           </CardBody>
         </Card>

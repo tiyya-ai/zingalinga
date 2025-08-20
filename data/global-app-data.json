@@ -164,6 +164,34 @@
       "fullContent": [],
       "difficulty": "beginner",
       "videoUrl": ""
+    },
+    {
+      "id": "video_1755689263807",
+      "title": "ujjgj",
+      "description": "gfhh",
+      "price": 41,
+      "category": "PP2 Program",
+      "rating": 5,
+      "thumbnail": "https://img.youtube.com/vi/Tx5HaR1S1jo/maxresdefault.jpg",
+      "videoUrl": "https://youtu.be/Tx5HaR1S1jo",
+      "duration": "",
+      "estimatedDuration": "",
+      "tags": [
+        "ijkj"
+      ],
+      "isActive": true,
+      "isVisible": true,
+      "createdAt": "2025-08-20T11:27:43.807Z",
+      "updatedAt": "2025-08-20T11:37:38.331Z",
+      "totalRatings": 0,
+      "features": [],
+      "fullContent": [],
+      "difficulty": "beginner",
+      "audioUrl": "",
+      "ageGroup": "6-12 years",
+      "videoType": "external",
+      "language": "English",
+      "ageRange": "9-21 Yeras"
     }
   ],
   "purchases": [
@@ -218,6 +246,22 @@
   ],
   "contentFiles": [],
   "settings": {
+    "siteName": "Zinga Linga",
+    "defaultLanguage": "en",
+    "timezone": "UTC",
+    "features": {
+      "userRegistration": true,
+      "emailVerification": true,
+      "videoComments": true,
+      "videoDownloads": true,
+      "socialSharing": false,
+      "parentalControls": true,
+      "offlineMode": true,
+      "multiLanguage": false
+    },
+    "dataSource": "real",
+    "apiEndpoint": "/api/data",
+    "enableRealTimeSync": true,
     "platform": {
       "siteName": "Zinga Linga",
       "siteDescription": "Educational videos for children aged 3-12",
@@ -228,16 +272,15 @@
       "currency": "USD",
       "dateFormat": "MM/DD/YYYY"
     },
-    "features": {
-      "userRegistration": true,
-      "emailVerification": true,
-      "videoComments": true,
-      "videoDownloads": true,
-      "socialSharing": false,
-      "parentalControls": true,
-      "offlineMode": true,
-      "multiLanguage": false
-    }
+    "ageGroups": [
+      "3-5 years",
+      "3-8 years",
+      "6-12 years",
+      "All ages",
+      "12-14",
+      "12-16 Yeras",
+      "9-21 Yeras"
+    ]
   },
   "categories": [
     "Audio Lessons",
@@ -254,7 +297,7 @@
   "flaggedContent": [],
   "accessLogs": [],
   "uploadQueue": [],
-  "lastUpdated": "2025-08-18T22:39:48.772Z",
+  "lastUpdated": "2025-08-20T11:37:38.331Z",
   "lastLoaded": "2025-01-20T10:00:00.000Z",
   "packages": [
     {
@@ -268,14 +311,16 @@
       ],
       "isActive": true,
       "isPopular": true,
-      "coverImage": "",
+      "coverImage": "https://demos.reytheme.com/melbourne/wp-content/uploads/sites/10/2019/07/lw-2.jpg",
       "createdAt": "2025-08-16T12:50:35.251Z",
-      "updatedAt": "2025-08-18T22:39:48.772Z",
+      "updatedAt": "2025-08-20T11:23:20.131Z",
       "contentIds": [
-        "sample_video_001"
+        "sample_video_001",
+        "audio_1755556710215"
       ]
     }
   ],
-  "lastSaved": "2025-08-18T22:39:48.805Z",
-  "savedVideos": []
+  "lastSaved": "2025-08-20T11:37:38.345Z",
+  "savedVideos": [],
+  "ageGroups": []
 }

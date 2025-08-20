@@ -43,7 +43,7 @@ export default function AdminPage() {
 
   return (
     <ModernAdminDashboard 
-      user={user} 
+      currentUser={user} 
       onLogout={handleLogout}
       onNavigate={(page) => window.location.href = `/${page}`}
     />
