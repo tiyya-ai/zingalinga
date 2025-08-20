@@ -144,7 +144,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 { name: 'Privacy Policy', page: 'privacy' },
                 { name: 'Terms and Conditions', page: 'terms' },
                 { name: 'Refund Policy', page: 'refund' },
-                { name: 'COPPA Compliance', page: 'coppa' },
                 { name: 'Help Center', page: 'help' },
                 { name: 'Technical Support', page: 'support' }
               ].map((link, index) => (
