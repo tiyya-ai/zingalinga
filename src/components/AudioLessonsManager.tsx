@@ -351,7 +351,7 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
             <TableHeader>
               <TableColumn>LESSON</TableColumn>
               <TableColumn>DURATION</TableColumn>
-              <TableColumn>PRICE</TableColumn>
+              <TableColumn>TYPE</TableColumn>
               <TableColumn>LEVEL</TableColumn>
               <TableColumn>ACCESS</TableColumn>
               <TableColumn>ACTIONS</TableColumn>
@@ -377,8 +377,8 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="font-semibold text-green-600">
-                      {lesson.price === 0 ? 'Free' : `$${lesson.price}`}
+                    <span className="font-semibold text-blue-600">
+                      Package Content
                     </span>
                   </TableCell>
                   <TableCell>
