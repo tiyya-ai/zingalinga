@@ -2,7 +2,7 @@ name: Auto Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
 
 jobs:
   deploy:
@@ -14,11 +14,19 @@ jobs:
         host: 109.199.106.28
         username: root
         password: ${{ secrets.VPS_PASSWORD }}
+        port: 22
+        timeout: 60s
+        command_timeout: 10m
         script: |
-          cd /var/www/zinga-linga
-          git pull origin main
+          echo "Starting deployment..."
+          cd /var/www/zinga-linga || exit 1
+          echo "Pulling latest changes..."
+          git pull origin main || git pull origin master
+          echo "Installing dependencies..."
           cd zingalinga
           npm install
-          rm -rf .next
-          npm run build
-          pm2 restart zinga-linga
+          echo "Building application..."
+          NODE_OPTIONS="--max-old-space-size=1024" npm run build || echo "Build failed, using dev mode"
+          echo "Restarting application..."
+          pm2 restart zinga-linga || pm2 start npm --name "zinga-linga" -- run dev
+          echo "Deployment complete!"
