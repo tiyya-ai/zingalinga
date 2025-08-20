@@ -1932,7 +1932,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       videoType: videoType,
       tags: tagsString,
       language: (video as any).language || 'English',
-      status: (video as any).isActive === false ? 'inactive' : 'active'
+      status: (video as any).isActive === false ? 'inactive' : 'active',
+      packageId: (video as any).packageId || ''
     };
     
     setVideoForm(formData);
@@ -1967,7 +1968,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       videoType: 'youtube',
       tags: '',
       language: 'English',
-      status: 'active'
+      status: 'active',
+      packageId: ''
     };
     
     setVideoForm(resetForm);
@@ -2056,7 +2058,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         if (action === 'add' && !pkg.contentIds.includes(videoId)) {
           pkg.contentIds.push(videoId);
         } else if (action === 'remove') {
-          pkg.contentIds = pkg.contentIds.filter(id => id !== videoId);
+          pkg.contentIds = pkg.contentIds.filter((id: string) => id !== videoId);
         }
         
         await vpsDataStore.updatePackage(pkg);
@@ -2164,7 +2166,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
           isActive: videoForm.status === 'active',
           isVisible: videoForm.status === 'active',
-          packageId: videoForm.packageId || null,
+          packageId: videoForm.packageId || undefined,
           updatedAt: new Date().toISOString()
         };
         
@@ -2206,7 +2208,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
           isActive: videoForm.status === 'active',
           isVisible: videoForm.status === 'active',
-          packageId: videoForm.packageId || null,
+          packageId: videoForm.packageId || undefined,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
@@ -2280,7 +2282,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         videoType: 'youtube',
         language: 'English',
         tags: '',
-        status: 'active'
+        status: 'active',
+        packageId: ''
       });
       setEditingVideo(null);
       
@@ -2582,6 +2585,31 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                   <SelectItem key="draft" value="draft">Draft</SelectItem>
                   <SelectItem key="inactive" value="inactive">Inactive</SelectItem>
                 </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Learning Package</label>
+                <Select
+                  selectedKeys={videoForm.packageId ? [videoForm.packageId] : []}
+                  onSelectionChange={(keys) => {
+                    const selected = Array.from(keys)[0] as string;
+                    setVideoForm({ ...videoForm, packageId: selected });
+                  }}
+                  placeholder="Select package (optional)"
+                  classNames={{
+                    trigger: "bg-white border-gray-300 hover:border-purple-400 focus:border-purple-500",
+                    value: "text-gray-900",
+                    popoverContent: "bg-white border border-gray-200 shadow-lg",
+                    listbox: "bg-white"
+                  }}
+                >
+                  {packages.map((pkg) => (
+                    <SelectItem key={pkg.id} value={pkg.id}>
+                      {pkg.icon} {pkg.name} - ${pkg.price}
+                    </SelectItem>
+                  ))}
+                </Select>
+                <p className="text-xs text-gray-500">Assign this video to a specific learning package</p>
               </div>
             </CardBody>
           </Card>

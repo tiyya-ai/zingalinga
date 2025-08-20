@@ -828,6 +828,36 @@ class VPSDataStore {
     }
   }
 
+  // Package management methods
+  async getPackages(): Promise<any[]> {
+    try {
+      const data = await this.loadData();
+      return data.packages || this.getDefaultPackages();
+    } catch (error) {
+      console.error('Error getting packages:', error);
+      return this.getDefaultPackages();
+    }
+  }
+
+  async updatePackage(packageData: any): Promise<boolean> {
+    try {
+      const data = await this.loadData();
+      data.packages = data.packages || [];
+      const index = data.packages.findIndex(p => p.id === packageData.id);
+      
+      if (index !== -1) {
+        data.packages[index] = { ...data.packages[index], ...packageData, updatedAt: new Date().toISOString() };
+      } else {
+        data.packages.push({ ...packageData, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+      }
+      
+      return await this.saveData(data);
+    } catch (error) {
+      console.error('Error updating package:', error);
+      return false;
+    }
+  }
+
   // Categories management
   async getCategories(): Promise<string[]> {
     const data = await this.loadData();

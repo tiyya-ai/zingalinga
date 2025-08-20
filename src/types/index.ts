@@ -55,6 +55,7 @@ export interface Module {
   hasPreview?: boolean;
   previewUrl?: string;
   accessLevel?: 'free' | 'paid' | 'premium';
+  packageId?: string;
 }
 
 export interface ProgramFile {
