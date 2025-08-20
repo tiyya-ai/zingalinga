@@ -119,7 +119,7 @@ export const YouTubeVideoCard: React.FC<YouTubeVideoCardProps> = ({
               onClick={onPurchase}
               className="w-full bg-red-500 hover:bg-red-600 text-white text-sm font-medium py-2 rounded-lg transition-colors"
             >
-              Buy ${video.price}
+              Package Required
             </button>
           )}
         </div>

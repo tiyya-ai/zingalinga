@@ -52,8 +52,7 @@ export default function EnhancedUploadQueue({ loadVideos }: EnhancedUploadQueueP
     title: '',
     description: '',
     videoFile: null as File | null,
-    category: 'educational',
-    price: 0
+    category: 'educational'
   });
 
   // Load upload queue on component mount
@@ -372,14 +371,7 @@ export default function EnhancedUploadQueue({ loadVideos }: EnhancedUploadQueueP
                 <SelectItem key="entertainment" value="entertainment">Entertainment</SelectItem>
                 <SelectItem key="interactive" value="interactive">Interactive</SelectItem>
               </Select>
-              <Input
-                label="Price"
-                type="number"
-                placeholder="0.00"
-                value={uploadForm.price.toString()}
-                onChange={(e) => setUploadForm({ ...uploadForm, price: parseFloat(e.target.value) || 0 })}
-                startContent={<span className="text-gray-500">$</span>}
-              />
+
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                 <input
                   type="file"

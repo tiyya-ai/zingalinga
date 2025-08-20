@@ -304,230 +304,13 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const [newCategory, setNewCategory] = useState('');
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editCategoryValue, setEditCategoryValue] = useState('');
-  const [ageGroups, setAgeGroups] = useState<string[]>([]);
-  const [newAgeGroup, setNewAgeGroup] = useState('');
-  const [editingAgeGroup, setEditingAgeGroup] = useState<string | null>(null);
-  const [editAgeGroupValue, setEditAgeGroupValue] = useState('');
 
-  const handleUpdateAgeGroup = async (oldAgeGroup: string, newAgeGroup: string) => {
-    if (!newAgeGroup.trim() || newAgeGroup === oldAgeGroup) {
-      setEditingAgeGroup(null);
-      return;
-    }
-    
-    if (ageGroups.includes(newAgeGroup.trim())) {
-      setToast({message: 'Age group already exists', type: 'error'});
-      setTimeout(() => setToast(null), 3000);
-      return;
-    }
-    
-    try {
-      const updatedAgeGroups = ageGroups.map(ag => ag === oldAgeGroup ? newAgeGroup.trim() : ag);
-      setAgeGroups(updatedAgeGroups);
-      await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups } as any);
-      
-      setEditingAgeGroup(null);
-      setToast({message: 'Age group updated successfully!', type: 'success'});
-      setTimeout(() => setToast(null), 3000);
-    } catch (error) {
-      console.error('Error updating age group:', error);
-      setToast({message: 'Failed to update age group', type: 'error'});
-      setTimeout(() => setToast(null), 3000);
-    }
-  };
 
-  const handleDeleteAgeGroup = async (ageGroup: string) => {
-    try {
-      const videosUsingAgeGroup = videos.filter(v => 
-        (v as any).ageGroup === ageGroup || (v as any).ageRange === ageGroup
-      );
-      
-      if (videosUsingAgeGroup.length > 0) {
-        const moveVideos = confirm(`This age group is used by ${videosUsingAgeGroup.length} videos. Move them to "3-8 years" before deleting?`);
-        if (!moveVideos) return;
-      }
-      
-      if (confirm(`Delete age group "${ageGroup}"?`)) {
-        const updatedAgeGroups = ageGroups.filter(ag => ag !== ageGroup);
-        setAgeGroups(updatedAgeGroups);
-        await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups } as any);
-        
-        setToast({message: 'Age group deleted successfully!', type: 'success'});
-        setTimeout(() => setToast(null), 3000);
-      }
-    } catch (error) {
-      setToast({message: 'Failed to delete age group', type: 'error'});
-      setTimeout(() => setToast(null), 3000);
-    }
-  };
 
-  const renderAgeGroupsPage = () => (
-    <div className="space-y-6">
-      <PageHeader 
-        title="Age Groups" 
-        actions={
-          <Button 
-            className="bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-            startContent={<Plus className="h-4 w-4" />}
-            onPress={async () => {
-              if (newAgeGroup.trim()) {
-                const updatedAgeGroups = [...ageGroups, newAgeGroup.trim()];
-                setAgeGroups(updatedAgeGroups);
-                await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups } as any);
-                setNewAgeGroup('');
-                setToast({message: 'Age group added successfully!', type: 'success'});
-                setTimeout(() => setToast(null), 3000);
-              }
-            }}
-          >
-            Add Age Group
-          </Button>
-        }
-      />
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card className="bg-white border border-gray-200">
-            <CardHeader className="border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">All Age Groups ({ageGroups.length})</h3>
-            </CardHeader>
-            <CardBody className="p-0">
-              <Table removeWrapper aria-label="Age groups table">
-                <TableHeader>
-                  <TableColumn>AGE GROUP</TableColumn>
-                  <TableColumn>VIDEOS</TableColumn>
-                  <TableColumn>STATUS</TableColumn>
-                  <TableColumn>ACTIONS</TableColumn>
-                </TableHeader>
-                <TableBody>
-                  {ageGroups.map((ageGroup, index) => (
-                    <TableRow key={ageGroup}>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
-                            <Users className="h-4 w-4 text-white" />
-                          </div>
-                          {editingAgeGroup === ageGroup ? (
-                            <Input
-                              value={editAgeGroupValue}
-                              onChange={(e) => setEditAgeGroupValue(e.target.value)}
-                              size="sm"
-                              className="w-48"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleUpdateAgeGroup(ageGroup, editAgeGroupValue);
-                                } else if (e.key === 'Escape') {
-                                  setEditingAgeGroup(null);
-                                }
-                              }}
-                              autoFocus
-                            />
-                          ) : (
-                            <span className="font-medium">{ageGroup}</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>{videos.filter(v => (v as any).ageGroup === ageGroup || (v as any).ageRange === ageGroup).length}</TableCell>
-                      <TableCell>
-                        <Chip size="sm" color="success" variant="flat">Active</Chip>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-1">
-                          {editingAgeGroup === ageGroup ? (
-                            <>
-                              <Button 
-                                size="sm" 
-                                variant="light" 
-                                className="hover:bg-green-50"
-                                onPress={() => handleUpdateAgeGroup(ageGroup, editAgeGroupValue)}
-                              >
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="light" 
-                                className="hover:bg-gray-50"
-                                onPress={() => setEditingAgeGroup(null)}
-                              >
-                                <X className="h-4 w-4 text-gray-600" />
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <Button 
-                                size="sm" 
-                                variant="light" 
-                                className="hover:bg-blue-50"
-                                onPress={() => {
-                                  setEditingAgeGroup(ageGroup);
-                                  setEditAgeGroupValue(ageGroup);
-                                }}
-                              >
-                                <Edit className="h-4 w-4 text-blue-600" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="light" 
-                                className="hover:bg-red-50"
-                                onPress={() => handleDeleteAgeGroup(ageGroup)}
-                              >
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardBody>
-          </Card>
-        </div>
-        
-        <div>
-          <Card className="bg-white border border-gray-200">
-            <CardHeader className="border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Add New Age Group</h3>
-            </CardHeader>
-            <CardBody className="space-y-4">
-              <Input
-                value={newAgeGroup}
-                onChange={(e) => setNewAgeGroup(e.target.value)}
-                placeholder="Enter age group (e.g., 9-12 years)"
-                onKeyDown={async (e) => {
-                  if (e.key === 'Enter' && newAgeGroup.trim() && !ageGroups.includes(newAgeGroup.trim())) {
-                    const updatedAgeGroups = [...ageGroups, newAgeGroup.trim()];
-                    setAgeGroups(updatedAgeGroups);
-                    await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups } as any);
-                    setNewAgeGroup('');
-                    setToast({message: 'Age group added successfully!', type: 'success'});
-                    setTimeout(() => setToast(null), 3000);
-                  }
-                }}
-              />
-              <Button 
-                className="w-full bg-indigo-600 text-white hover:bg-indigo-700"
-                onPress={async () => {
-                  if (newAgeGroup.trim() && !ageGroups.includes(newAgeGroup.trim())) {
-                    const updatedAgeGroups = [...ageGroups, newAgeGroup.trim()];
-                    setAgeGroups(updatedAgeGroups);
-                    await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups } as any);
-                    setNewAgeGroup('');
-                    setToast({message: 'Age group added successfully!', type: 'success'});
-                    setTimeout(() => setToast(null), 3000);
-                  }
-                }}
-                startContent={<Plus className="h-4 w-4" />}
-              >
-                Add Age Group
-              </Button>
-            </CardBody>
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
+
+
+
+
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [orderFilter, setOrderFilter] = useState('all');
   const [orderSearchTerm, setOrderSearchTerm] = useState('');
@@ -742,18 +525,14 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const [videoForm, setVideoForm] = useState({
     title: '',
     description: '',
-    price: 0,
     category: '',
     rating: 0,
-    ageGroup: '3-8 years',
     duration: '',
     thumbnail: '',
     videoUrl: '',
     videoType: 'upload',
     tags: '',
-    language: 'English',
-    status: 'active',
-    packageId: ''
+    status: 'active'
   });
 
   // Cleanup blob URLs on unmount
@@ -796,10 +575,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       // Load categories from VPS or use defaults
       setCategories(realCategories.length > 0 ? realCategories : ['Uncategorized']);
       
-      // Load age groups from VPS settings or use defaults
-      const settings = await vpsDataStore.getSettings();
-      const savedAgeGroups = (settings as any).ageGroups || ['3-5 years', '3-8 years', '6-12 years', 'All ages'];
-      setAgeGroups(savedAgeGroups);
+
       
       setComments(realComments);
       setSubscriptions(realSubscriptions);
@@ -997,7 +773,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         { id: 'all-videos', label: 'All Videos', icon: <Folder className="h-4 w-4" /> },
         { id: 'add-video', label: 'Add New', icon: <Plus className="h-4 w-4" /> },
         { id: 'categories', label: 'Categories', icon: <Tag className="h-4 w-4" /> },
-        { id: 'age-groups', label: 'Age Groups', icon: <Users className="h-4 w-4" /> },
+
         { id: 'upload-queue', label: 'Upload Queue', icon: <Upload className="h-4 w-4" />, badge: uploadQueue.length > 0 ? uploadQueue.length.toString() : undefined }
       ]
     },
@@ -1122,15 +898,12 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                   price: 0,
                   category: '',
                   rating: 0,
-                  ageGroup: '3-8 years',
                   duration: '',
                   thumbnail: '',
                   videoUrl: '',
                   videoType: 'youtube',
                   tags: '',
-                  language: 'English',
-                  status: 'active',
-                  packageId: ''
+                  status: 'active'
                 });
                 setActiveSection('add-video');
               } else if (item.id === 'add-package') {
@@ -1981,7 +1754,6 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const [audioForm, setAudioForm] = useState({
     title: '',
     description: '',
-    price: 0,
     duration: '',
     audioUrl: '',
     thumbnail: '',
@@ -2166,15 +1938,12 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       price: video.price || 0,
       category: video.category || '',
       rating: video.rating || 0,
-      ageGroup: (video as any).ageGroup || (video as any).ageRange || '3-8 years',
       duration: (video as any).duration || (video as any).estimatedDuration || '',
       thumbnail: video.thumbnail || '',
       videoUrl: video.videoUrl || '',
       videoType: videoType,
       tags: tagsString,
-      language: (video as any).language || 'English',
-      status: (video as any).isActive === false ? 'inactive' : 'active',
-      packageId: (video as any).packageId || ''
+      status: (video as any).isActive === false ? 'inactive' : 'active'
     };
     
     setVideoForm(formData);
@@ -2401,25 +2170,17 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           ...editingVideo, 
           title: videoForm.title,
           description: videoForm.description,
-          price: videoForm.price,
           category: videoForm.category,
           rating: videoForm.rating,
           thumbnail: persistentThumbnail,
           videoUrl: persistentVideoUrl,
           duration: videoForm.duration,
           estimatedDuration: videoForm.duration,
-          ageRange: videoForm.ageGroup,
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
           isActive: videoForm.status === 'active',
           isVisible: videoForm.status === 'active',
-          packageId: videoForm.packageId || undefined,
           updatedAt: new Date().toISOString()
         };
-        
-        // Update package content if assigned
-        if (videoForm.packageId) {
-          await updatePackageContent(videoForm.packageId, editingVideo.id, 'add');
-        }
         
         console.log('Ã°Å¸â€™Â¾ Saving updated video to data store...');
         const success = await vpsDataStore.updateProduct(updatedVideo);
@@ -2443,26 +2204,18 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           id: `video_${Date.now()}`,
           title: videoForm.title,
           description: videoForm.description,
-          price: videoForm.price,
           category: videoForm.category,
           rating: videoForm.rating,
           thumbnail: persistentThumbnail,
           videoUrl: persistentVideoUrl,
           duration: videoForm.duration,
           estimatedDuration: videoForm.duration,
-          ageRange: videoForm.ageGroup,
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
           isActive: videoForm.status === 'active',
           isVisible: videoForm.status === 'active',
-          packageId: videoForm.packageId || undefined,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
-        
-        // Update package content if assigned
-        if (videoForm.packageId) {
-          await updatePackageContent(videoForm.packageId, newVideo.id, 'add');
-        }
         
         console.log('Ã°Å¸â€™Â¾ Saving new video to data store...');
         let success = await vpsDataStore.addProduct(newVideo);
@@ -2524,12 +2277,9 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         thumbnail: '',
         videoUrl: '',
         duration: '',
-        ageGroup: '3-8 years',
         videoType: 'youtube',
-        language: 'English',
         tags: '',
-        status: 'active',
-        packageId: ''
+        status: 'active'
       });
       setEditingVideo(null);
       
@@ -2648,25 +2398,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                 />
 
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Package Value *</label>
-                  <Input
-                    type="number"
-                    value={videoForm.price.toString()}
-                    onChange={(e) => setVideoForm({ ...videoForm, price: parseFloat(e.target.value) || 0 })}
-                    placeholder="0.00"
-                    size="lg"
-                    radius="lg"
-                    startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
-                    classNames={{
-                      input: "bg-white text-gray-900 placeholder:text-gray-400",
-                      inputWrapper: "bg-white border-2 border-gray-200 hover:border-blue-400 focus-within:border-blue-500 shadow-sm hover:shadow-md transition-all duration-200 flex items-center"
-                    }}
-                  />
-                  <p className="text-xs text-gray-500">Value when included in packages (not sold individually)</p>
-
-                </div>
+              <div className="space-y-2">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Category *</label>
                   <Select
@@ -2729,83 +2461,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
             </CardHeader>
             <CardBody className="space-y-4">
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Age Group</label>
-                <div className="flex gap-2">
-                  <Select
-                    selectedKeys={[videoForm.ageGroup]}
-                    onSelectionChange={(keys) => {
-                      const selected = Array.from(keys)[0] as string;
-                      setVideoForm({ ...videoForm, ageGroup: selected });
-                    }}
-                    aria-label="Age group selection"
-                    className="flex-1"
-                    classNames={{
-                      trigger: "bg-white border border-gray-300 hover:border-blue-400 focus:border-blue-500 shadow-sm hover:shadow-md transition-all duration-200",
-                      popoverContent: "bg-white border border-gray-200 shadow-lg",
-                      listbox: "bg-white"
-                    }}
-                  >
-                    {ageGroups.map((ageGroup) => (
-                      <SelectItem key={ageGroup} value={ageGroup}>
-                        {ageGroup}
-                      </SelectItem>
-                    ))}
-                  </Select>
-                  <Button
-                    size="sm"
-                    variant="flat"
-                    color="primary"
-                    onPress={() => setActiveSection('age-groups')}
-                    startContent={<Settings className="h-4 w-4" />}
-                  >
-                    Manage
-                  </Button>
-                </div>
-                <Input
-                  size="sm"
-                  value={newAgeGroup}
-                  onChange={(e) => setNewAgeGroup(e.target.value)}
-                  placeholder="Enter new age group (e.g., 9-12 years)"
-                  onKeyDown={async (e) => {
-                    if (e.key === 'Enter' && newAgeGroup.trim() && !ageGroups.includes(newAgeGroup.trim())) {
-                      const updatedAgeGroups = [...ageGroups, newAgeGroup.trim()];
-                      setAgeGroups(updatedAgeGroups);
-                      await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups } as any);
-                      setNewAgeGroup('');
-                      setToast({message: 'Age group added successfully!', type: 'success'});
-                      setTimeout(() => setToast(null), 3000);
-                    }
-                  }}
-                  classNames={{
-                    input: "bg-white text-gray-900 placeholder:text-gray-400 border-0 focus:ring-0 focus:outline-none",
-                    inputWrapper: "bg-white border border-gray-300 hover:border-blue-400 focus-within:!border-blue-500 focus-within:!ring-0 focus-within:!outline-none focus-within:!shadow-none"
-                  }}
-                />
-              </div>
               {/* Duration is automatically handled - no user input needed */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Language</label>
-                <Select
-                  selectedKeys={[videoForm.language]}
-                  onSelectionChange={(keys) => {
-                    const selected = Array.from(keys)[0] as string;
-                    setVideoForm({ ...videoForm, language: selected });
-                  }}
-                  aria-label="Video language"
-                  classNames={{
-                    trigger: "bg-white border-gray-300 hover:border-blue-400 focus:border-blue-500",
-                    value: "text-gray-900",
-                    popoverContent: "bg-white border border-gray-200 shadow-lg",
-                    listbox: "bg-white"
-                  }}
-                >
-                  <SelectItem key="English" value="English">English</SelectItem>
-                  <SelectItem key="Spanish" value="Spanish">Spanish</SelectItem>
-                  <SelectItem key="French" value="French">French</SelectItem>
-                  <SelectItem key="German" value="German">German</SelectItem>
-                </Select>
-              </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Status</label>
                 <Select
@@ -2828,30 +2484,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                 </Select>
               </div>
               
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Learning Package</label>
-                <Select
-                  selectedKeys={videoForm.packageId ? [videoForm.packageId] : []}
-                  onSelectionChange={(keys) => {
-                    const selected = Array.from(keys)[0] as string;
-                    setVideoForm({ ...videoForm, packageId: selected });
-                  }}
-                  placeholder="Select package (optional)"
-                  classNames={{
-                    trigger: "bg-white border-gray-300 hover:border-purple-400 focus:border-purple-500",
-                    value: "text-gray-900",
-                    popoverContent: "bg-white border border-gray-200 shadow-lg",
-                    listbox: "bg-white"
-                  }}
-                >
-                  {packages.map((pkg) => (
-                    <SelectItem key={pkg.id} value={pkg.id}>
-                      {pkg.icon} {pkg.name} - ${pkg.price}
-                    </SelectItem>
-                  ))}
-                </Select>
-                <p className="text-xs text-gray-500">Assign this video to a specific learning package</p>
-              </div>
+
             </CardBody>
           </Card>
 
@@ -3020,9 +2653,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               </h4>
               <ul className="text-xs text-blue-800 space-y-1">
                 <li>- Videos are content for packages, not individual sales</li>
-                <li>- Set package value to help with pricing decisions</li>
                 <li>- Use descriptive titles for better package organization</li>
-                <li>- High-quality content increases package value</li>
+                <li>- High-quality content enhances package appeal</li>
               </ul>
             </CardBody>
           </Card>
@@ -3230,7 +2862,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                 </TableColumn>
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-left w-2/5">TITLE</TableColumn>
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-1/6">CATEGORY</TableColumn>
-                <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-1/6">PACKAGE VALUE</TableColumn>
+
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-1/6">RATING</TableColumn>
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-1/6">ACTIONS</TableColumn>
               </TableHeader>
@@ -3287,12 +2919,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                         {video.category || 'Uncategorized'}
                       </Chip>
                     </TableCell>
-                    <TableCell className="py-4 px-6 text-center">
-                      <div className="text-center">
-                        <span className="font-semibold text-gray-900">{formatCurrency(video.price || 0)}</span>
-                        <p className="text-xs text-gray-500">Package component</p>
-                      </div>
-                    </TableCell>
+
                     <TableCell className="py-4 px-6 text-center">
                       <div className="flex items-center justify-center space-x-1">
                         <Star className="h-4 w-4 text-yellow-500" />
@@ -5014,7 +4641,6 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           ...editingVideo,
           title: audioForm.title,
           description: audioForm.description,
-          price: audioForm.price,
           audioUrl: audioForm.audioUrl,
           thumbnail: audioForm.thumbnail || editingVideo.thumbnail,
           duration: audioForm.duration,
@@ -5039,7 +4665,6 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           id: `audio_${Date.now()}`,
           title: audioForm.title,
           description: audioForm.description,
-          price: audioForm.price,
           category: 'Audio Lessons',
           type: 'audio',
           audioUrl: audioForm.audioUrl, // Keep the actual URL (blob or regular)
@@ -5252,21 +4877,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                   HTML tags supported: &lt;b&gt;, &lt;i&gt;, &lt;u&gt;, &lt;br&gt;, &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Price *</label>
-                  <Input
-                    type="number"
-                    value={audioForm.price.toString()}
-                    onChange={(e) => setAudioForm({ ...audioForm, price: parseFloat(e.target.value) || 0 })}
-                    placeholder="0.00"
-                    startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
-                    classNames={{
-                      input: "bg-white",
-                      inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
-                    }}
-                  />
-                </div>
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Access Level</label>
                   <Select
@@ -5567,8 +5178,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         <CardBody className="space-y-4">
           <Input placeholder="Lesson Title" />
           <Textarea placeholder="Description" />
-          <div className="grid grid-cols-2 gap-4">
-            <Input type="number" placeholder="Price" startContent={<DollarSign className="h-4 w-4" />} />
+          <div className="grid grid-cols-1 gap-4">
             <Select placeholder="Access Level"><SelectItem key="free">Free</SelectItem><SelectItem key="paid">Paid</SelectItem></Select>
           </div>
           <div className="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center">
@@ -7954,7 +7564,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       case 'add-pp2-content': return renderAddPP2Content();
 
       case 'categories': return renderCategoriesPage();
-      case 'age-groups': return renderAgeGroupsPage();
+      
       case 'upload-queue': return renderUploadQueuePage();
       case 'packages': return renderPackages();
       case 'commerce': return renderCommerce();

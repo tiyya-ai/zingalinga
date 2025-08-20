@@ -1395,6 +1395,64 @@ class VPSDataStore {
       return false;
     }
   }
+
+  // Package purchase method
+  async purchasePackage(userId: string, packageId: string): Promise<boolean> {
+    try {
+      console.log('🛒 Processing package purchase:', { userId, packageId });
+      const data = await this.loadData();
+      
+      // Get the package
+      const package_ = data.packages?.find(p => p.id === packageId);
+      if (!package_) {
+        console.log('❌ Package not found');
+        return false;
+      }
+      
+      // Create purchase record for the package
+      const packagePurchase = {
+        id: `purchase_${Date.now()}_package`,
+        userId,
+        moduleId: packageId,
+        packageId,
+        purchaseDate: new Date().toISOString(),
+        amount: package_.price || 0,
+        status: 'completed' as const,
+        type: 'package' as const
+      };
+      
+      // Create individual purchase records for each content item in the package
+      const contentPurchases = (package_.contentIds || []).map((contentId: string, index: number) => ({
+        id: `purchase_${Date.now()}_${index}`,
+        userId,
+        moduleId: contentId,
+        packageId,
+        purchaseDate: new Date().toISOString(),
+        amount: 0, // Individual items are free when purchased as part of package
+        status: 'completed' as const,
+        type: 'video' as const
+      }));
+      
+      // Add all purchases
+      data.purchases = data.purchases || [];
+      data.purchases.push(packagePurchase, ...contentPurchases);
+      
+      // Update user's purchased modules
+      const user = data.users?.find(u => u.id === userId);
+      if (user) {
+        user.purchasedModules = user.purchasedModules || [];
+        user.purchasedModules.push(packageId, ...(package_.contentIds || []));
+        user.totalSpent = (user.totalSpent || 0) + (package_.price || 0);
+      }
+      
+      const success = await this.saveData(data);
+      console.log(success ? '✅ Package purchase completed' : '❌ Package purchase failed');
+      return success;
+    } catch (error) {
+      console.error('❌ Error purchasing package:', error);
+      return false;
+    }
+  }
 }
 
 // Export singleton instance

@@ -49,7 +49,6 @@ interface AudioLesson {
   description: string;
   audioUrl: string;
   duration: string;
-  price: number;
   accessLevel: 'free' | 'paid' | 'premium';
   thumbnail?: string;
   tags: string[];
@@ -92,7 +91,6 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
     description: '',
     audioUrl: '',
     duration: '',
-    price: 0,
     accessLevel: 'paid' as 'free' | 'paid' | 'premium',
     thumbnail: '',
     tags: '',
@@ -231,7 +229,7 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
       description: audioForm.description,
       audioUrl: audioForm.audioUrl,
       duration: audioForm.duration,
-      price: audioForm.price,
+
       accessLevel: audioForm.accessLevel,
       thumbnail: audioForm.thumbnail,
       tags: audioForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
@@ -261,7 +259,6 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
       description: '',
       audioUrl: '',
       duration: '',
-      price: 0,
       accessLevel: 'paid',
       thumbnail: '',
       tags: '',
@@ -280,7 +277,6 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
       description: lesson.description,
       audioUrl: lesson.audioUrl,
       duration: lesson.duration,
-      price: lesson.price,
       accessLevel: lesson.accessLevel,
       thumbnail: lesson.thumbnail || '',
       tags: lesson.tags.join(', '),
@@ -473,14 +469,7 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
                 rows={3}
               />
 
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Price"
-                  type="number"
-                  value={audioForm.price.toString()}
-                  onChange={(e) => setAudioForm({...audioForm, price: parseFloat(e.target.value) || 0})}
-                  startContent={<DollarSign className="h-4 w-4" />}
-                />
+              <div className="grid grid-cols-1 gap-4">
                 
                 <Select
                   label="Difficulty Level"

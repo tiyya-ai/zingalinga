@@ -5,7 +5,6 @@ export interface UploadFormData {
   description: string;
   videoFile: File | null;
   category: string;
-  price: number;
 }
 
 export interface UploadItem {
@@ -63,8 +62,6 @@ export const processRealUpload = async (
       id: uploadId,
       title: formData.title,
       description: formData.description,
-      price: formData.price,
-      originalPrice: formData.price,
       category: formData.category,
       videoUrl: videoUrl,
       thumbnail: thumbnailUrl,

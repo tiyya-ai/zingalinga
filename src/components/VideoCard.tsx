@@ -66,10 +66,10 @@ export const VideoCard: React.FC<VideoCardProps> = ({
           {duration}
         </div>
 
-        {/* Price Badge - Only show if not purchased */}
+        {/* Access Status */}
         {!isPurchased && (
-          <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-purple-900 px-3 py-1 rounded-full text-sm font-bold shadow-lg">
-            {price === 0 ? 'Free' : `$${price.toFixed(2)}`}
+          <div className="absolute top-2 right-2 bg-red-500/90 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+            🔒 Package Required
           </div>
         )}
 
@@ -154,7 +154,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
               onClick={onAddToCart}
               className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 px-3 py-2 sm:px-4 rounded-lg font-semibold transition-all duration-300 text-xs sm:text-sm shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-100"
             >
-              🛒 Buy Now
+              Purchase Package Required
             </button>
           </div>
         )}

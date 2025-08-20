@@ -390,7 +390,7 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
             startContent={<ShoppingCart className="w-5 h-5" />}
             onClick={() => onPurchase(module.id)}
           >
-            Purchase for ${module.price}
+            Purchase Package Required
           </Button>
         )}
       </div>
@@ -693,8 +693,8 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
                     <span>{relatedModule.rating || 4.5}</span>
                   </div>
                   <span>•</span>
-                  <span className="text-green-400 font-medium">
-                    {relatedModule.price === 0 ? 'Free' : `$${relatedModule.price}`}
+                  <span className="text-blue-400 font-medium">
+                    {hasAccess ? 'Owned' : 'Package Required'}
                   </span>
                 </div>
               </div>
@@ -751,10 +751,10 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
                 </Chip>
               </div>
             </div>
-            {!accessResult.hasAccess && accessResult.requiresPurchase && (
+            {!accessResult.hasAccess && (
               <div className="text-right">
-                <div className="text-2xl font-bold text-green-400">${module.price}</div>
-                <div className="text-sm text-gray-300">One-time purchase</div>
+                <div className="text-lg font-bold text-red-400">🔒 Package Required</div>
+                <div className="text-sm text-gray-300">Purchase package for access</div>
               </div>
             )}
           </div>
@@ -825,7 +825,7 @@ export const CleanVideoPlayer: React.FC<CleanVideoPlayerProps> = ({
               startContent={<ShoppingCart className="w-4 h-4" />}
               onClick={() => onPurchase(module.id)}
             >
-              Add to Cart - ${module.price}
+              Purchase Package Required
             </Button>
           )}
         </ModalFooter>

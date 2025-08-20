@@ -463,12 +463,13 @@ export default function CheckoutDashboard({
                 </Chip>
               )}
 
-              {module.price === 0 && (
+              {isPurchased && (
                 <Chip 
                   size="sm" 
-                  className="bg-blue-500/90 text-white border-blue-400/50 backdrop-blur-sm shadow-lg"
+                  className="bg-green-500/90 text-white border-green-400/50 backdrop-blur-sm shadow-lg"
+                  startContent={<Trophy className="w-3 h-3" />}
                 >
-                  Free
+                  Owned
                 </Chip>
               )}
             </div>
@@ -502,8 +503,8 @@ export default function CheckoutDashboard({
                 <Star className="w-4 h-4 text-yellow-400 fill-current" />
                 <span className="text-white text-sm">{module.rating || 4.5}</span>
               </div>
-              <span className="text-green-400 font-bold">
-                {module.price === 0 ? 'Free' : `$${module.price}`}
+              <span className="text-blue-400 font-bold">
+                {isPurchased ? 'Owned' : 'Package Required'}
               </span>
             </div>
             
@@ -675,7 +676,7 @@ export default function CheckoutDashboard({
                       <div className="w-20 h-14 bg-gray-300 rounded-lg" />
                       <div className="flex-1">
                         <h4 className="font-semibold text-white">{item.title}</h4>
-                        <p className="text-green-400 font-bold">${item.price}</p>
+                        <p className="text-blue-400 font-bold">Package Item</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -746,13 +747,13 @@ export default function CheckoutDashboard({
                         <p className="text-gray-400 text-sm">Digital Video</p>
                       </div>
                     </div>
-                    <span className="text-green-400 font-bold">${item.price}</span>
+                    <span className="text-blue-400 font-bold">Package Item</span>
                   </div>
                 ))}
                 <Divider className="bg-white/20" />
                 <div className="flex justify-between items-center text-lg">
                   <span className="text-white font-semibold">Total:</span>
-                  <span className="text-green-400 font-bold">${cart.reduce((sum, item) => sum + item.price, 0).toFixed(2)}</span>
+                  <span className="text-green-400 font-bold">Package Purchase Required</span>
                 </div>
               </div>
             </div>
@@ -810,7 +811,7 @@ export default function CheckoutDashboard({
               endContent={<CreditCard className="w-4 h-4" />}
               size="lg"
             >
-              Complete Purchase - ${cart.reduce((sum, item) => sum + item.price, 0).toFixed(2)}
+              Purchase Package Required
             </Button>
           </div>
         </CardBody>
@@ -847,14 +848,14 @@ export default function CheckoutDashboard({
                       <p className="text-green-400 text-sm">✓ Access Granted</p>
                     </div>
                   </div>
-                  <span className="text-green-400 font-bold">${item.price}</span>
+                  <span className="text-green-400 font-bold">✓ Included in Package</span>
                 </div>
               ))}
               <Divider className="bg-white/20" />
               <div className="flex justify-between items-center">
-                <span className="text-white font-semibold">Total Paid:</span>
+                <span className="text-white font-semibold">Package Status:</span>
                 <span className="text-green-400 font-bold text-lg">
-                  ${purchasedItems.reduce((sum, item) => sum + item.price, 0).toFixed(2)}
+                  ✓ Active
                 </span>
               </div>
             </div>
@@ -1146,7 +1147,7 @@ export default function CheckoutDashboard({
                   <div className="w-20 h-14 bg-gray-300 rounded-lg mx-auto" />
                   <div>
                     <h4 className="text-white font-semibold">{addedToCartItem.title}</h4>
-                    <p className="text-green-400 font-bold">${addedToCartItem.price}</p>
+                    <p className="text-blue-400 font-bold">Package Item</p>
                   </div>
                   <p className="text-gray-300 text-sm">
                     This video has been added to your cart. You can continue shopping or proceed to checkout.

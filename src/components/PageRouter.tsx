@@ -251,6 +251,27 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
     }
   };
 
+  const handlePackagePurchase = async (packageId: string) => {
+    if (!user) return;
+    try {
+      const success = await vpsDataStore.purchasePackage(user.id, packageId);
+      if (success) {
+        // Reload user data to reflect the purchase
+        const data = await vpsDataStore.loadData();
+        const updatedUser = data.users?.find(u => u.id === user.id);
+        if (updatedUser) {
+          setUser(updatedUser);
+        }
+        alert('Package purchased successfully!');
+      } else {
+        alert('Package purchase failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Package purchase error:', error);
+      alert('Package purchase failed. Please try again.');
+    }
+  };
+
   const loadInitialData = async () => {
     try {
       setIsLoading(true);
@@ -369,7 +390,12 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
         }
         return <UserProfilePage user={user} onBack={() => handleNavigation('home')} onNavigate={handleNavigation} />;
       case 'packages':
-        return <PackagesPage onBack={() => handleNavigation('home')} />;
+        return <PackagesPage 
+          currentUser={user}
+          onLoginClick={() => setShowLoginModal(true)}
+          onPurchase={handlePackagePurchase}
+          onBack={() => handleNavigation('home')} 
+        />;
 
       case 'home':
       default:

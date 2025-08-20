@@ -52,7 +52,6 @@
       "id": "sample_video_001",
       "title": "Sample Educational Video",
       "description": "A sample video for testing the admin",
-      "price": 9.99,
       "category": "education",
       "thumbnail": "/placeholder-video.jpg",
       "videoUrl": "/sample-video.mp4",
@@ -66,7 +65,6 @@
       "id": "bb1_lesson_001",
       "title": "BB1 - Basic Letters A-E",
       "description": "Learn the first 5 letters of the alphabet with fun activities and songs",
-      "price": 12.99,
       "category": "PP1 Program",
       "type": "video",
       "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
@@ -88,7 +86,6 @@
       "id": "bb1_lesson_002",
       "title": "BB1 - Numbers 1-5",
       "description": "Count from 1 to 5 with colorful animations and interactive exercises",
-      "price": 12.99,
       "category": "Uncategorized",
       "type": "video",
       "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
@@ -113,7 +110,6 @@
       "id": "bb2_lesson_001",
       "title": "BB2 - Advanced Reading Skills",
       "description": "Develop reading comprehension with story-based learning activities",
-      "price": 15.99,
       "category": "PP2 Program",
       "type": "video",
       "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
@@ -135,7 +131,6 @@
       "id": "audio_1755556710215",
       "title": "iiui",
       "description": "",
-      "price": 552,
       "category": "Audio Lessons",
       "type": "audio",
       "audioUrl": "kjk",
@@ -163,7 +158,6 @@
       "id": "video_1755689263807",
       "title": "ujjgj",
       "description": "gfhh",
-      "price": 41,
       "category": "PP2 Program",
       "rating": 5,
       "thumbnail": "https://img.youtube.com/vi/Tx5HaR1S1jo/maxresdefault.jpg",
@@ -263,12 +257,7 @@
       "currency": "USD",
       "dateFormat": "MM/DD/YYYY"
     },
-    "ageGroups": [
-      "3-5 years",
-      "3-8 years",
-      "6-12 years",
-      "All ages"
-    ]
+    "ageGroups": []
   },
   "categories": [
     "Audio Lessons",
@@ -289,23 +278,66 @@
   "lastLoaded": "2025-01-20T10:00:00.000Z",
   "packages": [
     {
-      "id": "package_1755348635251",
-      "name": "package 1",
-      "description": "gggdsgg",
-      "price": 50,
-      "type": "subscription",
-      "features": [
-        "ththth\nregregre\nthfh"
-      ],
+      "id": "package_bb1_starter",
+      "name": "BB1 Starter Package",
+      "description": "Perfect introduction to learning with basic letters and numbers",
+      "price": 29.99,
+      "type": "educational",
+      "contentIds": ["bb1_lesson_001", "bb1_lesson_002"],
+      "ageGroups": ["3-5", "6-8"],
+      "billingCycle": "one-time",
       "isActive": true,
+      "isVisible": true,
+      "icon": "📚",
+      "features": [
+        "Basic letter recognition A-E",
+        "Number counting 1-5",
+        "Interactive exercises",
+        "Progress tracking"
+      ],
+      "createdAt": "2025-01-20T10:00:00.000Z"
+    },
+    {
+      "id": "package_bb2_advanced",
+      "name": "BB2 Advanced Package",
+      "description": "Advanced reading skills for developing learners",
+      "price": 39.99,
+      "type": "educational",
+      "contentIds": ["bb2_lesson_001"],
+      "ageGroups": ["6-8", "9-12"],
+      "billingCycle": "one-time",
+      "isActive": true,
+      "isVisible": true,
+      "icon": "📖",
+      "features": [
+        "Advanced reading comprehension",
+        "Story-based learning",
+        "Critical thinking exercises",
+        "Assessment tools"
+      ],
+      "createdAt": "2025-01-20T10:00:00.000Z"
+    },
+    {
+      "id": "package_complete_bundle",
+      "name": "Complete Learning Bundle",
+      "description": "Everything you need for comprehensive early education",
+      "price": 59.99,
+      "type": "bundle",
+      "contentIds": ["sample_video_001", "bb1_lesson_001", "bb1_lesson_002", "bb2_lesson_001", "audio_1755556710215"],
+      "ageGroups": ["3-5", "6-8", "9-12"],
+      "billingCycle": "one-time",
+      "isActive": true,
+      "isVisible": true,
       "isPopular": true,
-      "coverImage": "https://demos.reytheme.com/melbourne/wp-content/uploads/sites/10/2019/07/lw-2.jpg",
-      "createdAt": "2025-08-16T12:50:35.251Z",
-      "updatedAt": "2025-08-20T11:23:20.131Z",
-      "contentIds": [
-        "sample_video_001",
-        "audio_1755556710215"
-      ]
+      "icon": "🎓",
+      "features": [
+        "All BB1 and BB2 content",
+        "Audio lessons included",
+        "Sample educational videos",
+        "Complete curriculum coverage",
+        "Lifetime access"
+      ],
+      "createdAt": "2025-01-20T10:00:00.000Z"
     }
   ],
   "lastSaved": "2025-08-20T16:10:28.815Z",
