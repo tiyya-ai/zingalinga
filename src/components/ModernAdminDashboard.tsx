@@ -306,6 +306,228 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const [editCategoryValue, setEditCategoryValue] = useState('');
   const [ageGroups, setAgeGroups] = useState<string[]>([]);
   const [newAgeGroup, setNewAgeGroup] = useState('');
+  const [editingAgeGroup, setEditingAgeGroup] = useState<string | null>(null);
+  const [editAgeGroupValue, setEditAgeGroupValue] = useState('');
+
+  const handleUpdateAgeGroup = async (oldAgeGroup: string, newAgeGroup: string) => {
+    if (!newAgeGroup.trim() || newAgeGroup === oldAgeGroup) {
+      setEditingAgeGroup(null);
+      return;
+    }
+    
+    if (ageGroups.includes(newAgeGroup.trim())) {
+      setToast({message: 'Age group already exists', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+    
+    try {
+      const updatedAgeGroups = ageGroups.map(ag => ag === oldAgeGroup ? newAgeGroup.trim() : ag);
+      setAgeGroups(updatedAgeGroups);
+      await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups } as any);
+      
+      setEditingAgeGroup(null);
+      setToast({message: 'Age group updated successfully!', type: 'success'});
+      setTimeout(() => setToast(null), 3000);
+    } catch (error) {
+      console.error('Error updating age group:', error);
+      setToast({message: 'Failed to update age group', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  const handleDeleteAgeGroup = async (ageGroup: string) => {
+    try {
+      const videosUsingAgeGroup = videos.filter(v => 
+        (v as any).ageGroup === ageGroup || (v as any).ageRange === ageGroup
+      );
+      
+      if (videosUsingAgeGroup.length > 0) {
+        const moveVideos = confirm(`This age group is used by ${videosUsingAgeGroup.length} videos. Move them to "3-8 years" before deleting?`);
+        if (!moveVideos) return;
+      }
+      
+      if (confirm(`Delete age group "${ageGroup}"?`)) {
+        const updatedAgeGroups = ageGroups.filter(ag => ag !== ageGroup);
+        setAgeGroups(updatedAgeGroups);
+        await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups } as any);
+        
+        setToast({message: 'Age group deleted successfully!', type: 'success'});
+        setTimeout(() => setToast(null), 3000);
+      }
+    } catch (error) {
+      setToast({message: 'Failed to delete age group', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  const renderAgeGroupsPage = () => (
+    <div className="space-y-6">
+      <PageHeader 
+        title="Age Groups" 
+        actions={
+          <Button 
+            className="bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+            startContent={<Plus className="h-4 w-4" />}
+            onPress={async () => {
+              if (newAgeGroup.trim()) {
+                const updatedAgeGroups = [...ageGroups, newAgeGroup.trim()];
+                setAgeGroups(updatedAgeGroups);
+                await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups } as any);
+                setNewAgeGroup('');
+                setToast({message: 'Age group added successfully!', type: 'success'});
+                setTimeout(() => setToast(null), 3000);
+              }
+            }}
+          >
+            Add Age Group
+          </Button>
+        }
+      />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <Card className="bg-white border border-gray-200">
+            <CardHeader className="border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">All Age Groups ({ageGroups.length})</h3>
+            </CardHeader>
+            <CardBody className="p-0">
+              <Table removeWrapper aria-label="Age groups table">
+                <TableHeader>
+                  <TableColumn>AGE GROUP</TableColumn>
+                  <TableColumn>VIDEOS</TableColumn>
+                  <TableColumn>STATUS</TableColumn>
+                  <TableColumn>ACTIONS</TableColumn>
+                </TableHeader>
+                <TableBody>
+                  {ageGroups.map((ageGroup, index) => (
+                    <TableRow key={ageGroup}>
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
+                            <Users className="h-4 w-4 text-white" />
+                          </div>
+                          {editingAgeGroup === ageGroup ? (
+                            <Input
+                              value={editAgeGroupValue}
+                              onChange={(e) => setEditAgeGroupValue(e.target.value)}
+                              size="sm"
+                              className="w-48"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleUpdateAgeGroup(ageGroup, editAgeGroupValue);
+                                } else if (e.key === 'Escape') {
+                                  setEditingAgeGroup(null);
+                                }
+                              }}
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="font-medium">{ageGroup}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>{videos.filter(v => (v as any).ageGroup === ageGroup || (v as any).ageRange === ageGroup).length}</TableCell>
+                      <TableCell>
+                        <Chip size="sm" color="success" variant="flat">Active</Chip>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-1">
+                          {editingAgeGroup === ageGroup ? (
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant="light" 
+                                className="hover:bg-green-50"
+                                onPress={() => handleUpdateAgeGroup(ageGroup, editAgeGroupValue)}
+                              >
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="light" 
+                                className="hover:bg-gray-50"
+                                onPress={() => setEditingAgeGroup(null)}
+                              >
+                                <X className="h-4 w-4 text-gray-600" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant="light" 
+                                className="hover:bg-blue-50"
+                                onPress={() => {
+                                  setEditingAgeGroup(ageGroup);
+                                  setEditAgeGroupValue(ageGroup);
+                                }}
+                              >
+                                <Edit className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="light" 
+                                className="hover:bg-red-50"
+                                onPress={() => handleDeleteAgeGroup(ageGroup)}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardBody>
+          </Card>
+        </div>
+        
+        <div>
+          <Card className="bg-white border border-gray-200">
+            <CardHeader className="border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Add New Age Group</h3>
+            </CardHeader>
+            <CardBody className="space-y-4">
+              <Input
+                value={newAgeGroup}
+                onChange={(e) => setNewAgeGroup(e.target.value)}
+                placeholder="Enter age group (e.g., 9-12 years)"
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter' && newAgeGroup.trim() && !ageGroups.includes(newAgeGroup.trim())) {
+                    const updatedAgeGroups = [...ageGroups, newAgeGroup.trim()];
+                    setAgeGroups(updatedAgeGroups);
+                    await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups } as any);
+                    setNewAgeGroup('');
+                    setToast({message: 'Age group added successfully!', type: 'success'});
+                    setTimeout(() => setToast(null), 3000);
+                  }
+                }}
+              />
+              <Button 
+                className="w-full bg-indigo-600 text-white hover:bg-indigo-700"
+                onPress={async () => {
+                  if (newAgeGroup.trim() && !ageGroups.includes(newAgeGroup.trim())) {
+                    const updatedAgeGroups = [...ageGroups, newAgeGroup.trim()];
+                    setAgeGroups(updatedAgeGroups);
+                    await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups } as any);
+                    setNewAgeGroup('');
+                    setToast({message: 'Age group added successfully!', type: 'success'});
+                    setTimeout(() => setToast(null), 3000);
+                  }
+                }}
+                startContent={<Plus className="h-4 w-4" />}
+              >
+                Add Age Group
+              </Button>
+            </CardBody>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [orderFilter, setOrderFilter] = useState('all');
   const [orderSearchTerm, setOrderSearchTerm] = useState('');
@@ -775,6 +997,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         { id: 'all-videos', label: 'All Videos', icon: <Folder className="h-4 w-4" /> },
         { id: 'add-video', label: 'Add New', icon: <Plus className="h-4 w-4" /> },
         { id: 'categories', label: 'Categories', icon: <Tag className="h-4 w-4" /> },
+        { id: 'age-groups', label: 'Age Groups', icon: <Users className="h-4 w-4" /> },
         { id: 'upload-queue', label: 'Upload Queue', icon: <Upload className="h-4 w-4" />, badge: uploadQueue.length > 0 ? uploadQueue.length.toString() : undefined }
       ]
     },
@@ -835,6 +1058,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       icon: <UserCheck className="h-5 w-5" />,
       color: 'text-indigo-600'
     },
+
     {
       id: 'settings',
       label: 'Settings',
@@ -890,8 +1114,25 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                   subscription: 'free'
                 });
               } else if (item.id === 'add-video') {
-                // Handle add video specifically
-                handleAddVideo();
+                // Handle add video specifically - ensure clean state
+                setEditingVideo(null);
+                setVideoForm({
+                  title: '',
+                  description: '',
+                  price: 0,
+                  category: '',
+                  rating: 0,
+                  ageGroup: '3-8 years',
+                  duration: '',
+                  thumbnail: '',
+                  videoUrl: '',
+                  videoType: 'youtube',
+                  tags: '',
+                  language: 'English',
+                  status: 'active',
+                  packageId: ''
+                });
+                setActiveSection('add-video');
               } else if (item.id === 'add-package') {
                 setEditingPackage(null);
                 setPackageForm({
@@ -1952,6 +2193,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
 
   const handleAddVideo = () => {
     console.log('🎬 Adding new video - resetting form and switching to add-video section');
+    
+    // Clear editing state first
     setEditingVideo(null);
     
     // Reset the video form completely
@@ -1959,7 +2202,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       title: '',
       description: '',
       price: 0,
-      category: '', // Don't auto-select category - force user to choose
+      category: '',
       rating: 0,
       ageGroup: '3-8 years',
       duration: '',
@@ -1972,8 +2215,11 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       packageId: ''
     };
     
-    setVideoForm(resetForm);
-    console.log('✅ Video form reset:', resetForm);
+    // Force form reset with a small delay to ensure state is cleared
+    setTimeout(() => {
+      setVideoForm(resetForm);
+      console.log('✅ Video form reset:', resetForm);
+    }, 10);
     
     // Switch to add video section
     setActiveSection('add-video');
@@ -2510,17 +2756,10 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                     size="sm"
                     variant="flat"
                     color="primary"
-                    onPress={async () => {
-                      if (newAgeGroup.trim() && !ageGroups.includes(newAgeGroup.trim())) {
-                        const updatedAgeGroups = [...ageGroups, newAgeGroup.trim()];
-                        setAgeGroups(updatedAgeGroups);
-                        await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups } as any);
-                        setNewAgeGroup('');
-                      }
-                    }}
-                    startContent={<Plus className="h-4 w-4" />}
+                    onPress={() => setActiveSection('age-groups')}
+                    startContent={<Settings className="h-4 w-4" />}
                   >
-                    Add
+                    Manage
                   </Button>
                 </div>
                 <Input
@@ -2534,6 +2773,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                       setAgeGroups(updatedAgeGroups);
                       await vpsDataStore.updateSettings({ ageGroups: updatedAgeGroups } as any);
                       setNewAgeGroup('');
+                      setToast({message: 'Age group added successfully!', type: 'success'});
+                      setTimeout(() => setToast(null), 3000);
                     }
                   }}
                   classNames={{
@@ -7713,6 +7954,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       case 'add-pp2-content': return renderAddPP2Content();
 
       case 'categories': return renderCategoriesPage();
+      case 'age-groups': return renderAgeGroupsPage();
       case 'upload-queue': return renderUploadQueuePage();
       case 'packages': return renderPackages();
       case 'commerce': return renderCommerce();
