@@ -2270,7 +2270,6 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       setVideoForm({
         title: '',
         description: '',
-        price: 0,
         category: '',
         rating: 0,
         thumbnail: '',
@@ -4345,7 +4344,6 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                               setAudioForm({
                                 title: lesson.title,
                                 description: lesson.description || '',
-                                price: lesson.price || 0,
                                 duration: lesson.duration || '',
                                 audioUrl: lesson.audioUrl || '',
                                 thumbnail: lesson.thumbnail || '',
@@ -4696,7 +4694,6 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       setAudioForm({
         title: '',
         description: '',
-        price: 0,
         duration: '',
         audioUrl: '',
         thumbnail: '',
