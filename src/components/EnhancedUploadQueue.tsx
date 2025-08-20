@@ -111,8 +111,7 @@ export default function EnhancedUploadQueue({ loadVideos }: EnhancedUploadQueueP
       title: '',
       description: '',
       videoFile: null,
-      category: 'educational',
-      price: 0
+      category: 'educational'
     });
 
     // Start the real upload process
