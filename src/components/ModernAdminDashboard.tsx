@@ -101,6 +101,7 @@ import { vpsDataStore } from '../utils/vpsDataStore';
 import { UserManagement } from './UserManagement';
 import { Module } from '../types';
 import { SuccessModal } from './SuccessModal';
+import { AdminPendingPayments } from './AdminPendingPayments';
 
 // Type definitions
 interface Package {
@@ -802,6 +803,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       color: 'text-emerald-600',
       children: [
         { id: 'orders', label: 'Orders', icon: <PackageIcon className="h-4 w-4" /> },
+        { id: 'pending-payments', label: 'Pending Payments', icon: <Clock className="h-4 w-4" /> },
         { id: 'subscriptions', label: 'Subscriptions', icon: <CreditCard className="h-4 w-4" /> },
         { id: 'transactions', label: 'Transactions', icon: <Receipt className="h-4 w-4" /> }
       ]
@@ -7539,9 +7541,14 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     return renderLearningPackagesComponent(setActiveSection);
   };
 
-
-
-
+  const renderPendingPayments = () => {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Pending Payments" />
+        <AdminPendingPayments />
+      </div>
+    );
+  };
 
   const renderContent = () => {
     switch (activeSection) {
@@ -7574,6 +7581,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       case 'children-profiles': return renderChildrenProfilesPage();
       case 'access-logs': return <div>Access Logs - Feature coming soon</div>;
       case 'orders': return renderOrdersPage();
+      case 'pending-payments': return renderPendingPayments();
       case 'admin-profile': return renderAdminProfile();
       case 'subscriptions': return <div>Subscriptions - Feature coming soon</div>;
       case 'transactions': return <div>Transactions - Feature coming soon</div>;

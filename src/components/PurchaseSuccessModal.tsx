@@ -64,10 +64,7 @@ export const PurchaseSuccessModal: React.FC<PurchaseSuccessModalProps> = ({
 
           {/* Action Button */}
           <button
-            onClick={() => {
-              onClose();
-              window.location.href = '/dashboard';
-            }}
+            onClick={onClose}
             className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 rounded-lg transition-all duration-200 shadow-lg"
           >
             Go to Dashboard

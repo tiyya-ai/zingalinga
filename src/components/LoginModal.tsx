@@ -160,24 +160,23 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
           const existingUser = existingUsers.find(u => u.email === sanitizedEmail);
           
           if (existingUser) {
-            // If user exists and has pending purchase, add items to their account
-            const pendingPurchase = localStorage.getItem('pendingPurchase');
-            if (pendingPurchase) {
-              const purchaseData = JSON.parse(pendingPurchase);
-              if (purchaseData.email === sanitizedEmail) {
-                // Add purchased items to existing user
-                const newModules = purchaseData.items.map((item: any) => item.id);
-                const updatedModules = [...new Set([...(existingUser.purchasedModules || []), ...newModules])];
-                const additionalSpent = purchaseData.total;
-                
-                await vpsDataStore.updateUser(existingUser.id, {
-                  ...existingUser,
-                  purchasedModules: updatedModules,
-                  totalSpent: (existingUser.totalSpent || 0) + additionalSpent
-                });
+            // Check for pending payments
+            const { pendingPaymentsManager } = await import('../utils/pendingPayments');
+            const pendingPayments = pendingPaymentsManager.getPendingPaymentsByEmail(sanitizedEmail);
+            
+            if (pendingPayments.length > 0) {
+              // Process all pending payments for this user
+              let allNewModules: string[] = [];
+              let totalAdditionalSpent = 0;
+              const allPurchases: any[] = [];
+              
+              for (const payment of pendingPayments) {
+                const newModules = payment.items.map((item: any) => item.id);
+                allNewModules = [...allNewModules, ...newModules];
+                totalAdditionalSpent += payment.total;
                 
                 // Create purchase records
-                const purchases = purchaseData.items.map((item: any) => ({
+                const purchases = payment.items.map((item: any) => ({
                   id: `purchase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                   userId: existingUser.id,
                   moduleId: item.id,
@@ -187,24 +186,36 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                   type: item.type === 'package' ? 'package' : 'video'
                 }));
                 
-                const data = await vpsDataStore.loadData();
-                await vpsDataStore.saveData({
-                  ...data,
-                  purchases: [...(data.purchases || []), ...purchases]
-                });
-                
-                localStorage.removeItem('pendingPurchase');
-                setPurchasedItems(purchaseData.items);
-                setShowSuccessModal(true);
-                
-                setSuccess('Purchase added to your existing account! Redirecting to dashboard...');
-                setTimeout(() => {
-                  onLogin(existingUser);
-                  window.location.href = '/dashboard';
-                }, 1500);
-                return;
+                allPurchases.push(...purchases);
+                pendingPaymentsManager.completePendingPayment(payment.id);
               }
+              
+              // Update user with all pending purchases
+              const updatedModules = [...new Set([...(existingUser.purchasedModules || []), ...allNewModules])];
+              
+              await vpsDataStore.updateUser(existingUser.id, {
+                ...existingUser,
+                purchasedModules: updatedModules,
+                totalSpent: (existingUser.totalSpent || 0) + totalAdditionalSpent
+              });
+              
+              const data = await vpsDataStore.loadData();
+              await vpsDataStore.saveData({
+                ...data,
+                purchases: [...(data.purchases || []), ...allPurchases]
+              });
+              
+              localStorage.removeItem('pendingPurchase');
+              setPurchasedItems(pendingPayments.flatMap(p => p.items));
+              setShowSuccessModal(true);
+              
+              setSuccess('All pending purchases added to your account! Redirecting to dashboard...');
+              setTimeout(() => {
+                onLogin(existingUser);
+              }, 1500);
+              return;
             }
+            
             setError('An account with this email already exists. Please sign in instead.');
             setIsLoading(false);
             return;
@@ -300,7 +311,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             setTimeout(() => {
               const { password: _, ...userWithoutPassword } = newUser;
               onLogin(userWithoutPassword);
-              window.location.href = '/dashboard';
             }, 1500);
           } else {
             setError('Account creation failed. Please try a different email.');
@@ -384,7 +394,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
               totalSpent: (userWithoutPassword as any).totalSpent || 0
             };
             onLogin(completeUser as UserType);
-            window.location.href = '/dashboard';
             // Clear guest account info after successful login
             localStorage.removeItem('guestAccountEmail');
             localStorage.removeItem('guestAccountName');

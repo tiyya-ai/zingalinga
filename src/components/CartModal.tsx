@@ -18,6 +18,7 @@ import {
 } from '@nextui-org/react';
 import { ShoppingCart, X, CreditCard, Lock, Star, Minus, Plus, CheckCircle, Heart, Gift } from 'lucide-react';
 import { useCart, CartItem, PRODUCTS } from '../hooks/useCart';
+import { pendingPaymentsManager } from '../utils/pendingPayments';
 
 interface CartModalProps {
   isOpen: boolean;
@@ -159,6 +160,13 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onPurchas
         total: total,
         timestamp: Date.now()
       }));
+      
+      // Also store in pending payments for admin tracking
+      pendingPaymentsManager.storePendingPayment({
+        email: paymentForm.email,
+        items: cartItems,
+        total: total
+      });
       
       onPurchase(cartItems);
       
