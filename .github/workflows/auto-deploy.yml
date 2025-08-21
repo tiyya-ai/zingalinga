@@ -31,8 +31,11 @@ jobs:
         password: ${{ secrets.VPS_PASSWORD }}
         script: |
           cd /var/www/zinga-linga || mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
-          git pull origin main || git clone https://github.com/${{ github.repository }} .
-          npm install
+          git fetch --all
+          git reset --hard origin/main
+          npm install --production=false
           npm run build
-          pm2 restart zinga-linga || pm2 start npm --name "zinga-linga" -- start
-          echo "Deployment complete"
+          pm2 stop zinga-linga || true
+          pm2 delete zinga-linga || true
+          pm2 start npm --name "zinga-linga" -- start
+          echo "Deployment complete - $(date)"
