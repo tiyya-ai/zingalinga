@@ -95,8 +95,8 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
           } else if (path === '/admin' || path === '/dashboard') {
             // Correct role for the URL - keep the current page
             // currentPage is already set above
-          } else if (currentPage === '') {
-            // No specific page set, redirect based on role
+          } else if (currentPage === '' && (path === '/' || path === '')) {
+            // Only redirect to dashboard if on root path
             if (session.user.role === 'admin') {
               window.history.replaceState({}, '', '/admin');
               setCurrentPage('admin');
