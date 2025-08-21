@@ -102,6 +102,8 @@ import { UserManagement } from './UserManagement';
 import { Module } from '../types';
 import { SuccessModal } from './SuccessModal';
 import { AdminPendingPayments } from './AdminPendingPayments';
+import GeneralSettings from './GeneralSettings';
+import EmailSettings from './EmailSettings';
 
 // Type definitions
 interface Package {
@@ -841,7 +843,14 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       id: 'settings',
       label: 'Settings',
       icon: <Settings className="h-5 w-5" />,
-      color: 'text-gray-600'
+      color: 'text-gray-600',
+      children: [
+        { id: 'general-settings', label: 'General Settings', icon: <Settings className="h-4 w-4" /> },
+        { id: 'email-settings', label: 'Email Settings', icon: <Mail className="h-4 w-4" /> },
+        { id: 'security-settings', label: 'Security Settings', icon: <Shield className="h-4 w-4" /> },
+        { id: 'notification-settings', label: 'Notification Settings', icon: <Bell className="h-4 w-4" /> },
+        { id: 'content-settings', label: 'Content Settings', icon: <FileText className="h-4 w-4" /> }
+      ]
     }
   ];
 
@@ -7297,236 +7306,157 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   );
 
   const renderSettings = () => (
+    <GeneralSettings />
+  );
+
+  const renderGeneralSettings = () => (
+    <GeneralSettings />
+  );
+
+  const renderEmailSettings = () => (
     <div className="space-y-6">
-      <PageHeader title="Settings" />
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* General Settings */}
-        <Card className="bg-white border border-gray-200">
-          <CardHeader className="border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">General Settings</h3>
-          </CardHeader>
-          <CardBody className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Platform Name</label>
-              <Input 
-                value="Zinga Linga" 
-                className="w-full"
-                classNames={{
-                  input: "bg-white",
-                  inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
-                }}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
-              <Input 
-                value="admin@zingalinga.com" 
-                type="email"
-                className="w-full"
-                classNames={{
-                  input: "bg-white",
-                  inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
-                }}
-              />
-            </div>
-            <Button 
-              className="w-full mt-4 bg-blue-600 text-white hover:bg-blue-700"
-              onPress={async () => {
-                try {
-                  const success = await vpsDataStore.updateSettings({
-                    platformName: 'Zinga Linga',
-                    contactEmail: 'admin@zingalinga.com',
-                    updatedAt: new Date().toISOString()
-                  } as any);
-                  if (success) {
-                    setToast({message: 'Settings saved successfully!', type: 'success'});
-                    setTimeout(() => setToast(null), 3000);
-                  } else {
-                    throw new Error('Failed to save');
-                  }
-                } catch (error) {
-                  setToast({message: 'Failed to save settings', type: 'error'});
-                  setTimeout(() => setToast(null), 3000);
-                }
-              }}
-            >
-              Save Settings
-            </Button>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Default Language</label>
-              <Select 
-                selectedKeys={["en"]}
-                className="w-full"
-                aria-label="Default language"
-                classNames={{
-                  trigger: "bg-gray-50 border-gray-200"
-                }}
-              >
-                <SelectItem key="en" value="en">English</SelectItem>
-                <SelectItem key="es" value="es">Spanish</SelectItem>
-                <SelectItem key="fr" value="fr">French</SelectItem>
-              </Select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
-              <Select 
-                selectedKeys={["UTC"]}
-                className="w-full"
-                aria-label="Timezone"
-                classNames={{
-                  trigger: "bg-gray-50 border-gray-200"
-                }}
-              >
-                <SelectItem key="UTC" value="UTC">UTC</SelectItem>
-                <SelectItem key="EST" value="EST">Eastern Time</SelectItem>
-                <SelectItem key="PST" value="PST">Pacific Time</SelectItem>
-              </Select>
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* Security Settings */}
-        <Card className="bg-white border border-gray-200">
-          <CardHeader className="border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Security Settings</h3>
-          </CardHeader>
-          <CardBody className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Email Verification</p>
-                <p className="text-sm text-gray-500">Require email verification for new users</p>
-              </div>
-              <Switch defaultSelected aria-label="Email verification" />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Two-Factor Authentication</p>
-                <p className="text-sm text-gray-500">Enable 2FA for admin accounts</p>
-              </div>
-              <Switch aria-label="Two-factor authentication" />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Session Security</p>
-                <p className="text-sm text-gray-500">Auto-logout after inactivity</p>
-              </div>
-              <Switch defaultSelected aria-label="Session security" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Session Timeout (minutes)</label>
-              <Input 
-                value="30" 
-                type="number"
-                className="w-full"
-                classNames={{
-                  input: "bg-gray-50",
-                  inputWrapper: "bg-gray-50 border-gray-200"
-                }}
-              />
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* Content Settings */}
-        <Card className="bg-white border border-gray-200">
-          <CardHeader className="border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Content Settings</h3>
-          </CardHeader>
-          <CardBody className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Auto Moderation</p>
-                <p className="text-sm text-gray-500">Automatically moderate user content</p>
-              </div>
-              <Switch defaultSelected />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Video Comments</p>
-                <p className="text-sm text-gray-500">Allow comments on videos</p>
-              </div>
-              <Switch defaultSelected />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Max Video Size (MB)</label>
-              <Input 
-                value="500" 
-                type="number"
-                className="w-full"
-                classNames={{
-                  input: "bg-gray-50",
-                  inputWrapper: "bg-gray-50 border-gray-200"
-                }}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Max Video Length (minutes)</label>
-              <Input 
-                value="30" 
-                type="number"
-                className="w-full"
-                classNames={{
-                  input: "bg-gray-50",
-                  inputWrapper: "bg-gray-50 border-gray-200"
-                }}
-              />
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* Notification Settings */}
-        <Card className="bg-white border border-gray-200">
-          <CardHeader className="border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-          </CardHeader>
-          <CardBody className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Email Notifications</p>
-                <p className="text-sm text-gray-500">Send email notifications to users</p>
-              </div>
-              <Switch defaultSelected />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Push Notifications</p>
-                <p className="text-sm text-gray-500">Send push notifications</p>
-              </div>
-              <Switch defaultSelected />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Marketing Emails</p>
-                <p className="text-sm text-gray-500">Send promotional emails</p>
-              </div>
-              <Switch />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">System Alerts</p>
-                <p className="text-sm text-gray-500">Admin system notifications</p>
-              </div>
-              <Switch defaultSelected />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-
-
-
-
-      {/* Action Buttons */}
-      <div className="flex justify-end space-x-3">
-        <Button variant="flat" className="bg-gray-100 text-gray-700 hover:bg-gray-200">
-          Reset to Defaults
-        </Button>
-        <Button className="bg-gray-900 text-white hover:bg-gray-800">
-          Save Changes
-        </Button>
-      </div>
+      <PageHeader title="Email Settings" />
+      <EmailSettings />
     </div>
   );
+
+  const renderSecuritySettings = () => (
+    <div className="space-y-6">
+      <PageHeader title="Security Settings" />
+      <Card className="bg-white border border-gray-200">
+        <CardHeader className="border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Security Configuration</h3>
+        </CardHeader>
+        <CardBody className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900">Email Verification</p>
+              <p className="text-sm text-gray-500">Require email verification for new users</p>
+            </div>
+            <Switch defaultSelected aria-label="Email verification" />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900">Two-Factor Authentication</p>
+              <p className="text-sm text-gray-500">Enable 2FA for admin accounts</p>
+            </div>
+            <Switch aria-label="Two-factor authentication" />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900">Session Security</p>
+              <p className="text-sm text-gray-500">Auto-logout after inactivity</p>
+            </div>
+            <Switch defaultSelected aria-label="Session security" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Session Timeout (minutes)</label>
+            <Input 
+              value="30" 
+              type="number"
+              className="w-full"
+              classNames={{
+                input: "bg-gray-50",
+                inputWrapper: "bg-gray-50 border-gray-200"
+              }}
+            />
+          </div>
+        </CardBody>
+      </Card>
+    </div>
+  );
+
+  const renderNotificationSettings = () => (
+    <div className="space-y-6">
+      <PageHeader title="Notification Settings" />
+      <Card className="bg-white border border-gray-200">
+        <CardHeader className="border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Notification Preferences</h3>
+        </CardHeader>
+        <CardBody className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900">Email Notifications</p>
+              <p className="text-sm text-gray-500">Send email notifications to users</p>
+            </div>
+            <Switch defaultSelected />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900">Push Notifications</p>
+              <p className="text-sm text-gray-500">Send push notifications</p>
+            </div>
+            <Switch defaultSelected />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900">Marketing Emails</p>
+              <p className="text-sm text-gray-500">Send promotional emails</p>
+            </div>
+            <Switch />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900">System Alerts</p>
+              <p className="text-sm text-gray-500">Admin system notifications</p>
+            </div>
+            <Switch defaultSelected />
+          </div>
+        </CardBody>
+      </Card>
+    </div>
+  );
+
+  const renderContentSettings = () => (
+    <div className="space-y-6">
+      <PageHeader title="Content Settings" />
+      <Card className="bg-white border border-gray-200">
+        <CardHeader className="border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Content Configuration</h3>
+        </CardHeader>
+        <CardBody className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900">Auto Moderation</p>
+              <p className="text-sm text-gray-500">Automatically moderate user content</p>
+            </div>
+            <Switch defaultSelected />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900">Video Comments</p>
+              <p className="text-sm text-gray-500">Allow comments on videos</p>
+            </div>
+            <Switch defaultSelected />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Max Video Size (MB)</label>
+            <Input 
+              value="500" 
+              type="number"
+              className="w-full"
+              classNames={{
+                input: "bg-gray-50",
+                inputWrapper: "bg-gray-50 border-gray-200"
+              }}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Max Video Length (minutes)</label>
+            <Input 
+              value="30" 
+              type="number"
+              className="w-full"
+              classNames={{
+                input: "bg-gray-50",
+                inputWrapper: "bg-gray-50 border-gray-200"
+              }}
+            />
+          </div>
+        </CardBody>
+      </Card>
+    </div>
+   );
 
   // Package render functions
   const renderAllPackages = () => {
@@ -7594,6 +7524,11 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       case 'recent-activity': return renderRecentActivity();
       case 'admin-profile': return renderAdminProfile();
       case 'settings': return renderSettings();
+      case 'general-settings': return renderGeneralSettings();
+      case 'email-settings': return renderEmailSettings();
+      case 'security-settings': return renderSecuritySettings();
+      case 'notification-settings': return renderNotificationSettings();
+      case 'content-settings': return renderContentSettings();
       default:
         return (
           <div className="space-y-6">
