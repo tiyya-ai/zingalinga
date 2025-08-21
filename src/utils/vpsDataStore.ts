@@ -1437,11 +1437,20 @@ class VPSDataStore {
       data.purchases = data.purchases || [];
       data.purchases.push(packagePurchase, ...contentPurchases);
       
-      // Update user's purchased modules
+      // Update user's purchased modules - include both package and individual content
       const user = data.users?.find(u => u.id === userId);
       if (user) {
         user.purchasedModules = user.purchasedModules || [];
-        user.purchasedModules.push(packageId, ...(package_.contentIds || []));
+        // Add package ID
+        if (!user.purchasedModules.includes(packageId)) {
+          user.purchasedModules.push(packageId);
+        }
+        // Add all content IDs from the package
+        (package_.contentIds || []).forEach(contentId => {
+          if (!user.purchasedModules!.includes(contentId)) {
+            user.purchasedModules!.push(contentId);
+          }
+        });
         user.totalSpent = (user.totalSpent || 0) + (package_.price || 0);
       }
       

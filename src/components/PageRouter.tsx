@@ -42,6 +42,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
   const [currentPage, setCurrentPage] = useState('');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showGuestLoginModal, setShowGuestLoginModal] = useState(false);
+  const [prefilledEmail, setPrefilledEmail] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [modules, setModules] = useState<Module[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -172,7 +173,9 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
     window.addEventListener('popstate', handlePopState);
     
     // Listen for guest login modal trigger
-    const handleShowGuestLogin = () => {
+    const handleShowGuestLogin = (event: any) => {
+      const email = event.detail?.email || '';
+      setPrefilledEmail(email);
       setShowGuestLoginModal(true);
     };
     
@@ -190,6 +193,11 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
     vpsDataStore.setCurrentUser(userData);
     const session = authManager.getCurrentSession();
     setCurrentSession(session);
+    
+    // Close any open login modals
+    setShowLoginModal(false);
+    setShowGuestLoginModal(false);
+    setPrefilledEmail('');
     
     // Redirect to appropriate dashboard after login
     if (userData.role === 'admin') {
@@ -437,6 +445,17 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
         onLogin={handleLogin}
+      />
+      
+      {/* Guest Login Modal (triggered after purchase) */}
+      <LoginModal 
+        isOpen={showGuestLoginModal}
+        onClose={() => {
+          setShowGuestLoginModal(false);
+          setPrefilledEmail('');
+        }}
+        onLogin={handleLogin}
+        prefilledEmail={prefilledEmail}
       />
       
 

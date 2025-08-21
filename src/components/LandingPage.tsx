@@ -16,11 +16,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
   const { addItem, clearCart } = useCart();
   
   const handleBuyNow = (product: 'kiki' | 'tano' | 'bundle' | 'explorer' | 'adventurer' | 'roadtripper' | 'bookie') => {
-    console.log('handleBuyNow called with:', product);
+    console.log('Buy button clicked for:', product);
     clearCart();
     setInitialProduct(product);
     setShowCart(true);
-    console.log('showCart set to true');
   };
 
   useEffect(() => {

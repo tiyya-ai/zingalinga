@@ -9,7 +9,7 @@ export interface CartItem {
   originalPrice?: number;
   description: string;
   quantity: number;
-  type: 'module' | 'bundle';
+  type: 'module' | 'bundle' | 'package';
   ageRange?: string;
   features?: string[];
 }

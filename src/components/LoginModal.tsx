@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { X, Eye, EyeOff, Mail, Lock, User, Sparkles, Heart } from 'lucide-react';
 import { User as UserType } from '../types';
 import { sanitizeInput, sanitizeForLog, validateEmail } from '../utils/securityUtils';
+import { PurchaseSuccessModal } from './PurchaseSuccessModal';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLogin: (user: UserType) => void;
+  prefilledEmail?: string;
 }
 
-export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => {
+export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, prefilledEmail }) => {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,12 +24,35 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
   const [success, setSuccess] = useState('');
   const [csrfToken, setCsrfToken] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, text: '', color: '' });
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [purchasedItems, setPurchasedItems] = useState<any[]>([]);
 
   useEffect(() => {
     if (isOpen) {
       setCsrfToken(Math.random().toString(36).substring(2, 15));
+      // Set prefilled email if provided and switch to register mode
+      if (prefilledEmail) {
+        setEmail(prefilledEmail);
+        setIsRegisterMode(true);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, prefilledEmail]);
+
+  // Listen for registration event from payment
+  useEffect(() => {
+    const handleShowRegistration = (event: CustomEvent) => {
+      const { email, name } = event.detail;
+      setEmail(email);
+      setName(name);
+      setIsRegisterMode(true);
+      // Don't open modal here, let parent component handle it
+    };
+
+    window.addEventListener('showRegistration', handleShowRegistration as EventListener);
+    return () => {
+      window.removeEventListener('showRegistration', handleShowRegistration as EventListener);
+    };
+  }, []);
 
   const checkPasswordStrength = (password: string) => {
     let score = 0;
@@ -132,16 +157,87 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
           
           // Check if user already exists
           const existingUsers = await vpsDataStore.getUsers();
-          const userExists = existingUsers.some(u => u.email === sanitizedEmail);
+          const existingUser = existingUsers.find(u => u.email === sanitizedEmail);
           
-          if (userExists) {
-            setError('An account with this email already exists.');
+          if (existingUser) {
+            // If user exists and has pending purchase, add items to their account
+            const pendingPurchase = localStorage.getItem('pendingPurchase');
+            if (pendingPurchase) {
+              const purchaseData = JSON.parse(pendingPurchase);
+              if (purchaseData.email === sanitizedEmail) {
+                // Add purchased items to existing user
+                const newModules = purchaseData.items.map((item: any) => item.id);
+                const updatedModules = [...new Set([...(existingUser.purchasedModules || []), ...newModules])];
+                const additionalSpent = purchaseData.total;
+                
+                await vpsDataStore.updateUser(existingUser.id, {
+                  ...existingUser,
+                  purchasedModules: updatedModules,
+                  totalSpent: (existingUser.totalSpent || 0) + additionalSpent
+                });
+                
+                // Create purchase records
+                const purchases = purchaseData.items.map((item: any) => ({
+                  id: `purchase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                  userId: existingUser.id,
+                  moduleId: item.id,
+                  purchaseDate: new Date().toISOString(),
+                  amount: item.price * item.quantity,
+                  status: 'completed' as const,
+                  type: item.type === 'package' ? 'package' : 'video'
+                }));
+                
+                const data = await vpsDataStore.loadData();
+                await vpsDataStore.saveData({
+                  ...data,
+                  purchases: [...(data.purchases || []), ...purchases]
+                });
+                
+                localStorage.removeItem('pendingPurchase');
+                setPurchasedItems(purchaseData.items);
+                setShowSuccessModal(true);
+                
+                setSuccess('Purchase added to your existing account! Redirecting to dashboard...');
+                setTimeout(() => {
+                  onLogin(existingUser);
+                  window.location.href = '/dashboard';
+                }, 1500);
+                return;
+              }
+            }
+            setError('An account with this email already exists. Please sign in instead.');
             setIsLoading(false);
             return;
           }
           
+          // Check for pending purchase
+          const pendingPurchase = localStorage.getItem('pendingPurchase');
+          let purchasedModules: string[] = [];
+          let totalSpent = 0;
+          let purchases: any[] = [];
+          
+          if (pendingPurchase) {
+            const purchaseData = JSON.parse(pendingPurchase);
+            if (purchaseData.email === sanitizedEmail) {
+              purchasedModules = purchaseData.items.map((item: any) => item.id);
+              totalSpent = purchaseData.total;
+              
+              // Create purchase records
+              purchases = purchaseData.items.map((item: any) => ({
+                id: `purchase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                userId: `user_${Date.now()}`, // Will be updated with actual user ID
+                moduleId: item.id,
+                purchaseDate: new Date().toISOString(),
+                amount: item.price * item.quantity,
+                status: 'completed' as const,
+                type: item.type === 'package' ? 'package' : 'video'
+              }));
+            }
+          }
+          
+          const newUserId = `user_${Date.now()}`;
           const newUser = {
-            id: `user_${Date.now()}`,
+            id: newUserId,
             email: sanitizedEmail,
             password: sanitizedPassword,
             name: sanitizedName,
@@ -149,18 +245,61 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             createdAt: new Date().toISOString(),
             lastLogin: new Date().toISOString(),
             isActive: true,
-            purchasedModules: [],
-            totalSpent: 0
+            purchasedModules,
+            totalSpent
           };
+          
+          // Update purchase records with correct user ID
+          purchases.forEach(purchase => {
+            purchase.userId = newUserId;
+          });
           
           const success = await vpsDataStore.addUser(newUser);
           if (success) {
-            setSuccess('Account created successfully! Logging you in...');
+            // Add purchase records if any
+            if (purchases.length > 0) {
+              const data = await vpsDataStore.loadData();
+              const updatedData = {
+                ...data,
+                purchases: [...(data.purchases || []), ...purchases]
+              };
+              await vpsDataStore.saveData(updatedData);
+              
+              // Handle package purchases - add content from packages to user's modules
+              const packagePurchases = purchases.filter(p => p.type === 'package');
+              if (packagePurchases.length > 0) {
+                const packages = data.packages || [];
+                packagePurchases.forEach(purchase => {
+                  const pkg = packages.find(p => p.id === purchase.moduleId);
+                  if (pkg && pkg.contentIds) {
+                    // Add package content to user's purchased modules
+                    pkg.contentIds.forEach((contentId: string) => {
+                      if (!newUser.purchasedModules.includes(contentId)) {
+                        newUser.purchasedModules.push(contentId);
+                      }
+                    });
+                  }
+                });
+                
+                // Update user with package content
+                await vpsDataStore.updateUser(newUserId, newUser);
+              }
+            }
+            
+            // Show success modal if there were purchases
+            if (purchases.length > 0) {
+              setPurchasedItems(purchaseData.items);
+              setShowSuccessModal(true);
+            }
+            
+            // Clear pending purchase
+            localStorage.removeItem('pendingPurchase');
+            
+            setSuccess('Account created successfully! Redirecting to dashboard...');
             setTimeout(() => {
               const { password: _, ...userWithoutPassword } = newUser;
               onLogin(userWithoutPassword);
-              onClose();
-              resetForm();
+              window.location.href = '/dashboard';
             }, 1500);
           } else {
             setError('Account creation failed. Please try a different email.');
@@ -236,7 +375,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             localStorage.setItem('zinga-linga-session', JSON.stringify(session));
             console.log('💾 Session created for:', user.email, 'Role:', user.role);
             
-            setSuccess('Welcome back! Redirecting...');
+            setSuccess('Welcome back! Redirecting to dashboard...');
             const { password: _, ...userWithoutPassword } = user;
             const completeUser = {
               ...userWithoutPassword,
@@ -244,8 +383,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
               totalSpent: (userWithoutPassword as any).totalSpent || 0
             };
             onLogin(completeUser as UserType);
-            onClose();
-            resetForm();
+            window.location.href = '/dashboard';
             // Clear guest account info after successful login
             localStorage.removeItem('guestAccountEmail');
             localStorage.removeItem('guestAccountName');
@@ -530,6 +668,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
         </div>
       </div>
+      
+      {/* Purchase Success Modal */}
+      <PurchaseSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          onClose();
+          resetForm();
+        }}
+        purchasedItems={purchasedItems}
+        userEmail={email}
+      />
     </div>
   );
 };

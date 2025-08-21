@@ -33,6 +33,62 @@ class AuthManager {
     return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
   }
 
+  // Transfer guest purchases to user account
+  private async transferGuestPurchases(userEmail: string, userId: string): Promise<void> {
+    try {
+      const guestEmail = localStorage.getItem('guestAccountEmail');
+      if (!guestEmail || guestEmail !== userEmail) {
+        return; // No guest purchases for this email
+      }
+
+      const data = await vpsDataStore.loadData();
+      
+      // Find guest user account
+      const guestUser = data.users?.find(u => u.email === guestEmail && u.id.startsWith('guest_'));
+      if (!guestUser) {
+        return;
+      }
+
+      // Find guest purchases
+      const guestPurchases = data.purchases?.filter(p => p.userId === guestUser.id) || [];
+      if (guestPurchases.length === 0) {
+        return;
+      }
+
+      // Update user with purchased modules
+      const userIndex = data.users?.findIndex(u => u.id === userId);
+      if (userIndex !== undefined && userIndex >= 0 && data.users) {
+        const existingModules = data.users[userIndex].purchasedModules || [];
+        const newModules = guestUser.purchasedModules || [];
+        data.users[userIndex].purchasedModules = [...new Set([...existingModules, ...newModules])];
+        data.users[userIndex].totalSpent = (data.users[userIndex].totalSpent || 0) + (guestUser.totalSpent || 0);
+      }
+
+      // Transfer purchases to real user
+      if (data.purchases) {
+        guestPurchases.forEach(purchase => {
+          purchase.userId = userId;
+        });
+      }
+
+      // Remove guest user account
+      if (data.users) {
+        data.users = data.users.filter(u => u.id !== guestUser.id);
+      }
+
+      // Save updated data
+      await vpsDataStore.saveData(data);
+      
+      // Clear guest account info from localStorage
+      localStorage.removeItem('guestAccountEmail');
+      localStorage.removeItem('guestAccountPassword');
+      
+      console.log('✅ Guest purchases transferred successfully');
+    } catch (error) {
+      console.error('Error transferring guest purchases:', error);
+    }
+  }
+
   // Set session
   setSession(session: AuthSession): void {
     try {
@@ -197,6 +253,9 @@ class AuthManager {
         return { success: false, message: 'Registration failed' };
       }
 
+      // Transfer any guest purchases to this new account
+      await this.transferGuestPurchases(email, user.id);
+
       return { success: true, user, message: 'Registration successful! You can now log in.' };
     } catch (error) {
       console.error('Registration error:', error);
@@ -256,6 +315,9 @@ class AuthManager {
         console.error('Failed to save session:', error);
         return { success: false, message: 'Failed to save session' };
       }
+
+      // Transfer any guest purchases to this account
+      await this.transferGuestPurchases(email, user.id);
 
       // Record successful login
       this.recordLoginAttempt(email, true);

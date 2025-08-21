@@ -423,7 +423,13 @@ export default function ProfessionalUserDashboard({
     // Also check user's purchased modules list
     const inUserList = user.purchasedModules?.includes(itemId) || false;
     
-    return hasPurchase || inUserList;
+    // Check if item is part of a purchased package
+    const isInPurchasedPackage = packages.some(pkg => 
+      user.purchasedModules?.includes(pkg.id) && 
+      pkg.contentIds?.includes(itemId)
+    );
+    
+    return hasPurchase || inUserList || isInPurchasedPackage;
   };
 
 
@@ -921,11 +927,7 @@ export default function ProfessionalUserDashboard({
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
               {allContent.map((content) => {
-                const isPurchased = localPurchases.some(purchase => 
-                  purchase.moduleId === content.id && 
-                  purchase.userId === user?.id && 
-                  purchase.status === 'completed'
-                );
+                const isPurchased = isItemPurchased(content.id);
                 
                 return (
                   <div key={content.id} className="bg-black/30 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden hover:scale-105 hover:border-yellow-400 transition-all duration-300 group">
@@ -1148,11 +1150,7 @@ export default function ProfessionalUserDashboard({
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredContent.map((content) => {
-                  const isPurchased = localPurchases.some(purchase => 
-                    purchase.moduleId === content.id && 
-                    purchase.userId === user?.id && 
-                    purchase.status === 'completed'
-                  );
+                  const isPurchased = isItemPurchased(content.id);
                   
                   return (
                     <div key={content.id} className="bg-black/30 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden hover:scale-105 hover:border-yellow-400 transition-all duration-300 group">

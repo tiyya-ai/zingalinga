@@ -34,6 +34,16 @@ export default function RootPage() {
     } catch (error) {
       console.error('Session check error:', error);
     }
+
+    // Listen for registration event from payment
+    const handleShowRegistration = () => {
+      setShowLoginModal(true);
+    };
+
+    window.addEventListener('showRegistration', handleShowRegistration);
+    return () => {
+      window.removeEventListener('showRegistration', handleShowRegistration);
+    };
   }, []);
 
   const handleLogin = async (userData: User) => {

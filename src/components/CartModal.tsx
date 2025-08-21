@@ -27,6 +27,7 @@ interface CartModalProps {
 }
 
 export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onPurchase, initialProduct }) => {
+  console.log('CartModal render - isOpen:', isOpen, 'initialProduct:', initialProduct);
   const { items: cartItems, addItem, removeItem, updateQuantity, getTotalItems, getTotalPrice, getSavings, clearCart } = useCart();
   const [showLoginModal, setShowLoginModal] = useState(false);
   
@@ -56,18 +57,74 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onPurchas
           addItem(PRODUCTS.COMPLETE_BUNDLE);
           break;
         case 'explorer':
+          addItem({
+            id: 'explorer-pack',
+            name: 'Explorer Pack',
+            price: 30.00,
+            description: 'Where Letters Come to Life!',
+            type: 'package' as const,
+            ageRange: '3-6 years',
+            features: [
+              'Letter Safari with playful letter recognition games',
+              'Magic Word Builder to create fun words like a word wizard!',
+              'Phonics party - sing along to catchy letter sounds',
+              'Storytime with exciting tales role plays for children',
+              '15 Learning Quests - colorful lessons that feel like playtime'
+            ]
+          });
+          break;
         case 'adventurer':
+          addItem({
+            id: 'adventurer-pack',
+            name: 'Adventurer Pack',
+            price: 45.00,
+            description: 'Reading Superpowers Unlocked!',
+            type: 'package' as const,
+            ageRange: '3-6 years',
+            features: [
+              'Everything in Explorer Pack PLUS:',
+              'Word Architect: Build bigger, cooler words!',
+              '25 Learning Quests with more stories, more adventures',
+              '25 Gold Star Challenges to earn rewards after each lesson'
+            ]
+          });
+          break;
         case 'roadtripper':
+          addItem({
+            id: 'roadtripper-pack',
+            name: 'Roadtripper Pack',
+            price: 80.00,
+            description: 'Learning On-The-Go!',
+            type: 'package' as const,
+            ageRange: '3-6 years',
+            features: [
+              '125 Audio adventures, perfect for car rides & travel',
+              '125 Sing-along phonics - turn travel time into learning time',
+              'Story podcasts with African tales that spark imagination'
+            ]
+          });
+          break;
         case 'bookie':
-          // For new products, add the bundle for now
-          addItem(PRODUCTS.COMPLETE_BUNDLE);
+          addItem({
+            id: 'bookie-pack',
+            name: 'Zingalinga Bookie Pack',
+            price: 60.00,
+            description: 'Interactive Learning Device',
+            type: 'package' as const,
+            ageRange: '3-6 years',
+            features: [
+              'Fully aligned PP1 and PP2 equivalent literacy product',
+              'Learn through stories anywhere anytime',
+              'Battery that lasts 4 days when fully utilized',
+              'Interactive screen with 20+ interactive lessons'
+            ]
+          });
           break;
       }
     }
   }, [isOpen, initialProduct]);
 
   const [showCheckout, setShowCheckout] = useState(false);
-  const [showThankYou, setShowThankYou] = useState(false);
   const [paymentForm, setPaymentForm] = useState({
     email: '',
     cardNumber: '',
@@ -94,65 +151,34 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onPurchas
         return;
       }
       
-      // Create guest account and purchase
-      const { vpsDataStore } = await import('../utils/vpsDataStore');
-      const data = await vpsDataStore.loadData();
-      
-      // Create new user account
-      const newUserId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const newUser = {
-        id: newUserId,
-        name: paymentForm.name,
+      // Store payment info for registration
+      localStorage.setItem('pendingPurchase', JSON.stringify({
         email: paymentForm.email,
-        role: 'user' as const,
-        createdAt: new Date().toISOString(),
-        purchasedModules: cartItems.map(item => item.id),
-        totalSpent: total
-      };
-      
-      // Create purchase records
-      const newPurchases = cartItems.map(item => ({
-        id: `purchase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        userId: newUserId,
-        moduleId: item.id,
-        purchaseDate: new Date().toISOString(),
-        amount: item.price * item.quantity,
-        status: 'completed' as const,
-        type: 'video' as const
+        name: paymentForm.name,
+        items: cartItems,
+        total: total,
+        timestamp: Date.now()
       }));
       
-      // Save to database
-      const updatedData = {
-        ...data,
-        users: [...(data.users || []), newUser],
-        purchases: [...(data.purchases || []), ...newPurchases]
-      };
-      await vpsDataStore.saveData(updatedData);
-      
-      // Store account info for login
-      localStorage.setItem('guestAccountEmail', paymentForm.email);
-      localStorage.setItem('guestAccountName', paymentForm.name);
-      localStorage.setItem('purchasedItems', JSON.stringify(cartItems));
-      
       onPurchase(cartItems);
-      setShowThankYou(true);
-      setShowCheckout(false);
+      
+      // Close cart modal
+      onClose();
       clearCart();
+      
+      // Redirect to registration page with pre-filled email
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('showRegistration', {
+          detail: { email: paymentForm.email, name: paymentForm.name }
+        }));
+      }, 300);
     } catch (error) {
       console.error('Purchase failed:', error);
       alert('Purchase failed. Please try again.');
     }
   };
 
-  const handleCloseThankYou = () => {
-    setShowThankYou(false);
-    setShowCheckout(false);
-    onClose();
-    // Trigger login modal globally after a short delay
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('showGuestLogin'));
-    }, 300);
-  };
+
 
   const canShowBundleOffer = cartItems.length === 2 && 
     cartItems.some(item => item.id === 'kiki-letters') && 
@@ -175,49 +201,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onPurchas
             </button>
           </div>
 
-          {showThankYou ? (
-            <div className="text-center py-6 space-y-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center mx-auto animate-pulse">
-                <CheckCircle className="w-8 h-8 text-white" />
-              </div>
-              
-              <div>
-                <h3 className="text-xl font-mali font-bold text-gray-900 mb-2">🎉 Success!</h3>
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-green-800 font-mali text-center">
-                    <span className="font-bold text-lg">Account Created & Payment Complete!</span><br/>
-                    Your videos are ready to watch
-                  </p>
-                </div>
-                
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <h4 className="font-bold text-blue-800 font-mali mb-2">📝 Your Login Details:</h4>
-                  <div className="text-sm text-blue-800 font-mali space-y-1">
-                    <div><strong>Email:</strong> {paymentForm.email}</div>
-                    <div><strong>Password:</strong> <span className="bg-blue-200 px-2 py-1 rounded font-mono">guest123</span></div>
-                  </div>
-                </div>
-                
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                  <p className="text-xs text-yellow-800 font-mali text-center">
-                    💡 <strong>Easy Login:</strong> Use the email above with password "guest123"
-                  </p>
-                </div>
-                
-                <button 
-                  onClick={handleCloseThankYou}
-                  className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white font-mali font-bold py-4 px-6 rounded-xl hover:from-green-600 hover:to-blue-600 transition-all text-base shadow-lg"
-                >
-                  🚀 Login & Watch My Videos
-                </button>
-                
-                <p className="text-xs text-gray-500 font-mali text-center mt-3">
-                  You'll be redirected to login page with your email pre-filled
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
+          <div className="space-y-4">
               {cartItems.length === 0 ? (
                 <div className="text-center py-8">
                   <div className="text-4xl mb-3">🛒</div>
@@ -332,7 +316,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onPurchas
                             onClick={handlePurchase}
                             className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 text-white font-mali font-bold py-2 px-4 rounded-lg hover:from-green-600 hover:to-blue-600 transition-all text-sm"
                           >
-                            Pay ${total.toFixed(2)}
+                            Complete Purchase
                           </button>
                         </div>
                       </div>
@@ -341,11 +325,8 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onPurchas
                 </>
               )}
             </div>
-          )}
         </div>
       </div>
-      
-
     </div>
   );
 };

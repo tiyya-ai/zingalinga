@@ -1,270 +1,205 @@
 {
   "users": [
     {
-      "id": "admin_001",
-      "email": "admin@zingalinga.com",
-      "password": "admin123",
-      "name": "Administrator Full Name",
-      "role": "admin",
-      "purchasedModules": [],
-      "totalSpent": 0,
-      "createdAt": "2025-01-20T10:00:00.000Z",
-      "lastLogin": "2025-01-20T10:00:00.000Z"
-    },
-    {
       "id": "user_001",
       "email": "test@example.com",
-      "password": "test123",
       "name": "Test User",
       "role": "user",
       "purchasedModules": [],
       "totalSpent": 0,
-      "createdAt": "2025-01-20T10:00:00.000Z",
-      "lastLogin": "2025-01-20T10:00:00.000Z"
+      "createdAt": "2025-08-21T00:06:32.576Z",
+      "lastLogin": "2025-08-21T00:06:32.576Z"
     },
     {
-      "id": "user-1",
-      "email": "user@example.com",
-      "password": "user123",
-      "name": "User",
+      "id": "user_1755734874231_h1kc4gmq0",
+      "name": "ahm",
+      "email": "yee@yee.com",
       "role": "user",
+      "createdAt": "2025-08-21T00:07:54.231Z",
       "purchasedModules": [
-        "package_1755348635251"
+        "explorer-pack"
       ],
-      "totalSpent": 0,
-      "createdAt": "2025-01-20T10:00:00.000Z",
-      "lastLogin": "2025-01-20T10:00:00.000Z"
+      "totalSpent": 30
     },
     {
-      "id": "admin-1",
-      "email": "admin@zingalinga.com",
-      "name": "Admin",
+      "id": "user_1755734876118_phhicehde",
+      "name": "ahm",
+      "email": "yee@yee.com",
       "role": "user",
+      "createdAt": "2025-08-21T00:07:56.118Z",
+      "purchasedModules": [
+        "explorer-pack"
+      ],
+      "totalSpent": 30
+    },
+    {
+      "id": "user_1755734914625_0qaleu8qf",
+      "name": "mdd",
+      "email": "ahmed@gmail.com",
+      "role": "user",
+      "createdAt": "2025-08-21T00:08:34.625Z",
+      "purchasedModules": [
+        "explorer-pack"
+      ],
+      "totalSpent": 30
+    },
+    {
+      "id": "user_1755735000425_7ab2311r5",
+      "name": "ahmed",
+      "email": "aemarkett@gmail.com",
+      "role": "user",
+      "createdAt": "2025-08-21T00:10:00.425Z",
+      "purchasedModules": [
+        "explorer-pack"
+      ],
+      "totalSpent": 30
+    },
+    {
+      "id": "user_1755735284300",
+      "email": "ahmed@mido.com",
+      "password": "amir2023M@@",
+      "name": "mido",
+      "role": "user",
+      "createdAt": "2025-08-21T00:14:44.300Z",
+      "lastLogin": "2025-08-21T00:14:44.300Z",
+      "isActive": true,
       "purchasedModules": [],
-      "totalSpent": 0,
-      "createdAt": "2025-01-20T10:00:00.000Z",
-      "lastLogin": "2025-01-20T10:00:00.000Z",
-      "updatedAt": "2025-08-15T06:47:25.150Z"
+      "totalSpent": 0
+    },
+    {
+      "id": "user_1755735373580",
+      "email": "ahmed@midoo.com",
+      "password": "test123",
+      "name": "bialo",
+      "role": "user",
+      "createdAt": "2025-08-21T00:16:13.580Z",
+      "lastLogin": "2025-08-21T00:16:13.580Z",
+      "isActive": true,
+      "purchasedModules": [
+        "explorer-pack"
+      ],
+      "totalSpent": 30
+    },
+    {
+      "id": "user_1755735461693",
+      "email": "bilal@billal.com",
+      "password": "test123",
+      "name": "ahmed",
+      "role": "user",
+      "createdAt": "2025-08-21T00:17:41.693Z",
+      "lastLogin": "2025-08-21T00:17:41.693Z",
+      "isActive": true,
+      "purchasedModules": [
+        "explorer-pack"
+      ],
+      "totalSpent": 60
+    },
+    {
+      "id": "user_1755735590980",
+      "email": "ismail@mido.com",
+      "password": "admin123",
+      "name": "ismail",
+      "role": "user",
+      "createdAt": "2025-08-21T00:19:50.980Z",
+      "lastLogin": "2025-08-21T00:19:50.980Z",
+      "isActive": true,
+      "purchasedModules": [
+        "explorer-pack"
+      ],
+      "totalSpent": 60
     }
   ],
-  "modules": [
-    {
-      "id": "sample_video_001",
-      "title": "Sample Educational Video",
-      "description": "A sample video for testing the admin",
-      "category": "education",
-      "thumbnail": "/placeholder-video.jpg",
-      "videoUrl": "/sample-video.mp4",
-      "duration": "15:30",
-      "estimatedDuration": "15:30",
-      "createdAt": "2025-01-20T10:00:00.000Z",
-      "isActive": true,
-      "rating": 4.5
-    },
-    {
-      "id": "bb1_lesson_001",
-      "title": "BB1 - Basic Letters A-E",
-      "description": "Learn the first 5 letters of the alphabet with fun activities and songs",
-      "category": "PP1 Program",
-      "type": "video",
-      "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-      "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-      "duration": "20:15",
-      "estimatedDuration": "20:15",
-      "createdAt": "2025-01-20T10:00:00.000Z",
-      "isActive": true,
-      "isVisible": true,
-      "rating": 4.8,
-      "tags": [
-        "letters",
-        "alphabet",
-        "basic",
-        "bb1"
-      ]
-    },
-    {
-      "id": "bb1_lesson_002",
-      "title": "BB1 - Numbers 1-5",
-      "description": "Count from 1 to 5 with colorful animations and interactive exercises",
-      "category": "Uncategorized",
-      "type": "video",
-      "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-      "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-      "duration": "18:30",
-      "estimatedDuration": "18:30",
-      "createdAt": "2025-01-20T10:00:00.000Z",
-      "isActive": true,
-      "isVisible": true,
-      "rating": 4.7,
-      "tags": [
-        "numbers",
-        "counting",
-        "basic",
-        "bb1"
-      ],
-      "videoType": "youtube",
-      "updatedAt": "2025-08-13T20:49:16.286Z",
-      "audioUrl": ""
-    },
-    {
-      "id": "bb2_lesson_001",
-      "title": "BB2 - Advanced Reading Skills",
-      "description": "Develop reading comprehension with story-based learning activities",
-      "category": "PP2 Program",
-      "type": "video",
-      "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-      "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-      "duration": "25:45",
-      "estimatedDuration": "25:45",
-      "createdAt": "2025-01-20T10:00:00.000Z",
-      "isActive": true,
-      "isVisible": true,
-      "rating": 4.9,
-      "tags": [
-        "reading",
-        "comprehension",
-        "advanced",
-        "bb2"
-      ]
-    },
-    {
-      "id": "audio_1755556710215",
-      "title": "iiui",
-      "description": "",
-      "category": "Audio Lessons",
-      "type": "audio",
-      "audioUrl": "kjk",
-      "thumbnail": "/default-audio-thumbnail.png",
-      "duration": "",
-      "tags": [
-        "kk"
-      ],
-      "aiTags": [],
-      "accessLevel": "paid",
-      "hasPreview": false,
-      "previewUrl": "",
-      "isActive": true,
-      "isVisible": true,
-      "createdAt": "2025-08-18T22:38:30.215Z",
-      "updatedAt": "2025-08-18T22:38:30.223Z",
-      "rating": 0,
-      "totalRatings": 0,
-      "features": [],
-      "fullContent": [],
-      "difficulty": "beginner",
-      "videoUrl": ""
-    },
-    {
-      "id": "video_1755689263807",
-      "title": "ujjgj",
-      "description": "gfhh",
-      "category": "PP2 Program",
-      "rating": 5,
-      "thumbnail": "https://img.youtube.com/vi/Tx5HaR1S1jo/maxresdefault.jpg",
-      "videoUrl": "https://youtu.be/Tx5HaR1S1jo",
-      "duration": "",
-      "estimatedDuration": "",
-      "tags": [
-        "ijkj"
-      ],
-      "isActive": true,
-      "isVisible": true,
-      "createdAt": "2025-08-20T11:27:43.807Z",
-      "updatedAt": "2025-08-20T11:37:38.331Z",
-      "totalRatings": 0,
-      "features": [],
-      "fullContent": [],
-      "difficulty": "beginner",
-      "audioUrl": "",
-      "videoType": "external"
-    }
-  ],
+  "modules": [],
   "purchases": [
     {
-      "id": "purchase_pp1_1755077255031_user-1",
-      "userId": "user-1",
-      "moduleId": "pp1_1755077255031",
-      "purchaseDate": "2025-08-13T09:28:09.935Z",
-      "amount": 0,
+      "id": "purchase_1755734874231_wptx6ea91",
+      "userId": "user_1755734874231_h1kc4gmq0",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:07:54.231Z",
+      "amount": 30,
       "status": "completed",
-      "type": "video",
-      "createdAt": "2025-08-13T09:28:10.019Z"
+      "type": "video"
     },
     {
-      "id": "purchase_bb1_lesson_001_user-1",
-      "userId": "user-1",
-      "moduleId": "bb1_lesson_001",
-      "purchaseDate": "2025-08-15T06:12:19.211Z",
-      "amount": 12.99,
+      "id": "purchase_1755734876118_1tje29z4e",
+      "userId": "user_1755734876118_phhicehde",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:07:56.118Z",
+      "amount": 30,
       "status": "completed",
-      "type": "video",
-      "createdAt": "2025-08-15T06:12:30.644Z"
+      "type": "video"
     },
     {
-      "id": "purchase_bb1_lesson_001_user-1",
-      "userId": "user-1",
-      "moduleId": "bb1_lesson_001",
-      "purchaseDate": "2025-08-15T06:12:23.043Z",
-      "amount": 12.99,
+      "id": "purchase_1755734914625_h1977teh3",
+      "userId": "user_1755734914625_0qaleu8qf",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:08:34.625Z",
+      "amount": 30,
       "status": "completed",
-      "type": "video",
-      "createdAt": "2025-08-15T06:12:30.825Z"
+      "type": "video"
     },
     {
-      "id": "purchase_bb1_lesson_001_user-1",
-      "userId": "user-1",
-      "moduleId": "bb1_lesson_001",
-      "purchaseDate": "2025-08-15T06:12:27.179Z",
-      "amount": 12.99,
+      "id": "purchase_1755735000425_unbnh2t5k",
+      "userId": "user_1755735000425_7ab2311r5",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:10:00.425Z",
+      "amount": 30,
       "status": "completed",
-      "type": "video",
-      "createdAt": "2025-08-15T06:12:31.047Z"
+      "type": "video"
     },
     {
-      "id": "purchase_1755363224290_t1sq3980k",
-      "userId": "user-1",
-      "moduleId": "package_1755348635251",
-      "purchaseDate": "2025-08-16T16:53:44.290Z",
-      "amount": 0,
-      "status": "completed"
+      "id": "purchase_1755735373580_cfsfhj7ge",
+      "userId": "user_1755735373580",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:16:13.580Z",
+      "amount": 30,
+      "status": "completed",
+      "type": "package"
+    },
+    {
+      "id": "purchase_1755735461693_2ghnoz2zx",
+      "userId": "user_1755735461693",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:17:41.693Z",
+      "amount": 30,
+      "status": "completed",
+      "type": "package"
+    },
+    {
+      "id": "purchase_1755735488579_quzge5vg1",
+      "userId": "user_1755735461693",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:18:08.579Z",
+      "amount": 30,
+      "status": "completed",
+      "type": "package"
+    },
+    {
+      "id": "purchase_1755735590980_g9zfouz5z",
+      "userId": "user_1755735590980",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:19:50.980Z",
+      "amount": 30,
+      "status": "completed",
+      "type": "package"
+    },
+    {
+      "id": "purchase_1755735620889_pabm9pgru",
+      "userId": "user_1755735590980",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:20:20.889Z",
+      "amount": 30,
+      "status": "completed",
+      "type": "package"
     }
   ],
   "contentFiles": [],
-  "settings": {
-    "siteName": "Zinga Linga",
-    "defaultLanguage": "en",
-    "timezone": "UTC",
-    "features": {
-      "userRegistration": true,
-      "emailVerification": true,
-      "videoComments": true,
-      "videoDownloads": true,
-      "socialSharing": false,
-      "parentalControls": true,
-      "offlineMode": true,
-      "multiLanguage": false
-    },
-    "dataSource": "real",
-    "apiEndpoint": "/api/data",
-    "enableRealTimeSync": true,
-    "platform": {
-      "siteName": "Zinga Linga",
-      "siteDescription": "Educational videos for children aged 3-12",
-      "contactEmail": "contact@zingalinga.com",
-      "supportEmail": "support@zingalinga.com",
-      "defaultLanguage": "en",
-      "timezone": "UTC",
-      "currency": "USD",
-      "dateFormat": "MM/DD/YYYY"
-    },
-    "ageGroups": []
-  },
+  "uploadQueue": [],
+  "savedVideos": [],
   "categories": [
     "Audio Lessons",
     "PP1 Program",
-    "PP2 Program",
-    "education",
-    "entertainment"
+    "PP2 Program"
   ],
   "comments": [],
   "subscriptions": [],
@@ -273,74 +208,123 @@
   "scheduledContent": [],
   "flaggedContent": [],
   "accessLogs": [],
-  "uploadQueue": [],
-  "lastUpdated": "2025-08-20T16:10:28.795Z",
-  "lastLoaded": "2025-01-20T10:00:00.000Z",
   "packages": [
     {
-      "id": "package_bb1_starter",
-      "name": "BB1 Starter Package",
-      "description": "Perfect introduction to learning with basic letters and numbers",
-      "price": 29.99,
-      "type": "educational",
-      "contentIds": ["bb1_lesson_001", "bb1_lesson_002"],
-      "ageGroups": ["3-5", "6-8"],
-      "billingCycle": "one-time",
+      "id": "explorer-pack",
+      "name": "Explorer Pack",
+      "description": "Where Letters Come to Life!",
+      "price": 30,
+      "type": "subscription",
       "isActive": true,
-      "isVisible": true,
+      "isPopular": false,
+      "icon": "🎒",
+      "features": [
+        "Letter Safari with playful letter recognition games",
+        "Magic Word Builder to create fun words like a word wizard!",
+        "Phonics party - sing along to catchy letter sounds",
+        "Storytime with exciting tales role plays for children",
+        "15 Learning Quests - colorful lessons that feel like playtime"
+      ],
+      "contentIds": [],
+      "ageGroups": [
+        "3-6"
+      ],
+      "billingCycle": "yearly",
+      "createdAt": "2025-08-21T00:06:32.576Z",
+      "updatedAt": "2025-08-21T00:06:32.576Z"
+    },
+    {
+      "id": "adventurer-pack",
+      "name": "Adventurer Pack",
+      "description": "Reading Superpowers Unlocked!",
+      "price": 45,
+      "type": "subscription",
+      "isActive": true,
+      "isPopular": true,
+      "icon": "🚀",
+      "features": [
+        "Everything in Explorer Pack PLUS:",
+        "Word Architect: Build bigger, cooler words!",
+        "25 Learning Quests with more stories, more adventures",
+        "25 Gold Star Challenges to earn rewards after each lesson"
+      ],
+      "contentIds": [],
+      "ageGroups": [
+        "3-6"
+      ],
+      "billingCycle": "yearly",
+      "upgradeFrom": "explorer-pack",
+      "upgradePrice": 15,
+      "createdAt": "2025-08-21T00:06:32.576Z",
+      "updatedAt": "2025-08-21T00:06:32.576Z"
+    },
+    {
+      "id": "roadtripper-pack",
+      "name": "Roadtripper Pack",
+      "description": "Learning On-The-Go!",
+      "price": 80,
+      "type": "one-time",
+      "isActive": false,
+      "isPopular": false,
+      "icon": "🚗",
+      "features": [
+        "125 Audio adventures, perfect for car rides & travel",
+        "125 Sing-along phonics - turn travel time into learning time",
+        "Story podcasts with African tales that spark imagination"
+      ],
+      "contentIds": [],
+      "ageGroups": [
+        "3-6"
+      ],
+      "billingCycle": "one-time",
+      "upgradeFrom": "adventurer-pack",
+      "upgradePrice": 35,
+      "comingSoon": true,
+      "createdAt": "2025-08-21T00:06:32.576Z",
+      "updatedAt": "2025-08-21T00:06:32.576Z"
+    },
+    {
+      "id": "bookie-pack",
+      "name": "Zingalinga Bookie Pack",
+      "description": "Interactive Learning Device",
+      "price": 60,
+      "type": "physical",
+      "isActive": true,
+      "isPopular": false,
       "icon": "📚",
       "features": [
-        "Basic letter recognition A-E",
-        "Number counting 1-5",
-        "Interactive exercises",
-        "Progress tracking"
+        "Fully aligned PP1 and PP2 equivalent literacy product",
+        "Learn through stories anywhere anytime",
+        "Battery that lasts 4 days when fully utilized",
+        "Interactive screen with 20+ interactive lessons"
       ],
-      "createdAt": "2025-01-20T10:00:00.000Z"
-    },
-    {
-      "id": "package_bb2_advanced",
-      "name": "BB2 Advanced Package",
-      "description": "Advanced reading skills for developing learners",
-      "price": 39.99,
-      "type": "educational",
-      "contentIds": ["bb2_lesson_001"],
-      "ageGroups": ["6-8", "9-12"],
+      "contentIds": [],
+      "ageGroups": [
+        "3-6"
+      ],
       "billingCycle": "one-time",
-      "isActive": true,
-      "isVisible": true,
-      "icon": "📖",
-      "features": [
-        "Advanced reading comprehension",
-        "Story-based learning",
-        "Critical thinking exercises",
-        "Assessment tools"
-      ],
-      "createdAt": "2025-01-20T10:00:00.000Z"
-    },
-    {
-      "id": "package_complete_bundle",
-      "name": "Complete Learning Bundle",
-      "description": "Everything you need for comprehensive early education",
-      "price": 59.99,
-      "type": "bundle",
-      "contentIds": ["sample_video_001", "bb1_lesson_001", "bb1_lesson_002", "bb2_lesson_001", "audio_1755556710215"],
-      "ageGroups": ["3-5", "6-8", "9-12"],
-      "billingCycle": "one-time",
-      "isActive": true,
-      "isVisible": true,
-      "isPopular": true,
-      "icon": "🎓",
-      "features": [
-        "All BB1 and BB2 content",
-        "Audio lessons included",
-        "Sample educational videos",
-        "Complete curriculum coverage",
-        "Lifetime access"
-      ],
-      "createdAt": "2025-01-20T10:00:00.000Z"
+      "isPhysical": true,
+      "createdAt": "2025-08-21T00:06:32.576Z",
+      "updatedAt": "2025-08-21T00:06:32.576Z"
     }
   ],
-  "lastSaved": "2025-08-20T16:10:28.815Z",
-  "savedVideos": [],
-  "ageGroups": []
+  "bundles": [],
+  "ageGroups": [],
+  "settings": {
+    "siteName": "Zinga Linga",
+    "defaultLanguage": "en",
+    "timezone": "UTC",
+    "features": {
+      "userRegistration": true,
+      "videoComments": true,
+      "videoDownloads": true,
+      "socialSharing": false
+    },
+    "dataSource": "real",
+    "apiEndpoint": "/api/data",
+    "enableRealTimeSync": true
+  },
+  "lastUpdated": "2025-08-21T00:20:20.889Z",
+  "lastLoaded": "2025-08-21T00:06:32.576Z",
+  "lastSaved": "2025-08-21T00:20:21.163Z"
 }
