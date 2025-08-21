@@ -1446,7 +1446,7 @@ class VPSDataStore {
           user.purchasedModules.push(packageId);
         }
         // Add all content IDs from the package
-        (package_.contentIds || []).forEach(contentId => {
+        (package_.contentIds || []).forEach((contentId: string) => {
           if (!user.purchasedModules!.includes(contentId)) {
             user.purchasedModules!.push(contentId);
           }
