@@ -307,7 +307,7 @@ export class EmailService {
     return await this.sendEmail(emailData);
   }
   
-  private async notifyAdminNewRegistration(userEmail: string, userName: string): Promise<boolean> {
+  public async notifyAdminNewRegistration(userEmail: string, userName: string): Promise<boolean> {
     const emailData: EmailData = {
       to: this.config.adminEmail,
       subject: '🎉 New User Registration - ZingaLinga',
@@ -332,7 +332,7 @@ export class EmailService {
     return await this.sendEmail(emailData);
   }
 
-  private async notifyAdminNewPurchase(
+  public async notifyAdminNewPurchase(
     userEmail: string,
     userName: string,
     items: Array<{ name: string; price: number }>,
@@ -452,6 +452,21 @@ export class EmailService {
         </div>
       `,
       text: `${urgencyLevel} ALERT: Overdue Payment Registration - ${Math.floor(hoursSincePayment)}h\n\nA customer paid but hasn't completed registration for ${Math.floor(hoursSincePayment)} hours:\n\nCustomer Details:\nEmail: ${userEmail}\nHours Since Payment: ${Math.floor(hoursSincePayment)}h\nRegistration Token: ${registrationToken}\n\nPurchase Details:\n${items.map(item => `- ${item.name} - $${item.price.toFixed(2)}`).join('\n')}\nTotal: $${total.toFixed(2)}\n\nRecommended Actions:\n- Send a registration reminder email to the customer\n- Check if there are any technical issues preventing registration\n- Consider reaching out via phone if this is a high-value customer${hoursSincePayment >= 72 ? '\n- URGENT: Consider manual follow-up for this critical case' : ''}`
+    };
+
+    return await this.sendEmail(emailData);
+  }
+
+  public async sendCustomEmail(
+    to: string,
+    subject: string,
+    html: string
+  ): Promise<boolean> {
+    const emailData: EmailData = {
+      to,
+      subject,
+      html,
+      text: html.replace(/<[^>]*>/g, '') // Simple HTML to text conversion
     };
 
     return await this.sendEmail(emailData);

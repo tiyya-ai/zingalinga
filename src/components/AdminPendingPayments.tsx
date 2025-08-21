@@ -46,6 +46,10 @@ export const AdminPendingPayments: React.FC = () => {
 
   const sendRegistrationReminder = async (payment: PendingPayment) => {
     try {
+      if (!payment.registrationToken) {
+        alert('No registration token found for this payment.');
+        return;
+      }
       await paymentMonitoringService.sendManualReminder(payment.email, payment.registrationToken, payment.items, payment.total);
       alert('Registration reminder sent successfully!');
       // Refresh the data to update any statistics

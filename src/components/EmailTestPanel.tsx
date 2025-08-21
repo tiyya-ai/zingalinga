@@ -65,15 +65,15 @@ export default function EmailTestPanel() {
           if (connectionResult.success) {
             addResult('success', 'Email service connection successful!');
           } else {
-            addResult('error', `Connection failed: ${connectionResult.error}`);
+            addResult('error', `Connection failed: ${connectionResult.message}`);
           }
           break;
 
         case 'custom':
-          await emailService.sendEmail({
-            to: testEmail,
-            subject: customSubject,
-            html: `
+          await emailService.sendCustomEmail(
+            testEmail,
+            customSubject,
+            `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #333;">Test Email</h2>
                 <p>${customMessage}</p>
@@ -81,12 +81,12 @@ export default function EmailTestPanel() {
                 <p style="color: #666; font-size: 12px;">Sent from Zinga Linga Admin Dashboard</p>
               </div>
             `
-          });
+          );
           addResult('success', `Custom test email sent to ${testEmail}`);
           break;
 
         case 'welcome':
-          await emailService.sendWelcomeEmail(testEmail, 'Test User', 'test-token-123');
+          await emailService.sendWelcomeEmail(testEmail, 'Test User');
           addResult('success', `Welcome email sent to ${testEmail}`);
           break;
 
@@ -95,10 +95,11 @@ export default function EmailTestPanel() {
             testEmail,
             'Test User',
             [
-              { name: 'Premium Package', price: 29.99, quantity: 1 },
-              { name: 'Extra Content', price: 9.99, quantity: 2 }
+              { name: 'Premium Package', price: 29.99 },
+              { name: 'Extra Content', price: 9.99 }
             ],
-            69.97
+            39.98,
+            'TEST-ORDER-123'
           );
           addResult('success', `Purchase confirmation sent to ${testEmail}`);
           break;
@@ -108,7 +109,7 @@ export default function EmailTestPanel() {
             testEmail,
             'test-token-123',
             [
-              { name: 'Premium Package', price: 29.99, quantity: 1 }
+              { name: 'Premium Package', price: 29.99 }
             ],
             29.99
           );
@@ -117,21 +118,21 @@ export default function EmailTestPanel() {
 
         case 'admin-registration':
           await emailService.notifyAdminNewRegistration(
-            'Test User',
             testEmail,
-            'Premium Package'
+            'Test User'
           );
           addResult('success', 'Admin registration notification sent');
           break;
 
         case 'admin-purchase':
           await emailService.notifyAdminNewPurchase(
-            'Test User',
             testEmail,
+            'Test User',
             [
-              { name: 'Premium Package', price: 29.99, quantity: 1 }
+              { name: 'Premium Package', price: 29.99 }
             ],
-            29.99
+            29.99,
+            'TEST-ORDER-456'
           );
           addResult('success', 'Admin purchase notification sent');
           break;
@@ -140,10 +141,11 @@ export default function EmailTestPanel() {
           await emailService.notifyAdminOverduePayment(
             testEmail,
             [
-              { name: 'Premium Package', price: 29.99, quantity: 1 }
+              { name: 'Premium Package', price: 29.99 }
             ],
             29.99,
-            '24h'
+            24,
+            'test-token-789'
           );
           addResult('success', 'Admin overdue payment notification sent');
           break;
