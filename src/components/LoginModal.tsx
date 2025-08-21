@@ -287,7 +287,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             }
             
             // Show success modal if there were purchases
-            if (purchases.length > 0) {
+            if (purchases.length > 0 && pendingPurchase) {
+              const purchaseData = JSON.parse(pendingPurchase);
               setPurchasedItems(purchaseData.items);
               setShowSuccessModal(true);
             }
