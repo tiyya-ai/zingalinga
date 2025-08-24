@@ -305,7 +305,7 @@ class VPSDataStore {
               modules: this.memoryData.modules?.map(module => ({
                 ...module,
                 videoUrl: module.videoUrl?.startsWith('data:') ? '[Large video data removed]' : module.videoUrl,
-                thumbnail: module.thumbnail?.length > 50000 ? '[Large thumbnail removed]' : module.thumbnail,
+                thumbnail: (module.thumbnail && module.thumbnail.length > 50000) ? '[Large thumbnail removed]' : module.thumbnail,
                 audioUrl: module.audioUrl?.startsWith('data:') ? '[Large audio data removed]' : module.audioUrl
               }))
             };
