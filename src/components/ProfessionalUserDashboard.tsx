@@ -413,7 +413,7 @@ export default function ProfessionalUserDashboard({
       index === self.findIndex(p => p.moduleId === purchase.moduleId && p.userId === purchase.userId)
     );
     
-    // Check if purchased
+    // Check if purchased directly
     const hasPurchase = uniquePurchases.some(purchase => 
       purchase.moduleId === itemId && 
       purchase.userId === user.id && 
@@ -429,7 +429,12 @@ export default function ProfessionalUserDashboard({
       pkg.contentIds?.includes(itemId)
     );
     
-    return hasPurchase || inUserList || isInPurchasedPackage;
+    // For packages, check if the package itself is purchased
+    const isPackagePurchased = packages.some(pkg => 
+      pkg.id === itemId && user.purchasedModules?.includes(pkg.id)
+    );
+    
+    return hasPurchase || inUserList || isInPurchasedPackage || isPackagePurchased;
   };
 
 
@@ -2362,12 +2367,62 @@ export default function ProfessionalUserDashboard({
                         
                         {/* Action Button */}
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             if (isPurchased) {
                               // Navigate to package content or show access
                               console.log('Access package:', pkg.id);
-                            } else if (onPurchase) {
-                              onPurchase(pkg.id);
+                              alert(`✅ You own this package! Content is now accessible.`);
+                            } else if (pkg.isActive) {
+                              try {
+                                // Create purchase for package
+                                const packagePurchase = {
+                                  id: `purchase_${Date.now()}_${pkg.id}_${user?.id || 'user_1'}`,
+                                  userId: user?.id || 'user_1',
+                                  moduleId: pkg.id,
+                                  purchaseDate: new Date().toISOString(),
+                                  amount: pkg.price || 0,
+                                  status: 'completed' as const,
+                                  type: 'package' as const
+                                };
+                                
+                                // Create purchases for all content in package
+                                const contentPurchases = (pkg.contentIds || []).map((contentId: string, index: number) => ({
+                                  id: `purchase_${Date.now()}_content_${index}_${user?.id || 'user_1'}`,
+                                  userId: user?.id || 'user_1',
+                                  moduleId: contentId,
+                                  purchaseDate: new Date().toISOString(),
+                                  amount: 0,
+                                  status: 'completed' as const,
+                                  type: 'video' as const,
+                                  packageId: pkg.id
+                                }));
+                                
+                                // Save all purchases to VPS
+                                await vpsDataStore.addPurchase(packagePurchase);
+                                for (const contentPurchase of contentPurchases) {
+                                  await vpsDataStore.addPurchase(contentPurchase);
+                                }
+                                
+                                // Update user's purchased modules to include package AND all content
+                                if (user?.id) {
+                                  const allContentIds = pkg.contentIds || [];
+                                  const updatedUser = {
+                                    ...user,
+                                    purchasedModules: [...(user.purchasedModules || []), pkg.id, ...allContentIds],
+                                    totalSpent: (user.totalSpent || 0) + (pkg.price || 0)
+                                  };
+                                  await vpsDataStore.updateUser(user.id, updatedUser);
+                                  if (setUser) setUser(updatedUser);
+                                }
+                                
+                                // Update local purchases
+                                setLocalPurchases([...localPurchases, packagePurchase, ...contentPurchases]);
+                                
+                                alert(`🎉 Package "${pkg.name}" purchased! All ${(pkg.contentIds || []).length} content items are now available.`);
+                              } catch (error) {
+                                console.error('Package purchase failed:', error);
+                                alert('❌ Purchase failed. Please try again.');
+                              }
                             }
                           }}
                           disabled={!pkg.isActive}
@@ -2379,7 +2434,7 @@ export default function ProfessionalUserDashboard({
                               : 'bg-gray-500/20 text-gray-400 cursor-not-allowed'
                           }`}
                         >
-                          {isPurchased ? 'Access Package' : pkg.isActive ? 'Purchase Package' : 'Unavailable'}
+                          {isPurchased ? 'Access Package' : pkg.isActive ? `Purchase - $${pkg.price?.toFixed(2) || '0.00'}` : 'Unavailable'}
                         </button>
                       </div>
                     </div>

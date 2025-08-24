@@ -48,7 +48,7 @@ export const renderAllPackages = (
   packages: any[], 
   onDeletePackage: (id: string) => void, 
   formatCurrency: (amount: number) => string,
-  setActiveSection: (section: string) => void,
+  handleSetActiveSection: (section: string) => void,
   onEditPackage?: (pkg: any) => void,
   onPreviewPackage?: (pkg: any) => void
 ) => (
@@ -59,7 +59,7 @@ export const renderAllPackages = (
         <Button 
           className="bg-purple-600 text-white hover:bg-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
           startContent={<Plus className="h-4 w-4" />}
-          onPress={() => setActiveSection('add-package')}
+          onPress={() => handleSetActiveSection('add-package')}
         >
           Add New Package
         </Button>
@@ -178,7 +178,7 @@ export const renderAddPackage = (
   packageForm: any, 
   setPackageForm: (form: any) => void, 
   onSavePackage: () => void,
-  setActiveSection: (section: string) => void,
+  handleSetActiveSection: (section: string) => void,
   editingPackage?: any,
   availableContent?: any[]
 ) => {
@@ -192,7 +192,7 @@ export const renderAddPackage = (
       actions={
         <Button 
           variant="flat" 
-          onPress={() => setActiveSection('all-packages')}
+          onPress={() => handleSetActiveSection('all-packages')}
           className="bg-gray-100 text-gray-700 hover:bg-gray-200"
           startContent={<X className="h-4 w-4" />}
         >
@@ -539,7 +539,7 @@ export const renderAddPackage = (
 );
 };
 
-export const renderLearningPackages = (setActiveSection: (section: string) => void) => (
+export const renderLearningPackages = (handleSetActiveSection: (section: string) => void) => (
   <div className="space-y-6">
     <PageHeader title="Learning Packages" />
     
@@ -555,7 +555,7 @@ export const renderLearningPackages = (setActiveSection: (section: string) => vo
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             <Button 
               className="h-24 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-              onPress={() => setActiveSection('all-packages')}
+              onPress={() => handleSetActiveSection('all-packages')}
             >
               <div className="text-center">
                 <PackageIcon className="h-8 w-8 mx-auto mb-2" />
@@ -566,7 +566,7 @@ export const renderLearningPackages = (setActiveSection: (section: string) => vo
             
             <Button 
               className="h-24 bg-gradient-to-r from-pink-500 to-pink-600 text-white hover:from-pink-600 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-              onPress={() => setActiveSection('add-package')}
+              onPress={() => handleSetActiveSection('add-package')}
             >
               <div className="text-center">
                 <Plus className="h-8 w-8 mx-auto mb-2" />

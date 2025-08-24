@@ -160,6 +160,44 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
           const existingUser = existingUsers.find(u => u.email === sanitizedEmail);
           
           if (existingUser) {
+            // If user exists but has no password or temp password, allow them to set one
+            if (!existingUser.password || existingUser.password === 'temp123') {
+              console.log('🔑 Updating password for existing user without proper password');
+              await vpsDataStore.updateUser(existingUser.id, {
+                ...existingUser,
+                password: sanitizedPassword,
+                name: sanitizedName,
+                status: 'active',
+                isActive: true,
+                lastLogin: new Date().toISOString()
+              });
+              
+              setSuccess('Account updated successfully! You can now login with your new password.');
+              
+              // Create session for auto-login
+              const sessionDuration = 8 * 60 * 60 * 1000; // 8 hours
+              const session = {
+                user: { ...existingUser, name: sanitizedName },
+                token: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+                expiresAt: Date.now() + sessionDuration,
+                loginTime: Date.now(),
+                lastActivity: Date.now(),
+                userAgent: navigator.userAgent,
+              };
+              localStorage.setItem('zinga-linga-session', JSON.stringify(session));
+              
+              setTimeout(() => {
+                const { password: _, ...userWithoutPassword } = existingUser;
+                onLogin({
+                  ...userWithoutPassword,
+                  name: sanitizedName,
+                  purchasedModules: existingUser.purchasedModules || [],
+                  totalSpent: existingUser.totalSpent || 0
+                });
+              }, 1500);
+              return;
+            }
+            
             // Check for pending payments
             const { pendingPaymentsManager } = await import('../utils/pendingPayments');
             const pendingPayments = pendingPaymentsManager.getPendingPaymentsByEmail(sanitizedEmail);
@@ -308,6 +346,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             localStorage.removeItem('pendingPurchase');
             
             setSuccess('Account created successfully! Redirecting to dashboard...');
+            
+            // Create session for auto-login
+            const sessionDuration = 8 * 60 * 60 * 1000; // 8 hours
+            const session = {
+              user: newUser,
+              token: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+              expiresAt: Date.now() + sessionDuration,
+              loginTime: Date.now(),
+              lastActivity: Date.now(),
+              userAgent: navigator.userAgent,
+            };
+            localStorage.setItem('zinga-linga-session', JSON.stringify(session));
+            
             setTimeout(() => {
               const { password: _, ...userWithoutPassword } = newUser;
               onLogin(userWithoutPassword);

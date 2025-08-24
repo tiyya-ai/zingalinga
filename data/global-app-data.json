@@ -125,6 +125,18 @@
       "dateOfBirth": "",
       "subscription": "free",
       "updatedAt": "2025-08-24T16:53:30.010Z"
+    },
+    {
+      "id": "user_1756076576270",
+      "email": "ahme@dmido.com",
+      "password": "admin123",
+      "name": "ahmed",
+      "role": "user",
+      "createdAt": "2025-08-24T23:02:56.270Z",
+      "lastLogin": "2025-08-24T23:02:56.270Z",
+      "isActive": true,
+      "purchasedModules": [],
+      "totalSpent": 0
     }
   ],
   "modules": [],
@@ -209,6 +221,14 @@
       "amount": 30,
       "status": "completed",
       "type": "package"
+    },
+    {
+      "id": "purchase_1756076748987_pqqcj9woz",
+      "userId": "user-1",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-24T23:05:48.987Z",
+      "amount": 0,
+      "status": "completed"
     }
   ],
   "contentFiles": [],
@@ -342,7 +362,7 @@
     "apiEndpoint": "/api/data",
     "enableRealTimeSync": true
   },
-  "lastUpdated": "2025-08-24T16:53:30.017Z",
+  "lastUpdated": "2025-08-24T23:05:48.987Z",
   "lastLoaded": "2025-08-21T00:06:32.576Z",
-  "lastSaved": "2025-08-24T16:53:31.904Z"
+  "lastSaved": "2025-08-24T23:05:49.007Z"
 }

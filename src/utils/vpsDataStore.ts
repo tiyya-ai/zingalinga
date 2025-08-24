@@ -275,6 +275,11 @@ class VPSDataStore {
         lastUpdated: new Date().toISOString()
       };
 
+      // Calculate data size for logging
+      const dataSize = JSON.stringify(this.memoryData).length;
+      console.log(`📊 Data size: ${(dataSize / 1024 / 1024).toFixed(2)}MB`);
+      console.log(`📊 Total modules: ${data.modules?.length || 0}`);
+
       // Save to API first
       try {
         const response = await fetch('/api/data', {
@@ -287,17 +292,44 @@ class VPSDataStore {
         
         if (response.ok) {
           console.log('✅ Data saved to API successfully');
+          return true;
         } else {
-          console.error('❌ API save failed:', await response.text());
+          const errorText = await response.text();
+          console.error('❌ API save failed:', errorText);
+          
+          // If API save fails due to size, try with reduced data
+          if (errorText.includes('too large') || errorText.includes('limit') || response.status === 413) {
+            console.log('🔄 Attempting to save with reduced media data...');
+            const reducedData = {
+              ...this.memoryData,
+              modules: this.memoryData.modules?.map(module => ({
+                ...module,
+                videoUrl: module.videoUrl?.startsWith('data:') ? '[Large video data removed]' : module.videoUrl,
+                thumbnail: module.thumbnail?.length > 50000 ? '[Large thumbnail removed]' : module.thumbnail,
+                audioUrl: module.audioUrl?.startsWith('data:') ? '[Large audio data removed]' : module.audioUrl
+              }))
+            };
+            
+            const reducedResponse = await fetch('/api/data', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(reducedData)
+            });
+            
+            if (reducedResponse.ok) {
+              console.log('✅ Reduced data saved to API successfully');
+              return true;
+            }
+          }
+          
+          return false;
         }
       } catch (apiError) {
         console.error('❌ API save error:', apiError);
+        return false;
       }
-
-      // Skip localStorage to avoid quota issues - API storage only
-      console.log('✅ Data saved to API, localStorage skipped to avoid quota issues');
-      
-      return true;
     } catch (error) {
       console.error('❌ Failed to save data:', error);
       return false;
@@ -362,11 +394,36 @@ class VPSDataStore {
       };
       
       data.modules = data.modules || [];
+      
+      // Check if adding this product would exceed reasonable limits
+      const currentVideoCount = data.modules.length;
+      console.log(`📊 Current video count: ${currentVideoCount}`);
+      
+      // Remove any artificial limits - allow unlimited videos
       data.modules.push(newProduct);
       
       console.log('💾 Saving product to data store...');
       const success = await this.saveData(data);
       console.log(success ? '✅ Product saved successfully' : '❌ Product save failed');
+      
+      if (!success) {
+        console.log('🔄 Attempting to save with reduced data size...');
+        // If save fails, try with smaller data
+        const lightProduct = {
+          ...newProduct,
+          videoUrl: newProduct.videoUrl?.startsWith('data:') ? '' : newProduct.videoUrl,
+          thumbnail: newProduct.thumbnail?.length > 50000 ? '' : newProduct.thumbnail,
+          audioUrl: newProduct.audioUrl?.startsWith('data:') ? '' : newProduct.audioUrl,
+          originalSize: newProduct.videoUrl?.length || 0
+        };
+        
+        // Replace the last added product with the light version
+        data.modules[data.modules.length - 1] = lightProduct;
+        const lightSuccess = await this.saveData(data);
+        console.log(lightSuccess ? '✅ Light product saved successfully' : '❌ Light product save failed');
+        return lightSuccess;
+      }
+      
       return success;
     } catch (error) {
       console.error('❌ Error adding product:', error);

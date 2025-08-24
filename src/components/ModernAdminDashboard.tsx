@@ -291,6 +291,27 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const [activeSection, setActiveSection] = useState('overview');
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
+  // Handle URL-based navigation for admin sections
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const section = urlParams.get('section');
+      if (section) {
+        handleSetActiveSection(section);
+      }
+    }
+  }, []);
+
+  // Custom setActiveSection that updates URL
+  const handleSetActiveSection = (section: string) => {
+    setActiveSection(section);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('section', section);
+      window.history.pushState({}, '', url.toString());
+    }
+  };
+
   // Data states with proper typing
   const [videos, setVideos] = useState<Module[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
@@ -909,7 +930,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
             } else {
               // Handle special cases for user management
               if (item.id === 'add-user') {
-                setActiveSection('add-user');
+                handleSetActiveSection('add-user');
                 // Reset editing state for new user
                 setEditingUser(null);
                 setUserForm({
@@ -938,7 +959,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                   tags: '',
                   status: 'active'
                 });
-                setActiveSection('add-video');
+                handleSetActiveSection('add-video');
               } else if (item.id === 'add-package') {
                 setEditingPackage(null);
                 setPackageForm({
@@ -953,9 +974,9 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                   coverImage: '',
                   contentIds: []
                 });
-                setActiveSection(item.id);
+                handleSetActiveSection(item.id);
               } else {
-                setActiveSection(item.id);
+                handleSetActiveSection(item.id);
               }
               if (isMobile) setSidebarOpen(false);
             }
@@ -1095,7 +1116,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Button 
                 className="h-20 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
-                onPress={() => setActiveSection('add-video')}
+                onPress={() => handleSetActiveSection('add-video')}
               >
                 <div className="text-center">
                   <Plus className="h-6 w-6 mx-auto mb-1" />
@@ -1104,7 +1125,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               </Button>
               <Button 
                 className="h-20 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
-                onPress={() => setActiveSection('categories')}
+                onPress={() => handleSetActiveSection('categories')}
               >
                 <div className="text-center">
                   <Tag className="h-6 w-6 mx-auto mb-1" />
@@ -1113,7 +1134,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               </Button>
               <Button 
                 className="h-20 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
-                onPress={() => setActiveSection('all-videos')}
+                onPress={() => handleSetActiveSection('all-videos')}
               >
                 <div className="text-center">
                   <Video className="h-6 w-6 mx-auto mb-1" />
@@ -1122,7 +1143,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               </Button>
               <Button 
                 className="h-20 bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
-                onPress={() => setActiveSection('orders')}
+                onPress={() => handleSetActiveSection('orders')}
               >
                 <div className="text-center">
                   <ShoppingCart className="h-6 w-6 mx-auto mb-1" />
@@ -1131,7 +1152,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               </Button>
               <Button 
                 className="h-20 bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
-                onPress={() => setActiveSection('all-users')}
+                onPress={() => handleSetActiveSection('all-users')}
               >
                 <div className="text-center">
                   <Users className="h-6 w-6 mx-auto mb-1" />
@@ -1140,7 +1161,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               </Button>
               <Button 
                 className="h-20 bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
-                onPress={() => setActiveSection('settings')}
+                onPress={() => handleSetActiveSection('settings')}
               >
                 <div className="text-center">
                   <Settings className="h-6 w-6 mx-auto mb-1" />
@@ -1149,7 +1170,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               </Button>
               <Button 
                 className="h-20 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white hover:from-yellow-600 hover:to-yellow-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
-                onPress={() => setActiveSection('audio-lessons')}
+                onPress={() => handleSetActiveSection('audio-lessons')}
               >
                 <div className="text-center">
                   <Headphones className="h-6 w-6 mx-auto mb-1" />
@@ -1158,7 +1179,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               </Button>
               <Button 
                 className="h-20 bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-600 hover:to-teal-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
-                onPress={() => setActiveSection('add-package')}
+                onPress={() => handleSetActiveSection('add-package')}
               >
                 <div className="text-center">
                   <Layers className="h-6 w-6 mx-auto mb-1" />
@@ -1176,7 +1197,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               size="sm"
               variant="flat"
               className="text-blue-600 hover:text-blue-700"
-              onPress={() => setActiveSection('recent-activity')}
+              onPress={() => handleSetActiveSection('recent-activity')}
             >
               View All
             </Button>
@@ -1990,7 +2011,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       thumbnailType: formData.thumbnail?.substring(0, 20)
     });
     
-    setActiveSection('edit-video');
+    handleSetActiveSection('edit-video');
   };
 
   const handleAddVideo = () => {
@@ -2024,7 +2045,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     }, 10);
     
     // Switch to add video section
-    setActiveSection('add-video');
+    handleSetActiveSection('add-video');
     console.log('✅ Active section set to: add-video');
   };
 
@@ -2319,7 +2340,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       vpsDataStore.clearMemoryCache();
       localStorage.removeItem('zinga-linga-app-data-cache');
       await loadRealData(true);
-      setActiveSection('all-videos');
+      handleSetActiveSection('all-videos');
     } catch (error) {
       console.error('Ã¢ÂÅ’ Failed to save video:', error);
       setToast({message: 'Failed to save video. Please try again.', type: 'error'});
@@ -2388,7 +2409,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
             )}
             <Button 
               variant="flat" 
-              onPress={() => setActiveSection('all-videos')}
+              onPress={() => handleSetActiveSection('all-videos')}
               className="bg-gray-100 text-gray-700 hover:bg-gray-200"
               startContent={<X className="h-4 w-4" />}
             >
@@ -2666,7 +2687,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                 onPress={() => {
                   if (confirm(`Are you sure you want to delete "${editingVideo.title}"? This action cannot be undone.`)) {
                     handleDeleteVideo(editingVideo.id);
-                    setActiveSection('all-videos');
+                    handleSetActiveSection('all-videos');
                   }
                 }}
                 aria-label="Delete video"
@@ -2797,7 +2818,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                       contentIds: selectedVideos,
                       name: `Package with ${selectedVideos.length} videos`
                     });
-                    setActiveSection('add-package');
+                    handleSetActiveSection('add-package');
                   }}
                   aria-label={`Create package with ${selectedVideos.length} selected videos`}
                 >
@@ -4245,7 +4266,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           <Button 
             className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
             startContent={<Plus className="h-4 w-4" />}
-            onPress={() => setActiveSection('add-audio-lesson')}
+            onPress={() => handleSetActiveSection('add-audio-lesson')}
           >
             Add Audio Lesson
           </Button>
@@ -4388,7 +4409,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                                 previewUrl: lesson.previewUrl || '',
                                 previewDuration: ''
                               });
-                              setActiveSection('add-audio-lesson');
+                              handleSetActiveSection('add-audio-lesson');
                             }}
                             aria-label={`Edit audio lesson ${lesson.title}`}
                           >
@@ -4435,7 +4456,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           <Button 
             className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
             startContent={<Plus className="h-4 w-4" />}
-            onPress={() => setActiveSection('add-video-lesson')}
+            onPress={() => handleSetActiveSection('add-video-lesson')}
           >
             Add Video Lesson
           </Button>
@@ -4511,7 +4532,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           <Button 
             className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
             startContent={<Plus className="h-4 w-4" />}
-            onPress={() => setActiveSection('add-pp1-content')}
+            onPress={() => handleSetActiveSection('add-pp1-content')}
           >
             Add PP1 Content
           </Button>
@@ -4553,7 +4574,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                           duration: (program as any).duration || '',
                           tags: Array.isArray((program as any).tags) ? (program as any).tags.join(', ') : (program as any).tags || ''
                         });
-                        setActiveSection('add-pp1-content');
+                        handleSetActiveSection('add-pp1-content');
                       }}
                       aria-label={`Edit PP1 program ${program.title}`}
                     >
@@ -4600,7 +4621,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                 <Button 
                   color="primary"
                   startContent={<Plus className="h-4 w-4" />}
-                  onPress={() => setActiveSection('add-pp1-content')}
+                  onPress={() => handleSetActiveSection('add-pp1-content')}
                 >
                   Add First PP1 Content
                 </Button>
@@ -4721,7 +4742,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         }
       }
       
-      setActiveSection('audio-lessons');
+      handleSetActiveSection('audio-lessons');
       setEditingVideo(null);
       
       // Reset form
@@ -4760,7 +4781,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       contentIds: pkg.contentIds || []
     });
     setEditingPackage(pkg);
-    setActiveSection('add-package');
+    handleSetActiveSection('add-package');
   };
 
   const handlePreviewPackage = (pkg: any) => {
@@ -4818,13 +4839,13 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           contentIds: []
         });
         setEditingPackage(null);
-        setActiveSection('all-packages');
+        handleSetActiveSection('all-packages');
         
         setToast({message: editingPackage ? 'Package updated successfully!' : 'Package created successfully!', type: 'success'});
         setTimeout(() => setToast(null), 3000);
         
         // Navigate back to packages list
-        setActiveSection('all-packages');
+        handleSetActiveSection('all-packages');
       } else {
         console.log('Ã¢ÂÅ’ Failed to save package');
         setToast({message: editingPackage ? 'Failed to update package.' : 'Failed to create package. Package name may already exist.', type: 'error'});
@@ -4865,7 +4886,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         actions={
           <Button 
             variant="flat" 
-            onPress={() => setActiveSection('audio-lessons')}
+            onPress={() => handleSetActiveSection('audio-lessons')}
             className="bg-gray-100 text-gray-700 hover:bg-gray-200"
             startContent={<X className="h-4 w-4" />}
           >
@@ -5202,7 +5223,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
 
   const renderAddVideoLesson = () => (
     <div className="space-y-6">
-      <PageHeader title="Add Video Lesson" actions={<Button variant="flat" onPress={() => setActiveSection('video-lessons')} startContent={<X className="h-4 w-4" />}>Cancel</Button>} />
+      <PageHeader title="Add Video Lesson" actions={<Button variant="flat" onPress={() => handleSetActiveSection('video-lessons')} startContent={<X className="h-4 w-4" />}>Cancel</Button>} />
       <Card className="bg-white border border-gray-200">
         <CardHeader><h3 className="text-lg font-semibold">Video Lesson Details</h3></CardHeader>
         <CardBody className="space-y-4">
@@ -5264,7 +5285,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       if (success) {
         setVideos(prev => [...prev, newContent]);
         alert('- PP1 content created successfully!');
-        setActiveSection('pp1-program');
+        handleSetActiveSection('pp1-program');
       } else {
         alert('- Failed to create PP1 content.');
       }
@@ -5277,7 +5298,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           actions={
             <Button 
               variant="flat" 
-              onPress={() => setActiveSection('pp1-program')} 
+              onPress={() => handleSetActiveSection('pp1-program')} 
               startContent={<X className="h-4 w-4" />}
               className="bg-gray-100 text-gray-700 hover:bg-gray-200"
             >
@@ -5576,7 +5597,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       if (success) {
         setVideos(prev => [...prev, newContent]);
         alert('- PP2 content created successfully!');
-        setActiveSection('pp2-program');
+        handleSetActiveSection('pp2-program');
       } else {
         alert('- Failed to create PP2 content.');
       }
@@ -5589,7 +5610,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           actions={
             <Button 
               variant="flat" 
-              onPress={() => setActiveSection('pp2-program')} 
+              onPress={() => handleSetActiveSection('pp2-program')} 
               startContent={<X className="h-4 w-4" />}
               className="bg-gray-100 text-gray-700 hover:bg-gray-200"
             >
@@ -5849,7 +5870,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
 
   const renderCreateBundle = () => (
     <div className="space-y-6">
-      <PageHeader title="Create Content Bundle" actions={<Button variant="flat" onPress={() => setActiveSection('content-bundles')} startContent={<X className="h-4 w-4" />}>Cancel</Button>} />
+      <PageHeader title="Create Content Bundle" actions={<Button variant="flat" onPress={() => handleSetActiveSection('content-bundles')} startContent={<X className="h-4 w-4" />}>Cancel</Button>} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-white border border-gray-200">
           <CardHeader><h3 className="text-lg font-semibold">Bundle Details</h3></CardHeader>
@@ -5981,7 +6002,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                       isActive: true
                     });
                     
-                    setActiveSection('content-bundles');
+                    handleSetActiveSection('content-bundles');
                   } else {
                     throw new Error('Failed to save to data store');
                   }
@@ -6008,7 +6029,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           <Button 
             className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
             startContent={<Plus className="h-4 w-4" />}
-            onPress={() => setActiveSection('create-bundle')}
+            onPress={() => handleSetActiveSection('create-bundle')}
           >
             Create Bundle
           </Button>
@@ -6054,7 +6075,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                         selectedVideos: bundle.selectedVideos || [],
                         isActive: bundle.isActive
                       });
-                      setActiveSection('create-bundle');
+                      handleSetActiveSection('create-bundle');
                     }}
                   >
                     <Edit className="h-4 w-4 text-blue-600" />
@@ -6097,7 +6118,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                 <Button 
                   color="primary"
                   startContent={<Plus className="h-4 w-4" />}
-                  onPress={() => setActiveSection('create-bundle')}
+                  onPress={() => handleSetActiveSection('create-bundle')}
                 >
                   Create First Bundle
                 </Button>
@@ -6290,7 +6311,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           <Button 
             className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
             startContent={<Plus className="h-4 w-4" />}
-            onPress={() => setActiveSection('add-user')}
+            onPress={() => handleSetActiveSection('add-user')}
           >
             Add New User
           </Button>
@@ -6422,7 +6443,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         actions={
           <Button 
             variant="flat" 
-            onPress={() => setActiveSection('all-users')}
+            onPress={() => handleSetActiveSection('all-users')}
             className="bg-gray-100 text-gray-700 hover:bg-gray-200"
             startContent={<X className="h-4 w-4" />}
           >
@@ -6646,7 +6667,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       dateOfBirth: userToEdit.dateOfBirth || '',
       subscription: userToEdit.subscription || 'free'
     });
-    setActiveSection('add-user');
+    handleSetActiveSection('add-user');
   };
 
   const handleSaveUser = async () => {
@@ -6715,7 +6736,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         }
       }
       
-      setActiveSection('all-users');
+      handleSetActiveSection('all-users');
       setEditingUser(null);
       
       // Reset form
@@ -6769,7 +6790,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
               <Button 
                 className="h-24 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('all-packages')}
+                onPress={() => handleSetActiveSection('all-packages')}
               >
                 <div className="text-center">
                   <PackageIcon className="h-8 w-8 mx-auto mb-2" />
@@ -6780,7 +6801,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               
               <Button 
                 className="h-24 bg-gradient-to-r from-pink-500 to-pink-600 text-white hover:from-pink-600 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('add-package')}
+                onPress={() => handleSetActiveSection('add-package')}
               >
                 <div className="text-center">
                   <Plus className="h-8 w-8 mx-auto mb-2" />
@@ -6811,7 +6832,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               <Button 
                 className="h-24 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('orders')}
+                onPress={() => handleSetActiveSection('orders')}
               >
                 <div className="text-center">
                   <PackageIcon className="h-8 w-8 mx-auto mb-2" />
@@ -6822,7 +6843,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               
               <Button 
                 className="h-24 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('subscriptions')}
+                onPress={() => handleSetActiveSection('subscriptions')}
               >
                 <div className="text-center">
                   <CreditCard className="h-8 w-8 mx-auto mb-2" />
@@ -6833,7 +6854,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               
               <Button 
                 className="h-24 bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-600 hover:to-teal-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('transactions')}
+                onPress={() => handleSetActiveSection('transactions')}
               >
                 <div className="text-center">
                   <Receipt className="h-8 w-8 mx-auto mb-2" />
@@ -6864,7 +6885,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
               <Button 
                 className="h-24 bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('comments')}
+                onPress={() => handleSetActiveSection('comments')}
               >
                 <div className="text-center">
                   <MessageSquare className="h-8 w-8 mx-auto mb-2" />
@@ -6875,7 +6896,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               
               <Button 
                 className="h-24 bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('flagged-content')}
+                onPress={() => handleSetActiveSection('flagged-content')}
               >
                 <div className="text-center">
                   <Flag className="h-8 w-8 mx-auto mb-2" />
@@ -6906,7 +6927,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
               <Button 
                 className="h-24 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('audio-lessons')}
+                onPress={() => handleSetActiveSection('audio-lessons')}
               >
                 <div className="text-center">
                   <Headphones className="h-8 w-8 mx-auto mb-2" />
@@ -6917,7 +6938,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               
               <Button 
                 className="h-24 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('pp1-program')}
+                onPress={() => handleSetActiveSection('pp1-program')}
               >
                 <div className="text-center">
                   <BookOpen className="h-8 w-8 mx-auto mb-2" />
@@ -6928,7 +6949,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               
               <Button 
                 className="h-24 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('pp2-program')}
+                onPress={() => handleSetActiveSection('pp2-program')}
               >
                 <div className="text-center">
                   <BookOpen className="h-8 w-8 mx-auto mb-2" />
@@ -6939,7 +6960,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               
               <Button 
                 className="h-24 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('content-bundles')}
+                onPress={() => handleSetActiveSection('content-bundles')}
               >
                 <div className="text-center">
                   <Layers className="h-8 w-8 mx-auto mb-2" />
@@ -6970,7 +6991,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
               <Button 
                 className="h-24 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('all-videos')}
+                onPress={() => handleSetActiveSection('all-videos')}
               >
                 <div className="text-center">
                   <Video className="h-8 w-8 mx-auto mb-2" />
@@ -6981,7 +7002,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               
               <Button 
                 className="h-24 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('add-video')}
+                onPress={() => handleSetActiveSection('add-video')}
               >
                 <div className="text-center">
                   <Plus className="h-8 w-8 mx-auto mb-2" />
@@ -6992,7 +7013,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               
               <Button 
                 className="h-24 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('categories')}
+                onPress={() => handleSetActiveSection('categories')}
               >
                 <div className="text-center">
                   <Tag className="h-8 w-8 mx-auto mb-2" />
@@ -7003,7 +7024,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               
               <Button 
                 className="h-24 bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('upload-queue')}
+                onPress={() => handleSetActiveSection('upload-queue')}
               >
                 <div className="text-center">
                   <Upload className="h-8 w-8 mx-auto mb-2" />
@@ -7034,7 +7055,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               <Button 
                 className="h-24 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('all-users')}
+                onPress={() => handleSetActiveSection('all-users')}
               >
                 <div className="text-center">
                   <Users className="h-8 w-8 mx-auto mb-2" />
@@ -7045,7 +7066,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               
               <Button 
                 className="h-24 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('add-user')}
+                onPress={() => handleSetActiveSection('add-user')}
               >
                 <div className="text-center">
                   <Plus className="h-8 w-8 mx-auto mb-2" />
@@ -7056,7 +7077,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               
               <Button 
                 className="h-24 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                onPress={() => setActiveSection('user-roles')}
+                onPress={() => handleSetActiveSection('user-roles')}
               >
                 <div className="text-center">
                   <Shield className="h-8 w-8 mx-auto mb-2" />
@@ -7483,15 +7504,15 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
 
   // Package render functions
   const renderAllPackages = () => {
-    return renderAllPackagesComponent(packages, handleDeletePackage, formatCurrency, setActiveSection, handleEditPackage, handlePreviewPackage);
+    return renderAllPackagesComponent(packages, handleDeletePackage, formatCurrency, handleSetActiveSection, handleEditPackage, handlePreviewPackage);
   };
 
   const renderAddPackage = () => {
-    return renderAddPackageComponent(packageForm, setPackageForm, handleSavePackage, setActiveSection, editingPackage, videos);
+    return renderAddPackageComponent(packageForm, setPackageForm, handleSavePackage, handleSetActiveSection, editingPackage, videos);
   };
 
   const renderLearningPackages = () => {
-    return renderLearningPackagesComponent(setActiveSection);
+    return renderLearningPackagesComponent(handleSetActiveSection);
   };
 
   const renderPendingPayments = () => {
@@ -7499,6 +7520,120 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       <div className="space-y-6">
         <PageHeader title="Pending Payments" />
         <AdminPendingPayments />
+      </div>
+    );
+  };
+
+  const renderChatSupport = () => {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Chat Support" />
+        <Card className="bg-white border border-gray-200">
+          <CardBody className="p-12">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <MessageSquare className="h-10 w-10 text-blue-600" />
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-3">Chat Support</h3>
+              <p className="text-gray-600 text-lg">Manage customer support conversations and help requests.</p>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  };
+
+  const renderAccessLogs = () => {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Access Logs" />
+        <Card className="bg-white border border-gray-200">
+          <CardBody className="p-12">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Shield className="h-10 w-10 text-gray-600" />
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-3">Access Logs</h3>
+              <p className="text-gray-600 text-lg">Monitor user access patterns and security events.</p>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  };
+
+  const renderSubscriptions = () => {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Subscriptions" />
+        <Card className="bg-white border border-gray-200">
+          <CardBody className="p-12">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CreditCard className="h-10 w-10 text-emerald-600" />
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-3">Subscriptions</h3>
+              <p className="text-gray-600 text-lg">Manage user subscriptions and billing cycles.</p>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  };
+
+  const renderTransactions = () => {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Transactions" />
+        <Card className="bg-white border border-gray-200">
+          <CardBody className="p-12">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Receipt className="h-10 w-10 text-green-600" />
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-3">Transactions</h3>
+              <p className="text-gray-600 text-lg">View and manage payment transactions.</p>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  };
+
+  const renderComments = () => {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Comments Moderation" />
+        <Card className="bg-white border border-gray-200">
+          <CardBody className="p-12">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <MessageSquare className="h-10 w-10 text-blue-600" />
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-3">Comments Moderation</h3>
+              <p className="text-gray-600 text-lg">Review and moderate user comments and feedback.</p>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  };
+
+  const renderFlaggedContent = () => {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Flagged Content" />
+        <Card className="bg-white border border-gray-200">
+          <CardBody className="p-12">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Flag className="h-10 w-10 text-red-600" />
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-3">Flagged Content</h3>
+              <p className="text-gray-600 text-lg">Review content that has been flagged by users.</p>
+            </div>
+          </CardBody>
+        </Card>
       </div>
     );
   };
@@ -7524,6 +7659,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       case 'upload-queue': return renderUploadQueuePage();
       case 'packages': return renderPackages();
       case 'commerce': return renderCommerce();
+      case 'scheduling': return renderContentScheduling();
+      case 'chat': return renderChatSupport();
       case 'moderation': return renderModeration();
       case 'content': return renderContentCategories();
       case 'videos': return renderVideos();
@@ -7532,14 +7669,15 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       case 'add-user': return renderAddUser();
       case 'user-roles': return renderUserRoles();
       case 'children-profiles': return renderChildrenProfilesPage();
-      case 'access-logs': return <div>Access Logs - Feature coming soon</div>;
+      case 'access-logs': return renderAccessLogs();
       case 'orders': return renderOrdersPage();
       case 'pending-payments': return renderPendingPayments();
       case 'admin-profile': return renderAdminProfile();
-      case 'subscriptions': return <div>Subscriptions - Feature coming soon</div>;
-      case 'transactions': return <div>Transactions - Feature coming soon</div>;
-      case 'comments': return <div>Comments - Feature coming soon</div>;
-      case 'flagged-content': return <div>Flagged Content - Feature coming soon</div>;
+      case 'access-logs': return renderAccessLogs();
+      case 'subscriptions': return renderSubscriptions();
+      case 'transactions': return renderTransactions();
+      case 'comments': return renderComments();
+      case 'flagged-content': return renderFlaggedContent();
       case 'all-packages': return renderAllPackages();
       case 'add-package': return renderAddPackage();
 
@@ -7629,7 +7767,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                  </DropdownTrigger>
                  <DropdownMenu className="w-80">
                    {pendingPaymentsCount > 0 && (
-                     <DropdownItem key="pending-payments" className="p-3 bg-gray-50 border-l-4 border-red-500" onPress={() => setActiveSection('pending-payments')}>
+                     <DropdownItem key="pending-payments" className="p-3 bg-gray-50 border-l-4 border-red-500" onPress={() => handleSetActiveSection('pending-payments')}>
                        <div className="flex items-start space-x-3">
                          <div className="w-2 h-2 rounded-full mt-2 bg-red-500"></div>
                          <div className="flex-1">
@@ -7656,7 +7794,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                        </div>
                      </DropdownItem>
                    ))}
-                   <DropdownItem key="view-all" className="border-t" onPress={() => setActiveSection('notifications')}>
+                   <DropdownItem key="view-all" className="border-t" onPress={() => handleSetActiveSection('notifications')}>
                      <div className="text-center py-2">
                        <span className="text-sm font-medium text-blue-600">View All Notifications</span>
                      </div>
@@ -7679,10 +7817,10 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                   </div>
                 </DropdownTrigger>
                 <DropdownMenu>
-                  <DropdownItem key="profile" startContent={<Users className="h-4 w-4" />} onPress={() => setActiveSection('admin-profile')}>
+                  <DropdownItem key="profile" startContent={<Users className="h-4 w-4" />} onPress={() => handleSetActiveSection('admin-profile')}>
                     My Profile
                   </DropdownItem>
-                  <DropdownItem key="settings" startContent={<Settings className="h-4 w-4" />} onPress={() => setActiveSection('settings')}>
+                  <DropdownItem key="settings" startContent={<Settings className="h-4 w-4" />} onPress={() => handleSetActiveSection('settings')}>
                     Settings
                   </DropdownItem>
                   <DropdownItem key="help" startContent={<HelpCircle className="h-4 w-4" />} onPress={() => onNavigate?.('help')}>

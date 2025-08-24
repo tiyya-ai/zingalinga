@@ -12,7 +12,9 @@ import {
   SelectItem,
   Textarea,
   Divider,
-  Chip
+  Chip,
+  Tabs,
+  Tab
 } from '@nextui-org/react';
 import {
   Mail,
@@ -25,8 +27,10 @@ import {
   Key,
   Globe,
   Save,
-  Bell
+  Bell,
+  TestTube
 } from 'lucide-react';
+import EmailTestPanel from './EmailTestPanel';
 
 interface EmailConfig {
   smtpHost: string;
@@ -276,7 +280,16 @@ export default function EmailSettings({ onConfigUpdate }: EmailSettingsProps) {
         </div>
       </div>
 
-      {/* Email Service Status */}
+      {/* Tabs for Configuration and Testing */}
+      <Tabs aria-label="Email Settings" className="w-full">
+        <Tab key="configuration" title={
+          <div className="flex items-center space-x-2">
+            <Settings className="h-4 w-4" />
+            <span>Configuration</span>
+          </div>
+        }>
+          <div className="space-y-6 mt-6">
+            {/* Email Service Status */}
       <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader className="border-b border-gray-200 pb-4">
           <div className="flex items-center space-x-3">
@@ -505,7 +518,7 @@ export default function EmailSettings({ onConfigUpdate }: EmailSettingsProps) {
                 <h4 className="font-medium text-gray-900">Welcome Email</h4>
               </div>
               <p className="text-sm text-gray-600">Sent to new users after registration</p>
-              <Button size="sm" variant="flat" className="mt-2 bg-blue-50 text-blue-600">Edit Template</Button>
+              <Button size="sm" variant="flat" className="mt-2 bg-blue-50 text-blue-600" onPress={() => alert('Welcome Email template editor coming soon!')}>Edit Template</Button>
             </div>
             <div className="p-4 border border-gray-200 rounded-lg hover:border-green-300 transition-colors cursor-pointer">
               <div className="flex items-center space-x-3 mb-2">
@@ -515,7 +528,7 @@ export default function EmailSettings({ onConfigUpdate }: EmailSettingsProps) {
                 <h4 className="font-medium text-gray-900">Purchase Confirmation</h4>
               </div>
               <p className="text-sm text-gray-600">Sent after successful purchases</p>
-              <Button size="sm" variant="flat" className="mt-2 bg-green-50 text-green-600">Edit Template</Button>
+              <Button size="sm" variant="flat" className="mt-2 bg-green-50 text-green-600" onPress={() => alert('Purchase Confirmation template editor coming soon!')}>Edit Template</Button>
             </div>
             <div className="p-4 border border-gray-200 rounded-lg hover:border-orange-300 transition-colors cursor-pointer">
               <div className="flex items-center space-x-3 mb-2">
@@ -525,7 +538,7 @@ export default function EmailSettings({ onConfigUpdate }: EmailSettingsProps) {
                 <h4 className="font-medium text-gray-900">Password Reset</h4>
               </div>
               <p className="text-sm text-gray-600">Sent for password reset requests</p>
-              <Button size="sm" variant="flat" className="mt-2 bg-orange-50 text-orange-600">Edit Template</Button>
+              <Button size="sm" variant="flat" className="mt-2 bg-orange-50 text-orange-600" onPress={() => alert('Password Reset template editor coming soon!')}>Edit Template</Button>
             </div>
             <div className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 transition-colors cursor-pointer">
               <div className="flex items-center space-x-3 mb-2">
@@ -535,7 +548,7 @@ export default function EmailSettings({ onConfigUpdate }: EmailSettingsProps) {
                 <h4 className="font-medium text-gray-900">System Alerts</h4>
               </div>
               <p className="text-sm text-gray-600">Critical system notifications</p>
-              <Button size="sm" variant="flat" className="mt-2 bg-purple-50 text-purple-600">Edit Template</Button>
+              <Button size="sm" variant="flat" className="mt-2 bg-purple-50 text-purple-600" onPress={() => alert('System Alerts template editor coming soon!')}>Edit Template</Button>
             </div>
           </div>
         </CardBody>
@@ -597,6 +610,20 @@ export default function EmailSettings({ onConfigUpdate }: EmailSettingsProps) {
           {isSaving ? 'Saving...' : 'Save Email Configuration'}
         </Button>
       </div>
+            </div>
+        </Tab>
+        
+        <Tab key="testing" title={
+          <div className="flex items-center space-x-2">
+            <TestTube className="h-4 w-4" />
+            <span>Email Testing & Preview</span>
+          </div>
+        }>
+          <div className="mt-6">
+            <EmailTestPanel />
+          </div>
+        </Tab>
+      </Tabs>
     </div>
   );
 }
