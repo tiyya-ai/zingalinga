@@ -329,6 +329,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [adminSuccessModal, setAdminSuccessModal] = useState({ isOpen: false, message: '' });
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
 
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, message: string, onConfirm: () => void} | null>(null);
@@ -396,6 +397,25 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     setNotifications(realNotifications.slice(0, 10));
   }, [users, orders, comments]);
 
+  // Load pending payments count
+  useEffect(() => {
+    const loadPendingPayments = async () => {
+      try {
+        const { pendingPaymentsManager } = await import('../utils/pendingPayments');
+        const allPendingPayments = pendingPaymentsManager.getAllPendingPayments();
+        setPendingPaymentsCount(allPendingPayments.length);
+      } catch (error) {
+        console.error('Error loading pending payments:', error);
+        setPendingPaymentsCount(0);
+      }
+    };
+
+    loadPendingPayments();
+    
+    // Refresh pending payments count every 30 seconds
+    const interval = setInterval(loadPendingPayments, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const [dataLoaded, setDataLoaded] = useState(true);
   const [analyticsActiveTab, setAnalyticsActiveTab] = useState('overview');
@@ -1163,7 +1183,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           </CardHeader>
           <CardBody>
             <div className="space-y-4">
-              {recentActivities.slice(0, 15).map((activity, index) => (
+              {recentActivities.slice(0, 5).map((activity, index) => (
                 <div key={`${activity.id}-${index}`} className="flex items-center space-x-4 p-4 hover:bg-gray-50 rounded-xl transition-colors">
                   <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-medium">{activity.avatar.charAt(0).toUpperCase()}</span>
@@ -7572,31 +7592,22 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                 <Menu className="h-5 w-5 text-gray-300" />
               </Button>
               <div className="hidden md:flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <BarChart3 className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-white">Zinga Linga</h1>
-                  <p className="text-sm text-gray-400">admin</p>
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg">
+                  <img 
+                    src="https://zingalinga.io/zinga%20linga%20logo.png" 
+                    alt="Zinga Linga Logo" 
+                    className="h-8 w-auto hover:scale-105 transition-transform duration-300 cursor-pointer"
+                    onClick={() => window.location.href = '/'}
+                  />
                 </div>
               </div>
             </div>
 
 
 
-            {/* Center Search - Hidden on mobile */}
+            {/* Center Section - Empty */}
             <div className="hidden md:flex flex-1 justify-center px-8">
-              <div className="relative w-full max-w-md">
-                <Input
-                  placeholder="Search..."
-                  startContent={<Search className="h-4 w-4 text-gray-400" />}
-                  className="w-full"
-                  classNames={{
-                    input: "bg-transparent text-white placeholder:text-gray-300 border-0",
-                    inputWrapper: "bg-transparent backdrop-blur-md border border-white/20 hover:border-white/30 focus-within:border-white/40 transition-all duration-200"
-                  }}
-                />
-              </div>
+              {/* Center space reserved for future content */}
             </div>
 
             {/* Right Section */}
@@ -7611,30 +7622,48 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                     aria-label="View notifications"
                   >
                     <Bell className="h-5 w-5 text-gray-300" />
-                    <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-gray-900"></div>
+                    {pendingPaymentsCount > 0 && (
+                      <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-gray-900"></div>
+                    )}
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu className="w-80">
-                  {[...notifications.slice(0, 5).map((notification) => (
-                    <DropdownItem key={notification.id} className="p-3">
-                      <div className="flex items-start space-x-3">
-                        <div className={`w-2 h-2 rounded-full mt-2 ${
-                          notification.type === 'success' ? 'bg-green-500' :
-                          notification.type === 'warning' ? 'bg-yellow-500' :
-                          'bg-blue-500'
-                        }`}></div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">{notification.message}</p>
-                          <p className="text-xs text-gray-500">{notification.time}</p>
+                  {[
+                    // Pending payment alerts first
+                    ...(pendingPaymentsCount > 0 ? [
+                      <DropdownItem key="pending-payments" className="p-3 bg-gray-50 border-l-4 border-red-500" onPress={() => setActiveSection('pending-payments')}>
+                        <div className="flex items-start space-x-3">
+                          <div className="w-2 h-2 rounded-full mt-2 bg-red-500"></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">
+                              {pendingPaymentsCount} pending payment{pendingPaymentsCount > 1 ? 's' : ''} require attention
+                            </p>
+                            <p className="text-xs text-gray-500">Click to view details</p>
+                          </div>
                         </div>
+                      </DropdownItem>
+                    ] : []),
+                    // Regular notifications
+                    ...notifications.slice(0, pendingPaymentsCount > 0 ? 4 : 5).map((notification) => (
+                      <DropdownItem key={notification.id} className="p-3">
+                        <div className="flex items-start space-x-3">
+                          <div className={`w-2 h-2 rounded-full mt-2 ${
+                            notification.type === 'success' ? 'bg-green-500' :
+                            notification.type === 'warning' ? 'bg-yellow-500' :
+                            'bg-blue-500'
+                          }`}></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{notification.message}</p>
+                            <p className="text-xs text-gray-500">{notification.time}</p>
+                          </div>
+                        </div>
+                      </DropdownItem>
+                    )),
+                    <DropdownItem key="view-all" className="border-t" onPress={() => setActiveSection('notifications')}>
+                      <div className="text-center py-2">
+                        <span className="text-sm font-medium text-blue-600">View All Notifications</span>
                       </div>
                     </DropdownItem>
-                  )),
-                  <DropdownItem key="view-all" className="border-t" onPress={() => setActiveSection('notifications')}>
-                    <div className="text-center py-2">
-                      <span className="text-sm font-medium text-blue-600">View All Notifications</span>
-                    </div>
-                  </DropdownItem>
                   ]}
                 </DropdownMenu>
               </Dropdown>

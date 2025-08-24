@@ -49,6 +49,7 @@ export const pendingPaymentsManager = {
 
   // Get all pending payments (for admin)
   getAllPendingPayments: (): PendingPayment[] => {
-    return JSON.parse(localStorage.getItem('pendingPayments') || '[]');
+    const allPayments = JSON.parse(localStorage.getItem('pendingPayments') || '[]');
+    return allPayments.filter((p: PendingPayment) => p.status === 'pending');
   }
 };

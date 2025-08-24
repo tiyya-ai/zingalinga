@@ -160,15 +160,15 @@ const RecentActivityPage: React.FC<RecentActivityPageProps> = ({ onBack, onNavig
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center">
               <Clock className="h-5 w-5 text-gray-400 mr-2" />
-              <h2 className="text-lg font-medium text-gray-900">All Recent Activities</h2>
+              <h2 className="text-lg font-medium text-gray-900">Recent Activities (Latest 5)</h2>
             </div>
             <p className="mt-1 text-sm text-gray-500">
-              Complete history of system activities and user interactions
+              Latest 5 system activities and user interactions
             </p>
           </div>
 
           <div className="divide-y divide-gray-200">
-            {recentActivities.map((activity) => {
+            {recentActivities.slice(0, 5).map((activity) => {
               const IconComponent = activity.icon;
               return (
                 <div key={activity.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
@@ -192,12 +192,7 @@ const RecentActivityPage: React.FC<RecentActivityPageProps> = ({ onBack, onNavig
             })}
           </div>
 
-          {/* Load More Button */}
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-            <button className="w-full text-center text-sm text-gray-600 hover:text-gray-900 transition-colors">
-              Load More Activities
-            </button>
-          </div>
+
         </div>
       </div>
     </div>
