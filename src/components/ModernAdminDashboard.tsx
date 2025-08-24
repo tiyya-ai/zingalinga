@@ -7779,7 +7779,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                        </div>
                      </DropdownItem>
                    ) : null}
-                   {notifications.slice(0, pendingPaymentsCount > 0 ? 4 : 5).map((notification) => (
+                   {notifications.slice(0, pendingPaymentsCount > 0 ? 4 : 5).map((notification) => 
                      <DropdownItem key={notification.id} className="p-3">
                        <div className="flex items-start space-x-3">
                          <div className={`w-2 h-2 rounded-full mt-2 ${
@@ -7793,7 +7793,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                          </div>
                        </div>
                      </DropdownItem>
-                   ))}
+                   )}
                    <DropdownItem key="view-all" className="border-t" onPress={() => handleSetActiveSection('notifications')}>
                      <div className="text-center py-2">
                        <span className="text-sm font-medium text-blue-600">View All Notifications</span>
