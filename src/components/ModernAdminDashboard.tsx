@@ -104,6 +104,9 @@ import { SuccessModal } from './SuccessModal';
 import { AdminPendingPayments } from './AdminPendingPayments';
 import GeneralSettings from './GeneralSettings';
 import EmailSettings from './EmailSettings';
+import SecuritySettings from './SecuritySettings';
+import ContentSettings from './ContentSettings';
+import NotificationSettings from './NotificationSettings';
 
 // Type definitions
 interface Package {

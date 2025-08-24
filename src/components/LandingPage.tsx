@@ -406,7 +406,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
                 </div>
                 <div className="flex items-start gap-3 text-gray-700">
                   <div className="w-2 h-2 bg-brand-pink rounded-full mt-2"></div>
-                  <span className="font-mali text-sm">Battery that lasts 4 days when fully utilized</span>
+                  <span className="font-mali text-sm">Battery that lasts 8 hours when fully utilized</span>
                 </div>
                 <div className="flex items-start gap-3 text-gray-700">
                   <div className="w-2 h-2 bg-brand-pink rounded-full mt-2"></div>
@@ -498,8 +498,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
                     <Play className="w-6 h-6 text-brand-yellow" />
                   </div>
                   <div>
-                    <h4 className="font-mali font-bold text-gray-800 mb-2">4-Day Battery Life</h4>
-                    <p className="font-mali text-gray-600">Battery lasts for 4 days when fully utilized</p>
+                    <h4 className="font-mali font-bold text-gray-800 mb-2">8 Hours of Battery When Fully Charged</h4>
+                <p className="font-mali text-gray-600">Battery lasts for 8 hours when fully utilized</p>
                   </div>
                 </div>
                 

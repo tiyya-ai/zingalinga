@@ -33,11 +33,11 @@ import {
   AlertTriangle,
   CheckCircle,
   Info,
-  RefreshCw
+  RefreshCw,
+  Bell
 } from 'lucide-react';
 import { platformStatsCalculator, PlatformStatistics } from '../utils/platformStats';
-import EmailSettings from './EmailSettings';
-import EmailTestPanel from './EmailTestPanel';
+
 
 interface GeneralSettingsData {
   platform: {
@@ -267,29 +267,32 @@ export default function GeneralSettings() {
 
   return (
     <div className="space-y-6" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">General Settings</h1>
-          <p className="text-gray-600 mt-1">Configure platform settings and preferences</p>
-        </div>
-        <div className="flex space-x-2">
-          <Button
-            variant="flat"
-            startContent={<RotateCcw className="h-4 w-4" />}
-            onPress={onResetOpen}
-          >
-            Reset to Defaults
-          </Button>
-          <Button
-            color="primary"
-            startContent={<Save className="h-4 w-4" />}
-            onPress={handleSave}
-            isLoading={saving}
-            isDisabled={!hasChanges}
-          >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
+      {/* Professional Header */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900 mb-2">General Settings</h1>
+            <p className="text-gray-600">Configure platform settings, features, and system preferences</p>
+          </div>
+          <div className="flex space-x-3">
+            <Button
+              variant="flat"
+              className="bg-gray-100 text-gray-700 hover:bg-gray-200"
+              startContent={<RotateCcw className="h-4 w-4" />}
+              onPress={onResetOpen}
+            >
+              Reset to Defaults
+            </Button>
+            <Button
+              className="bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+              startContent={<Save className="h-4 w-4" />}
+              onPress={handleSave}
+              isLoading={saving}
+              isDisabled={!hasChanges}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -317,27 +320,35 @@ export default function GeneralSettings() {
       )}
 
       {/* Platform Statistics */}
-      <Card>
-        <CardHeader className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Info className="h-5 w-5 text-blue-500" />
-            <h3 className="text-lg font-semibold">Platform Statistics</h3>
-          </div>
-          <div className="flex items-center space-x-2">
-            {lastStatsUpdate && (
-              <span className="text-xs text-gray-500">
-                Updated: {lastStatsUpdate.toLocaleTimeString()}
-              </span>
-            )}
-            <Button
-              size="sm"
-              variant="flat"
-              startContent={<RefreshCw className="h-3 w-3" />}
-              onPress={handleRefreshStats}
-              isLoading={statsLoading}
-            >
-              Refresh
-            </Button>
+      <Card className="bg-white border border-gray-200 shadow-sm">
+        <CardHeader className="border-b border-gray-200 pb-4">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Info className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Platform Statistics</h3>
+                <p className="text-sm text-gray-600">Real-time platform metrics and performance data</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              {lastStatsUpdate && (
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                  Updated: {lastStatsUpdate.toLocaleTimeString()}
+                </span>
+              )}
+              <Button
+                size="sm"
+                variant="flat"
+                className="bg-blue-50 text-blue-600 hover:bg-blue-100"
+                startContent={<RefreshCw className="h-3 w-3" />}
+                onPress={handleRefreshStats}
+                isLoading={statsLoading}
+              >
+                Refresh
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardBody>
@@ -421,10 +432,17 @@ export default function GeneralSettings() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Platform Configuration */}
-        <Card>
-          <CardHeader className="flex items-center space-x-2">
-            <Globe className="h-5 w-5 text-blue-500" />
-            <h3 className="text-lg font-semibold">Platform Configuration</h3>
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardHeader className="border-b border-gray-200 pb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Globe className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Platform Configuration</h3>
+                <p className="text-sm text-gray-600">Basic platform settings and information</p>
+              </div>
+            </div>
           </CardHeader>
           <CardBody className="space-y-4">
             <Input
@@ -514,10 +532,17 @@ export default function GeneralSettings() {
         </Card>
 
         {/* Feature Toggles */}
-        <Card>
-          <CardHeader className="flex items-center space-x-2">
-            <Settings className="h-5 w-5 text-purple-500" />
-            <h3 className="text-lg font-semibold">Feature Controls</h3>
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardHeader className="border-b border-gray-200 pb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Settings className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Feature Controls</h3>
+                <p className="text-sm text-gray-600">Enable or disable platform features</p>
+              </div>
+            </div>
           </CardHeader>
           <CardBody className="space-y-4">
             <div className="flex items-center justify-between">
@@ -600,10 +625,17 @@ export default function GeneralSettings() {
         </Card>
 
         {/* System Limits */}
-        <Card>
-          <CardHeader className="flex items-center space-x-2">
-            <Database className="h-5 w-5 text-green-500" />
-            <h3 className="text-lg font-semibold">System Limits</h3>
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardHeader className="border-b border-gray-200 pb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <Database className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">System Limits</h3>
+                <p className="text-sm text-gray-600">Configure system resource limits and quotas</p>
+              </div>
+            </div>
           </CardHeader>
           <CardBody className="space-y-4">
             <div>
@@ -675,11 +707,18 @@ export default function GeneralSettings() {
           </CardBody>
         </Card>
 
-        {/* Security Settings */}
-        <Card>
-          <CardHeader className="flex items-center space-x-2">
-            <Shield className="h-5 w-5 text-red-500" />
-            <h3 className="text-lg font-semibold">Security Settings</h3>
+        {/* Security & Privacy */}
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardHeader className="border-b border-gray-200 pb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <Shield className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Security & Privacy</h3>
+                <p className="text-sm text-gray-600">Security settings and privacy controls</p>
+              </div>
+            </div>
           </CardHeader>
           <CardBody className="space-y-4">
             <div className="flex items-center justify-between">
@@ -696,7 +735,7 @@ export default function GeneralSettings() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">Two-Factor Authentication</p>
-                <p className="text-sm text-gray-500">Enable 2FA for admin accounts</p>
+                <p className="text-sm text-gray-500">Enable 2FA for enhanced security</p>
               </div>
               <Switch
                 isSelected={settings.security.enableTwoFactor}
@@ -709,7 +748,7 @@ export default function GeneralSettings() {
               <Input
                 type="number"
                 value={settings.security.passwordMinLength.toString()}
-                onChange={(e) => updateSettings('security', 'passwordMinLength', parseInt(e.target.value) || 6)}
+                onChange={(e) => updateSettings('security', 'passwordMinLength', parseInt(e.target.value) || 8)}
                 min="6"
                 max="32"
                 endContent={<span className="text-gray-500">characters</span>}
@@ -764,10 +803,17 @@ export default function GeneralSettings() {
         </Card>
 
         {/* Notification Settings */}
-        <Card>
-          <CardHeader className="flex items-center space-x-2">
-            <Mail className="h-5 w-5 text-orange-500" />
-            <h3 className="text-lg font-semibold">Notification Preferences</h3>
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardHeader className="border-b border-gray-200 pb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                <Bell className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Notification Settings</h3>
+                <p className="text-sm text-gray-600">Configure notification preferences</p>
+              </div>
+            </div>
           </CardHeader>
           <CardBody className="space-y-4">
             <div className="flex items-center justify-between">
@@ -827,17 +873,18 @@ export default function GeneralSettings() {
           </CardBody>
         </Card>
 
-        {/* Email Settings */}
-        <EmailSettings />
-
-        {/* Email Testing */}
-        <EmailTestPanel />
-
         {/* Content Management */}
-        <Card>
-          <CardHeader className="flex items-center space-x-2">
-            <Video className="h-5 w-5 text-indigo-500" />
-            <h3 className="text-lg font-semibold">Content Management</h3>
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardHeader className="border-b border-gray-200 pb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <Video className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Content Management</h3>
+                <p className="text-sm text-gray-600">Content moderation and filtering settings</p>
+              </div>
+            </div>
           </CardHeader>
           <CardBody className="space-y-4">
             <div className="flex items-center justify-between">
@@ -898,7 +945,7 @@ export default function GeneralSettings() {
               <label className="block text-sm font-medium mb-2">Allowed Video Formats</label>
               <div className="flex flex-wrap gap-2">
                 {settings.content.allowedVideoFormats.map((format) => (
-                  <Chip key={format} size="sm" variant="flat">
+                  <Chip key={format} size="sm" variant="flat" className="bg-indigo-100 text-indigo-800">
                     {format.toUpperCase()}
                   </Chip>
                 ))}

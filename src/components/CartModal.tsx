@@ -116,7 +116,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onPurchas
             features: [
               'Fully aligned PP1 and PP2 equivalent literacy product',
               'Learn through stories anywhere anytime',
-              'Battery that lasts 4 days when fully utilized',
+              'Battery that lasts 8 hours when fully utilized',
               'Interactive screen with 20+ interactive lessons'
             ]
           });

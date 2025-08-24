@@ -53,9 +53,8 @@ const AboutPage: React.FC<AboutPageProps> = ({ onBack, onNavigate, onLoginClick 
             <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
               <h2 className="text-xl sm:text-2xl font-mali font-bold text-brand-green mb-3 sm:mb-4">Meet Kiki & Tano</h2>
               <p className="font-mali text-gray-700 leading-relaxed text-sm sm:text-base">
-                Our beloved characters, Kiki the monkey and Tano the elephant, guide children through 
-                exciting adventures across the African continent. Through their stories, children learn 
-                letters, sounds, and cultural values in an entertaining and memorable way.
+                Our beloved characters, Kiki and Tano, guide children through their stories, children learn 
+                letters, work formation, and sounds (phonetics) in an entertaining and memorable way.
               </p>
             </div>
             
