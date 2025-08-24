@@ -7779,21 +7779,25 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                        </div>
                      </DropdownItem>
                    ) : null}
-                   {notifications.slice(0, pendingPaymentsCount > 0 ? 4 : 5).map((notification) => 
-                     <DropdownItem key={notification.id} className="p-3">
-                       <div className="flex items-start space-x-3">
-                         <div className={`w-2 h-2 rounded-full mt-2 ${
-                           notification.type === 'success' ? 'bg-green-500' :
-                           notification.type === 'warning' ? 'bg-yellow-500' :
-                           'bg-blue-500'
-                         }`}></div>
-                         <div className="flex-1">
-                           <p className="text-sm font-medium text-gray-900">{notification.message}</p>
-                           <p className="text-xs text-gray-500">{notification.time}</p>
-                         </div>
+                   {notifications.length > 0 ? (
+                     <DropdownItem key="notifications" className="p-3">
+                       <div className="space-y-2">
+                         {notifications.slice(0, pendingPaymentsCount > 0 ? 4 : 5).map((notification, index) => (
+                           <div key={index} className="flex items-start space-x-3">
+                             <div className={`w-2 h-2 rounded-full mt-2 ${
+                               notification.type === 'success' ? 'bg-green-500' :
+                               notification.type === 'warning' ? 'bg-yellow-500' :
+                               'bg-blue-500'
+                             }`}></div>
+                             <div className="flex-1">
+                               <p className="text-sm font-medium text-gray-900">{notification.message}</p>
+                               <p className="text-xs text-gray-500">{notification.time}</p>
+                             </div>
+                           </div>
+                         ))}
                        </div>
                      </DropdownItem>
-                   )}
+                   ) : null}
                    <DropdownItem key="view-all" className="border-t" onPress={() => handleSetActiveSection('notifications')}>
                      <div className="text-center py-2">
                        <span className="text-sm font-medium text-blue-600">View All Notifications</span>
