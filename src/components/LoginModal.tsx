@@ -349,6 +349,20 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
               console.log('- Passwords match:', dbUser.password === sanitizedPassword);
               
               if (dbUser.password === sanitizedPassword) {
+                // Check if user is suspended
+                if (dbUser.status === 'suspended') {
+                  setError('Your account has been suspended. Please contact support for assistance.');
+                  setIsLoading(false);
+                  return;
+                }
+                
+                // Check if user is inactive
+                if (dbUser.status === 'inactive') {
+                  setError('Your account is inactive. Please contact support to reactivate your account.');
+                  setIsLoading(false);
+                  return;
+                }
+                
                 user = {
                   ...dbUser,
                   lastLogin: new Date().toISOString(),

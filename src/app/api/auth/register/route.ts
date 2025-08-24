@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
       password,
       name,
       role: 'user',
+      status: 'active',
       purchasedModules: [],
       totalSpent: 0,
       createdAt: new Date().toISOString(),

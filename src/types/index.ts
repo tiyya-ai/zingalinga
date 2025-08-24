@@ -4,6 +4,7 @@ export interface User {
   name: string;
   purchasedModules: string[];
   role: 'user' | 'admin';
+  status?: 'active' | 'inactive' | 'suspended';
   createdAt: string;
   lastLogin?: string;
   totalSpent?: number;

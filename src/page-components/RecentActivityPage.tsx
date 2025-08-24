@@ -160,15 +160,15 @@ const RecentActivityPage: React.FC<RecentActivityPageProps> = ({ onBack, onNavig
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center">
               <Clock className="h-5 w-5 text-gray-400 mr-2" />
-              <h2 className="text-lg font-medium text-gray-900">Recent Activities (Latest 5)</h2>
+              <h2 className="text-lg font-medium text-gray-900">Recent Activities</h2>
             </div>
             <p className="mt-1 text-sm text-gray-500">
-              Latest 5 system activities and user interactions
+              All recent system activities and user interactions
             </p>
           </div>
 
           <div className="divide-y divide-gray-200">
-            {recentActivities.slice(0, 5).map((activity) => {
+            {recentActivities.map((activity) => {
               const IconComponent = activity.icon;
               return (
                 <div key={activity.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">

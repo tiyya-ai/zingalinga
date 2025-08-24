@@ -34,6 +34,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check user status
+    if (user.status === 'suspended') {
+      return NextResponse.json(
+        { success: false, error: 'Your account has been suspended. Please contact support for assistance.' },
+        { status: 403 }
+      );
+    }
+    
+    if (user.status === 'inactive') {
+      return NextResponse.json(
+        { success: false, error: 'Your account is inactive. Please contact support to reactivate your account.' },
+        { status: 403 }
+      );
+    }
+
     user.lastLogin = new Date().toISOString();
     await writeFile(DATA_FILE, JSON.stringify(data, null, 2));
 

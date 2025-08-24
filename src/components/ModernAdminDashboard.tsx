@@ -448,7 +448,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const [activityFilter, setActivityFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 1000; // Show all activities
 
   // Load recent activities for main dashboard
   useEffect(() => {
@@ -7613,60 +7613,58 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
             {/* Right Section */}
             <div className="flex items-center space-x-2">
               {/* Notifications */}
-              <Dropdown>
-                <DropdownTrigger>
-                  <Button
-                    isIconOnly
-                    variant="light"
-                    className="hover:bg-gray-800 rounded-lg transition-colors relative"
-                    aria-label="View notifications"
-                  >
-                    <Bell className="h-5 w-5 text-gray-300" />
-                    {pendingPaymentsCount > 0 && (
-                      <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-gray-900"></div>
-                    )}
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu className="w-80">
-                  {[
-                    // Pending payment alerts first
-                    ...(pendingPaymentsCount > 0 ? [
-                      <DropdownItem key="pending-payments" className="p-3 bg-gray-50 border-l-4 border-red-500" onPress={() => setActiveSection('pending-payments')}>
-                        <div className="flex items-start space-x-3">
-                          <div className="w-2 h-2 rounded-full mt-2 bg-red-500"></div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">
-                              {pendingPaymentsCount} pending payment{pendingPaymentsCount > 1 ? 's' : ''} require attention
-                            </p>
-                            <p className="text-xs text-gray-500">Click to view details</p>
-                          </div>
-                        </div>
-                      </DropdownItem>
-                    ] : []),
-                    // Regular notifications
-                    ...notifications.slice(0, pendingPaymentsCount > 0 ? 4 : 5).map((notification) => (
-                      <DropdownItem key={notification.id} className="p-3">
-                        <div className="flex items-start space-x-3">
-                          <div className={`w-2 h-2 rounded-full mt-2 ${
-                            notification.type === 'success' ? 'bg-green-500' :
-                            notification.type === 'warning' ? 'bg-yellow-500' :
-                            'bg-blue-500'
-                          }`}></div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">{notification.message}</p>
-                            <p className="text-xs text-gray-500">{notification.time}</p>
-                          </div>
-                        </div>
-                      </DropdownItem>
-                    )),
-                    <DropdownItem key="view-all" className="border-t" onPress={() => setActiveSection('notifications')}>
-                      <div className="text-center py-2">
-                        <span className="text-sm font-medium text-blue-600">View All Notifications</span>
-                      </div>
-                    </DropdownItem>
-                  ]}
-                </DropdownMenu>
-              </Dropdown>
+               <Dropdown>
+                 <DropdownTrigger>
+                   <Button
+                     isIconOnly
+                     variant="light"
+                     className="hover:bg-gray-800 rounded-lg transition-colors relative"
+                     aria-label="View notifications"
+                   >
+                     <Bell className="h-5 w-5 text-gray-300" />
+                     {pendingPaymentsCount > 0 && (
+                       <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-gray-900"></div>
+                     )}
+                   </Button>
+                 </DropdownTrigger>
+                 <DropdownMenu className="w-80">
+                   {pendingPaymentsCount > 0 && (
+                     <DropdownItem key="pending-payments" className="p-3 bg-gray-50 border-l-4 border-red-500" onPress={() => setActiveSection('pending-payments')}>
+                       <div className="flex items-start space-x-3">
+                         <div className="w-2 h-2 rounded-full mt-2 bg-red-500"></div>
+                         <div className="flex-1">
+                           <p className="text-sm font-medium text-gray-900">
+                             {pendingPaymentsCount} pending payment{pendingPaymentsCount > 1 ? 's' : ''} require attention
+                           </p>
+                           <p className="text-xs text-gray-500">Click to view details</p>
+                         </div>
+                       </div>
+                     </DropdownItem>
+                   )}
+                   {notifications.slice(0, pendingPaymentsCount > 0 ? 4 : 5).map((notification) => (
+                     <DropdownItem key={notification.id} className="p-3">
+                       <div className="flex items-start space-x-3">
+                         <div className={`w-2 h-2 rounded-full mt-2 ${
+                           notification.type === 'success' ? 'bg-green-500' :
+                           notification.type === 'warning' ? 'bg-yellow-500' :
+                           'bg-blue-500'
+                         }`}></div>
+                         <div className="flex-1">
+                           <p className="text-sm font-medium text-gray-900">{notification.message}</p>
+                           <p className="text-xs text-gray-500">{notification.time}</p>
+                         </div>
+                       </div>
+                     </DropdownItem>
+                   ))}
+                   <DropdownItem key="view-all" className="border-t" onPress={() => setActiveSection('notifications')}>
+                     <div className="text-center py-2">
+                       <span className="text-sm font-medium text-blue-600">View All Notifications</span>
+                     </div>
+                   </DropdownItem>
+                 </DropdownMenu>
+               </Dropdown>
+              
+
               
               {/* User Menu */}
               <Dropdown>

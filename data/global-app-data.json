@@ -107,6 +107,24 @@
         "explorer-pack"
       ],
       "totalSpent": 60
+    },
+    {
+      "id": "user_1756053506971",
+      "email": "ahmed@maroc.ma",
+      "password": "agadir33",
+      "name": "AHMED MAROC",
+      "role": "user",
+      "createdAt": "2025-08-24T16:38:26.971Z",
+      "lastLogin": "2025-08-24T16:38:26.971Z",
+      "isActive": true,
+      "purchasedModules": [],
+      "totalSpent": 0,
+      "status": "suspended",
+      "avatar": "",
+      "phone": "",
+      "dateOfBirth": "",
+      "subscription": "free",
+      "updatedAt": "2025-08-24T16:53:30.010Z"
     }
   ],
   "modules": [],
@@ -324,7 +342,7 @@
     "apiEndpoint": "/api/data",
     "enableRealTimeSync": true
   },
-  "lastUpdated": "2025-08-21T00:20:20.889Z",
+  "lastUpdated": "2025-08-24T16:53:30.017Z",
   "lastLoaded": "2025-08-21T00:06:32.576Z",
-  "lastSaved": "2025-08-21T00:20:21.163Z"
+  "lastSaved": "2025-08-24T16:53:31.904Z"
 }

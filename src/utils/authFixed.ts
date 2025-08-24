@@ -205,6 +205,17 @@ class AuthManager {
         return { success: false, message: result.error || 'Invalid email or password' };
       }
 
+      // Check user status
+      if (user.status === 'suspended') {
+        this.recordLoginAttempt(email, false);
+        return { success: false, message: 'Your account has been suspended. Please contact support for assistance.' };
+      }
+      
+      if (user.status === 'inactive') {
+        this.recordLoginAttempt(email, false);
+        return { success: false, message: 'Your account is inactive. Please contact support to reactivate your account.' };
+      }
+
       // Create session
       const sessionDuration = user.role === 'admin' ? this.adminSessionDuration : this.sessionDuration;
       const session: AuthSession = {
