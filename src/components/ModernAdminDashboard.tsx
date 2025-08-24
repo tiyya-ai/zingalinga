@@ -7766,7 +7766,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                    </Button>
                  </DropdownTrigger>
                  <DropdownMenu className="w-80">
-                   {pendingPaymentsCount > 0 && (
+                   {pendingPaymentsCount > 0 ? (
                      <DropdownItem key="pending-payments" className="p-3 bg-gray-50 border-l-4 border-red-500" onPress={() => handleSetActiveSection('pending-payments')}>
                        <div className="flex items-start space-x-3">
                          <div className="w-2 h-2 rounded-full mt-2 bg-red-500"></div>
@@ -7778,7 +7778,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                          </div>
                        </div>
                      </DropdownItem>
-                   )}
+                   ) : null}
                    {notifications.slice(0, pendingPaymentsCount > 0 ? 4 : 5).map((notification) => (
                      <DropdownItem key={notification.id} className="p-3">
                        <div className="flex items-start space-x-3">
