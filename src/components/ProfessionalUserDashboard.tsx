@@ -176,9 +176,11 @@ export default function ProfessionalUserDashboard({
 
   // Read URL parameters and set activeTab
   useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab) {
-      setActiveTab(tab);
+    if (searchParams) {
+      const tab = searchParams.get('tab');
+      if (tab) {
+        setActiveTab(tab);
+      }
     }
   }, [searchParams]);
 
