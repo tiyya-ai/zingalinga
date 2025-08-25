@@ -87,71 +87,75 @@ export const AdminPendingPayments: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Payment Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
+      {/* Payment Statistics - Responsive Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Pending</p>
-              <p className="text-2xl font-bold text-gray-800">{paymentStats.totalPending}</p>
+              <p className="text-xs sm:text-sm text-gray-600">Total Pending</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-800">{paymentStats.totalPending}</p>
             </div>
-            <Package className="w-8 h-8 text-blue-500" />
+            <Package className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">24h+ Overdue</p>
-              <p className="text-2xl font-bold text-blue-600">{paymentStats.overdue24h}</p>
+              <p className="text-xs sm:text-sm text-gray-600">24h+ Overdue</p>
+              <p className="text-lg sm:text-2xl font-bold text-blue-600">{paymentStats.overdue24h}</p>
             </div>
-            <Clock className="w-8 h-8 text-blue-500" />
+            <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">48h+ Overdue</p>
-              <p className="text-2xl font-bold text-yellow-600">{paymentStats.overdue48h}</p>
+              <p className="text-xs sm:text-sm text-gray-600">48h+ Overdue</p>
+              <p className="text-lg sm:text-2xl font-bold text-yellow-600">{paymentStats.overdue48h}</p>
             </div>
-            <AlertTriangle className="w-8 h-8 text-yellow-500" />
+            <AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500" />
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">72h+ Overdue</p>
-              <p className="text-2xl font-bold text-orange-600">{paymentStats.overdue72h}</p>
+              <p className="text-xs sm:text-sm text-gray-600">72h+ Overdue</p>
+              <p className="text-lg sm:text-2xl font-bold text-orange-600">{paymentStats.overdue72h}</p>
             </div>
-            <AlertTriangle className="w-8 h-8 text-orange-500" />
+            <AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500" />
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4 col-span-2 sm:col-span-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">1w+ Critical</p>
-              <p className="text-2xl font-bold text-red-600">{paymentStats.overdueWeek}</p>
+              <p className="text-xs sm:text-sm text-gray-600">1w+ Critical</p>
+              <p className="text-lg sm:text-2xl font-bold text-red-600">{paymentStats.overdueWeek}</p>
             </div>
-            <Bell className="w-8 h-8 text-red-500" />
+            <Bell className="w-6 h-6 sm:w-8 sm:h-8 text-red-500" />
           </div>
         </div>
       </div>
       
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Clock className="w-6 h-6 text-orange-600" />
-          <h2 className="text-2xl font-bold text-gray-800">Payments Pending Registration</h2>
-          <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
-            {pendingPayments.length} pending
-          </span>
-          {overduePayments.length > 0 && (
-            <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
-              {overduePayments.length} overdue
+      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Payments Pending Registration</h2>
+          </div>
+          <div className="flex gap-2">
+            <span className="bg-orange-100 text-orange-800 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
+              {pendingPayments.length} pending
             </span>
-          )}
+            {overduePayments.length > 0 && (
+              <span className="bg-red-100 text-red-800 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
+                {overduePayments.length} overdue
+              </span>
+            )}
+          </div>
         </div>
 
         {pendingPayments.length === 0 ? (
@@ -168,46 +172,50 @@ export const AdminPendingPayments: React.FC = () => {
               const isOverdue = hoursSince >= 24;
               
               return (
-                <div key={payment.id} className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
+                <div key={payment.id} className={`border rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow ${
                   isOverdue ? 'border-red-200 bg-red-50' : 'border-gray-200'
                 }`}>
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Mail className="w-4 h-4 text-gray-500" />
-                        <span className="font-semibold text-gray-800">{payment.email}</span>
-                        <span className="text-sm text-gray-500">
-                          {new Date(payment.paymentDate).toLocaleDateString()}
-                        </span>
-                        {isOverdue && (
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            getUrgencyColor(hoursSince)
-                          }`}>
-                            {getUrgencyLabel(hoursSince)} - {formatTimeSince(hoursSince)}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-gray-500" />
+                          <span className="font-semibold text-gray-800 text-sm sm:text-base">{payment.email}</span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs sm:text-sm text-gray-500">
+                            {new Date(payment.paymentDate).toLocaleDateString()}
                           </span>
-                        )}
+                          {isOverdue && (
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              getUrgencyColor(hoursSince)
+                            }`}>
+                              {getUrgencyLabel(hoursSince)} - {formatTimeSince(hoursSince)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       
                       <div className="flex items-center gap-2 mb-3">
                         <Package className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm text-gray-600">
+                        <span className="text-xs sm:text-sm text-gray-600">
                           {payment.items.length} items - ${payment.total.toFixed(2)}
                         </span>
                       </div>
 
                       <div className="space-y-1">
                         {payment.items.map((item, index) => (
-                          <div key={index} className="text-sm text-gray-600 ml-6">
+                          <div key={index} className="text-xs sm:text-sm text-gray-600 ml-4 sm:ml-6">
                             • {item.name} - ${item.price.toFixed(2)}
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-row sm:flex-col gap-2 items-center sm:items-stretch">
                       <button
                         onClick={() => sendRegistrationReminder(payment)}
-                        className={`px-4 py-2 rounded-lg transition-colors text-sm ${
+                        className={`px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap ${
                           isOverdue 
                             ? 'bg-red-600 text-white hover:bg-red-700' 
                             : 'bg-blue-600 text-white hover:bg-blue-700'

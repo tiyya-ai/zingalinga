@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { User, Module, Purchase, ContentFile } from '../types';
 import { checkVideoAccess, getVideoUrl } from '../utils/videoAccess';
 import { vpsDataStore } from '../utils/vpsDataStore';
@@ -71,6 +72,8 @@ export default function ProfessionalUserDashboard({
   onPurchase,
   setUser
 }: ProfessionalUserDashboardProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(true);
   const [localPurchases, setLocalPurchases] = useState<Purchase[]>(purchases);
   const [liveModules, setLiveModules] = useState<Module[]>(modules);
@@ -170,6 +173,14 @@ export default function ProfessionalUserDashboard({
       window.removeEventListener('userProfileUpdated', handleProfileUpdate as EventListener);
     };
   }, [setUser]);
+
+  // Read URL parameters and set activeTab
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   // Update local purchases and user stats when prop changes
   useEffect(() => {
@@ -279,6 +290,13 @@ export default function ProfessionalUserDashboard({
     return null;
   }
   
+  // Handle tab navigation with URL parameters
+  const handleSetActiveTab = (tab: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    router.push(url.pathname + url.search);
+    setActiveTab(tab);
+  };
   
   // Convert admin modules to videos with proper URL handling first
   const adminVideos: Video[] = allModules
@@ -610,7 +628,7 @@ export default function ProfessionalUserDashboard({
             <div className="flex items-center space-x-2 sm:space-x-4">
 
               <button
-                onClick={() => setActiveTab('profile')}
+                onClick={() => handleSetActiveTab('profile')}
                 className="relative bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-all duration-200 backdrop-blur-sm border border-white/20"
               >
                 <div className="w-6 h-6 rounded-full overflow-hidden border-2 border-yellow-400/50">
@@ -634,7 +652,7 @@ export default function ProfessionalUserDashboard({
               </button>
               
               <button 
-                onClick={() => setActiveTab('cart')}
+                onClick={() => handleSetActiveTab('cart')}
                 className="relative bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-all duration-200 backdrop-blur-sm border border-white/20"
               >
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -688,7 +706,7 @@ export default function ProfessionalUserDashboard({
             ].map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleSetActiveTab(tab.id)}
                 className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 flex items-center justify-center text-white space-x-3 hover:bg-white/20"
               >
                 <span className="text-2xl">{tab.label.split(' ')[0]}</span>
@@ -725,7 +743,7 @@ export default function ProfessionalUserDashboard({
                 <button
                   key={tab.id}
                   onClick={() => {
-                    setActiveTab(tab.id);
+                    handleSetActiveTab(tab.id);
                     if (isMobile) setShowFilters(false);
                   }}
                   className={`w-full md:w-auto px-4 py-3 md:py-2 rounded-lg font-semibold transition-all duration-200 flex items-center justify-between md:justify-center space-x-2 text-sm md:text-xs lg:text-sm ${
@@ -773,7 +791,7 @@ export default function ProfessionalUserDashboard({
                     My Videos ({allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length})
                   </h3>
                   <button 
-                    onClick={() => setActiveTab('videos')}
+                    onClick={() => handleSetActiveTab('videos')}
                     className="text-brand-red hover:text-brand-pink text-sm font-mali"
                   >
                     View All →
@@ -844,7 +862,7 @@ export default function ProfessionalUserDashboard({
                       <div className="text-2xl mb-2">🎬</div>
                       <div className="text-sm">No videos yet</div>
                       <button 
-                        onClick={() => setActiveTab('store')}
+                        onClick={() => handleSetActiveTab('store')}
                         className="text-yellow-400 hover:text-yellow-300 text-xs mt-1"
                       >
                         Add Videos
@@ -884,7 +902,7 @@ export default function ProfessionalUserDashboard({
             {/* Quick Actions */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <button 
-                onClick={() => setActiveTab('all-content')}
+                onClick={() => handleSetActiveTab('all-content')}
                 className="bg-gradient-to-r from-brand-green to-brand-blue hover:from-green-600 hover:to-blue-600 text-white p-4 rounded-xl transition-all duration-200 text-center group shadow-lg"
               >
                 <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">📚</div>
@@ -892,7 +910,7 @@ export default function ProfessionalUserDashboard({
               </button>
               
               <button 
-                onClick={() => setActiveTab('audio-lessons')}
+                onClick={() => handleSetActiveTab('audio-lessons')}
                 className="bg-gradient-to-r from-brand-yellow to-brand-red hover:from-yellow-500 hover:to-red-500 text-white p-4 rounded-xl transition-all duration-200 text-center group shadow-lg"
               >
                 <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">🎧</div>
@@ -900,7 +918,7 @@ export default function ProfessionalUserDashboard({
               </button>
               
               <button 
-                onClick={() => setActiveTab('store')}
+                onClick={() => handleSetActiveTab('store')}
                 className="bg-gradient-to-r from-brand-red to-brand-pink hover:from-red-600 hover:to-pink-600 text-white p-4 rounded-xl transition-all duration-200 text-center group shadow-lg"
               >
                 <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">🛍️</div>
@@ -908,7 +926,7 @@ export default function ProfessionalUserDashboard({
               </button>
               
               <button 
-                onClick={() => setActiveTab('videos')}
+                onClick={() => handleSetActiveTab('videos')}
                 className="bg-gradient-to-r from-brand-blue to-brand-green hover:from-blue-600 hover:to-green-600 text-white p-4 rounded-xl transition-all duration-200 text-center group shadow-lg"
               >
                 <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">🎬</div>
@@ -1663,7 +1681,7 @@ export default function ProfessionalUserDashboard({
                 <div className="text-white text-xl mb-2">No videos available</div>
                 <div className="text-purple-200 text-sm mb-6">Videos will appear here when added</div>
                 <button 
-                  onClick={() => setActiveTab('store')}
+                  onClick={() => handleSetActiveTab('store')}
                   className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold px-6 py-3 rounded-lg transition-all duration-200"
                 >
                   Browse Store
@@ -1690,7 +1708,7 @@ export default function ProfessionalUserDashboard({
                 <div className="text-white text-xl mb-2">Your cart is empty</div>
                 <div className="text-purple-200 text-sm mb-6">Add some videos to your cart to get started</div>
                 <button 
-                  onClick={() => setActiveTab('store')}
+                  onClick={() => handleSetActiveTab('store')}
                   className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold px-6 py-3 rounded-lg transition-all duration-200"
                 >
                   Browse Store
@@ -1841,7 +1859,7 @@ export default function ProfessionalUserDashboard({
                 <div className="text-white text-xl mb-2">All videos purchased!</div>
                 <div className="text-purple-200 text-sm">Go to "My Videos" to watch your content</div>
                 <button 
-                  onClick={() => setActiveTab('videos')}
+                  onClick={() => handleSetActiveTab('videos')}
                   className="mt-4 bg-gradient-to-r from-green-500 to-blue-500 text-white px-6 py-3 rounded-lg font-bold"
                 >
                   Go to My Videos
@@ -2003,7 +2021,7 @@ export default function ProfessionalUserDashboard({
                       <div className="text-4xl mb-2">🎬</div>
                       <div>No videos purchased yet</div>
                       <button 
-                        onClick={() => setActiveTab('store')}
+                        onClick={() => handleSetActiveTab('store')}
                         className="mt-2 text-yellow-400 hover:text-yellow-300 text-sm"
                       >
                         Browse Store →
@@ -2075,7 +2093,7 @@ export default function ProfessionalUserDashboard({
                 <div className="text-white text-xl mb-2">No saved videos</div>
                 <div className="text-purple-200 text-sm mb-6">Save videos to watch them later</div>
                 <button 
-                  onClick={() => setActiveTab('store')}
+                  onClick={() => handleSetActiveTab('store')}
                   className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold px-6 py-3 rounded-lg transition-all duration-200"
                 >
                   Browse Videos
@@ -2169,7 +2187,7 @@ export default function ProfessionalUserDashboard({
                 <div className="text-white text-xl mb-2">Your playlist is empty</div>
                 <div className="text-purple-200 text-sm mb-6">Add videos to your playlist to watch them later</div>
                 <button 
-                  onClick={() => setActiveTab('videos')}
+                  onClick={() => handleSetActiveTab('videos')}
                   className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold px-6 py-3 rounded-lg transition-all duration-200"
                 >
                   Browse Videos
@@ -2490,7 +2508,7 @@ export default function ProfessionalUserDashboard({
                   <div className="text-white text-xl mb-2">No orders yet</div>
                   <div className="text-purple-200 text-sm mb-6">Your purchase history will appear here</div>
                   <button 
-                    onClick={() => setActiveTab('store')}
+                    onClick={() => handleSetActiveTab('store')}
                     className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold px-6 py-3 rounded-lg transition-all duration-200"
                   >
                     Browse Store
@@ -2683,7 +2701,7 @@ export default function ProfessionalUserDashboard({
                         <div className="text-white text-xl mb-2">No purchases yet</div>
                         <div className="text-purple-200 text-sm mb-6">Start exploring our video collection</div>
                         <button 
-                          onClick={() => setActiveTab('store')}
+                          onClick={() => handleSetActiveTab('store')}
                           className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-3 rounded-xl font-semibold hover:scale-105 transition-transform"
                         >
                           Browse Store
@@ -2721,7 +2739,7 @@ export default function ProfessionalUserDashboard({
                 </button>
                 
                 <button 
-                  onClick={() => setActiveTab('videos')}
+                  onClick={() => handleSetActiveTab('videos')}
                   className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white p-6 rounded-xl transition-all hover:scale-105 shadow-lg text-center"
                 >
                   <div className="text-3xl mb-3">🎬</div>
@@ -2907,10 +2925,10 @@ export default function ProfessionalUserDashboard({
               <h4 className="text-white font-mali font-bold mb-4">Quick Links</h4>
               <div className="space-y-2">
                 {[
-                  { label: 'Home', action: () => setActiveTab('dashboard') },
-                  { label: 'Videos', action: () => setActiveTab('videos') },
-                  { label: 'Store', action: () => setActiveTab('store') },
-                  { label: 'My Library', action: () => setActiveTab('library') }
+                  { label: 'Home', action: () => handleSetActiveTab('dashboard') },
+                { label: 'Videos', action: () => handleSetActiveTab('videos') },
+                { label: 'Store', action: () => handleSetActiveTab('store') },
+                { label: 'My Library', action: () => handleSetActiveTab('library') }
                 ].map(link => (
                   <button
                     key={link.label}
@@ -3323,7 +3341,7 @@ export default function ProfessionalUserDashboard({
                       
                       setTimeout(() => {
                         setShowThankYou(false);
-                        setActiveTab('videos');
+                        handleSetActiveTab('videos');
                       }, 2000);
                     } catch (error) {
                       alert('Purchase failed. Please try again.');
@@ -3358,7 +3376,7 @@ export default function ProfessionalUserDashboard({
             <button 
               onClick={() => {
                 setShowThankYou(false);
-                setActiveTab('videos');
+                handleSetActiveTab('videos');
               }}
               className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white font-bold py-3 rounded-xl transition-colors"
             >
