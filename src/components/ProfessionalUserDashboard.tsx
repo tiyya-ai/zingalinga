@@ -575,6 +575,12 @@ export default function ProfessionalUserDashboard({
 
   const getTotalPrice = () => {
     return cartItems.reduce((total, itemId) => {
+      // Check if it's a package first
+      const pkg = packages.find(p => p.id === itemId);
+      if (pkg) {
+        return total + (pkg.price || 0);
+      }
+      // Otherwise check regular items
       const item = storeItems.find(item => item.id === itemId);
       const price = item?.price || 0;
       const discount = item?.discount || 0;
@@ -584,6 +590,12 @@ export default function ProfessionalUserDashboard({
 
   const getOriginalPrice = () => {
     return cartItems.reduce((total, itemId) => {
+      // Check if it's a package first
+      const pkg = packages.find(p => p.id === itemId);
+      if (pkg) {
+        return total + (pkg.price || 0);
+      }
+      // Otherwise check regular items
       const item = storeItems.find(item => item.id === itemId);
       return total + (item?.price || 0);
     }, 0).toFixed(2);
@@ -1720,6 +1732,37 @@ export default function ProfessionalUserDashboard({
               <div className="space-y-6">
                 <div className="grid grid-cols-1 gap-4">
                   {cartItems.map(itemId => {
+                    // Check if it's a package first
+                    const pkg = packages.find(p => p.id === itemId);
+                    if (pkg) {
+                      return (
+                        <div key={itemId} className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-white/20">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <div className="text-white text-2xl">
+                                {pkg.icon || '📦'}
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="text-xl font-bold text-white mb-2">{pkg.name}</h3>
+                              <p className="text-purple-200 text-sm mb-2">{pkg.description}</p>
+                              <div className="text-yellow-400 font-bold text-lg">${pkg.price?.toFixed(2) || '0.00'}</div>
+                              <div className="text-green-400 text-xs mt-1">
+                                Package • {(pkg.contentIds || []).length} items included
+                              </div>
+                            </div>
+                            <button 
+                              onClick={() => removeFromCart(itemId)}
+                              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    // Otherwise check regular items
                     const item = storeItems.find(item => item.id === itemId);
                     if (!item) return null;
                     return (
@@ -2385,77 +2428,111 @@ export default function ProfessionalUserDashboard({
                           )}
                         </div>
                         
-                        {/* Action Button */}
-                        <button
-                          onClick={async () => {
-                            if (isPurchased) {
-                              // Navigate to package content or show access
-                              console.log('Access package:', pkg.id);
-                              alert(`✅ You own this package! Content is now accessible.`);
-                            } else if (pkg.isActive) {
-                              try {
-                                // Create purchase for package
-                                const packagePurchase = {
-                                  id: `purchase_${Date.now()}_${pkg.id}_${user?.id || 'user_1'}`,
-                                  userId: user?.id || 'user_1',
-                                  moduleId: pkg.id,
-                                  purchaseDate: new Date().toISOString(),
-                                  amount: pkg.price || 0,
-                                  status: 'completed' as const,
-                                  type: 'package' as const
-                                };
-                                
-                                // Create purchases for all content in package
-                                const contentPurchases = (pkg.contentIds || []).map((contentId: string, index: number) => ({
-                                  id: `purchase_${Date.now()}_content_${index}_${user?.id || 'user_1'}`,
-                                  userId: user?.id || 'user_1',
-                                  moduleId: contentId,
-                                  purchaseDate: new Date().toISOString(),
-                                  amount: 0,
-                                  status: 'completed' as const,
-                                  type: 'video' as const,
-                                  packageId: pkg.id
-                                }));
-                                
-                                // Save all purchases to VPS
-                                await vpsDataStore.addPurchase(packagePurchase);
-                                for (const contentPurchase of contentPurchases) {
-                                  await vpsDataStore.addPurchase(contentPurchase);
-                                }
-                                
-                                // Update user's purchased modules to include package AND all content
-                                if (user?.id) {
-                                  const allContentIds = pkg.contentIds || [];
-                                  const updatedUser = {
-                                    ...user,
-                                    purchasedModules: [...(user.purchasedModules || []), pkg.id, ...allContentIds],
-                                    totalSpent: (user.totalSpent || 0) + (pkg.price || 0)
-                                  };
-                                  await vpsDataStore.updateUser(user.id, updatedUser);
-                                  if (setUser) setUser(updatedUser);
-                                }
-                                
-                                // Update local purchases
-                                setLocalPurchases([...localPurchases, packagePurchase, ...contentPurchases]);
-                                
-                                alert(`🎉 Package "${pkg.name}" purchased! All ${(pkg.contentIds || []).length} content items are now available.`);
-                              } catch (error) {
-                                console.error('Package purchase failed:', error);
-                                alert('❌ Purchase failed. Please try again.');
-                              }
-                            }
-                          }}
-                          disabled={!pkg.isActive}
-                          className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 ${
-                            isPurchased
-                              ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                              : pkg.isActive
-                              ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 shadow-lg hover:shadow-xl'
-                              : 'bg-gray-500/20 text-gray-400 cursor-not-allowed'
-                          }`}
-                        >
-                          {isPurchased ? 'Access Package' : pkg.isActive ? `Purchase - $${pkg.price?.toFixed(2) || '0.00'}` : 'Unavailable'}
-                        </button>
+                        {/* Action Buttons */}
+                        <div className="flex space-x-2">
+                          {isPurchased ? (
+                            <button
+                              onClick={() => {
+                                console.log('Access package:', pkg.id);
+                                alert(`✅ You own this package! Content is now accessible.`);
+                              }}
+                              className="w-full py-3 rounded-lg font-semibold transition-all duration-200 bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                            >
+                              Access Package
+                            </button>
+                          ) : pkg.isActive ? (
+                            <>
+                              {cartItems.includes(pkg.id) ? (
+                                <button
+                                  onClick={() => removeFromCart(pkg.id)}
+                                  className="flex-1 py-3 rounded-lg font-semibold transition-all duration-200 bg-red-500 hover:bg-red-600 text-white"
+                                >
+                                  Remove from Cart
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    addToCart(pkg.id);
+                                    setShowCartPopup(true);
+                                    setTimeout(() => setShowCartPopup(false), 2000);
+                                  }}
+                                  className="flex-1 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 shadow-lg hover:shadow-xl"
+                                >
+                                  Add to Cart - ${pkg.price?.toFixed(2) || '0.00'}
+                                </button>
+                              )}
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    // Create purchase for package
+                                    const packagePurchase = {
+                                      id: `purchase_${Date.now()}_${pkg.id}_${user?.id || 'user_1'}`,
+                                      userId: user?.id || 'user_1',
+                                      moduleId: pkg.id,
+                                      purchaseDate: new Date().toISOString(),
+                                      amount: pkg.price || 0,
+                                      status: 'completed' as const,
+                                      type: 'package' as const
+                                    };
+                                    
+                                    // Create purchases for all content in package
+                                    const contentPurchases = (pkg.contentIds || []).map((contentId: string, index: number) => ({
+                                      id: `purchase_${Date.now()}_content_${index}_${user?.id || 'user_1'}`,
+                                      userId: user?.id || 'user_1',
+                                      moduleId: contentId,
+                                      purchaseDate: new Date().toISOString(),
+                                      amount: 0,
+                                      status: 'completed' as const,
+                                      type: 'video' as const,
+                                      packageId: pkg.id
+                                    }));
+                                    
+                                    // Save all purchases to VPS
+                                    await vpsDataStore.addPurchase(packagePurchase);
+                                    for (const contentPurchase of contentPurchases) {
+                                      await vpsDataStore.addPurchase(contentPurchase);
+                                    }
+                                    
+                                    // Update user's purchased modules to include package AND all content
+                                    if (user?.id) {
+                                      const allContentIds = pkg.contentIds || [];
+                                      const updatedUser = {
+                                        ...user,
+                                        purchasedModules: [...(user.purchasedModules || []), pkg.id, ...allContentIds],
+                                        totalSpent: (user.totalSpent || 0) + (pkg.price || 0)
+                                      };
+                                      await vpsDataStore.updateUser(user.id, updatedUser);
+                                      if (setUser) setUser(updatedUser);
+                                    }
+                                    
+                                    // Update local purchases
+                                    setLocalPurchases([...localPurchases, packagePurchase, ...contentPurchases]);
+                                    
+                                    // Remove from cart if it was there
+                                    if (cartItems.includes(pkg.id)) {
+                                      removeFromCart(pkg.id);
+                                    }
+                                    
+                                    alert(`🎉 Package "${pkg.name}" purchased! All ${(pkg.contentIds || []).length} content items are now available.`);
+                                  } catch (error) {
+                                    console.error('Package purchase failed:', error);
+                                    alert('❌ Purchase failed. Please try again.');
+                                  }
+                                }}
+                                className="px-4 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-lg hover:shadow-xl"
+                              >
+                                Buy Now
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              disabled
+                              className="w-full py-3 rounded-lg font-semibold transition-all duration-200 bg-gray-500/20 text-gray-400 cursor-not-allowed"
+                            >
+                              Unavailable
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -3277,6 +3354,21 @@ export default function ProfessionalUserDashboard({
               
               <div className="space-y-3 mb-6">
                 {cartItems.map(itemId => {
+                  // Check if it's a package first
+                  const pkg = packages.find(p => p.id === itemId);
+                  if (pkg) {
+                    return (
+                      <div key={itemId} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <span className="text-gray-800 font-semibold">{pkg.name}</span>
+                          <div className="text-xs text-gray-500">Package • {(pkg.contentIds || []).length} items</div>
+                        </div>
+                        <span className="font-bold text-green-600">${pkg.price?.toFixed(2) || '0.00'}</span>
+                      </div>
+                    );
+                  }
+                  
+                  // Otherwise check regular items
                   const item = storeItems.find(item => item.id === itemId);
                   if (!item) return null;
                   return (
@@ -3317,16 +3409,58 @@ export default function ProfessionalUserDashboard({
                         );
                         
                         if (!alreadyPurchased) {
-                          const purchase = {
-                            id: `purchase_${timestamp}_${itemId}_${user?.id || 'user_1'}`,
-                            userId: user?.id || 'user_1',
-                            moduleId: itemId,
-                            purchaseDate: new Date().toISOString(),
-                            amount: storeItems.find(item => item.id === itemId)?.price || 0,
-                            status: 'completed' as const,
-                            type: 'video' as const
-                          };
-                          newPurchases.push(purchase);
+                          // Check if it's a package
+                          const pkg = packages.find(p => p.id === itemId);
+                          if (pkg) {
+                            // Create package purchase
+                            const packagePurchase = {
+                              id: `purchase_${timestamp}_${itemId}_${user?.id || 'user_1'}`,
+                              userId: user?.id || 'user_1',
+                              moduleId: itemId,
+                              purchaseDate: new Date().toISOString(),
+                              amount: pkg.price || 0,
+                              status: 'completed' as const,
+                              type: 'package' as const
+                            };
+                            newPurchases.push(packagePurchase);
+                            
+                            // Create purchases for all content in package
+                            const contentPurchases = (pkg.contentIds || []).map((contentId: string, index: number) => ({
+                              id: `purchase_${timestamp}_content_${index}_${user?.id || 'user_1'}`,
+                              userId: user?.id || 'user_1',
+                              moduleId: contentId,
+                              purchaseDate: new Date().toISOString(),
+                              amount: 0,
+                              status: 'completed' as const,
+                              type: 'video' as const,
+                              packageId: itemId
+                            }));
+                            newPurchases.push(...contentPurchases);
+                            
+                            // Update user's purchased modules to include package AND all content
+                            if (user?.id) {
+                              const allContentIds = pkg.contentIds || [];
+                              const updatedUser = {
+                                ...user,
+                                purchasedModules: [...(user.purchasedModules || []), pkg.id, ...allContentIds],
+                                totalSpent: (user.totalSpent || 0) + (pkg.price || 0)
+                              };
+                              await vpsDataStore.updateUser(user.id, updatedUser);
+                              if (setUser) setUser(updatedUser);
+                            }
+                          } else {
+                            // Regular item purchase
+                            const purchase = {
+                              id: `purchase_${timestamp}_${itemId}_${user?.id || 'user_1'}`,
+                              userId: user?.id || 'user_1',
+                              moduleId: itemId,
+                              purchaseDate: new Date().toISOString(),
+                              amount: storeItems.find(item => item.id === itemId)?.price || 0,
+                              status: 'completed' as const,
+                              type: 'video' as const
+                            };
+                            newPurchases.push(purchase);
+                          }
                         }
                       }
                       
@@ -3346,6 +3480,7 @@ export default function ProfessionalUserDashboard({
                         handleSetActiveTab('videos');
                       }, 2000);
                     } catch (error) {
+                      console.error('Purchase failed:', error);
                       alert('Purchase failed. Please try again.');
                     }
                   }}
