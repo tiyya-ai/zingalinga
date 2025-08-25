@@ -124,7 +124,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers,
       dateOfBirth: user.dateOfBirth || '',
       subscription: user.subscription || 'free'
     });
-    setActiveSection('add-user');
+    onNavigate('add-user');
   };
 
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
@@ -219,7 +219,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers,
         }
       }
       
-      setActiveSection('all-users');
+      onNavigate('all-users');
       setEditingUser(null);
       
       setUserForm({
@@ -272,7 +272,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers,
                 dateOfBirth: '',
                 subscription: 'free'
               });
-              setActiveSection('add-user');
+              onNavigate('add-user');
             }}
           >
             Add New User
@@ -576,7 +576,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers,
         actions={
           <Button 
             variant="flat" 
-            onPress={() => setActiveSection('all-users')}
+            onPress={() => onNavigate('all-users')}
             className="bg-gray-100 text-gray-700 hover:bg-gray-200"
             startContent={<X className="h-4 w-4" />}
           >
@@ -795,7 +795,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers,
                 startContent={<Trash2 className="h-4 w-4" />}
                 onPress={() => {
                   handleDeleteUser(editingUser.id);
-                  setActiveSection('all-users');
+                  onNavigate('all-users');
                 }}
               >
                 Delete User

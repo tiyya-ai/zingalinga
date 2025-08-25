@@ -328,11 +328,10 @@ class RealDataAnalytics {
         });
       }
       
-      // Sort by timestamp (most recent first) and limit to 5 items
+      // Sort by timestamp (most recent first)
       return activities
         .filter(activity => activity.timestamp)
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        .slice(0, 5);
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         
     } catch (error) {
       console.error('Error getting recent activity:', error);
