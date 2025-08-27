@@ -137,31 +137,23 @@
       "isActive": true,
       "purchasedModules": [],
       "totalSpent": 0
-    }
-  ],
-  "modules": [
+    },
     {
-      "id": "video_1756309360716",
-      "title": "anachid",
-      "description": "",
-      "category": "PP1 Program",
-      "rating": 0,
-      "thumbnail": "https://img.youtube.com/vi/66IWcGzbZN0/maxresdefault.jpg",
-      "videoUrl": "https://www.youtube.com/watch?v=66IWcGzbZN0",
-      "duration": "5:00",
-      "estimatedDuration": "5:00",
-      "tags": [],
-      "isActive": true,
-      "isVisible": true,
-      "createdAt": "2025-08-27T15:42:40.716Z",
-      "updatedAt": "2025-08-27T15:42:40.720Z",
-      "totalRatings": 0,
-      "features": [],
-      "fullContent": [],
-      "difficulty": "beginner",
-      "audioUrl": ""
+      "id": "user-1",
+      "email": "test@example.com",
+      "name": "Test User",
+      "role": "user",
+      "purchasedModules": [
+        "adventurer-pack"
+      ],
+      "totalSpent": 45,
+      "createdAt": "2025-08-27T15:42:59.879Z",
+      "lastLogin": "2025-08-27T15:42:59.879Z",
+      "password": "test123",
+      "isActive": true
     }
   ],
+  "modules": [],
   "purchases": [
     {
       "id": "purchase_1755734874231_wptx6ea91",
@@ -251,6 +243,16 @@
       "purchaseDate": "2025-08-24T23:05:48.987Z",
       "amount": 0,
       "status": "completed"
+    },
+    {
+      "id": "purchase_1756322647662_adventurer-pack_user-1",
+      "userId": "user-1",
+      "moduleId": "adventurer-pack",
+      "purchaseDate": "2025-08-27T19:24:07.662Z",
+      "amount": 45,
+      "status": "completed",
+      "type": "package",
+      "createdAt": "2025-08-27T19:24:07.713Z"
     }
   ],
   "contentFiles": [],
@@ -258,8 +260,7 @@
   "savedVideos": [],
   "categories": [
     "Audio Lessons",
-    "PP1 Program",
-    "PP2 Program"
+    "Video Lessons"
   ],
   "comments": [],
   "subscriptions": [],
@@ -286,14 +287,15 @@
         "15 Learning Quests - colorful lessons that feel like playtime"
       ],
       "contentIds": [
-        "video_1756309360716"
+        "video_1756309360716",
+        "video_1756323338364"
       ],
       "ageGroups": [
         "3-6"
       ],
       "billingCycle": "yearly",
       "createdAt": "2025-08-21T00:06:32.576Z",
-      "updatedAt": "2025-08-27T15:42:50.759Z",
+      "updatedAt": "2025-08-27T19:35:50.005Z",
       "coverImage": ""
     },
     {
@@ -387,7 +389,7 @@
     "apiEndpoint": "/api/data",
     "enableRealTimeSync": true
   },
-  "lastUpdated": "2025-08-27T15:42:50.759Z",
+  "lastUpdated": "2025-08-27T22:30:32.656Z",
   "lastLoaded": "2025-08-21T00:06:32.576Z",
-  "lastSaved": "2025-08-27T15:42:50.809Z"
+  "lastSaved": "2025-08-27T22:30:32.679Z"
 }

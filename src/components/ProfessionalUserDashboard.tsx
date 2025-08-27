@@ -9,6 +9,7 @@ import { getVideoThumbnail } from '../utils/videoUtils';
 import { ChatModal } from './ChatModal';
 import { ClientOnly } from './ClientOnly';
 import dynamic from 'next/dynamic';
+import { VideoModalWithSidebar } from './VideoModalWithSidebar';
 
 import { VideoCard } from './VideoCard';
 
@@ -720,7 +721,7 @@ export default function ProfessionalUserDashboard({
               { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
               { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
               { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => !localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed')).length },
-              { id: 'packages', label: '📦 Packages', count: packages.length },
+              { id: 'packages', label: '📦 Packages', count: packages.filter(pkg => (pkg.contentIds || []).length > 0).length },
               { id: 'package-content', label: '📋 Package Content', count: packages.filter(pkg => isItemPurchased(pkg.id)).reduce((total, pkg) => total + (pkg.contentIds?.length || 0), 0) },
               { id: 'playlist', label: '📋 Playlist', count: playlist.length },
               { id: 'profile', label: '👤 Profile', count: null }
@@ -758,7 +759,7 @@ export default function ProfessionalUserDashboard({
                     purchase.status === 'completed'
                   )
                 ).length },
-                { id: 'packages', label: '📦 Packages', count: packages.length },
+                { id: 'packages', label: '📦 Packages', count: packages.filter(pkg => (pkg.contentIds || []).length > 0).length },
                 { id: 'package-content', label: '📋 Package Content', count: packages.filter(pkg => isItemPurchased(pkg.id)).reduce((total, pkg) => total + (pkg.contentIds?.length || 0), 0) },
                 { id: 'playlist', label: '📋 Playlist', count: playlist.length }
               ].map(tab => (
@@ -2384,7 +2385,7 @@ export default function ProfessionalUserDashboard({
                 .filter(Boolean)}
             </div>
             
-            {packages.filter(pkg => isItemPurchased(pkg.id)).length === 0 && (
+            {packages.filter(pkg => isItemPurchased(pkg.id)).length === 0 ? (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <div className="text-6xl mb-4">📦</div>
                 <div className="text-white text-xl mb-2">No Package Content</div>
@@ -2394,6 +2395,18 @@ export default function ProfessionalUserDashboard({
                   className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-3 rounded-lg font-bold"
                 >
                   Browse Packages
+                </button>
+              </div>
+            ) : packages.filter(pkg => isItemPurchased(pkg.id)).flatMap(pkg => pkg.contentIds || []).length === 0 && (
+              <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+                <div className="text-6xl mb-4">🛍️</div>
+                <div className="text-white text-xl mb-2">No Content in Your Packages Yet</div>
+                <div className="text-purple-200 text-sm mb-6">Your packages are ready! Browse the store to add content to your packages</div>
+                <button 
+                  onClick={() => handleSetActiveTab('store')}
+                  className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-lg font-bold"
+                >
+                  Browse Store
                 </button>
               </div>
             )}
@@ -2411,7 +2424,7 @@ export default function ProfessionalUserDashboard({
               <p className="text-purple-200">Discover bundled content packages with special pricing</p>
             </div>
             
-            {packages.length === 0 ? (
+            {packages.filter(pkg => (pkg.contentIds || []).length > 0).length === 0 ? (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <div className="text-6xl mb-4">📦</div>
                 <div className="text-white text-xl mb-2">No Packages Available</div>
@@ -2419,7 +2432,7 @@ export default function ProfessionalUserDashboard({
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {packages.map((pkg) => {
+                {packages.filter(pkg => (pkg.contentIds || []).length > 0).map((pkg) => {
                   const isPurchased = localPurchases.some(purchase => 
                     purchase.moduleId === pkg.id && 
                     purchase.userId === user?.id && 
@@ -2534,10 +2547,7 @@ export default function ProfessionalUserDashboard({
                         <div className="flex space-x-2">
                           {isPurchased ? (
                             <button
-                              onClick={() => {
-                                console.log('Access package:', pkg.id);
-                                alert(`✅ You own this package! Content is now accessible.`);
-                              }}
+                              onClick={() => handleSetActiveTab('package-content')}
                               className="w-full py-3 rounded-lg font-semibold transition-all duration-200 bg-green-500/20 text-green-400 hover:bg-green-500/30"
                             >
                               Access Package
@@ -2617,7 +2627,12 @@ export default function ProfessionalUserDashboard({
                                       removeFromCart(pkg.id);
                                     }
                                     
-                                    alert(`🎉 Package "${pkg.name}" purchased! All ${(pkg.contentIds || []).length} content items are now available.`);
+                                    const contentCount = (pkg.contentIds || []).length;
+                                    if (contentCount > 0) {
+                                      alert(`🎉 Package "${pkg.name}" purchased! All ${contentCount} content items are now available.`);
+                                    } else {
+                                      alert(`🎉 Package "${pkg.name}" purchased successfully! You can now add content from the store to your package.`);
+                                    }
                                   } catch (error) {
                                     console.error('Package purchase failed:', error);
                                     alert('❌ Purchase failed. Please try again.');
@@ -3654,172 +3669,16 @@ export default function ProfessionalUserDashboard({
         user={user}
       />
 
-      {/* Universal Video Modal - Mobile Responsive */}
+      {/* Video Modal with Sidebar */}
       {showVideoModal && selectedVideo && (
-        <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-0 sm:p-2">
-          <div className="bg-gray-900 rounded-none sm:rounded-2xl w-full h-full sm:max-w-6xl sm:w-full sm:max-h-[95vh] sm:h-auto overflow-hidden shadow-2xl">
-            {/* Header - Mobile Responsive */}
-            <div className="flex justify-between items-center p-3 sm:p-4 border-b border-gray-700">
-              <h2 className="text-white font-bold text-lg sm:text-xl truncate pr-4">{selectedVideo.title}</h2>
-              <button
-                onClick={closeVideoModal}
-                className="text-gray-400 hover:text-white text-2xl w-10 h-10 sm:w-8 sm:h-8 rounded-full hover:bg-gray-700 flex items-center justify-center transition-all flex-shrink-0"
-              >
-                ×
-              </button>
-            </div>
-            
-            {/* Video Player - Mobile Responsive */}
-            <div className="p-2 sm:p-4">
-              {selectedVideo.videoUrl && selectedVideo.videoUrl.trim() ? (
-                (() => {
-                  const videoUrl = selectedVideo.videoUrl;
-                  
-                  // YouTube videos
-                  if (videoUrl.includes('youtube.com/embed/') || videoUrl.includes('youtu.be/') || videoUrl.includes('youtube.com/watch')) {
-                    let embedUrl = videoUrl;
-                    
-                    // Convert YouTube URLs to embed format
-                    if (videoUrl.includes('youtube.com/watch')) {
-                      const videoId = videoUrl.split('v=')[1]?.split('&')[0];
-                      embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
-                    } else if (videoUrl.includes('youtu.be/')) {
-                      const videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0];
-                      embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
-                    } else if (!videoUrl.includes('autoplay=1')) {
-                      embedUrl = videoUrl + (videoUrl.includes('?') ? '&' : '?') + 'autoplay=1&rel=0';
-                    }
-                    
-                    return (
-                      <iframe
-                        src={embedUrl}
-                        className="w-full aspect-video rounded-none sm:rounded-lg"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        title={selectedVideo.title}
-                      />
-                    );
-                  }
-                  
-                  // Google Drive videos
-                  if (videoUrl.includes('drive.google.com')) {
-                    let embedUrl = videoUrl;
-                    
-                    // Convert Google Drive URLs to embed format
-                    const fileIdMatch = videoUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-                    if (fileIdMatch) {
-                      const fileId = fileIdMatch[1];
-                      embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
-                    }
-                    
-                    return (
-                      <iframe
-                        src={embedUrl}
-                        className="w-full aspect-video rounded-none sm:rounded-lg"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        title={selectedVideo.title}
-                      />
-                    );
-                  }
-                  
-                  // Vimeo videos
-                  if (videoUrl.includes('vimeo.com')) {
-                    let embedUrl = videoUrl;
-                    if (videoUrl.includes('vimeo.com/') && !videoUrl.includes('player.vimeo.com')) {
-                      const videoId = videoUrl.split('vimeo.com/')[1]?.split('?')[0];
-                      embedUrl = `https://player.vimeo.com/video/${videoId}?autoplay=1`;
-                    }
-                    
-                    return (
-                      <iframe
-                        src={embedUrl}
-                        className="w-full aspect-video rounded-none sm:rounded-lg"
-                        frameBorder="0"
-                        allow="autoplay; fullscreen; picture-in-picture"
-                        allowFullScreen
-                        title={selectedVideo.title}
-                      />
-                    );
-                  }
-                  
-                  // Direct video files (MP4, WebM, etc.) or blob URLs
-                  return (
-                    <video 
-                      controls
-                      autoPlay
-                      className="w-full aspect-video rounded-none sm:rounded-lg bg-black"
-                      poster={selectedVideo.thumbnail}
-                      controlsList="nodownload"
-                      onContextMenu={(e) => e.preventDefault()}
-                    >
-                      <source src={videoUrl} type="video/mp4" />
-                      <source src={videoUrl} type="video/webm" />
-                      <source src={videoUrl} type="video/ogg" />
-                      Your browser does not support the video tag.
-                    </video>
-                  );
-                })()
-              ) : (
-                <div className="w-full aspect-video bg-gray-800 flex items-center justify-center rounded-lg">
-                  <div className="text-center text-white">
-                    <div className="text-4xl mb-2">⚠️</div>
-                    <div>No video available</div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Video Info & Actions - Mobile Responsive */}
-              <div className="mt-3 sm:mt-4">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0 mb-3">
-                  <div className="flex-1">
-                    <p className="text-gray-300 text-sm mb-2 line-clamp-3 sm:line-clamp-none">{selectedVideo.description}</p>
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400">
-                      {selectedVideo.duration && <span>⏱️ {selectedVideo.duration}</span>}
-                      <span>•</span>
-                      <span>📂 {selectedVideo.category}</span>
-                      {selectedVideo.rating && (
-                        <>
-                          <span>•</span>
-                          <span>⭐ {selectedVideo.rating}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Playlist Button - Mobile Responsive */}
-                  <button
-                    onClick={() => {
-                      if (playlist.includes(selectedVideo.id)) {
-                        setPlaylist(prev => prev.filter(id => id !== selectedVideo.id));
-                      } else {
-                        setPlaylist(prev => [...prev, selectedVideo.id]);
-                      }
-                    }}
-                    className={`flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm sm:text-base w-full sm:w-auto ${
-                      playlist.includes(selectedVideo.id)
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                        : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                    }`}
-                  >
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                      <polyline points="14,2 14,8 20,8"/>
-                      <line x1="16" y1="13" x2="8" y2="13"/>
-                      <line x1="16" y1="17" x2="8" y2="17"/>
-                      <polyline points="10,9 9,9 8,9"/>
-                    </svg>
-                    <span className="text-xs sm:text-sm">
-                      {playlist.includes(selectedVideo.id) ? 'Remove' : 'Add to Playlist'}
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <VideoModalWithSidebar
+          selectedVideo={selectedVideo}
+          onClose={closeVideoModal}
+          packages={packages}
+          allModules={allModules}
+          isItemPurchased={isItemPurchased}
+          setSelectedVideo={setSelectedVideo}
+        />
       )}
 
       {/* Audio Player Modal - Mobile Responsive */}
