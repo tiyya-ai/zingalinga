@@ -151,6 +151,7 @@ export default function ProfessionalUserDashboard({
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [playlist, setPlaylist] = useState<string[]>([]);
+  const [purchasingPackage, setPurchasingPackage] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -2374,7 +2375,7 @@ export default function ProfessionalUserDashboard({
                         <div className="p-4">
                           <h3 className="text-lg font-bold text-white mb-2">{content.title}</h3>
                           <p className="text-purple-200 text-sm mb-3">{content.description}</p>
-                          <div className="text-green-400 text-sm">✓ From Package</div>
+                          <div className="text-green-400 text-sm">✓ From {pkg.name}</div>
                         </div>
                       </div>
                     );
@@ -2565,6 +2566,8 @@ export default function ProfessionalUserDashboard({
                               <button
                                 onClick={async () => {
                                   try {
+                                    setPurchasingPackage(pkg.id);
+                                    
                                     // Create purchase for package
                                     const packagePurchase = {
                                       id: `purchase_${Date.now()}_${pkg.id}_${user?.id || 'user_1'}`,
@@ -2618,11 +2621,21 @@ export default function ProfessionalUserDashboard({
                                   } catch (error) {
                                     console.error('Package purchase failed:', error);
                                     alert('❌ Purchase failed. Please try again.');
+                                  } finally {
+                                    setPurchasingPackage(null);
                                   }
                                 }}
-                                className="px-4 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-lg hover:shadow-xl"
+                                disabled={purchasingPackage === pkg.id}
+                                className="px-4 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                Buy Now
+                                {purchasingPackage === pkg.id ? (
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    <span>Processing...</span>
+                                  </div>
+                                ) : (
+                                  'Buy Now'
+                                )}
                               </button>
                             </>
                           ) : (
