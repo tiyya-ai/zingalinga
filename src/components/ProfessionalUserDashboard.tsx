@@ -111,8 +111,13 @@ export default function ProfessionalUserDashboard({
     level: 1
   });
 
-  // Convert admin modules to store items (all videos as purchasable content)
+  // Convert admin modules to store items (exclude package content from individual display)
   const allModules = liveModules.length > 0 ? liveModules : modules; // Use props if liveModules is empty
+  
+  // Get all content IDs that are part of packages to exclude from individual display
+  const packageContentIds = packages.reduce((ids: string[], pkg) => {
+    return [...ids, ...(pkg.contentIds || [])];
+  }, []);
 
   // Initialize user stats after allModules is available
   useEffect(() => {
@@ -378,7 +383,7 @@ export default function ProfessionalUserDashboard({
 
 
   const storeItems = allModules
-    .filter(module => module && (module.type === 'video' || !module.type))
+    .filter(module => module && (module.type === 'video' || !module.type) && !packageContentIds.includes(module.id))
     .map(module => {
       let thumbnail = '';
       
@@ -482,8 +487,8 @@ export default function ProfessionalUserDashboard({
     }
   };
 
-  // Get all content with fixed thumbnail processing
-  const allContent = allModules.filter(module => module.isVisible !== false).map(module => {
+  // Get all content with fixed thumbnail processing (exclude package content from individual display)
+  const allContent = allModules.filter(module => module.isVisible !== false && !packageContentIds.includes(module.id)).map(module => {
     let thumbnail = '';
     
     // Priority 1: File objects
@@ -715,6 +720,7 @@ export default function ProfessionalUserDashboard({
               { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
               { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => !localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed')).length },
               { id: 'packages', label: '📦 Packages', count: packages.length },
+              { id: 'package-content', label: '📋 Package Content', count: packages.filter(pkg => isItemPurchased(pkg.id)).reduce((total, pkg) => total + (pkg.contentIds?.length || 0), 0) },
               { id: 'playlist', label: '📋 Playlist', count: playlist.length },
               { id: 'profile', label: '👤 Profile', count: null }
             ].map(tab => (
@@ -752,6 +758,7 @@ export default function ProfessionalUserDashboard({
                   )
                 ).length },
                 { id: 'packages', label: '📦 Packages', count: packages.length },
+                { id: 'package-content', label: '📋 Package Content', count: packages.filter(pkg => isItemPurchased(pkg.id)).reduce((total, pkg) => total + (pkg.contentIds?.length || 0), 0) },
                 { id: 'playlist', label: '📋 Playlist', count: playlist.length }
               ].map(tab => (
                 <button
@@ -2293,6 +2300,100 @@ export default function ProfessionalUserDashboard({
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Package Content Tab */}
+        {activeTab === 'package-content' && (
+          <section className="space-y-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="mr-2">📦</span>
+                My Package Content
+              </h2>
+              <p className="text-purple-200">All content from your purchased packages</p>
+            </div>
+            
+            {/* Show content from purchased packages */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {packages
+                .filter(pkg => isItemPurchased(pkg.id))
+                .flatMap(pkg => 
+                  (pkg.contentIds || []).map((contentId: string) => {
+                    const content = allModules.find(m => m.id === contentId);
+                    if (!content) return null;
+                    
+                    return (
+                      <div key={content.id} className="bg-black/30 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden hover:scale-105 hover:border-yellow-400 transition-all duration-300 group">
+                        <div className="relative">
+                          <div className="w-full h-48 bg-gradient-to-br from-green-500 to-green-600 relative overflow-hidden">
+                            {content.thumbnail && (
+                              <img 
+                                src={content.thumbnail} 
+                                alt={content.title} 
+                                className="w-full h-full object-cover" 
+                                onError={(e) => e.currentTarget.style.display = 'none'}
+                              />
+                            )}
+                            
+                            {/* Play button */}
+                            <div 
+                              className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors cursor-pointer"
+                              onClick={() => {
+                                if (content.category === 'Audio Lessons' || content.type === 'audio') {
+                                  setSelectedAudio(content);
+                                  setShowAudioModal(true);
+                                } else {
+                                  const video = {
+                                    id: content.id,
+                                    title: content.title,
+                                    thumbnail: content.thumbnail || '',
+                                    duration: content.duration || '',
+                                    description: content.description || '',
+                                    videoUrl: content.videoUrl || '',
+                                    category: content.category || 'Videos',
+                                    isPremium: false,
+                                    price: 0,
+                                    isYouTube: content.videoUrl?.includes('youtube')
+                                  };
+                                  playVideo(video);
+                                }
+                              }}
+                            >
+                              <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/30">
+                                <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z"/>
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="p-4">
+                          <h3 className="text-lg font-bold text-white mb-2">{content.title}</h3>
+                          <p className="text-purple-200 text-sm mb-3">{content.description}</p>
+                          <div className="text-green-400 text-sm">✓ From Package</div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )
+                .filter(Boolean)}
+            </div>
+            
+            {packages.filter(pkg => isItemPurchased(pkg.id)).length === 0 && (
+              <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+                <div className="text-6xl mb-4">📦</div>
+                <div className="text-white text-xl mb-2">No Package Content</div>
+                <div className="text-purple-200 text-sm mb-6">Purchase packages to access bundled content</div>
+                <button 
+                  onClick={() => handleSetActiveTab('packages')}
+                  className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-3 rounded-lg font-bold"
+                >
+                  Browse Packages
+                </button>
               </div>
             )}
           </section>
