@@ -760,7 +760,12 @@ export default function ProfessionalUserDashboard({
                   )
                 ).length },
                 { id: 'packages', label: '📦 Packages', count: packages.filter(pkg => (pkg.contentIds || []).length > 0).length },
-                { id: 'package-content', label: '📋 Package Content', count: packages.filter(pkg => isItemPurchased(pkg.id)).reduce((total, pkg) => total + (pkg.contentIds?.length || 0), 0) },
+                { id: 'package-content', label: '📋 Package Content', count: packages.filter(pkg => isItemPurchased(pkg.id)).reduce((total, pkg) => {
+                  const availableContent = (pkg.contentIds || []).filter(contentId => 
+                    allModules.some(module => module.id === contentId)
+                  );
+                  return total + availableContent.length;
+                }, 0) },
                 { id: 'playlist', label: '📋 Playlist', count: playlist.length }
               ].map(tab => (
                 <button
