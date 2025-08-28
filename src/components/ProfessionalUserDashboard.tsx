@@ -223,9 +223,8 @@ export default function ProfessionalUserDashboard({
     });
   }, [purchases, user?.id, allModules]);
 
-  // Update live modules when prop changes and clear cache
+  // Update live modules when prop changes (without clearing cache)
   useEffect(() => {
-    vpsDataStore.clearMemoryCache();
     setLiveModules(modules);
   }, [modules]);
   
@@ -233,13 +232,8 @@ export default function ProfessionalUserDashboard({
   useEffect(() => {
     const loadData = async () => {
       try {
-        // FORCE clear all caches to ensure fresh data
-        vpsDataStore.clearMemoryCache();
-        localStorage.removeItem('zinga-linga-app-data-cache');
-        localStorage.removeItem('zinga-linga-app-data');
-        
-        // Force fresh data load from API/VPS
-        const vpsData = await vpsDataStore.loadData(true);
+        // Load data WITHOUT forcing refresh to preserve existing data
+        const vpsData = await vpsDataStore.loadData(false);
         
         if (vpsData.modules) {
           setLiveModules(vpsData.modules);
@@ -266,14 +260,10 @@ export default function ProfessionalUserDashboard({
       // Real-time updates with multiple triggers
       const handleVisibilityChange = () => {
         if (!document.hidden) {
-          vpsDataStore.clearMemoryCache();
-          localStorage.removeItem('zinga-linga-app-data-cache');
           loadData();
         }
       };
       const handleFocus = () => {
-        vpsDataStore.clearMemoryCache();
-        localStorage.removeItem('zinga-linga-app-data-cache');
         loadData();
       };
       
@@ -333,33 +323,57 @@ export default function ProfessionalUserDashboard({
         thumbnail = module.thumbnail;
       }
       
-      // Convert YouTube URLs to embed format
+      // Convert video URLs to embed format and get thumbnails
       let isYouTube = false;
+      let isVimeo = false;
+      
       if (typeof videoUrl === 'string' && !videoUrl.startsWith('data:') && !videoUrl.startsWith('blob:')) {
-        let videoId = null;
-        
-        // Handle youtube.com/watch?v= format
-        if (videoUrl.includes('youtube.com/watch') && videoUrl.includes('v=')) {
-          const urlParams = new URLSearchParams(videoUrl.split('?')[1]);
-          videoId = urlParams.get('v');
-        }
-        // Handle youtu.be/ format
-        else if (videoUrl.includes('youtu.be/')) {
-          videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0]?.split('&')[0];
-        }
-        // Handle youtube.com/embed/ format (already correct)
-        else if (videoUrl.includes('youtube.com/embed/')) {
-          videoId = videoUrl.split('youtube.com/embed/')[1]?.split('?')[0]?.split('&')[0];
-          isYouTube = true;
-        }
-        
-        if (videoId && videoId.trim()) {
-          videoUrl = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
-          // Use YouTube thumbnail if no custom thumbnail or default logo
-          if (!thumbnail || thumbnail === '/zinga-linga-logo.png') {
-            thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        // Handle YouTube
+        if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+          let videoId = null;
+          
+          if (videoUrl.includes('youtube.com/watch') && videoUrl.includes('v=')) {
+            const urlParams = new URLSearchParams(videoUrl.split('?')[1]);
+            videoId = urlParams.get('v');
+          } else if (videoUrl.includes('youtu.be/')) {
+            videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0]?.split('&')[0];
+          } else if (videoUrl.includes('youtube.com/embed/')) {
+            videoId = videoUrl.split('youtube.com/embed/')[1]?.split('?')[0]?.split('&')[0];
+            isYouTube = true;
           }
-          isYouTube = true;
+          
+          if (videoId && videoId.trim()) {
+            videoUrl = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
+            if (!thumbnail || thumbnail === '/zinga-linga-logo.png') {
+              thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+            }
+            isYouTube = true;
+          }
+        }
+        // Handle Vimeo
+        else if (videoUrl.includes('vimeo.com')) {
+          const vimeoIdMatch = videoUrl.match(/vimeo\.com\/(\d+)/);
+          if (vimeoIdMatch) {
+            const videoId = vimeoIdMatch[1];
+            videoUrl = `https://player.vimeo.com/video/${videoId}?autoplay=1&title=0&byline=0&portrait=0`;
+            // For Vimeo private videos, use our API to get thumbnail
+            if (!thumbnail || thumbnail === '/zinga-linga-logo.png') {
+              // Fetch thumbnail asynchronously
+              fetch(`/api/vimeo?url=${encodeURIComponent(module.videoUrl)}`)
+                .then(res => res.json())
+                .then(data => {
+                  if (data.thumbnail) {
+                    // Update the module with the fetched thumbnail
+                    module.vimeoThumbnail = data.thumbnail;
+                  }
+                })
+                .catch(err => console.log('Vimeo thumbnail fetch failed:', err));
+              
+              // Use fallback thumbnail while loading
+              thumbnail = module.vimeoThumbnail || `https://i.vimeocdn.com/video/${videoId}_640x360.jpg`;
+            }
+            isVimeo = true;
+          }
         }
       }
       
@@ -376,7 +390,8 @@ export default function ProfessionalUserDashboard({
         rating: (module as any).rating,
         views: (module as any).views,
         tags: (module as any).tags,
-        isYouTube: isYouTube
+        isYouTube: isYouTube,
+        isVimeo: isVimeo
       };
     });
 
@@ -720,8 +735,13 @@ export default function ProfessionalUserDashboard({
               { id: 'pp1-program', label: '📚 PP1', count: allModules.filter(module => module && module.category === 'PP1 Program' && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length },
               { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length },
               { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => !localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed')).length },
-              { id: 'packages', label: '📦 Packages', count: packages.filter(pkg => (pkg.contentIds || []).length > 0).length },
-              { id: 'package-content', label: '📋 Package Content', count: packages.filter(pkg => isItemPurchased(pkg.id)).reduce((total, pkg) => total + (pkg.contentIds?.length || 0), 0) },
+              { id: 'packages', label: '📦 Packages', count: packages.filter(pkg => (pkg.contentIds || []).length > 0 && (pkg.contentIds || []).some((contentId: string) => allModules.some(module => module.id === contentId))).length },
+              { id: 'package-content', label: '📋 Package Content', count: packages.filter(pkg => isItemPurchased(pkg.id)).reduce((total, pkg) => {
+                const availableContent = (pkg.contentIds || []).filter((contentId: string) => 
+                  allModules.some(module => module.id === contentId)
+                );
+                return total + availableContent.length;
+              }, 0) },
               { id: 'playlist', label: '📋 Playlist', count: playlist.length },
               { id: 'profile', label: '👤 Profile', count: null }
             ].map(tab => (
@@ -757,7 +777,7 @@ export default function ProfessionalUserDashboard({
                     purchase.status === 'completed'
                   )
                 ).length },
-                { id: 'packages', label: '📦 Packages', count: packages.filter(pkg => (pkg.contentIds || []).length > 0).length },
+                { id: 'packages', label: '📦 Packages', count: packages.filter(pkg => (pkg.contentIds || []).length > 0 && (pkg.contentIds || []).some((contentId: string) => allModules.some(module => module.id === contentId))).length },
                 { id: 'package-content', label: '📋 Package Content', count: packages.filter(pkg => isItemPurchased(pkg.id)).reduce((total, pkg) => {
                   const availableContent = (pkg.contentIds || []).filter((contentId: string) => 
                     allModules.some(module => module.id === contentId)
@@ -2113,7 +2133,9 @@ export default function ProfessionalUserDashboard({
               {packages
                 .filter(pkg => isItemPurchased(pkg.id))
                 .flatMap(pkg => 
-                  (pkg.contentIds || []).map((contentId: string) => {
+                  (pkg.contentIds || []).filter((contentId: string) => 
+                    allModules.some(module => module.id === contentId)
+                  ).map((contentId: string) => {
                     const content = allModules.find(m => m.id === contentId);
                     if (!content) return null;
                     
@@ -2187,7 +2209,7 @@ export default function ProfessionalUserDashboard({
                   Browse Packages
                 </button>
               </div>
-            ) : packages.filter(pkg => isItemPurchased(pkg.id)).flatMap(pkg => pkg.contentIds || []).length === 0 && (
+            ) : packages.filter(pkg => isItemPurchased(pkg.id)).flatMap(pkg => (pkg.contentIds || []).filter((contentId: string) => allModules.some(module => module.id === contentId))).length === 0 && (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <div className="text-6xl mb-4">🛍️</div>
                 <div className="text-white text-xl mb-2">No Content in Your Packages Yet</div>
@@ -2214,7 +2236,7 @@ export default function ProfessionalUserDashboard({
               <p className="text-purple-200">Discover bundled content packages with special pricing</p>
             </div>
             
-            {packages.filter(pkg => (pkg.contentIds || []).length > 0).length === 0 ? (
+            {packages.filter(pkg => (pkg.contentIds || []).length > 0 && (pkg.contentIds || []).some((contentId: string) => allModules.some(module => module.id === contentId))).length === 0 ? (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <div className="text-6xl mb-4">📦</div>
                 <div className="text-white text-xl mb-2">No Packages Available</div>
@@ -2222,7 +2244,7 @@ export default function ProfessionalUserDashboard({
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {packages.filter(pkg => (pkg.contentIds || []).length > 0).map((pkg) => {
+                {packages.filter(pkg => (pkg.contentIds || []).length > 0 && (pkg.contentIds || []).some((contentId: string) => allModules.some(module => module.id === contentId))).map((pkg) => {
                   const isPurchased = localPurchases.some(purchase => 
                     purchase.moduleId === pkg.id && 
                     purchase.userId === user?.id && 

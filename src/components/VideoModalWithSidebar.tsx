@@ -146,6 +146,28 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
                   );
                 }
                 
+                // Vimeo videos (including private)
+                if (videoUrl.includes('vimeo.com') || videoUrl.includes('player.vimeo.com')) {
+                  let embedUrl = videoUrl;
+                  
+                  const vimeoIdMatch = videoUrl.match(/vimeo\.com\/(\d+)/) || videoUrl.match(/player\.vimeo\.com\/video\/(\d+)/);
+                  if (vimeoIdMatch) {
+                    const videoId = vimeoIdMatch[1];
+                    embedUrl = `https://player.vimeo.com/video/${videoId}?autoplay=1&title=0&byline=0&portrait=0`;
+                  }
+                  
+                  return (
+                    <iframe
+                      src={embedUrl}
+                      className="w-full aspect-video rounded-none sm:rounded-lg"
+                      frameBorder="0"
+                      allow="autoplay; fullscreen; picture-in-picture"
+                      allowFullScreen
+                      title={selectedVideo.title}
+                    />
+                  );
+                }
+                
                 // Direct video files (including blob URLs and data URLs)
                 return (
                   <video 
@@ -241,7 +263,8 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
                         category: video.category || 'Videos',
                         isPremium: video.isPremium || false,
                         price: video.price || 0,
-                        isYouTube: video.videoUrl?.includes('youtube')
+                        isYouTube: video.videoUrl?.includes('youtube'),
+                        isVimeo: video.videoUrl?.includes('vimeo')
                       };
                       setSelectedVideo(newVideo);
                     }}
