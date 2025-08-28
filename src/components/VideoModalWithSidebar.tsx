@@ -85,18 +85,18 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-0 sm:p-2"
+      className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-0 sm:p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
         }
       }}
     >
-      <div className="bg-gray-900 rounded-none sm:rounded-2xl w-full h-full sm:max-w-7xl sm:w-full sm:max-h-[95vh] sm:h-auto overflow-hidden shadow-2xl flex">
+      <div className="bg-gray-900 rounded-none sm:rounded-2xl w-full h-full sm:max-w-6xl lg:max-w-7xl sm:w-full sm:max-h-[95vh] sm:h-auto overflow-hidden shadow-2xl flex flex-col lg:flex-row">
         {/* Main Video Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           {/* Header */}
-          <div className="flex justify-end items-center p-3 sm:p-4 border-b border-gray-700">
+          <div className="flex justify-end items-center p-3 sm:p-4 border-b border-gray-700 flex-shrink-0">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -109,7 +109,7 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
           </div>
           
           {/* Video Player */}
-          <div className="p-2 sm:p-4 flex-1">
+          <div className="p-2 sm:p-4 flex-1 overflow-y-auto">
             {selectedVideo.videoUrl && selectedVideo.videoUrl.trim() ? (
               (() => {
                 let videoUrl = selectedVideo.videoUrl;
@@ -254,8 +254,8 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
         
         {/* Related Videos Sidebar */}
         {relatedVideos.length > 0 && (
-          <div className="w-80 bg-gray-800 border-l border-gray-700 flex flex-col">
-            <div className="p-4 border-b border-gray-700">
+          <div className="w-full lg:w-80 bg-gray-800 border-t lg:border-t-0 lg:border-l border-gray-700 flex flex-col max-h-64 lg:max-h-none">
+            <div className="p-4 border-b border-gray-700 flex-shrink-0">
               <h3 className="text-white font-bold text-sm flex items-center">
                 <span className="mr-2">🎬</span>
                 More Videos
@@ -263,7 +263,7 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
               <p className="text-gray-400 text-xs mt-1">{relatedVideos.length} videos available</p>
             </div>
             
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0">
               {relatedVideos.map((video, index) => {
                 if (!video) return null;
                 const isCurrentVideo = video.id === selectedVideo.id;

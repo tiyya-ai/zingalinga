@@ -144,6 +144,17 @@ export async function POST(request: NextRequest) {
       console.log('🔒 Backup created:', backupFile);
     }
     
+    // CRITICAL: Refuse to save if we would lose existing modules
+    if (existingData?.modules?.length > 0 && (!data.modules || data.modules.length === 0)) {
+      console.error('🚨 CRITICAL: Refusing to save - would delete', existingData.modules.length, 'modules!');
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Data protection: Refusing to delete existing modules',
+        existingModules: existingData.modules.length,
+        incomingModules: data.modules?.length || 0
+      }, { status: 400 });
+    }
+    
     // STRICT data preservation - never lose existing content
     const preservedData = {
       users: data.users && data.users.length > 0 ? data.users : (existingData?.users || []),
@@ -165,9 +176,14 @@ export async function POST(request: NextRequest) {
       ageGroups: data.ageGroups || existingData?.ageGroups || [],
       settings: { ...existingData?.settings, ...data.settings },
       lastSaved: new Date().toISOString(),
-      lastUpdated: data.lastUpdated || new Date().toISOString()
+      lastUpdated: data.lastUpdated || new Date().toISOString(),
+      deploymentProtection: true
     };
     
+    console.log('🛡️ DATA PROTECTION ACTIVE:');
+    console.log('📊 Existing modules:', existingData?.modules?.length || 0);
+    console.log('📊 Incoming modules:', data.modules?.length || 0);
+    console.log('📊 Final modules:', preservedData.modules?.length || 0);
     console.log('💾 PROTECTED SAVE - Preserving', preservedData.modules?.length || 0, 'modules,', preservedData.users?.length || 0, 'users');
     await writeFile(dataFile, JSON.stringify(preservedData, null, 2));
     

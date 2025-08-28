@@ -1677,7 +1677,7 @@ export default function ProfessionalUserDashboard({
                             purchase.moduleId === item.id && 
                             purchase.userId === user?.id && 
                             purchase.status === 'completed'
-                          )
+                          ) && !packageContentIds.includes(item.id)
                         ).length} Videos Available for Purchase
                       </span>
                     </div>
@@ -1718,7 +1718,7 @@ export default function ProfessionalUserDashboard({
                 purchase.moduleId === item.id && 
                 purchase.userId === user?.id && 
                 purchase.status === 'completed'
-              )
+              ) && !packageContentIds.includes(item.id)
             ).length === 0 ? (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <div className="text-6xl mb-4">✅</div>
@@ -1738,7 +1738,7 @@ export default function ProfessionalUserDashboard({
                     purchase.moduleId === item.id && 
                     purchase.userId === user?.id && 
                     purchase.status === 'completed'
-                  )
+                  ) && !packageContentIds.includes(item.id)
                 ).map((item) => (
                   <div key={item.id} className="bg-black/30 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden hover:scale-105 hover:border-yellow-400 transition-all duration-300 group">
                     <div className="relative">
@@ -2134,12 +2134,24 @@ export default function ProfessionalUserDashboard({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {packages
                 .filter(pkg => isItemPurchased(pkg.id))
-                .flatMap(pkg => 
-                  (pkg.contentIds || []).filter((contentId: string) => 
+                .flatMap(pkg => {
+                  // Get user's purchase date for this package
+                  const packagePurchase = localPurchases.find(p => 
+                    p.moduleId === pkg.id && 
+                    p.userId === user?.id && 
+                    p.status === 'completed'
+                  );
+                  const purchaseDate = packagePurchase ? new Date(packagePurchase.purchaseDate) : new Date();
+                  
+                  return (pkg.contentIds || []).filter((contentId: string) => 
                     allModules.some(module => module.id === contentId)
                   ).map((contentId: string) => {
                     const content = allModules.find(m => m.id === contentId);
                     if (!content) return null;
+                    
+                    // Check if content was added after user's purchase (needs upgrade)
+                    const contentDate = new Date(content.createdAt || content.updatedAt || purchaseDate);
+                    const needsUpgrade = contentDate > purchaseDate;
                     
                     return (
                       <div key={content.id} className="bg-black/30 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden hover:scale-105 hover:border-yellow-400 transition-all duration-300 group">
@@ -2154,48 +2166,73 @@ export default function ProfessionalUserDashboard({
                               />
                             )}
                             
-                            {/* Play button */}
-                            <div 
-                              className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors cursor-pointer"
-                              onClick={() => {
-                                if (content.category === 'Audio Lessons' || content.type === 'audio') {
-                                  setSelectedAudio(content);
-                                  setShowAudioModal(true);
-                                } else {
-                                  const video = {
-                                    id: content.id,
-                                    title: content.title,
-                                    thumbnail: content.thumbnail || '',
-                                    duration: content.duration || '',
-                                    description: content.description || '',
-                                    videoUrl: content.videoUrl || '',
-                                    category: content.category || 'Videos',
-                                    isPremium: false,
-                                    price: 0,
-                                    isYouTube: content.videoUrl?.includes('youtube')
-                                  };
-                                  playVideo(video);
-                                }
-                              }}
-                            >
-                              <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/30">
-                                <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M8 5v14l11-7z"/>
-                                </svg>
+                            {needsUpgrade ? (
+                              /* Upgrade Required Overlay */
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+                                <div className="text-center text-white">
+                                  <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mb-3 mx-auto">
+                                    <span className="text-2xl">🔄</span>
+                                  </div>
+                                  <div className="text-sm font-bold mb-2">Upgrade Required</div>
+                                  <div className="text-xs opacity-80">New content added</div>
+                                </div>
                               </div>
-                            </div>
+                            ) : (
+                              /* Play button for accessible content */
+                              <div 
+                                className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors cursor-pointer"
+                                onClick={() => {
+                                  if (content.category === 'Audio Lessons' || content.type === 'audio') {
+                                    setSelectedAudio(content);
+                                    setShowAudioModal(true);
+                                  } else {
+                                    const video = {
+                                      id: content.id,
+                                      title: content.title,
+                                      thumbnail: content.thumbnail || '',
+                                      duration: content.duration || '',
+                                      description: content.description || '',
+                                      videoUrl: content.videoUrl || '',
+                                      category: content.category || 'Videos',
+                                      isPremium: false,
+                                      price: 0,
+                                      isYouTube: content.videoUrl?.includes('youtube')
+                                    };
+                                    playVideo(video);
+                                  }
+                                }}
+                              >
+                                <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/30">
+                                  <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                  </svg>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                         
                         <div className="p-4">
                           <h3 className="text-lg font-bold text-white mb-2">{content.title}</h3>
                           <p className="text-purple-200 text-sm mb-3">{content.description}</p>
-                          <div className="text-green-400 text-sm">✓ From {pkg.name}</div>
+                          <div className="flex items-center justify-between">
+                            <div className="text-green-400 text-sm">✓ From {pkg.name}</div>
+                            {needsUpgrade && (
+                              <button 
+                                onClick={() => {
+                                  alert(`🔄 Upgrade Required!\n\nNew content "${content.title}" has been added to your ${pkg.name}.\n\nUpgrade your package to access this content.`);
+                                }}
+                                className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs font-bold transition-colors"
+                              >
+                                Upgrade
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
-                  })
-                )
+                  });
+                })
                 .filter(Boolean)}
             </div>
             

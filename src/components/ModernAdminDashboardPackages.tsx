@@ -359,11 +359,11 @@ export const renderAddPackage = (
 
                 {/* Selected Content */}
                 <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">Selected Content ({packageForm.contentIds?.length || 0})</h4>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Selected Content ({packageForm.contentIds?.filter((id: string) => availableContent?.some(c => c.id === id)).length || 0})</h4>
                   <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg bg-white">
                     {packageForm.contentIds && packageForm.contentIds.length > 0 ? (
                       <div className="divide-y divide-gray-100">
-                        {packageForm.contentIds.map((contentId: string) => {
+                        {packageForm.contentIds.filter((contentId: string) => availableContent?.some(c => c.id === contentId)).map((contentId: string) => {
                           const content = availableContent?.find(c => c.id === contentId);
                           if (!content) return null;
                           
