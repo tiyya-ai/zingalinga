@@ -716,10 +716,9 @@ export default function ProfessionalUserDashboard({
           <div className="grid grid-cols-2 gap-2">
             {[
               { id: 'dashboard', label: '🏠 Home', count: null },
-              { id: 'all-content', label: '📚 Content', count: allContent.length },
-              { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
-              { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
-              { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
+              { id: 'audio-lessons', label: '🎧 Audio', count: allModules.filter(module => module && (module.category === 'Audio Lessons' || module.type === 'audio') && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length },
+              { id: 'pp1-program', label: '📚 PP1', count: allModules.filter(module => module && module.category === 'PP1 Program' && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length },
+              { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length },
               { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => !localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed')).length },
               { id: 'packages', label: '📦 Packages', count: packages.filter(pkg => (pkg.contentIds || []).length > 0).length },
               { id: 'package-content', label: '📋 Package Content', count: packages.filter(pkg => isItemPurchased(pkg.id)).reduce((total, pkg) => total + (pkg.contentIds?.length || 0), 0) },
@@ -748,10 +747,9 @@ export default function ProfessionalUserDashboard({
             <div className="flex flex-col md:flex-row md:flex-wrap gap-2 bg-white/10 backdrop-blur-sm rounded-xl p-2 border border-white/20">
               {[
                 { id: 'dashboard', label: '🏠 Home', count: null },
-                { id: 'all-content', label: '📚 Content', count: allContent.length },
-                { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
-                { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
-                { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
+                { id: 'audio-lessons', label: '🎧 Audio', count: allModules.filter(module => module && (module.category === 'Audio Lessons' || module.type === 'audio') && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length },
+                { id: 'pp1-program', label: '📚 PP1', count: allModules.filter(module => module && module.category === 'PP1 Program' && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length },
+                { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length },
                 { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => 
                   !localPurchases.some(purchase => 
                     purchase.moduleId === item.id && 
@@ -929,13 +927,7 @@ export default function ProfessionalUserDashboard({
 
             {/* Quick Actions */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <button 
-                onClick={() => handleSetActiveTab('all-content')}
-                className="bg-gradient-to-r from-brand-green to-brand-blue hover:from-green-600 hover:to-blue-600 text-white p-4 rounded-xl transition-all duration-200 text-center group shadow-lg"
-              >
-                <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">📚</div>
-                <div className="font-mali font-bold text-sm">All Content</div>
-              </button>
+
               
               <button 
                 onClick={() => handleSetActiveTab('audio-lessons')}
@@ -964,214 +956,7 @@ export default function ProfessionalUserDashboard({
           </div>
         )}
 
-        {/* All Content Tab */}
-        {activeTab === 'all-content' && (
-          <section className="space-y-6 relative">
-            
-            <div className="bg-purple-800/60 backdrop-blur-sm rounded-xl p-6 border border-purple-600/50 shadow-lg relative z-10">
-              <h2 className="text-2xl font-bold text-emerald-400 mb-4 flex items-center">
-                <span className="mr-2">📚</span>
-                All Learning Content
-              </h2>
-              <p className="text-white">Browse all available content types - Audio, Video, Programs & More</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
-              {allContent.map((content) => {
-                const isPurchased = isItemPurchased(content.id);
-                
-                return (
-                  <div key={content.id} className="bg-black/30 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden hover:scale-105 hover:border-yellow-400 transition-all duration-300 group">
-                    <div className="relative">
-                      <div className={`w-full h-48 bg-gradient-to-br ${getContentColor(content.category || '')} relative overflow-hidden`}>
-                        {content.thumbnail && content.thumbnail.trim() ? (
-                          <img 
-                            src={content.thumbnail} 
-                            alt={content.title} 
-                            className="w-full h-full object-cover" 
-                            onLoad={() => {}}
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                              const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                              if (fallback) fallback.style.display = 'flex';
-                            }}
-                          />
-                        ) : null}
 
-                        
-                        {/* Play icon for all content types */}
-                        {isPurchased && (
-                          <div 
-                            className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors group-hover:bg-black/30 cursor-pointer"
-                            onClick={() => {
-                              if (content && content.id) {
-                                if (content.category === 'Audio Lessons' || content.type === 'audio') {
-                                  let audioUrl = content.audioUrl || content.videoUrl;
-                                  let audioFile = null;
-                                  
-                                  if (content.audioUrl && typeof content.audioUrl === 'object' && 'type' in content.audioUrl) {
-                                    audioUrl = URL.createObjectURL(content.audioUrl as unknown as File);
-                                    audioFile = content.audioUrl;
-                                  } else if (content.videoUrl && typeof content.videoUrl === 'object' && 'type' in content.videoUrl) {
-                                    audioUrl = URL.createObjectURL(content.videoUrl as unknown as File);
-                                    audioFile = content.videoUrl;
-                                  }
-                                  
-                                  if (audioUrl) {
-                                    setSelectedAudio({
-                                      ...content,
-                                      audioUrl: audioUrl,
-                                      audioFile: audioFile
-                                    });
-                                    setShowAudioModal(true);
-                                  } else {
-                                    alert('⚠️ Audio file not available.');
-                                  }
-                                } else if (content.category === 'PP1 Program') {
-                                  if (content.videoUrl) {
-                                    const video = {
-                                      id: content.id,
-                                      title: content.title,
-                                      thumbnail: content.thumbnail || '',
-                                      duration: content.duration || '5:00',
-                                      description: content.description || '',
-                                      videoUrl: content.videoUrl || '',
-                                      category: content.category || 'PP1 Program',
-                                      isPremium: content.isPremium || false,
-                                      price: content.price || 0,
-                                      rating: (content as any).rating,
-                                      views: (content as any).views,
-                                      tags: (content as any).tags,
-                                      isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
-                                    };
-                                    playVideo(video);
-                                  } else if (content.audioUrl) {
-                                    let audioUrl = content.audioUrl;
-                                    let audioFile = null;
-                                    
-                                    if (content.audioUrl && typeof content.audioUrl === 'object' && 'type' in content.audioUrl) {
-                                      audioUrl = URL.createObjectURL(content.audioUrl as unknown as File);
-                                      audioFile = content.audioUrl;
-                                    }
-                                    
-                                    setSelectedAudio({
-                                      ...content,
-                                      audioUrl: audioUrl,
-                                      audioFile: audioFile
-                                    });
-                                    setShowAudioModal(true);
-                                  } else {
-                                    alert(`✅ You own this ${content.category}! Content is now accessible.`);
-                                  }
-                                } else {
-                                  const video = {
-                                    id: content.id,
-                                    title: content.title,
-                                    thumbnail: content.thumbnail || '',
-                                    duration: (content as any).duration || content.duration || (content as any).estimatedDuration || '5:00',
-                                    description: content.description || '',
-                                    videoUrl: content.videoUrl || '',
-                                    category: content.category || 'Videos',
-                                    isPremium: content.isPremium || false,
-                                    price: content.price || 0,
-                                    rating: (content as any).rating,
-                                    views: (content as any).views,
-                                    tags: (content as any).tags,
-                                    isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
-                                  };
-                                  playVideo(video);
-                                }
-                              }
-                            }}
-                          >
-                            <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/30 backdrop-blur-sm group-hover:scale-110 transition-all duration-300">
-                              {content.category === 'Audio Lessons' || content.type === 'audio' ? (
-                                <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                                </svg>
-                              ) : content.category === 'PP1 Program' ? (
-                                <span className="text-white text-2xl">📚</span>
-                              ) : (
-                                <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M8 5v14l11-7z"/>
-                                </svg>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {!isPurchased && (
-                        <div className="absolute top-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-sm font-medium">
-                          ${content.price || 0}
-                        </div>
-                      )}
-                      
-
-                      
-
-                      
-                      {!isPurchased && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                          <div className="text-center text-white">
-                            <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mb-3 mx-auto">
-                              <span className="text-2xl">🔒</span>
-                            </div>
-                            <div className="text-sm font-bold">Purchase Required</div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="p-4">
-                      <h3 className="text-lg font-bold text-white mb-2">{content.title}</h3>
-                      <p className="text-purple-200 text-sm mb-3 line-clamp-2">{content.description || 'No description available'}</p>
-                      
-                      {content.aiTags && content.aiTags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-3">
-                          {content.aiTags.slice(0, 2).map(tag => (
-                            <span key={tag} className="px-2 py-1 bg-white/20 text-white/80 rounded-full text-xs">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          {content.hasPreview && (
-                            <span className="text-blue-400 text-xs">👁️ Preview</span>
-                          )}
-                        </div>
-                        
-                        {!isPurchased && (
-                          <button 
-                            onClick={() => {
-                              addToCart(content.id);
-                              setShowCartPopup(true);
-                              setTimeout(() => setShowCartPopup(false), 2000);
-                            }}
-                            className="bg-yellow-400 hover:bg-yellow-500 text-purple-800 px-4 py-2 rounded-lg font-semibold transition-colors text-sm"
-                          >
-                            Buy Now
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            
-            {allContent.length === 0 && (
-              <div className="text-center py-12 bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-700 shadow-lg">
-                <div className="text-6xl mb-4">📚</div>
-                <div className="text-brand-yellow text-xl mb-2 font-mali font-bold">No content available</div>
-                <div className="text-gray-300 text-sm font-mali">Admin needs to add content through the admin panel</div>
-              </div>
-            )}
-          </section>
-        )}
 
         {/* Category-specific tabs */}
         {['audio-lessons', 'video-lessons', 'pp1-program'].map(tabId => {
@@ -1184,7 +969,7 @@ export default function ProfessionalUserDashboard({
           };
           
           const categoryName = categoryMap[tabId];
-          const filteredContent = allContent.filter(content => content.category === categoryName);
+          const filteredContent = allModules.filter(module => module.category === categoryName && !packageContentIds.includes(module.id) && isItemPurchased(module.id));
           
           return activeTab === tabId && (
             <section key={tabId} className="space-y-6">
@@ -1553,9 +1338,9 @@ export default function ProfessionalUserDashboard({
               )}
             </div>
 
-            {/* Video Cards - Only Show Purchased Videos */}
+            {/* Video Cards - Only Show Purchased Videos (excluding package content) */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).map(module => {
+              {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).map(module => {
                 const isPurchased = isItemPurchased(module.id);
                 let thumbnail = module.thumbnail || '';
                 
@@ -1703,7 +1488,7 @@ export default function ProfessionalUserDashboard({
             </div>
             
             {/* Show message when no purchased videos */}
-            {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length === 0 && (
+            {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length === 0 && (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <div className="text-6xl mb-4">🎬</div>
                 <div className="text-white text-xl mb-2">No videos available</div>
