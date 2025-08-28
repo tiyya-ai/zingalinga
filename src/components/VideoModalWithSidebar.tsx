@@ -120,6 +120,28 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
                   console.log('Created blob URL for video:', videoUrl);
                 }
                 
+                // Vimeo videos FIRST (before other checks)
+                if (videoUrl.includes('vimeo.com')) {
+                  let embedUrl = videoUrl;
+                  const vimeoIdMatch = videoUrl.match(/vimeo\.com\/(\d+)/);
+                  if (vimeoIdMatch) {
+                    const videoId = vimeoIdMatch[1];
+                    embedUrl = `https://player.vimeo.com/video/${videoId}?autoplay=1&title=0&byline=0&portrait=0`;
+                  }
+                  
+                  console.log('🎬 Loading Vimeo video:', embedUrl);
+                  return (
+                    <iframe
+                      src={embedUrl}
+                      className="w-full aspect-video rounded-none sm:rounded-lg"
+                      frameBorder="0"
+                      allow="autoplay; fullscreen; picture-in-picture"
+                      allowFullScreen
+                      title={selectedVideo.title}
+                    />
+                  );
+                }
+                
                 // YouTube videos
                 if (videoUrl.includes('youtube.com/embed/') || videoUrl.includes('youtu.be/') || videoUrl.includes('youtube.com/watch')) {
                   let embedUrl = videoUrl;
