@@ -251,16 +251,22 @@ class VPSDataStore {
           data.ageGroups = [];
         }
         this.memoryData = data;
-        console.log('✅ Data loaded from API with', data.packages?.length || 0, 'packages');
+        console.log('✅ Data loaded from API with', data.modules?.length || 0, 'modules and', data.packages?.length || 0, 'packages');
         return data;
       }
     } catch (error) {
       console.error('❌ API load failed:', error);
     }
     
-    // Skip localStorage fallback to avoid quota issues
-    console.log('⚠️ API failed, using default data (localStorage skipped)');
+    // If API fails, try to preserve existing data or use minimal defaults
+    console.log('⚠️ API failed, preserving existing data or using minimal defaults');
     
+    if (this.memoryData) {
+      console.log('📦 Using existing memory data to preserve content');
+      return this.memoryData;
+    }
+    
+    // Only use default data if no existing data exists
     const defaultData = this.getDefaultData();
     this.memoryData = defaultData;
     return defaultData;
@@ -269,16 +275,21 @@ class VPSDataStore {
   // Save data to API
   async saveData(data: AppData): Promise<boolean> {
     try {
-      // Always save to memory first
-      this.memoryData = {
+      // Preserve existing modules if data.modules is empty
+      const preservedData = {
         ...data,
+        modules: data.modules && data.modules.length > 0 ? data.modules : (this.memoryData?.modules || []),
         lastUpdated: new Date().toISOString()
       };
+      
+      // Always save to memory first
+      this.memoryData = preservedData;
 
       // Calculate data size for logging
       const dataSize = JSON.stringify(this.memoryData).length;
       console.log(`📊 Data size: ${(dataSize / 1024 / 1024).toFixed(2)}MB`);
-      console.log(`📊 Total modules: ${data.modules?.length || 0}`);
+      console.log(`📊 Total modules: ${this.memoryData.modules?.length || 0}`);
+      console.log(`📊 Preserving ${this.memoryData.modules?.length || 0} modules in save operation`);
 
       // Save to API first
       try {
@@ -291,7 +302,8 @@ class VPSDataStore {
         });
         
         if (response.ok) {
-          console.log('✅ Data saved to API successfully');
+          const result = await response.json();
+          console.log('✅ Data saved to API successfully with', result.moduleCount || 0, 'modules');
           return true;
         } else {
           const errorText = await response.text();
