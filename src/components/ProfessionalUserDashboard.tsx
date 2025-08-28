@@ -765,7 +765,7 @@ export default function ProfessionalUserDashboard({
                     allModules.some(module => module.id === contentId)
                   );
                   return total + availableContent.length;
-                }, 0) }
+                }, 0) },
                 { id: 'playlist', label: '📋 Playlist', count: playlist.length }
               ].map(tab => (
                 <button
