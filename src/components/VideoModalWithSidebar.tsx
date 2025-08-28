@@ -112,7 +112,13 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
           <div className="p-2 sm:p-4 flex-1">
             {selectedVideo.videoUrl && selectedVideo.videoUrl.trim() ? (
               (() => {
-                const videoUrl = selectedVideo.videoUrl;
+                let videoUrl = selectedVideo.videoUrl;
+                
+                // Handle File objects by creating blob URLs
+                if (typeof videoUrl === 'object' && 'type' in videoUrl) {
+                  videoUrl = URL.createObjectURL(videoUrl as unknown as File);
+                  console.log('Created blob URL for video:', videoUrl);
+                }
                 
                 // YouTube videos
                 if (videoUrl.includes('youtube.com/embed/') || videoUrl.includes('youtu.be/') || videoUrl.includes('youtube.com/watch')) {
@@ -140,7 +146,7 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
                   );
                 }
                 
-                // Direct video files
+                // Direct video files (including blob URLs and data URLs)
                 return (
                   <video 
                     controls
@@ -149,10 +155,20 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
                     poster={selectedVideo.thumbnail}
                     controlsList="nodownload"
                     onContextMenu={(e) => e.preventDefault()}
+                    onError={(e) => {
+                      console.error('Video failed to load:', videoUrl);
+                      console.log('Video URL type:', typeof videoUrl);
+                      console.log('Video URL length:', videoUrl.length);
+                    }}
+                    onLoadStart={() => {
+                      console.log('Video loading started:', videoUrl.substring(0, 100) + '...');
+                    }}
                   >
                     <source src={videoUrl} type="video/mp4" />
                     <source src={videoUrl} type="video/webm" />
                     <source src={videoUrl} type="video/ogg" />
+                    <source src={videoUrl} type="video/avi" />
+                    <source src={videoUrl} type="video/mov" />
                     Your browser does not support the video tag.
                   </video>
                 );
@@ -162,6 +178,7 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
                 <div className="text-center text-gray-400">
                   <div className="text-6xl mb-4">🎬</div>
                   <div className="text-xl">Video not available</div>
+                  <div className="text-sm mt-2">URL: {selectedVideo.videoUrl ? 'Present but invalid' : 'Missing'}</div>
                 </div>
               </div>
             )}

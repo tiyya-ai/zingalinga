@@ -70,8 +70,9 @@ class VPSDataStore {
   }
 
   clearMemoryCache() {
-    this.memoryData = null;
-    console.log('🧹 Memory cache cleared');
+    // NEVER clear memory cache to prevent data loss
+    console.log('⚠️ Memory cache clear requested but BLOCKED to prevent data loss');
+    console.log('📊 Current memory data has', this.memoryData?.modules?.length || 0, 'modules');
   }
 
   // Get default data structure
@@ -258,18 +259,40 @@ class VPSDataStore {
       console.error('❌ API load failed:', error);
     }
     
-    // If API fails, try to preserve existing data or use minimal defaults
-    console.log('⚠️ API failed, preserving existing data or using minimal defaults');
+    // CRITICAL: Never lose data - always preserve existing content
+    console.log('⚠️ API failed, STRICT data preservation mode activated');
     
     if (this.memoryData) {
-      console.log('📦 Using existing memory data to preserve content');
+      console.log('🔒 PROTECTED: Using existing memory data with', this.memoryData.modules?.length || 0, 'modules');
       return this.memoryData;
     }
     
-    // Only use default data if no existing data exists
-    const defaultData = this.getDefaultData();
-    this.memoryData = defaultData;
-    return defaultData;
+    // Return minimal structure - NEVER default data that could overwrite
+    console.log('🛡️ No existing data - returning minimal structure to prevent overwrites');
+    const minimalData = {
+      users: [],
+      modules: [],
+      purchases: [],
+      contentFiles: [],
+      uploadQueue: [],
+      savedVideos: [],
+      categories: ['Audio Lessons', 'PP1 Program', 'PP2 Program'],
+      comments: [],
+      subscriptions: [],
+      transactions: [],
+      notifications: [],
+      scheduledContent: [],
+      flaggedContent: [],
+      accessLogs: [],
+      packages: [],
+      bundles: [],
+      ageGroups: [],
+      settings: this.getDefaultSettings(),
+      lastUpdated: new Date().toISOString(),
+      lastLoaded: new Date().toISOString()
+    };
+    this.memoryData = minimalData;
+    return minimalData;
   }
 
   // Save data to API
