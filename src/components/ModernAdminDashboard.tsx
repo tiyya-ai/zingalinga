@@ -2793,15 +2793,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
 
   const renderAllVideos = () => (
     <div className="space-y-6">
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-        <div className="flex items-center space-x-2">
-          <PackageIcon className="h-5 w-5 text-yellow-600" />
-          <h3 className="font-semibold text-yellow-800">Package-Only Sales Model</h3>
-        </div>
-        <p className="text-yellow-700 text-sm mt-1">
-          Videos are sold exclusively as packages. Individual video pricing is for package creation only.
-        </p>
-      </div>
+
       <PageHeader 
         title="All Videos (Package Content)" 
         actions={

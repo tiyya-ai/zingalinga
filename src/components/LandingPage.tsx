@@ -103,7 +103,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
           <div className="flex justify-center px-4 mt-8">
             <div className="aspect-video w-full max-w-2xl">
               <iframe
-                src="https://player.vimeo.com/video/1109185849?autoplay=0&loop=0&title=0&byline=0&portrait=0"
+                src="https://player.vimeo.com/video/1113868282?autoplay=0&loop=0&title=0&byline=0&portrait=0"
                 className="w-full h-full rounded-2xl"
                 frameBorder="0"
                 allow="autoplay; fullscreen; picture-in-picture"
