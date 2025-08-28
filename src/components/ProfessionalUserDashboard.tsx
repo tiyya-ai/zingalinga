@@ -365,14 +365,14 @@ export default function ProfessionalUserDashboard({
                   .then(data => {
                     if (data.thumbnail) {
                       // Update the module with the fetched thumbnail
-                      module.vimeoThumbnail = data.thumbnail;
+                      (module as any).vimeoThumbnail = data.thumbnail;
                     }
                   })
                   .catch(err => console.log('Vimeo thumbnail fetch failed:', err));
               }
               
               // Use fallback thumbnail while loading
-              thumbnail = module.vimeoThumbnail || `https://i.vimeocdn.com/video/${videoId}_640x360.jpg`;
+              thumbnail = (module as any).vimeoThumbnail || `https://i.vimeocdn.com/video/${videoId}_640x360.jpg`;
             }
             isVimeo = true;
           }
