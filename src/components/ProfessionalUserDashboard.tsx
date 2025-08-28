@@ -359,15 +359,17 @@ export default function ProfessionalUserDashboard({
             // For Vimeo private videos, use our API to get thumbnail
             if (!thumbnail || thumbnail === '/zinga-linga-logo.png') {
               // Fetch thumbnail asynchronously
-              fetch(`/api/vimeo?url=${encodeURIComponent(module.videoUrl)}`)
-                .then(res => res.json())
-                .then(data => {
-                  if (data.thumbnail) {
-                    // Update the module with the fetched thumbnail
-                    module.vimeoThumbnail = data.thumbnail;
-                  }
-                })
-                .catch(err => console.log('Vimeo thumbnail fetch failed:', err));
+              if (module.videoUrl) {
+                fetch(`/api/vimeo?url=${encodeURIComponent(module.videoUrl)}`)
+                  .then(res => res.json())
+                  .then(data => {
+                    if (data.thumbnail) {
+                      // Update the module with the fetched thumbnail
+                      module.vimeoThumbnail = data.thumbnail;
+                    }
+                  })
+                  .catch(err => console.log('Vimeo thumbnail fetch failed:', err));
+              }
               
               // Use fallback thumbnail while loading
               thumbnail = module.vimeoThumbnail || `https://i.vimeocdn.com/video/${videoId}_640x360.jpg`;
