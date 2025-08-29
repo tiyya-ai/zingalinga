@@ -1,0 +1,155 @@
+{
+  "users": [
+    {
+      "id": "user_001",
+      "email": "test@example.com",
+      "name": "Test User",
+      "role": "user",
+      "purchasedModules": [],
+      "totalSpent": 0,
+      "createdAt": "2025-08-21T00:06:32.576Z",
+      "lastLogin": "2025-08-21T00:06:32.576Z"
+    },
+    {
+      "id": "user-1",
+      "email": "test@example.com",
+      "name": "Test User",
+      "role": "user",
+      "purchasedModules": [
+        "adventurer-pack"
+      ],
+      "totalSpent": 45,
+      "createdAt": "2025-08-27T15:42:59.879Z",
+      "lastLogin": "2025-08-27T15:42:59.879Z",
+      "password": "test123",
+      "isActive": true
+    }
+  ],
+  "modules": [
+    {
+      "id": "video_1756309360716",
+      "title": "Sample Video 1",
+      "description": "Educational content for children",
+      "category": "Video Lessons",
+      "videoUrl": "https://vimeo.com/1113868168",
+      "thumbnail": "",
+      "duration": "5:00",
+      "price": 0,
+      "isPremium": false,
+      "createdAt": "2025-08-27T15:42:40.716Z",
+      "updatedAt": "2025-08-27T15:42:40.716Z"
+    },
+    {
+      "id": "video_1756323338364",
+      "title": "Sample Video 2", 
+      "description": "More educational content",
+      "category": "Video Lessons",
+      "videoUrl": "https://vimeo.com/1113868168",
+      "thumbnail": "",
+      "duration": "5:00",
+      "price": 0,
+      "isPremium": false,
+      "createdAt": "2025-08-27T19:35:38.364Z",
+      "updatedAt": "2025-08-27T19:35:38.364Z"
+    }
+  ],
+  "purchases": [
+    {
+      "id": "purchase_1756322647662_adventurer-pack_user-1",
+      "userId": "user-1",
+      "moduleId": "adventurer-pack",
+      "purchaseDate": "2025-08-27T19:24:07.662Z",
+      "amount": 45,
+      "status": "completed",
+      "type": "package",
+      "createdAt": "2025-08-27T19:24:07.713Z"
+    }
+  ],
+  "contentFiles": [],
+  "uploadQueue": [],
+  "savedVideos": [],
+  "categories": [
+    "Audio Lessons",
+    "Video Lessons"
+  ],
+  "comments": [],
+  "subscriptions": [],
+  "transactions": [],
+  "notifications": [],
+  "scheduledContent": [],
+  "flaggedContent": [],
+  "accessLogs": [],
+  "packages": [
+    {
+      "id": "explorer-pack",
+      "name": "Explorer Pack",
+      "description": "Where Letters Come to Life!",
+      "price": 30,
+      "type": "subscription",
+      "isActive": true,
+      "isPopular": false,
+      "icon": "🎒",
+      "features": [
+        "Letter Safari with playful letter recognition games",
+        "Magic Word Builder to create fun words like a word wizard!",
+        "Phonics party - sing along to catchy letter sounds",
+        "Storytime with exciting tales role plays for children",
+        "15 Learning Quests - colorful lessons that feel like playtime"
+      ],
+      "contentIds": [
+        "video_1756309360716",
+        "video_1756323338364"
+      ],
+      "ageGroups": [
+        "3-6"
+      ],
+      "billingCycle": "yearly",
+      "createdAt": "2025-08-21T00:06:32.576Z",
+      "updatedAt": "2025-08-27T19:35:50.005Z",
+      "coverImage": ""
+    },
+    {
+      "id": "adventurer-pack",
+      "name": "Adventurer Pack",
+      "description": "Reading Superpowers Unlocked!",
+      "price": 45,
+      "type": "subscription",
+      "isActive": true,
+      "isPopular": true,
+      "icon": "🚀",
+      "features": [
+        "Everything in Explorer Pack PLUS:",
+        "Word Architect: Build bigger, cooler words!",
+        "25 Learning Quests with more stories, more adventures",
+        "25 Gold Star Challenges to earn rewards after each lesson"
+      ],
+      "contentIds": [],
+      "ageGroups": [
+        "3-6"
+      ],
+      "billingCycle": "yearly",
+      "upgradeFrom": "explorer-pack",
+      "upgradePrice": 15,
+      "createdAt": "2025-08-21T00:06:32.576Z",
+      "updatedAt": "2025-08-21T00:06:32.576Z"
+    }
+  ],
+  "bundles": [],
+  "ageGroups": [],
+  "settings": {
+    "siteName": "Zinga Linga",
+    "defaultLanguage": "en",
+    "timezone": "UTC",
+    "features": {
+      "userRegistration": true,
+      "videoComments": true,
+      "videoDownloads": true,
+      "socialSharing": false
+    },
+    "dataSource": "real",
+    "apiEndpoint": "/api/data",
+    "enableRealTimeSync": true
+  },
+  "lastUpdated": "2025-08-27T22:30:32.656Z",
+  "deploymentProtection": true
+}

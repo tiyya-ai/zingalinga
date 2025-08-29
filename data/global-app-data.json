@@ -153,7 +153,62 @@
       "isActive": true
     }
   ],
-  "modules": [],
+  "modules": [
+    {
+      "id": "video_1756309360716",
+      "title": "Sample Video 1",
+      "description": "Educational content for children",
+      "category": "Video Lessons",
+      "videoUrl": "https://vimeo.com/1113868168",
+      "thumbnail": "",
+      "duration": "5:00",
+      "price": 0,
+      "isPremium": false,
+      "createdAt": "2025-08-27T15:42:40.716Z",
+      "updatedAt": "2025-08-27T15:42:40.716Z"
+    },
+    {
+      "id": "video_1756323338364",
+      "title": "Sample Video 2", 
+      "description": "More educational content",
+      "category": "Video Lessons",
+      "videoUrl": "https://vimeo.com/1113868168",
+      "thumbnail": "",
+      "duration": "5:00",
+      "price": 0,
+      "isPremium": false,
+      "createdAt": "2025-08-27T19:35:38.364Z",
+      "updatedAt": "2025-08-27T19:35:38.364Z"
+    },
+    {
+      "id": "audio_1756323400001",
+      "title": "Phonics Song A-B-C",
+      "description": "Learn the alphabet with fun songs",
+      "category": "Audio Lessons",
+      "type": "audio",
+      "audioUrl": "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
+      "thumbnail": "",
+      "duration": "3:30",
+      "price": 0,
+      "isPremium": false,
+      "createdAt": "2025-08-27T20:00:00.001Z",
+      "updatedAt": "2025-08-27T20:00:00.001Z"
+    },
+    {
+      "id": "audio_1756323400002",
+      "title": "Letter Sounds Practice",
+      "description": "Practice letter sounds with interactive audio",
+      "category": "Audio Lessons",
+      "type": "audio",
+      "audioUrl": "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
+      "thumbnail": "",
+      "duration": "4:15",
+      "price": 0,
+      "isPremium": false,
+      "createdAt": "2025-08-27T20:05:00.002Z",
+      "updatedAt": "2025-08-27T20:05:00.002Z"
+    }
+  ],
   "purchases": [
     {
       "id": "purchase_1755734874231_wptx6ea91",
@@ -288,7 +343,9 @@
       ],
       "contentIds": [
         "video_1756309360716",
-        "video_1756323338364"
+        "video_1756323338364",
+        "audio_1756323400001",
+        "audio_1756323400002"
       ],
       "ageGroups": [
         "3-6"
@@ -391,5 +448,6 @@
   },
   "lastUpdated": "2025-08-27T22:30:32.656Z",
   "lastLoaded": "2025-08-21T00:06:32.576Z",
-  "lastSaved": "2025-08-27T22:30:32.679Z"
+  "lastSaved": "2025-08-27T22:30:32.679Z",
+  "deploymentProtection": true
 }

@@ -147,6 +147,40 @@ export async function POST(request: NextRequest) {
     // CRITICAL: Refuse to save if we would lose existing modules
     if (existingData?.modules?.length > 0 && (!data.modules || data.modules.length === 0)) {
       console.error('🚨 CRITICAL: Refusing to save - would delete', existingData.modules.length, 'modules!');
+      
+      // Try to restore from permanent backup
+      try {
+        const backupPath = path.join(DATA_DIR, 'backup-permanent.json');
+        if (existsSync(backupPath)) {
+          const backupData = JSON.parse(await readFile(backupPath, 'utf-8'));
+          console.log('🔄 Restoring from permanent backup with', backupData.modules?.length || 0, 'modules');
+          
+          // Merge backup data with current data
+          const restoredData = {
+            ...data,
+            modules: backupData.modules || [],
+            users: [...(data.users || []), ...(backupData.users || [])].filter((user, index, self) => 
+              index === self.findIndex(u => u.id === user.id)
+            ),
+            purchases: [...(data.purchases || []), ...(backupData.purchases || [])].filter((purchase, index, self) => 
+              index === self.findIndex(p => p.id === purchase.id)
+            )
+          };
+          
+          await writeFile(dataFile, JSON.stringify(restoredData, null, 2));
+          console.log('✅ Data restored from permanent backup!');
+          
+          return NextResponse.json({ 
+            success: true, 
+            message: 'Data restored from permanent backup',
+            moduleCount: restoredData.modules?.length || 0,
+            restored: true
+          });
+        }
+      } catch (restoreError) {
+        console.error('❌ Failed to restore from backup:', restoreError);
+      }
+      
       return NextResponse.json({ 
         success: false, 
         error: 'Data protection: Refusing to delete existing modules',
@@ -185,6 +219,17 @@ export async function POST(request: NextRequest) {
     console.log('📊 Incoming modules:', data.modules?.length || 0);
     console.log('📊 Final modules:', preservedData.modules?.length || 0);
     console.log('💾 PROTECTED SAVE - Preserving', preservedData.modules?.length || 0, 'modules,', preservedData.users?.length || 0, 'users');
+    
+    // Create permanent backup if we have significant data
+    if (preservedData.modules?.length > 0) {
+      try {
+        const permanentBackupPath = path.join(DATA_DIR, 'backup-permanent.json');
+        await writeFile(permanentBackupPath, JSON.stringify(preservedData, null, 2));
+        console.log('🔒 Permanent backup updated with', preservedData.modules.length, 'modules');
+      } catch (backupError) {
+        console.error('⚠️ Failed to create permanent backup:', backupError);
+      }
+    }
     await writeFile(dataFile, JSON.stringify(preservedData, null, 2));
     
     return NextResponse.json({ 
