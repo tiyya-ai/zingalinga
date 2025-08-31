@@ -272,7 +272,7 @@ export default function CheckoutDashboard({
 
   const loadUserPreferences = async () => {
     try {
-      const userData = await vpsDataStore.getUserData(sanitizeInput(user.id));
+      const userData = await vpsDataStore.getUserProfile(sanitizeInput(user.id));
       if (userData) {
         setSelectedTheme(userData.theme || themes[0]);
         setSelectedAvatar(userData.avatar || avatars[0]);

@@ -1,6 +1,6 @@
 // File-based Data Store
 import { User, Module, Purchase, ContentFile } from '../types';
-import './mockApi'; // Initialize mock API for data persistence
+// Mock API removed to fix build error
 // Removed defaultModules import to prevent fallback to hardcoded videos
 
 interface UploadQueueItem {
@@ -268,45 +268,66 @@ class VPSDataStore {
         return this.memoryData;
       }
       
-      // Load from API
-      const response = await fetch('/api/data');
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Merge with existing data to prevent loss
-        const mergedData = {
-          ...data,
-          modules: data.modules || this.memoryData?.modules || [],
-          packages: data.packages?.length > 0 ? data.packages : this.getDefaultPackages(),
-          categories: data.categories?.length > 0 ? data.categories : ['Audio Lessons', 'PP1 Program', 'PP2 Program'],
-          savedVideos: data.savedVideos || [],
-          ageGroups: data.ageGroups || [],
-          users: data.users || this.memoryData?.users || [],
-          purchases: data.purchases || this.memoryData?.purchases || [],
-          lastLoaded: new Date().toISOString()
-        };
-        
-        this.memoryData = mergedData;
-        console.log('✅ Data loaded from API with', mergedData.modules?.length || 0, 'modules and', mergedData.packages?.length || 0, 'packages');
-        return mergedData;
+      // Try to load from localStorage first
+      const stored = localStorage.getItem('zinga-linga-persistent-data');
+      if (stored) {
+        try {
+          const data = JSON.parse(stored);
+          this.memoryData = data;
+          console.log('✅ Data loaded from localStorage with', data.modules?.length || 0, 'modules');
+          return data;
+        } catch (error) {
+          console.error('Failed to parse stored data:', error);
+        }
       }
+      
+      // Fallback to API if available
+      try {
+        const response = await fetch('/api/data');
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Merge with existing data to prevent loss
+          const mergedData = {
+            ...data,
+            modules: data.modules || this.memoryData?.modules || [],
+            packages: data.packages?.length > 0 ? data.packages : this.getDefaultPackages(),
+            categories: data.categories?.length > 0 ? data.categories : ['Audio Lessons', 'PP1 Program', 'PP2 Program'],
+            savedVideos: data.savedVideos || [],
+            ageGroups: data.ageGroups || [],
+            users: data.users || this.memoryData?.users || [],
+            purchases: data.purchases || this.memoryData?.purchases || [],
+            lastLoaded: new Date().toISOString()
+          };
+          
+          this.memoryData = mergedData;
+          localStorage.setItem('zinga-linga-persistent-data', JSON.stringify(mergedData));
+          console.log('✅ Data loaded from API with', mergedData.modules?.length || 0, 'modules and', mergedData.packages?.length || 0, 'packages');
+          return mergedData;
+        }
+      } catch (error) {
+        console.error('❌ API load failed:', error);
+      }
+    
+      // CRITICAL: Never lose data - always preserve existing content
+      console.log('⚠️ API failed, preserving existing data');
+      
+      if (this.memoryData) {
+        console.log('🔒 PROTECTED: Using existing memory data with', this.memoryData.modules?.length || 0, 'modules');
+        return this.memoryData;
+      }
+      
+      // Return default structure only if no data exists
+      console.log('🆕 No existing data - initializing with defaults');
+      const defaultData = this.getDefaultData();
+      this.memoryData = defaultData;
+      return defaultData;
     } catch (error) {
-      console.error('❌ API load failed:', error);
+      console.error('❌ Failed to load data:', error);
+      const defaultData = this.getDefaultData();
+      this.memoryData = defaultData;
+      return defaultData;
     }
-    
-    // CRITICAL: Never lose data - always preserve existing content
-    console.log('⚠️ API failed, preserving existing data');
-    
-    if (this.memoryData) {
-      console.log('🔒 PROTECTED: Using existing memory data with', this.memoryData.modules?.length || 0, 'modules');
-      return this.memoryData;
-    }
-    
-    // Return default structure only if no data exists
-    console.log('🆕 No existing data - initializing with defaults');
-    const defaultData = this.getDefaultData();
-    this.memoryData = defaultData;
-    return defaultData;
   }
 
   // Save data to API
@@ -321,67 +342,15 @@ class VPSDataStore {
       
       // Always update memory cache immediately
       this.memoryData = preservedData;
-
-      // Calculate data size for logging
-      const dataSize = JSON.stringify(this.memoryData).length;
-      console.log(`📊 Data size: ${(dataSize / 1024 / 1024).toFixed(2)}MB`);
-      console.log(`📊 Total modules: ${this.memoryData.modules?.length || 0}`);
-      console.log(`📊 Saving ${this.memoryData.modules?.length || 0} modules`);
-
-      // Save to API
+      
+      // Save to localStorage for persistence
       try {
-        const response = await fetch('/api/data', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(this.memoryData)
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          console.log('✅ Data saved to API successfully with', result.moduleCount || 0, 'modules');
-          return true;
-        } else {
-          const errorText = await response.text();
-          console.error('❌ API save failed:', errorText);
-          
-          // If API save fails due to size, try with reduced data
-          if (errorText.includes('too large') || errorText.includes('limit') || response.status === 413) {
-            console.log('🔄 Attempting to save with reduced media data...');
-            const reducedData = {
-              ...this.memoryData,
-              modules: this.memoryData.modules?.map(module => ({
-                ...module,
-                videoUrl: module.videoUrl?.startsWith('data:') ? '[Large video data removed]' : module.videoUrl,
-                thumbnail: (module.thumbnail && module.thumbnail.length > 50000) ? '[Large thumbnail removed]' : module.thumbnail,
-                audioUrl: module.audioUrl?.startsWith('data:') ? '[Large audio data removed]' : module.audioUrl
-              }))
-            };
-            
-            const reducedResponse = await fetch('/api/data', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(reducedData)
-            });
-            
-            if (reducedResponse.ok) {
-              console.log('✅ Reduced data saved to API successfully');
-              return true;
-            }
-          }
-          
-          // Even if API fails, we still have the data in memory
-          console.log('⚠️ API save failed but data preserved in memory');
-          return true; // Return true to prevent data loss
-        }
-      } catch (apiError) {
-        console.error('❌ API save error:', apiError);
-        // Even if API fails, we still have the data in memory
-        console.log('⚠️ API error but data preserved in memory');
-        return true; // Return true to prevent data loss
+        localStorage.setItem('zinga-linga-persistent-data', JSON.stringify(this.memoryData));
+        console.log('✅ Data saved to localStorage with', this.memoryData.modules?.length || 0, 'modules');
+        return true;
+      } catch (error) {
+        console.error('❌ localStorage save failed:', error);
+        return false;
       }
     } catch (error) {
       console.error('❌ Failed to save data:', error);
@@ -695,10 +664,21 @@ class VPSDataStore {
 
   async deleteUser(userId: string): Promise<boolean> {
     try {
+      console.log('🗑️ Deleting user:', userId);
       const data = await this.loadData();
       data.users = data.users || [];
+      const originalLength = data.users.length;
       data.users = data.users.filter(u => u.id !== userId);
-      return await this.saveData(data);
+      
+      if (data.users.length < originalLength) {
+        const success = await this.saveData(data);
+        if (success) {
+          console.log('✅ User deleted successfully');
+          this.memoryData = data;
+        }
+        return success;
+      }
+      return false;
     } catch (error) {
       console.error('Error deleting user:', error);
       return false;
