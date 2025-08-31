@@ -124,6 +124,11 @@ class VPSDataStore {
         isActive: true,
         isPopular: false,
         icon: '🎒',
+        colorScheme: {
+          primary: '#D97706',
+          secondary: '#F59E0B',
+          accent: '#FCD34D'
+        },
         features: [
           'Letter Safari with playful letter recognition games',
           'Magic Word Builder to create fun words like a word wizard!',
@@ -134,8 +139,11 @@ class VPSDataStore {
         contentIds: [],
         ageGroups: ['3-6'],
         billingCycle: 'yearly',
+        coverImage: null,
+        upgradePrice: 0,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        lastContentUpdate: new Date().toISOString()
       },
       {
         id: 'adventurer-pack',
@@ -146,6 +154,11 @@ class VPSDataStore {
         isActive: true,
         isPopular: true,
         icon: '🚀',
+        colorScheme: {
+          primary: '#DC2626',
+          secondary: '#EF4444',
+          accent: '#FCA5A5'
+        },
         features: [
           'Everything in Explorer Pack PLUS:',
           'Word Architect: Build bigger, cooler words!',
@@ -157,8 +170,11 @@ class VPSDataStore {
         billingCycle: 'yearly',
         upgradeFrom: 'explorer-pack',
         upgradePrice: 15,
+        coverImage: null,
+        contentUpgradePrice: 5,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        lastContentUpdate: new Date().toISOString()
       },
       {
         id: 'roadtripper-pack',
@@ -169,6 +185,11 @@ class VPSDataStore {
         isActive: false,
         isPopular: false,
         icon: '🚗',
+        colorScheme: {
+          primary: '#059669',
+          secondary: '#10B981',
+          accent: '#6EE7B7'
+        },
         features: [
           '125 Audio adventures, perfect for car rides & travel',
           '125 Sing-along phonics - turn travel time into learning time',
@@ -180,8 +201,11 @@ class VPSDataStore {
         upgradeFrom: 'adventurer-pack',
         upgradePrice: 35,
         comingSoon: true,
+        coverImage: null,
+        contentUpgradePrice: 10,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        lastContentUpdate: new Date().toISOString()
       },
       {
         id: 'bookie-pack',
@@ -192,6 +216,11 @@ class VPSDataStore {
         isActive: true,
         isPopular: false,
         icon: '📚',
+        colorScheme: {
+          primary: '#7C2D12',
+          secondary: '#EA580C',
+          accent: '#FB923C'
+        },
         features: [
           'Fully aligned PP1 and PP2 equivalent literacy product',
           'Learn through stories anywhere anytime',
@@ -202,8 +231,11 @@ class VPSDataStore {
         ageGroups: ['3-6'],
         billingCycle: 'one-time',
         isPhysical: true,
+        coverImage: null,
+        contentUpgradePrice: 0,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        lastContentUpdate: new Date().toISOString()
       }
     ];
   }
@@ -931,6 +963,38 @@ class VPSDataStore {
     }
   }
 
+  async hasNewContentSincePurchase(packageId: string, userPurchaseDate: string): Promise<boolean> {
+    try {
+      const data = await this.loadData();
+      const pkg = data.packages?.find(p => p.id === packageId);
+      
+      if (!pkg || !pkg.lastContentUpdate) return false;
+      
+      const purchaseDate = new Date(userPurchaseDate);
+      const lastUpdate = new Date(pkg.lastContentUpdate);
+      
+      return lastUpdate > purchaseDate;
+    } catch (error) {
+      console.error('Error checking new content:', error);
+      return false;
+    }
+  }
+
+
+
+  async getUserPackagePurchaseDate(userId: string, packageId: string): Promise<string | null> {
+    try {
+      const data = await this.loadData();
+      const purchase = data.purchases?.find(p => 
+        p.userId === userId && p.moduleId === packageId && p.type === 'package'
+      );
+      return purchase?.purchaseDate || null;
+    } catch (error) {
+      console.error('Error getting user package purchase date:', error);
+      return null;
+    }
+  }
+
 
 
   // Categories management
@@ -1136,7 +1200,14 @@ class VPSDataStore {
     try {
       const data = await this.loadData();
       data.purchases = data.purchases || [];
-      data.purchases.push({ ...purchase, id: purchase.id || `purchase_${Date.now()}`, createdAt: new Date().toISOString() });
+      // Ensure purchases are created in a PENDING state by default.
+      const newPurchase = {
+        ...purchase,
+        id: purchase.id || `purchase_${Date.now()}`,
+        status: purchase.status || 'pending',
+        createdAt: new Date().toISOString()
+      };
+      data.purchases.push(newPurchase);
       return await this.saveData(data);
     } catch (error) {
       console.error('Error adding purchase:', error);
@@ -1253,92 +1324,120 @@ class VPSDataStore {
     }
   }
 
-  // Bundle management methods
-  async getBundles(): Promise<any[]> {
+  // Audio Lessons management methods
+  async getAudioLessons(): Promise<any[]> {
     try {
       const data = await this.loadData();
-      const bundles = data.bundles || [];
-      console.log('📦 Retrieved bundles:', bundles.length);
-      return bundles;
+      return data.modules?.filter(m => m.category === 'Audio Lessons') || [];
     } catch (error) {
-      console.error('Error getting bundles:', error);
+      console.error('Error getting audio lessons:', error);
       return [];
     }
   }
 
-  async addBundle(bundleData: any): Promise<boolean> {
+  async addAudioLesson(lesson: any): Promise<boolean> {
     try {
-      console.log('📦 Adding bundle:', bundleData.name);
+      const lessonData = {
+        ...lesson,
+        id: lesson.id || `audio_${Date.now()}`,
+        category: 'Audio Lessons',
+        type: 'audio',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      return await this.addProduct(lessonData);
+    } catch (error) {
+      console.error('Error adding audio lesson:', error);
+      return false;
+    }
+  }
+
+  async updateAudioLesson(id: string, lesson: any): Promise<boolean> {
+    try {
+      const updatedLesson = {
+        ...lesson,
+        id,
+        category: 'Audio Lessons',
+        type: 'audio',
+        updatedAt: new Date().toISOString()
+      };
+      return await this.updateProduct(updatedLesson);
+    } catch (error) {
+      console.error('Error updating audio lesson:', error);
+      return false;
+    }
+  }
+
+  async deleteAudioLesson(id: string): Promise<boolean> {
+    try {
+      return await this.deleteProduct(id);
+    } catch (error) {
+      console.error('Error deleting audio lesson:', error);
+      return false;
+    }
+  }
+
+  // Package purchase method
+  async purchasePackage(userId: string, packageId: string): Promise<boolean> {
+    try {
+      console.log('🛒 Processing package purchase:', { userId, packageId });
       const data = await this.loadData();
       
-      // Check if bundle with same name already exists
-      const existingBundle = data.bundles?.find(b => b.name === bundleData.name);
-      if (existingBundle) {
-        console.log('❌ Bundle with same name already exists');
+      // Get the package
+      const package_ = data.packages?.find(p => p.id === packageId);
+      if (!package_) {
+        console.log('❌ Package not found');
         return false;
       }
       
-      const newBundle = {
-        ...bundleData,
-        id: bundleData.id || `bundle_${Date.now()}`,
-        createdAt: bundleData.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isActive: bundleData.isActive !== undefined ? bundleData.isActive : true
+      // Create purchase record for the package
+      const packagePurchase = {
+        id: `purchase_${Date.now()}_package`,
+        userId,
+        moduleId: packageId,
+        packageId,
+        purchaseDate: new Date().toISOString(),
+        amount: package_.price || 0,
+        status: 'completed' as const,
+        type: 'package' as const
       };
       
-      data.bundles = data.bundles || [];
-      data.bundles.push(newBundle);
+      // Create individual purchase records for each content item in the package
+      const contentPurchases = (package_.contentIds || []).map((contentId: string, index: number) => ({
+        id: `purchase_${Date.now()}_${index}`,
+        userId,
+        moduleId: contentId,
+        packageId,
+        purchaseDate: new Date().toISOString(),
+        amount: 0,
+        status: 'completed' as const,
+        type: 'video' as const
+      }));
       
-      console.log('💾 Saving bundle to data store...');
+      // Add all purchases
+      data.purchases = data.purchases || [];
+      data.purchases.push(packagePurchase, ...contentPurchases);
+      
+      // Update user's purchased modules
+      const user = data.users?.find(u => u.id === userId);
+      if (user) {
+        user.purchasedModules = user.purchasedModules || [];
+        if (!user.purchasedModules.includes(packageId)) {
+          user.purchasedModules.push(packageId);
+        }
+        (package_.contentIds || []).forEach((contentId: string) => {
+          if (!user.purchasedModules.includes(contentId)) {
+            user.purchasedModules.push(contentId);
+          }
+        });
+        user.totalSpent = (user.totalSpent || 0) + (package_.price || 0);
+      }
+      
       const success = await this.saveData(data);
-      console.log(success ? '✅ Bundle saved successfully' : '❌ Bundle save failed');
+      console.log(success ? '✅ Package purchase completed' : '❌ Package purchase failed');
       return success;
     } catch (error) {
-      console.error('❌ Error adding bundle:', error);
-      return false;
-    }
-  }
-
-  async updateBundle(updatedBundle: any): Promise<boolean> {
-    try {
-      console.log('🔄 Updating bundle:', updatedBundle.id);
-      const data = await this.loadData();
-      data.bundles = data.bundles || [];
-      const index = data.bundles.findIndex(b => b.id === updatedBundle.id);
-      if (index !== -1) {
-        data.bundles[index] = {
-          ...data.bundles[index],
-          ...updatedBundle,
-          updatedAt: new Date().toISOString()
-        };
-        const success = await this.saveData(data);
-        console.log(success ? '✅ Bundle updated successfully' : '❌ Bundle update failed');
-        return success;
-      }
-      return false;
-    } catch (error) {
-      console.error('Error updating bundle:', error);
-      return false;
-    }
-  }
-
-  async deleteBundle(bundleId: string): Promise<boolean> {
-    try {
-      console.log('🗑️ Deleting bundle:', bundleId);
-      const data = await this.loadData();
-      data.bundles = data.bundles || [];
-      const originalLength = data.bundles.length;
-      data.bundles = data.bundles.filter(b => b.id !== bundleId);
-      
-      if (data.bundles.length < originalLength) {
-        const success = await this.saveData(data);
-        console.log(success ? '✅ Bundle deleted successfully' : '❌ Bundle delete failed');
-        return success;
-      }
-      console.log('❌ Bundle not found');
-      return false;
-    } catch (error) {
-      console.error('Error deleting bundle:', error);
+      console.error('❌ Error purchasing package:', error);
       return false;
     }
   }
@@ -1427,131 +1526,6 @@ class VPSDataStore {
     } catch (error) {
       console.error('Error getting available upgrades:', error);
       return [];
-    }
-  }
-
-  // Bundle purchase method
-  async purchaseBundle(userId: string, bundleId: string): Promise<boolean> {
-    try {
-      console.log('🛒 Processing bundle purchase:', { userId, bundleId });
-      const data = await this.loadData();
-      
-      // Get the bundle
-      const bundle = data.bundles?.find(b => b.id === bundleId);
-      if (!bundle) {
-        console.log('❌ Bundle not found');
-        return false;
-      }
-      
-      // Create purchase record for the bundle
-      const bundlePurchase = {
-        id: `purchase_${Date.now()}_bundle`,
-        userId,
-        moduleId: bundleId,
-        bundleId,
-        purchaseDate: new Date().toISOString(),
-        amount: bundle.price || 0,
-        status: 'completed' as const,
-        type: 'bundle' as const
-      };
-      
-      // Create individual purchase records for each content item in the bundle
-      const contentPurchases = (bundle.contentIds || []).map((contentId: string, index: number) => ({
-        id: `purchase_${Date.now()}_${index}`,
-        userId,
-        moduleId: contentId,
-        bundleId,
-        purchaseDate: new Date().toISOString(),
-        amount: 0, // Individual items are free when purchased as part of bundle
-        status: 'completed' as const,
-        type: 'video' as const
-      }));
-      
-      // Add all purchases
-      data.purchases = data.purchases || [];
-      data.purchases.push(bundlePurchase, ...contentPurchases);
-      
-      // Update user's purchased modules
-      const user = data.users?.find(u => u.id === userId);
-      if (user) {
-        user.purchasedModules = user.purchasedModules || [];
-        user.purchasedModules.push(bundleId, ...(bundle.contentIds || []));
-        user.totalSpent = (user.totalSpent || 0) + (bundle.price || 0);
-      }
-      
-      const success = await this.saveData(data);
-      console.log(success ? '✅ Bundle purchase completed' : '❌ Bundle purchase failed');
-      return success;
-    } catch (error) {
-      console.error('❌ Error purchasing bundle:', error);
-      return false;
-    }
-  }
-
-  // Package purchase method
-  async purchasePackage(userId: string, packageId: string): Promise<boolean> {
-    try {
-      console.log('🛒 Processing package purchase:', { userId, packageId });
-      const data = await this.loadData();
-      
-      // Get the package
-      const package_ = data.packages?.find(p => p.id === packageId);
-      if (!package_) {
-        console.log('❌ Package not found');
-        return false;
-      }
-      
-      // Create purchase record for the package
-      const packagePurchase = {
-        id: `purchase_${Date.now()}_package`,
-        userId,
-        moduleId: packageId,
-        packageId,
-        purchaseDate: new Date().toISOString(),
-        amount: package_.price || 0,
-        status: 'completed' as const,
-        type: 'package' as const
-      };
-      
-      // Create individual purchase records for each content item in the package
-      const contentPurchases = (package_.contentIds || []).map((contentId: string, index: number) => ({
-        id: `purchase_${Date.now()}_${index}`,
-        userId,
-        moduleId: contentId,
-        packageId,
-        purchaseDate: new Date().toISOString(),
-        amount: 0, // Individual items are free when purchased as part of package
-        status: 'completed' as const,
-        type: 'video' as const
-      }));
-      
-      // Add all purchases
-      data.purchases = data.purchases || [];
-      data.purchases.push(packagePurchase, ...contentPurchases);
-      
-      // Update user's purchased modules - include both package and individual content
-      const user = data.users?.find(u => u.id === userId);
-      if (user) {
-        user.purchasedModules = user.purchasedModules || [];
-        // Add package ID
-        if (!user.purchasedModules.includes(packageId)) {
-          user.purchasedModules.push(packageId);
-        }
-        // Add all content IDs from the package
-        (package_.contentIds || []).forEach((contentId: string) => {
-          if (!user.purchasedModules!.includes(contentId)) {
-            user.purchasedModules!.push(contentId);
-          }
-        });
-        user.totalSpent = (user.totalSpent || 0) + (package_.price || 0);
-      }
-      
-      const success = await this.saveData(data);
-      console.log(success ? '✅ Package purchase completed' : '❌ Package purchase failed');
-      return success;
-    } catch (error) {
-      console.error('❌ Error purchasing package:', error);
-      return false;
     }
   }
 }

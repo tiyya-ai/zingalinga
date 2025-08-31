@@ -49,7 +49,7 @@ interface AudioLesson {
   description: string;
   audioUrl: string;
   duration: string;
-  accessLevel: 'free' | 'paid' | 'premium';
+  price: number;
   thumbnail?: string;
   tags: string[];
   category: string;
@@ -89,9 +89,9 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
   const [audioForm, setAudioForm] = useState({
     title: '',
     description: '',
+    price: 0,
     audioUrl: '',
     duration: '',
-    accessLevel: 'paid' as 'free' | 'paid' | 'premium',
     thumbnail: '',
     tags: '',
     difficulty: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
@@ -227,10 +227,9 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
     const lessonData = {
       title: audioForm.title,
       description: audioForm.description,
+      price: audioForm.price || 0,
       audioUrl: audioForm.audioUrl,
       duration: audioForm.duration,
-
-      accessLevel: audioForm.accessLevel,
       thumbnail: audioForm.thumbnail,
       tags: audioForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
       category: 'Audio Lessons',
@@ -257,9 +256,9 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
     setAudioForm({
       title: '',
       description: '',
+      price: 0,
       audioUrl: '',
       duration: '',
-      accessLevel: 'paid',
       thumbnail: '',
       tags: '',
       difficulty: 'beginner',
@@ -275,9 +274,9 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
     setAudioForm({
       title: lesson.title,
       description: lesson.description,
+      price: lesson.price || 0,
       audioUrl: lesson.audioUrl,
       duration: lesson.duration,
-      accessLevel: lesson.accessLevel,
       thumbnail: lesson.thumbnail || '',
       tags: lesson.tags.join(', '),
       difficulty: lesson.difficulty,
@@ -351,9 +350,9 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
             <TableHeader>
               <TableColumn>LESSON</TableColumn>
               <TableColumn>DURATION</TableColumn>
+              <TableColumn>PRICE</TableColumn>
               <TableColumn>TYPE</TableColumn>
               <TableColumn>LEVEL</TableColumn>
-              <TableColumn>ACCESS</TableColumn>
               <TableColumn>ACTIONS</TableColumn>
             </TableHeader>
             <TableBody>
@@ -377,6 +376,12 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
                     </div>
                   </TableCell>
                   <TableCell>
+                    <div className="flex items-center gap-1">
+                      <DollarSign className="h-4 w-4 text-green-500" />
+                      <span className="font-semibold text-green-600">${lesson.price || 0}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <span className="font-semibold text-blue-600">
                       Package Content
                     </span>
@@ -393,18 +398,7 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
                       {lesson.difficulty}
                     </Chip>
                   </TableCell>
-                  <TableCell>
-                    <Chip
-                      size="sm"
-                      color={
-                        lesson.accessLevel === 'free' ? 'success' :
-                        lesson.accessLevel === 'premium' ? 'secondary' : 'primary'
-                      }
-                      variant="flat"
-                    >
-                      {lesson.accessLevel}
-                    </Chip>
-                  </TableCell>
+
                   <TableCell>
                     <div className="flex gap-1">
                       <Button
@@ -448,7 +442,10 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
       </Card>
 
       {/* Add/Edit Modal */}
-      <Modal isOpen={isModalOpen} onClose={onModalClose} size="2xl">
+      <Modal isOpen={isModalOpen} onClose={() => {
+        resetForm();
+        onModalClose();
+      }} size="2xl">
         <ModalContent>
           <ModalHeader>
             {editingLesson ? 'Edit Audio Lesson' : 'Add New Audio Lesson'}
@@ -469,28 +466,30 @@ export const AudioLessonsManager: React.FC<AudioLessonsManagerProps> = ({
                 rows={3}
               />
 
-              <div className="grid grid-cols-1 gap-4">
-                
-                <Select
-                  label="Difficulty Level"
-                  selectedKeys={[audioForm.difficulty]}
-                  onSelectionChange={(keys) => setAudioForm({...audioForm, difficulty: Array.from(keys)[0] as any})}
-                >
-                  <SelectItem key="beginner">Beginner</SelectItem>
-                  <SelectItem key="intermediate">Intermediate</SelectItem>
-                  <SelectItem key="advanced">Advanced</SelectItem>
-                </Select>
-              </div>
-
+              <Input
+                label="Price ($)"
+                type="number"
+                min="0"
+                step="0.01"
+                value={audioForm.price?.toString() || '0'}
+                onChange={(e) => setAudioForm({...audioForm, price: parseFloat(e.target.value) || 0})}
+                placeholder="0.00"
+                startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
+                description="Set to 0 for free with package, or set price for upgrade"
+                isRequired
+              />
+              
               <Select
-                label="Access Level"
-                selectedKeys={[audioForm.accessLevel]}
-                onSelectionChange={(keys) => setAudioForm({...audioForm, accessLevel: Array.from(keys)[0] as any})}
+                label="Difficulty Level"
+                selectedKeys={[audioForm.difficulty]}
+                onSelectionChange={(keys) => setAudioForm({...audioForm, difficulty: Array.from(keys)[0] as any})}
               >
-                <SelectItem key="free">Free</SelectItem>
-                <SelectItem key="paid">Paid</SelectItem>
-                <SelectItem key="premium">Premium</SelectItem>
+                <SelectItem key="beginner">Beginner</SelectItem>
+                <SelectItem key="intermediate">Intermediate</SelectItem>
+                <SelectItem key="advanced">Advanced</SelectItem>
               </Select>
+
+
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Audio File</label>

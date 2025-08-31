@@ -9,12 +9,11 @@ import { getVideoThumbnail } from '../utils/videoUtils';
 import { ChatModal } from './ChatModal';
 import { ClientOnly } from './ClientOnly';
 import dynamic from 'next/dynamic';
-import { VideoModalWithSidebar } from './VideoModalWithSidebar';
 
 import { VideoCard } from './VideoCard';
-
-
-
+import { PackageCard } from './PackageCard';
+import { PackageCheckoutModal } from './PackageCheckoutModal';
+import { VideoModalWithSidebar } from './VideoModalWithSidebar';
 
 interface Video {
   id: string;
@@ -81,6 +80,9 @@ export default function ProfessionalUserDashboard({
   const [savedCategories, setSavedCategories] = useState<string[]>([]);
   const [savedVideosList, setSavedVideosList] = useState<any[]>([]);
   const [packages, setPackages] = useState<any[]>([]);
+  const [availableUpgrades, setAvailableUpgrades] = useState<any[]>([]);
+  const [selectedPackageForCheckout, setSelectedPackageForCheckout] = useState<any | null>(null);
+  const [showPackageCheckout, setShowPackageCheckout] = useState(false);
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [cartItems, setCartItems] = useState<string[]>([]);
@@ -112,13 +114,8 @@ export default function ProfessionalUserDashboard({
     level: 1
   });
 
-  // Convert admin modules to store items (exclude package content from individual display)
+  // Convert admin modules to store items (all videos as purchasable content)
   const allModules = liveModules.length > 0 ? liveModules : modules; // Use props if liveModules is empty
-  
-  // Get all content IDs that are part of packages to exclude from individual display
-  const packageContentIds = packages.reduce((ids: string[], pkg) => {
-    return [...ids, ...(pkg.contentIds || [])];
-  }, []);
 
   // Initialize user stats after allModules is available
   useEffect(() => {
@@ -152,7 +149,7 @@ export default function ProfessionalUserDashboard({
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [playlist, setPlaylist] = useState<string[]>([]);
-  const [purchasingPackage, setPurchasingPackage] = useState<string | null>(null);
+  const [newContentNotifications, setNewContentNotifications] = useState<any[]>([]);
 
 
   useEffect(() => {
@@ -173,21 +170,26 @@ export default function ProfessionalUserDashboard({
       }
     };
     
+    // Listen for package content navigation
+    const handleNavigateToContent = (event: CustomEvent) => {
+      handleSetActiveTab('all-content');
+    };
+    
     window.addEventListener('userProfileUpdated', handleProfileUpdate as EventListener);
+    window.addEventListener('navigateToContent', handleNavigateToContent as EventListener);
     
     return () => {
       window.removeEventListener('resize', checkMobile);
       window.removeEventListener('userProfileUpdated', handleProfileUpdate as EventListener);
+      window.removeEventListener('navigateToContent', handleNavigateToContent as EventListener);
     };
   }, [setUser]);
 
   // Read URL parameters and set activeTab
   useEffect(() => {
-    if (searchParams) {
-      const tab = searchParams.get('tab');
-      if (tab) {
-        setActiveTab(tab);
-      }
+    const tab = searchParams?.get('tab');
+    if (tab) {
+      setActiveTab(tab);
     }
   }, [searchParams]);
 
@@ -223,17 +225,54 @@ export default function ProfessionalUserDashboard({
     });
   }, [purchases, user?.id, allModules]);
 
-  // Update live modules when prop changes (without clearing cache)
+  // Update live modules when prop changes and clear cache
   useEffect(() => {
+    vpsDataStore.clearMemoryCache();
     setLiveModules(modules);
   }, [modules]);
   
+  // Check for new content in owned packages
+  const checkForNewContent = () => {
+    if (!user?.id) return;
+    
+    const ownedPackages = packages.filter(pkg => isItemPurchased(pkg.id));
+    const notifications: any[] = [];
+    
+    ownedPackages.forEach(pkg => {
+      const packageContent = allModules.filter(content => pkg.contentIds?.includes(content.id));
+      
+      packageContent.forEach(content => {
+        const createdDate = new Date(content.createdAt || Date.now());
+        const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+        
+        if (createdDate >= threeDaysAgo) {
+          notifications.push({
+            id: `${pkg.id}-${content.id}`,
+            packageName: pkg.name,
+            contentTitle: content.title,
+            contentType: content.category === 'Audio Lessons' ? 'Audio' : 'Video',
+            isUpgrade: content.price && content.price > 0,
+            price: content.price || 0,
+            createdAt: content.createdAt
+          });
+        }
+      });
+    });
+    
+    setNewContentNotifications(notifications);
+  };
+
   // Real-time data loading with multiple triggers
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load data WITHOUT forcing refresh to preserve existing data
-        const vpsData = await vpsDataStore.loadData(false);
+        // FORCE clear all caches to ensure fresh data
+        vpsDataStore.clearMemoryCache();
+        localStorage.removeItem('zinga-linga-app-data-cache');
+        localStorage.removeItem('zinga-linga-app-data');
+        
+        // Force fresh data load from API/VPS
+        const vpsData = await vpsDataStore.loadData(true);
         
         if (vpsData.modules) {
           setLiveModules(vpsData.modules);
@@ -242,6 +281,15 @@ export default function ProfessionalUserDashboard({
         // Load packages from VPS
         const packagesData = await vpsDataStore.getPackages();
         setPackages(packagesData);
+        
+        // Load available upgrades from VPS
+        if (user?.id) {
+          const upgrades = await vpsDataStore.getAvailableUpgrades(user.id);
+          setAvailableUpgrades(upgrades);
+        }
+        
+        // Check for new content after data loads
+        setTimeout(() => checkForNewContent(), 1000);
         
         // Load saved videos from VPS
         if (user?.id) {
@@ -260,10 +308,14 @@ export default function ProfessionalUserDashboard({
       // Real-time updates with multiple triggers
       const handleVisibilityChange = () => {
         if (!document.hidden) {
+          vpsDataStore.clearMemoryCache();
+          localStorage.removeItem('zinga-linga-app-data-cache');
           loadData();
         }
       };
       const handleFocus = () => {
+        vpsDataStore.clearMemoryCache();
+        localStorage.removeItem('zinga-linga-app-data-cache');
         loadData();
       };
       
@@ -323,59 +375,33 @@ export default function ProfessionalUserDashboard({
         thumbnail = module.thumbnail;
       }
       
-      // Convert video URLs to embed format and get thumbnails
+      // Convert YouTube URLs to embed format
       let isYouTube = false;
-      let isVimeo = false;
-      
       if (typeof videoUrl === 'string' && !videoUrl.startsWith('data:') && !videoUrl.startsWith('blob:')) {
-        // Handle YouTube
-        if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
-          let videoId = null;
-          
-          if (videoUrl.includes('youtube.com/watch') && videoUrl.includes('v=')) {
-            const urlParams = new URLSearchParams(videoUrl.split('?')[1]);
-            videoId = urlParams.get('v');
-          } else if (videoUrl.includes('youtu.be/')) {
-            videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0]?.split('&')[0];
-          } else if (videoUrl.includes('youtube.com/embed/')) {
-            videoId = videoUrl.split('youtube.com/embed/')[1]?.split('?')[0]?.split('&')[0];
-            isYouTube = true;
-          }
-          
-          if (videoId && videoId.trim()) {
-            videoUrl = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
-            if (!thumbnail || thumbnail === '/zinga-linga-logo.png') {
-              thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-            }
-            isYouTube = true;
-          }
+        let videoId = null;
+        
+        // Handle youtube.com/watch?v= format
+        if (videoUrl.includes('youtube.com/watch') && videoUrl.includes('v=')) {
+          const urlParams = new URLSearchParams(videoUrl.split('?')[1]);
+          videoId = urlParams.get('v');
         }
-        // Handle Vimeo
-        else if (videoUrl.includes('vimeo.com')) {
-          const vimeoIdMatch = videoUrl.match(/vimeo\.com\/(\d+)/);
-          if (vimeoIdMatch) {
-            const videoId = vimeoIdMatch[1];
-            videoUrl = `https://player.vimeo.com/video/${videoId}?autoplay=1&title=0&byline=0&portrait=0`;
-            // For Vimeo private videos, use our API to get thumbnail
-            if (!thumbnail || thumbnail === '/zinga-linga-logo.png') {
-              // Fetch thumbnail asynchronously
-              if (module.videoUrl) {
-                fetch(`/api/vimeo?url=${encodeURIComponent(module.videoUrl)}`)
-                  .then(res => res.json())
-                  .then(data => {
-                    if (data.thumbnail) {
-                      // Update the module with the fetched thumbnail
-                      (module as any).vimeoThumbnail = data.thumbnail;
-                    }
-                  })
-                  .catch(err => console.log('Vimeo thumbnail fetch failed:', err));
-              }
-              
-              // Use fallback thumbnail while loading
-              thumbnail = (module as any).vimeoThumbnail || `https://i.vimeocdn.com/video/${videoId}_640x360.jpg`;
-            }
-            isVimeo = true;
+        // Handle youtu.be/ format
+        else if (videoUrl.includes('youtu.be/')) {
+          videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0]?.split('&')[0];
+        }
+        // Handle youtube.com/embed/ format (already correct)
+        else if (videoUrl.includes('youtube.com/embed/')) {
+          videoId = videoUrl.split('youtube.com/embed/')[1]?.split('?')[0]?.split('&')[0];
+          isYouTube = true;
+        }
+        
+        if (videoId && videoId.trim()) {
+          videoUrl = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
+          // Use YouTube thumbnail if no custom thumbnail or default logo
+          if (!thumbnail || thumbnail === '/zinga-linga-logo.png') {
+            thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
           }
+          isYouTube = true;
         }
       }
       
@@ -392,8 +418,7 @@ export default function ProfessionalUserDashboard({
         rating: (module as any).rating,
         views: (module as any).views,
         tags: (module as any).tags,
-        isYouTube: isYouTube,
-        isVimeo: isVimeo
+        isYouTube: isYouTube
       };
     });
 
@@ -402,7 +427,7 @@ export default function ProfessionalUserDashboard({
 
 
   const storeItems = allModules
-    .filter(module => module && (module.type === 'video' || !module.type) && !packageContentIds.includes(module.id))
+    .filter(module => module && (module.type === 'video' || !module.type))
     .map(module => {
       let thumbnail = '';
       
@@ -467,10 +492,12 @@ export default function ProfessionalUserDashboard({
     // Also check user's purchased modules list
     const inUserList = user.purchasedModules?.includes(itemId) || false;
     
-    // Check if item is part of a purchased package
+    // Check if item is part of a purchased package (only for items with no price)
+    const content = allModules.find(m => m.id === itemId);
     const isInPurchasedPackage = packages.some(pkg => 
       user.purchasedModules?.includes(pkg.id) && 
-      pkg.contentIds?.includes(itemId)
+      pkg.contentIds?.includes(itemId) &&
+      (!content?.price || content.price === 0) // Only free content is included with package
     );
     
     // For packages, check if the package itself is purchased
@@ -506,8 +533,8 @@ export default function ProfessionalUserDashboard({
     }
   };
 
-  // Get all content with fixed thumbnail processing (exclude package content from individual display)
-  const allContent = allModules.filter(module => module.isVisible !== false && !packageContentIds.includes(module.id)).map(module => {
+  // Get all content with fixed thumbnail processing
+  const allContent = allModules.filter(module => module.isVisible !== false).map(module => {
     let thumbnail = '';
     
     // Priority 1: File objects
@@ -566,6 +593,27 @@ export default function ProfessionalUserDashboard({
     }
   });
 
+  // Real-time counter function
+  const getRealCounts = () => {
+    const userPurchasedItems = localPurchases.filter(p => p.userId === user?.id && p.status === 'completed');
+    const purchasedModuleIds = new Set(userPurchasedItems.map(p => p.moduleId));
+    
+    return {
+      totalContent: allModules.filter(m => m.isVisible !== false).length,
+      audioContent: allModules.filter(m => m.category === 'Audio Lessons' || m.type === 'audio').length,
+      videoContent: allModules.filter(m => (m.type === 'video' || !m.type) && m.category !== 'Audio Lessons').length,
+      pp1Content: allModules.filter(m => m.category === 'PP1 Program').length,
+      myVideos: allModules.filter(m => (m.type === 'video' || !m.type) && m.category !== 'Audio Lessons' && purchasedModuleIds.has(m.id)).length,
+      availableStore: storeItems.filter(item => {
+        const isPurchased = purchasedModuleIds.has(item.id);
+        const isPartOfPackage = packages.some(pkg => pkg.contentIds?.includes(item.id));
+        return !isPurchased && !isPartOfPackage;
+      }).length,
+      totalPackages: packages.length,
+      playlistItems: playlist.length
+    };
+  };
+
   const playVideo = (video: any) => {
     setSelectedVideo(video);
     setShowVideoModal(true);
@@ -599,12 +647,6 @@ export default function ProfessionalUserDashboard({
 
   const getTotalPrice = () => {
     return cartItems.reduce((total, itemId) => {
-      // Check if it's a package first
-      const pkg = packages.find(p => p.id === itemId);
-      if (pkg) {
-        return total + (pkg.price || 0);
-      }
-      // Otherwise check regular items
       const item = storeItems.find(item => item.id === itemId);
       const price = item?.price || 0;
       const discount = item?.discount || 0;
@@ -614,15 +656,44 @@ export default function ProfessionalUserDashboard({
 
   const getOriginalPrice = () => {
     return cartItems.reduce((total, itemId) => {
-      // Check if it's a package first
-      const pkg = packages.find(p => p.id === itemId);
-      if (pkg) {
-        return total + (pkg.price || 0);
-      }
-      // Otherwise check regular items
       const item = storeItems.find(item => item.id === itemId);
       return total + (item?.price || 0);
     }, 0).toFixed(2);
+  };
+
+  // Handle package upgrade
+  const handleUpgrade = async (upgradePackage: any) => {
+    if (!user?.id) return;
+    
+    try {
+      const success = await vpsDataStore.upgradePackage(
+        user.id,
+        upgradePackage.upgradeFrom,
+        upgradePackage.id
+      );
+      
+      if (success) {
+        // Reload packages and upgrades
+        const packagesData = await vpsDataStore.getPackages();
+        setPackages(packagesData);
+        
+        const upgrades = await vpsDataStore.getAvailableUpgrades(user.id);
+        setAvailableUpgrades(upgrades);
+        
+        // Update user data
+        const vpsData = await vpsDataStore.loadData(true);
+        if (vpsData.purchases) {
+          setLocalPurchases(vpsData.purchases);
+        }
+        
+        alert(`🎉 Successfully upgraded to ${upgradePackage.name}!`);
+      } else {
+        alert('❌ Upgrade failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error upgrading package:', error);
+      alert('❌ Upgrade failed. Please try again.');
+    }
   };
 
 
@@ -733,17 +804,16 @@ export default function ProfessionalUserDashboard({
           <div className="grid grid-cols-2 gap-2">
             {[
               { id: 'dashboard', label: '🏠 Home', count: null },
-              { id: 'audio-lessons', label: '🎧 Audio', count: allModules.filter(module => module && (module.category === 'Audio Lessons' || module.type === 'audio') && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length },
-              { id: 'pp1-program', label: '📚 PP1', count: allModules.filter(module => module && module.category === 'PP1 Program' && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length },
-              { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length },
-              { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => !localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed')).length },
-              { id: 'packages', label: '📦 Packages', count: packages.filter(pkg => (pkg.contentIds || []).length > 0 && (pkg.contentIds || []).some((contentId: string) => allModules.some(module => module.id === contentId))).length },
-              { id: 'package-content', label: '📋 Package Content', count: packages.filter(pkg => isItemPurchased(pkg.id)).reduce((total, pkg) => {
-                const availableContent = (pkg.contentIds || []).filter((contentId: string) => 
-                  allModules.some(module => module.id === contentId)
-                );
-                return total + availableContent.length;
-              }, 0) },
+              { id: 'all-content', label: '📚 Content', count: allContent.length },
+              { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
+              { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
+              { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
+              { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => {
+                const isPurchased = localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed');
+                const isPartOfPackage = packages.some(pkg => pkg.contentIds && pkg.contentIds.includes(item.id));
+                return !isPurchased && !isPartOfPackage;
+              }).length },
+              { id: 'packages', label: '📦 Packages', count: packages.length },
               { id: 'playlist', label: '📋 Playlist', count: playlist.length },
               { id: 'profile', label: '👤 Profile', count: null }
             ].map(tab => (
@@ -769,23 +839,22 @@ export default function ProfessionalUserDashboard({
             <div className="flex flex-col md:flex-row md:flex-wrap gap-2 bg-white/10 backdrop-blur-sm rounded-xl p-2 border border-white/20">
               {[
                 { id: 'dashboard', label: '🏠 Home', count: null },
-                { id: 'audio-lessons', label: '🎧 Audio', count: allModules.filter(module => module && (module.category === 'Audio Lessons' || module.type === 'audio') && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length },
-                { id: 'pp1-program', label: '📚 PP1', count: allModules.filter(module => module && module.category === 'PP1 Program' && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length },
-                { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length },
-                { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => 
-                  !localPurchases.some(purchase => 
+                { id: 'all-content', label: '📚 Content', count: allContent.length },
+                { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
+                { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
+                { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
+                { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => {
+                  const isPurchased = localPurchases.some(purchase => 
                     purchase.moduleId === item.id && 
                     purchase.userId === user?.id && 
                     purchase.status === 'completed'
-                  )
-                ).length },
-                { id: 'packages', label: '📦 Packages', count: packages.filter(pkg => (pkg.contentIds || []).length > 0 && (pkg.contentIds || []).some((contentId: string) => allModules.some(module => module.id === contentId))).length },
-                { id: 'package-content', label: '📋 Package Content', count: packages.filter(pkg => isItemPurchased(pkg.id)).reduce((total, pkg) => {
-                  const availableContent = (pkg.contentIds || []).filter((contentId: string) => 
-                    allModules.some(module => module.id === contentId)
                   );
-                  return total + availableContent.length;
-                }, 0) },
+                  const isPartOfPackage = packages.some(pkg => 
+                    pkg.contentIds && pkg.contentIds.includes(item.id)
+                  );
+                  return !isPurchased && !isPartOfPackage;
+                }).length },
+                { id: 'packages', label: '📦 Packages', count: packages.length },
                 { id: 'playlist', label: '📋 Playlist', count: playlist.length }
               ].map(tab => (
                 <button
@@ -830,13 +899,16 @@ export default function ProfessionalUserDashboard({
             </div>
 
             {/* My Content Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* My Videos */}
               <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 border border-white/20 shadow-2xl">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-emerald-400 flex items-center">
                     <span className="mr-2">🎬</span>
-                    My Videos ({allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length})
+                    My Videos ({(() => {
+                      const counts = getRealCounts();
+                      return counts.myVideos;
+                    })()})
                   </h3>
                   <button 
                     onClick={() => handleSetActiveTab('videos')}
@@ -846,7 +918,9 @@ export default function ProfessionalUserDashboard({
                   </button>
                 </div>
                 <div className="space-y-3">
-                  {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).slice(0, 3).map(module => {
+                  {(() => {
+                    const myVideos = allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id));
+                    return myVideos.slice(0, 3).map(module => {
                     let thumbnail = module.thumbnail || '';
                     if (module.thumbnail && typeof module.thumbnail === 'object' && 'type' in module.thumbnail) {
                       thumbnail = URL.createObjectURL(module.thumbnail as File as unknown as File);
@@ -904,8 +978,11 @@ export default function ProfessionalUserDashboard({
                         </div>
                       </div>
                     );
-                  })}
-                  {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length === 0 && (
+                    });
+                  })()}
+                  {(() => {
+                    const myVideos = allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id));
+                    return myVideos.length === 0 ? (
                     <div className="text-center py-4 text-purple-200">
                       <div className="text-2xl mb-2">🎬</div>
                       <div className="text-sm">No videos yet</div>
@@ -916,7 +993,8 @@ export default function ProfessionalUserDashboard({
                         Add Videos
                       </button>
                     </div>
-                  )}
+                    ) : null;
+                  })()}
                 </div>
               </div>
 
@@ -945,18 +1023,86 @@ export default function ProfessionalUserDashboard({
                   </div>
                 </div>
               </div>
+
+              {/* New Content Available */}
+              <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 border border-white/20 shadow-2xl">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-emerald-400 flex items-center">
+                    <span className="mr-2">🎉</span>
+                    New Content Available!
+                  </h3>
+                  {newContentNotifications.length > 0 && (
+                    <button 
+                      onClick={() => setNewContentNotifications([])}
+                      className="text-white/60 hover:text-white text-sm"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  {newContentNotifications.length > 0 ? (
+                    newContentNotifications.slice(0, 3).map(notification => (
+                      <div key={notification.id} className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+                        <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <span className="text-white text-xs">🎬</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-white font-medium text-sm truncate">{notification.contentTitle}</div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            {notification.isUpgrade ? (
+                              <span className="bg-orange-400 px-2 py-1 rounded text-xs font-bold text-white">Upgrade ${notification.price}</span>
+                            ) : (
+                              <span className="bg-green-400 px-2 py-1 rounded text-xs font-bold text-white">Free</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-purple-200">
+                      <div className="text-2xl mb-2">📺</div>
+                      <div className="text-sm">No new content</div>
+                      <div className="text-xs text-purple-300 mt-1">Check back later!</div>
+                    </div>
+                  )}
+                  {newContentNotifications.length > 3 && (
+                    <div className="text-purple-200 text-xs text-center">+{newContentNotifications.length - 3} more items</div>
+                  )}
+                </div>
+                {newContentNotifications.length > 0 && (
+                  <button 
+                    onClick={() => {
+                      handleSetActiveTab('all-content');
+                      setNewContentNotifications([]);
+                    }}
+                    className="mt-4 w-full text-yellow-400 hover:text-yellow-300 text-sm font-medium"
+                  >
+                    View All Content →
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Quick Actions */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-
+              <button 
+                onClick={() => handleSetActiveTab('all-content')}
+                className="bg-gradient-to-r from-brand-green to-brand-blue hover:from-green-600 hover:to-blue-600 text-white p-4 rounded-xl transition-all duration-200 text-center group shadow-lg"
+              >
+                <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">📚</div>
+                <div className="font-mali font-bold text-sm">All Content</div>
+              </button>
               
               <button 
                 onClick={() => handleSetActiveTab('audio-lessons')}
                 className="bg-gradient-to-r from-brand-yellow to-brand-red hover:from-yellow-500 hover:to-red-500 text-white p-4 rounded-xl transition-all duration-200 text-center group shadow-lg"
               >
                 <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">🎧</div>
-                <div className="font-mali font-bold text-sm">Audio</div>
+                <div className="font-mali font-bold text-sm">Audio ({(() => {
+                  const counts = getRealCounts();
+                  return counts.audioContent;
+                })()})</div>
               </button>
               
               <button 
@@ -972,13 +1118,262 @@ export default function ProfessionalUserDashboard({
                 className="bg-gradient-to-r from-brand-blue to-brand-green hover:from-blue-600 hover:to-green-600 text-white p-4 rounded-xl transition-all duration-200 text-center group shadow-lg"
               >
                 <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">🎬</div>
-                <div className="font-mali font-bold text-sm">My Videos</div>
+                <div className="font-mali font-bold text-sm">My Videos ({(() => {
+                  const counts = getRealCounts();
+                  return counts.myVideos;
+                })()})</div>
               </button>
             </div>
           </div>
         )}
 
+        {/* All Content Tab */}
+        {activeTab === 'all-content' && (
+          <section className="space-y-6 relative">
+            
+            <div className="bg-purple-800/60 backdrop-blur-sm rounded-xl p-6 border border-purple-600/50 shadow-lg relative z-10">
+              <h2 className="text-2xl font-bold text-emerald-400 mb-4 flex items-center">
+                <span className="mr-2">📚</span>
+                All Learning Content
+              </h2>
+              <p className="text-white">Browse all available content types - Audio, Video, Programs & More</p>
+            </div>
+            
+            {/* Package Filter Tabs */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <h3 className="text-lg font-bold text-white mb-3 flex items-center">
+                <span className="mr-2">📦</span>
+                Filter by Package
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSelectedCategory('All')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    selectedCategory === 'All'
+                      ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-purple-900'
+                      : 'bg-white/20 text-white hover:bg-white/30'
+                  }`}
+                >
+                  All Content
+                </button>
+                {packages.map(pkg => (
+                  <button
+                    key={pkg.id}
+                    onClick={() => setSelectedCategory(pkg.name)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                      selectedCategory === pkg.name
+                        ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-purple-900'
+                        : 'bg-white/20 text-white hover:bg-white/30'
+                    }`}
+                  >
+                    {pkg.name}
+                    <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded-full">
+                      {pkg.contentIds?.length || 0}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
+              {allContent.filter(content => {
+                if (selectedCategory === 'All') return true;
+                
+                // Check if content belongs to selected package
+                const selectedPackage = packages.find(pkg => pkg.name === selectedCategory);
+                if (selectedPackage) {
+                  return selectedPackage.contentIds?.includes(content.id) || false;
+                }
+                
+                // Fallback to category filtering
+                return content.category === selectedCategory;
+              }).map((content) => {
+                const isPurchased = isItemPurchased(content.id);
+                const isInPackage = packages.some(pkg => pkg.contentIds?.includes(content.id));
+                const hasPrice = content.price && content.price > 0;
+                const packageOwned = packages.some(pkg => pkg.contentIds?.includes(content.id) && isItemPurchased(pkg.id));
+                const needsUpgrade = hasPrice && isInPackage && packageOwned && !isPurchased;
+                
+                return (
+                  <div key={content.id} className="bg-black/30 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden hover:scale-105 hover:border-yellow-400 transition-all duration-300 group">
+                    <div className="relative">
+                      <div className={`w-full h-48 bg-gradient-to-br ${getContentColor(content.category || '')} relative overflow-hidden`}>
+                        {content.thumbnail && content.thumbnail.trim() ? (
+                          <img 
+                            src={content.thumbnail} 
+                            alt={content.title} 
+                            className="w-full h-full object-cover" 
+                            onLoad={() => {}}
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
 
+                        {/* Play icon for purchased content */}
+                        {isPurchased && (
+                          <div 
+                            className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors group-hover:bg-black/30 cursor-pointer"
+                            onClick={() => {
+                              if (content && content.id) {
+                                if (content.category === 'Audio Lessons' || content.type === 'audio') {
+                                  let audioUrl = content.audioUrl || content.videoUrl;
+                                  let audioFile = null;
+                                  
+                                  if (content.audioUrl && typeof content.audioUrl === 'object' && 'type' in content.audioUrl) {
+                                    audioUrl = URL.createObjectURL(content.audioUrl as unknown as File);
+                                    audioFile = content.audioUrl;
+                                  } else if (content.videoUrl && typeof content.videoUrl === 'object' && 'type' in content.videoUrl) {
+                                    audioUrl = URL.createObjectURL(content.videoUrl as unknown as File);
+                                    audioFile = content.videoUrl;
+                                  }
+                                  
+                                  if (audioUrl) {
+                                    setSelectedAudio({
+                                      ...content,
+                                      audioUrl: audioUrl,
+                                      audioFile: audioFile
+                                    });
+                                    setShowAudioModal(true);
+                                  } else {
+                                    alert('⚠️ Audio file not available.');
+                                  }
+                                } else {
+                                  const video = {
+                                    id: content.id,
+                                    title: content.title,
+                                    thumbnail: content.thumbnail || '',
+                                    duration: (content as any).duration || content.duration || (content as any).estimatedDuration || '5:00',
+                                    description: content.description || '',
+                                    videoUrl: content.videoUrl || '',
+                                    category: content.category || 'Videos',
+                                    isPremium: content.isPremium || false,
+                                    price: content.price || 0,
+                                    rating: (content as any).rating,
+                                    views: (content as any).views,
+                                    tags: (content as any).tags,
+                                    isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be')
+                                  };
+                                  playVideo(video);
+                                }
+                              }
+                            }}
+                          >
+                            <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/30 backdrop-blur-sm group-hover:scale-110 transition-all duration-300">
+                              {content.category === 'Audio Lessons' || content.type === 'audio' ? (
+                                <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                                </svg>
+                              ) : (
+                                <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z"/>
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Price badge */}
+                      {!isPurchased && (
+                        <div className="absolute top-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-sm font-medium">
+                          {needsUpgrade ? `Upgrade $${content.price}` : `$${content.price || 0}`}
+                        </div>
+                      )}
+                      
+                      {/* Lock overlay */}
+                      {!isPurchased && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                          <div className="text-center text-white">
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 mx-auto ${
+                              needsUpgrade ? 'bg-orange-500' : 'bg-red-500'
+                            }`}>
+                              <span className="text-2xl">{needsUpgrade ? '⬆️' : '🔒'}</span>
+                            </div>
+                            <div className="text-sm font-bold">
+                              {needsUpgrade ? 'Upgrade Required' : 'Purchase Required'}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="p-4">
+                      <h3 className="text-lg font-bold text-white mb-2">{content.title}</h3>
+                      <p className="text-purple-200 text-sm mb-3 line-clamp-2">{content.description || 'No description available'}</p>
+                      
+                      {content.aiTags && content.aiTags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {content.aiTags.slice(0, 2).map(tag => (
+                            <span key={tag} className="px-2 py-1 bg-white/20 text-white/80 rounded-full text-xs">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          {needsUpgrade && (
+                            <span className="text-orange-400 text-xs">📦 Package Upgrade</span>
+                          )}
+                          {content.hasPreview && (
+                            <span className="text-blue-400 text-xs">👁️ Preview</span>
+                          )}
+                        </div>
+                        
+                        {!isPurchased && (
+                          <button 
+                            onClick={() => {
+                              addToCart(content.id);
+                              setShowCartPopup(true);
+                              setTimeout(() => setShowCartPopup(false), 2000);
+                            }}
+                            className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm ${
+                              needsUpgrade 
+                                ? 'bg-orange-400 hover:bg-orange-500 text-white'
+                                : 'bg-yellow-400 hover:bg-yellow-500 text-purple-800'
+                            }`}
+                          >
+                            {needsUpgrade ? `Upgrade $${content.price}` : 'Buy Now'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {allContent.filter(content => {
+              if (selectedCategory === 'All') return true;
+              
+              // Check if content belongs to selected package
+              const selectedPackage = packages.find(pkg => pkg.name === selectedCategory);
+              if (selectedPackage) {
+                return selectedPackage.contentIds?.includes(content.id) || false;
+              }
+              
+              // Fallback to category filtering
+              return content.category === selectedCategory;
+            }).length === 0 && (
+              <div className="text-center py-12 bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-700 shadow-lg">
+                <div className="text-6xl mb-4">📚</div>
+                <div className="text-brand-yellow text-xl mb-2 font-mali font-bold">
+                  {selectedCategory === 'All' ? 'No content available' : `No content in ${selectedCategory}`}
+                </div>
+                <div className="text-gray-300 text-sm font-mali">
+                  {selectedCategory === 'All' 
+                    ? 'Admin needs to add content through the admin panel'
+                    : 'Try selecting a different package or category'
+                  }
+                </div>
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Category-specific tabs */}
         {['audio-lessons', 'video-lessons', 'pp1-program'].map(tabId => {
@@ -991,7 +1386,7 @@ export default function ProfessionalUserDashboard({
           };
           
           const categoryName = categoryMap[tabId];
-          const filteredContent = allModules.filter(module => module.category === categoryName && !packageContentIds.includes(module.id) && isItemPurchased(module.id));
+          const filteredContent = allContent.filter(content => content.category === categoryName);
           
           return activeTab === tabId && (
             <section key={tabId} className="space-y-6">
@@ -1231,10 +1626,10 @@ export default function ProfessionalUserDashboard({
                               }
                             }}
                             className={`w-full px-4 py-2 rounded-lg font-semibold transition-colors ${
-                              'bg-green-500 hover:bg-green-600 text-white'
+                              content.category === 'Audio Lessons' || content.type === 'audio' ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
                             }`}
                           >
-                            Access Content
+                            {content.category === 'Audio Lessons' || content.type === 'audio' ? 'Play' : 'Access Content'}
                           </button>
                         ) : (
                           <button 
@@ -1360,9 +1755,9 @@ export default function ProfessionalUserDashboard({
               )}
             </div>
 
-            {/* Video Cards - Only Show Purchased Videos (excluding package content) */}
+            {/* Video Cards - Only Show Purchased Videos */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).map(module => {
+              {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).map(module => {
                 const isPurchased = isItemPurchased(module.id);
                 let thumbnail = module.thumbnail || '';
                 
@@ -1510,7 +1905,7 @@ export default function ProfessionalUserDashboard({
             </div>
             
             {/* Show message when no purchased videos */}
-            {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && !packageContentIds.includes(module.id) && isItemPurchased(module.id)).length === 0 && (
+            {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length === 0 && (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <div className="text-6xl mb-4">🎬</div>
                 <div className="text-white text-xl mb-2">No videos available</div>
@@ -1553,37 +1948,6 @@ export default function ProfessionalUserDashboard({
               <div className="space-y-6">
                 <div className="grid grid-cols-1 gap-4">
                   {cartItems.map(itemId => {
-                    // Check if it's a package first
-                    const pkg = packages.find(p => p.id === itemId);
-                    if (pkg) {
-                      return (
-                        <div key={itemId} className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-white/20">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <div className="text-white text-2xl">
-                                {pkg.icon || '📦'}
-                              </div>
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="text-xl font-bold text-white mb-2">{pkg.name}</h3>
-                              <p className="text-purple-200 text-sm mb-2">{pkg.description}</p>
-                              <div className="text-yellow-400 font-bold text-lg">${pkg.price?.toFixed(2) || '0.00'}</div>
-                              <div className="text-green-400 text-xs mt-1">
-                                Package • {(pkg.contentIds || []).length} items included
-                              </div>
-                            </div>
-                            <button 
-                              onClick={() => removeFromCart(itemId)}
-                              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    }
-                    
-                    // Otherwise check regular items
                     const item = storeItems.find(item => item.id === itemId);
                     if (!item) return null;
                     return (
@@ -1672,13 +2036,17 @@ export default function ProfessionalUserDashboard({
                     <div>
                       <h2 className="text-4xl font-bold text-white mb-1">Video Store</h2>
                       <span className="text-purple-200 text-lg">
-                        {storeItems.filter(item => 
-                          !localPurchases.some(purchase => 
+                        {storeItems.filter(item => {
+                          const isPurchased = localPurchases.some(purchase => 
                             purchase.moduleId === item.id && 
                             purchase.userId === user?.id && 
                             purchase.status === 'completed'
-                          ) && !packageContentIds.includes(item.id)
-                        ).length} Videos Available for Purchase
+                          );
+                          const isPartOfPackage = packages.some(pkg => 
+                            pkg.contentIds && pkg.contentIds.includes(item.id)
+                          );
+                          return !isPurchased && !isPartOfPackage;
+                        }).length} Videos Available for Purchase
                       </span>
                     </div>
                   </div>
@@ -1713,13 +2081,21 @@ export default function ProfessionalUserDashboard({
               </div>
             </div>
             
-            {storeItems.filter(item => 
-              !localPurchases.some(purchase => 
+            {storeItems.filter(item => {
+              // Exclude purchased items
+              const isPurchased = localPurchases.some(purchase => 
                 purchase.moduleId === item.id && 
                 purchase.userId === user?.id && 
                 purchase.status === 'completed'
-              ) && !packageContentIds.includes(item.id)
-            ).length === 0 ? (
+              );
+              
+              // Exclude items that are part of any package
+              const isPartOfPackage = packages.some(pkg => 
+                pkg.contentIds && pkg.contentIds.includes(item.id)
+              );
+              
+              return !isPurchased && !isPartOfPackage;
+            }).length === 0 ? (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <div className="text-6xl mb-4">✅</div>
                 <div className="text-white text-xl mb-2">All videos purchased!</div>
@@ -1733,13 +2109,21 @@ export default function ProfessionalUserDashboard({
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {storeItems.filter(item => 
-                  !localPurchases.some(purchase => 
+                {storeItems.filter(item => {
+                  // Exclude purchased items
+                  const isPurchased = localPurchases.some(purchase => 
                     purchase.moduleId === item.id && 
                     purchase.userId === user?.id && 
                     purchase.status === 'completed'
-                  ) && !packageContentIds.includes(item.id)
-                ).map((item) => (
+                  );
+                  
+                  // Exclude items that are part of any package
+                  const isPartOfPackage = packages.some(pkg => 
+                    pkg.contentIds && pkg.contentIds.includes(item.id)
+                  );
+                  
+                  return !isPurchased && !isPartOfPackage;
+                }).map((item) => (
                   <div key={item.id} className="bg-black/30 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden hover:scale-105 hover:border-yellow-400 transition-all duration-300 group">
                     <div className="relative">
                       <div className="w-full h-48 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-600 relative overflow-hidden">
@@ -2119,151 +2503,6 @@ export default function ProfessionalUserDashboard({
           </section>
         )}
 
-        {/* Package Content Tab */}
-        {activeTab === 'package-content' && (
-          <section className="space-y-6">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
-                <span className="mr-2">📦</span>
-                My Package Content
-              </h2>
-              <p className="text-purple-200">All content from your purchased packages</p>
-            </div>
-            
-            {/* Show content from purchased packages */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {packages
-                .filter(pkg => isItemPurchased(pkg.id))
-                .flatMap(pkg => {
-                  // Get user's purchase date for this package
-                  const packagePurchase = localPurchases.find(p => 
-                    p.moduleId === pkg.id && 
-                    p.userId === user?.id && 
-                    p.status === 'completed'
-                  );
-                  const purchaseDate = packagePurchase ? new Date(packagePurchase.purchaseDate) : new Date();
-                  
-                  return (pkg.contentIds || []).filter((contentId: string) => 
-                    allModules.some(module => module.id === contentId)
-                  ).map((contentId: string) => {
-                    const content = allModules.find(m => m.id === contentId);
-                    if (!content) return null;
-                    
-                    // Check if content was added after user's purchase (needs upgrade)
-                    const contentDate = new Date(content.createdAt || content.updatedAt || purchaseDate);
-                    const needsUpgrade = contentDate > purchaseDate;
-                    
-                    return (
-                      <div key={content.id} className="bg-black/30 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden hover:scale-105 hover:border-yellow-400 transition-all duration-300 group">
-                        <div className="relative">
-                          <div className="w-full h-48 bg-gradient-to-br from-green-500 to-green-600 relative overflow-hidden">
-                            {content.thumbnail && (
-                              <img 
-                                src={content.thumbnail} 
-                                alt={content.title} 
-                                className="w-full h-full object-cover" 
-                                onError={(e) => e.currentTarget.style.display = 'none'}
-                              />
-                            )}
-                            
-                            {needsUpgrade ? (
-                              /* Upgrade Required Overlay */
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-                                <div className="text-center text-white">
-                                  <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mb-3 mx-auto">
-                                    <span className="text-2xl">🔄</span>
-                                  </div>
-                                  <div className="text-sm font-bold mb-2">Upgrade Required</div>
-                                  <div className="text-xs opacity-80">New content added</div>
-                                </div>
-                              </div>
-                            ) : (
-                              /* Play button for accessible content */
-                              <div 
-                                className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors cursor-pointer"
-                                onClick={() => {
-                                  if (content.category === 'Audio Lessons' || content.type === 'audio') {
-                                    setSelectedAudio(content);
-                                    setShowAudioModal(true);
-                                  } else {
-                                    const video = {
-                                      id: content.id,
-                                      title: content.title,
-                                      thumbnail: content.thumbnail || '',
-                                      duration: content.duration || '',
-                                      description: content.description || '',
-                                      videoUrl: content.videoUrl || '',
-                                      category: content.category || 'Videos',
-                                      isPremium: false,
-                                      price: 0,
-                                      isYouTube: content.videoUrl?.includes('youtube')
-                                    };
-                                    playVideo(video);
-                                  }
-                                }}
-                              >
-                                <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/30">
-                                  <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M8 5v14l11-7z"/>
-                                  </svg>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="p-4">
-                          <h3 className="text-lg font-bold text-white mb-2">{content.title}</h3>
-                          <p className="text-purple-200 text-sm mb-3">{content.description}</p>
-                          <div className="flex items-center justify-between">
-                            <div className="text-green-400 text-sm">✓ From {pkg.name}</div>
-                            {needsUpgrade && (
-                              <button 
-                                onClick={() => {
-                                  alert(`🔄 Upgrade Required!\n\nNew content "${content.title}" has been added to your ${pkg.name}.\n\nUpgrade your package to access this content.`);
-                                }}
-                                className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs font-bold transition-colors"
-                              >
-                                Upgrade
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  });
-                })
-                .filter(Boolean)}
-            </div>
-            
-            {packages.filter(pkg => isItemPurchased(pkg.id)).length === 0 ? (
-              <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-                <div className="text-6xl mb-4">📦</div>
-                <div className="text-white text-xl mb-2">No Package Content</div>
-                <div className="text-purple-200 text-sm mb-6">Purchase packages to access bundled content</div>
-                <button 
-                  onClick={() => handleSetActiveTab('packages')}
-                  className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-3 rounded-lg font-bold"
-                >
-                  Browse Packages
-                </button>
-              </div>
-            ) : packages.filter(pkg => isItemPurchased(pkg.id)).flatMap(pkg => (pkg.contentIds || []).filter((contentId: string) => allModules.some(module => module.id === contentId))).length === 0 && (
-              <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-                <div className="text-6xl mb-4">🛍️</div>
-                <div className="text-white text-xl mb-2">No Content in Your Packages Yet</div>
-                <div className="text-purple-200 text-sm mb-6">Your packages are ready! Browse the store to add content to your packages</div>
-                <button 
-                  onClick={() => handleSetActiveTab('store')}
-                  className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-lg font-bold"
-                >
-                  Browse Store
-                </button>
-              </div>
-            )}
-          </section>
-        )}
-
         {/* Packages Tab */}
         {activeTab === 'packages' && (
           <section className="space-y-6">
@@ -2275,7 +2514,7 @@ export default function ProfessionalUserDashboard({
               <p className="text-purple-200">Discover bundled content packages with special pricing</p>
             </div>
             
-            {packages.filter(pkg => (pkg.contentIds || []).length > 0 && (pkg.contentIds || []).some((contentId: string) => allModules.some(module => module.id === contentId))).length === 0 ? (
+            {packages.length === 0 ? (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <div className="text-6xl mb-4">📦</div>
                 <div className="text-white text-xl mb-2">No Packages Available</div>
@@ -2283,238 +2522,66 @@ export default function ProfessionalUserDashboard({
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {packages.filter(pkg => (pkg.contentIds || []).length > 0 && (pkg.contentIds || []).some((contentId: string) => allModules.some(module => module.id === contentId))).map((pkg) => {
-                  const isPurchased = localPurchases.some(purchase => 
-                    purchase.moduleId === pkg.id && 
-                    purchase.userId === user?.id && 
-                    purchase.status === 'completed'
-                  );
+                {packages.map((pkg) => {
+                  const isPurchased = isItemPurchased(pkg.id);
+                  const userPurchase = localPurchases.find(p => p.moduleId === pkg.id && p.userId === user?.id && p.type === 'package');
+                  const hasNewContent = userPurchase && pkg.lastContentUpdate ? 
+                    new Date(pkg.lastContentUpdate) > new Date(userPurchase.purchaseDate) : false;
                   
                   return (
-                    <div key={pkg.id} className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300 group">
-                      {/* Package Image/Video */}
-                      <div className="relative h-48 bg-gradient-to-br from-purple-500 to-pink-600">
-                        {pkg.mediaUrl ? (
-                          pkg.mediaUrl.startsWith('data:video/') ? (
-                            <video 
-                              className="w-full h-full object-cover"
-                              poster={pkg.thumbnail || ''}
-                              muted
-                            >
-                              <source src={pkg.mediaUrl} type="video/mp4" />
-                            </video>
-                          ) : (
-                            <img 
-                              src={pkg.mediaUrl} 
-                              alt={pkg.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
-                          )
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <span className="text-6xl">{pkg.icon || '📦'}</span>
-                          </div>
-                        )}
+                    <PackageCard
+                      key={pkg.id}
+                      package={pkg}
+                      isPurchased={isPurchased}
+                      hasNewContent={hasNewContent}
+                      onBuy={(packageId) => {
+                        const selectedPkg = packages.find(p => p.id === packageId);
+                        if (selectedPkg) {
+                          setSelectedPackageForCheckout(selectedPkg);
+                          setShowPackageCheckout(true);
+                        }
+                      }}
+                      onUpgrade={async (packageId) => {
+                        if (!user?.id) return;
                         
-                        {/* Package Type Badge */}
-                        <div className="absolute top-3 left-3">
-                          <span className="px-2 py-1 bg-black/50 text-white text-xs rounded-full backdrop-blur-sm">
-                            {pkg.type || 'Package'}
-                          </span>
-                        </div>
+                        const pkg = packages.find(p => p.id === packageId);
+                        if (!pkg) return;
                         
-                        {/* Popular Badge */}
-                        {pkg.isPopular && (
-                          <div className="absolute top-3 right-3">
-                            <span className="px-2 py-1 bg-yellow-500 text-black text-xs rounded-full font-semibold">
-                              ⭐ Popular
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Package Content */}
-                      <div className="p-6">
-                        <div className="flex items-start justify-between mb-3">
-                          <h3 className="text-lg font-bold text-white group-hover:text-purple-200 transition-colors">
-                            {pkg.name}
-                          </h3>
-                          <div className="text-right">
-                            <div className="text-xl font-bold text-green-400">
-                              ${pkg.price?.toFixed(2) || '0.00'}
-                            </div>
-                            {pkg.originalPrice && pkg.originalPrice > pkg.price && (
-                              <div className="text-sm text-gray-400 line-through">
-                                ${pkg.originalPrice.toFixed(2)}
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                        const upgradePrice = pkg.contentUpgradePrice || 0;
                         
-                        <p className="text-purple-200 text-sm mb-4 line-clamp-2">
-                          {pkg.description || 'No description available'}
-                        </p>
+                        if (upgradePrice > 0) {
+                          const confirmed = confirm(`Upgrade to get new content for $${upgradePrice}?`);
+                          if (!confirmed) return;
+                        }
                         
-                        {/* Features */}
-                        {pkg.features && pkg.features.length > 0 && (
-                          <div className="mb-4">
-                            <div className="text-white text-sm font-semibold mb-2">Includes:</div>
-                            <ul className="text-purple-200 text-xs space-y-1">
-                              {pkg.features.slice(0, 3).map((feature: string, index: number) => (
-                                <li key={index} className="flex items-center">
-                                  <span className="w-1 h-1 bg-purple-400 rounded-full mr-2"></span>
-                                  {feature}
-                                </li>
-                              ))}
-                              {pkg.features.length > 3 && (
-                                <li className="text-purple-300 text-xs">+{pkg.features.length - 3} more...</li>
-                              )}
-                            </ul>
-                          </div>
-                        )}
-                        
-                        {/* Status */}
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center space-x-2">
-                            <span className={`w-2 h-2 rounded-full ${
-                              pkg.isActive ? 'bg-green-400' : 'bg-red-400'
-                            }`}></span>
-                            <span className="text-xs text-purple-200">
-                              {pkg.isActive ? 'Available' : 'Unavailable'}
-                            </span>
-                          </div>
-                          
-                          {isPurchased && (
-                            <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
-                              ✓ Purchased
-                            </span>
-                          )}
-                        </div>
-                        
-                        {/* Action Buttons */}
-                        <div className="flex space-x-2">
-                          {isPurchased ? (
-                            <button
-                              onClick={() => handleSetActiveTab('package-content')}
-                              className="w-full py-3 rounded-lg font-semibold transition-all duration-200 bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                            >
-                              Access Package
-                            </button>
-                          ) : pkg.isActive ? (
-                            <>
-                              {cartItems.includes(pkg.id) ? (
-                                <button
-                                  onClick={() => removeFromCart(pkg.id)}
-                                  className="flex-1 py-3 rounded-lg font-semibold transition-all duration-200 bg-red-500 hover:bg-red-600 text-white"
-                                >
-                                  Remove from Cart
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => {
-                                    addToCart(pkg.id);
-                                    setShowCartPopup(true);
-                                    setTimeout(() => setShowCartPopup(false), 2000);
-                                  }}
-                                  className="flex-1 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 shadow-lg hover:shadow-xl"
-                                >
-                                  Add to Cart - ${pkg.price?.toFixed(2) || '0.00'}
-                                </button>
-                              )}
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    setPurchasingPackage(pkg.id);
-                                    
-                                    // Create purchase for package
-                                    const packagePurchase = {
-                                      id: `purchase_${Date.now()}_${pkg.id}_${user?.id || 'user_1'}`,
-                                      userId: user?.id || 'user_1',
-                                      moduleId: pkg.id,
-                                      purchaseDate: new Date().toISOString(),
-                                      amount: pkg.price || 0,
-                                      status: 'completed' as const,
-                                      type: 'package' as const
-                                    };
-                                    
-                                    // Create purchases for all content in package
-                                    const contentPurchases = (pkg.contentIds || []).map((contentId: string, index: number) => ({
-                                      id: `purchase_${Date.now()}_content_${index}_${user?.id || 'user_1'}`,
-                                      userId: user?.id || 'user_1',
-                                      moduleId: contentId,
-                                      purchaseDate: new Date().toISOString(),
-                                      amount: 0,
-                                      status: 'completed' as const,
-                                      type: 'video' as const,
-                                      packageId: pkg.id
-                                    }));
-                                    
-                                    // Save all purchases to VPS
-                                    await vpsDataStore.addPurchase(packagePurchase);
-                                    for (const contentPurchase of contentPurchases) {
-                                      await vpsDataStore.addPurchase(contentPurchase);
-                                    }
-                                    
-                                    // Update user's purchased modules to include package AND all content
-                                    if (user?.id) {
-                                      const allContentIds = pkg.contentIds || [];
-                                      const updatedUser = {
-                                        ...user,
-                                        purchasedModules: [...(user.purchasedModules || []), pkg.id, ...allContentIds],
-                                        totalSpent: (user.totalSpent || 0) + (pkg.price || 0)
-                                      };
-                                      await vpsDataStore.updateUser(user.id, updatedUser);
-                                      if (setUser) setUser(updatedUser);
-                                    }
-                                    
-                                    // Update local purchases
-                                    setLocalPurchases([...localPurchases, packagePurchase, ...contentPurchases]);
-                                    
-                                    // Remove from cart if it was there
-                                    if (cartItems.includes(pkg.id)) {
-                                      removeFromCart(pkg.id);
-                                    }
-                                    
-                                    const contentCount = (pkg.contentIds || []).length;
-                                    if (contentCount > 0) {
-                                      alert(`🎉 Package "${pkg.name}" purchased! All ${contentCount} content items are now available.`);
-                                    } else {
-                                      alert(`🎉 Package "${pkg.name}" purchased successfully! You can now add content from the store to your package.`);
-                                    }
-                                  } catch (error) {
-                                    console.error('Package purchase failed:', error);
-                                    alert('❌ Purchase failed. Please try again.');
-                                  } finally {
-                                    setPurchasingPackage(null);
-                                  }
-                                }}
-                                disabled={purchasingPackage === pkg.id}
-                                className="px-4 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                {purchasingPackage === pkg.id ? (
-                                  <div className="flex items-center space-x-2">
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    <span>Processing...</span>
-                                  </div>
-                                ) : (
-                                  'Buy Now'
-                                )}
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              disabled
-                              className="w-full py-3 rounded-lg font-semibold transition-all duration-200 bg-gray-500/20 text-gray-400 cursor-not-allowed"
-                            >
-                              Unavailable
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                        try {
+                          const success = await vpsDataStore.upgradePackage(user.id, pkg.upgradeFrom || '', packageId);
+                          if (success) {
+                            // Update user's total spent if there's a cost
+                            if (upgradePrice > 0 && setUser) {
+                              const updatedUser = {
+                                ...user,
+                                totalSpent: (user.totalSpent || 0) + upgradePrice
+                              };
+                              setUser(updatedUser);
+                            }
+                            
+                            // Reload data
+                            const vpsData = await vpsDataStore.loadData(true);
+                            if (vpsData.purchases) {
+                              setLocalPurchases(vpsData.purchases);
+                            }
+                            
+                            alert('✅ Package upgraded successfully!');
+                          } else {
+                            alert('❌ Upgrade failed. Please try again.');
+                          }
+                        } catch (error) {
+                          console.error('Upgrade error:', error);
+                          alert('❌ Upgrade failed. Please try again.');
+                        }
+                      }}
+                    />
                   );
                 })}
               </div>
@@ -3334,21 +3401,6 @@ export default function ProfessionalUserDashboard({
               
               <div className="space-y-3 mb-6">
                 {cartItems.map(itemId => {
-                  // Check if it's a package first
-                  const pkg = packages.find(p => p.id === itemId);
-                  if (pkg) {
-                    return (
-                      <div key={itemId} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <span className="text-gray-800 font-semibold">{pkg.name}</span>
-                          <div className="text-xs text-gray-500">Package • {(pkg.contentIds || []).length} items</div>
-                        </div>
-                        <span className="font-bold text-green-600">${pkg.price?.toFixed(2) || '0.00'}</span>
-                      </div>
-                    );
-                  }
-                  
-                  // Otherwise check regular items
                   const item = storeItems.find(item => item.id === itemId);
                   if (!item) return null;
                   return (
@@ -3389,58 +3441,16 @@ export default function ProfessionalUserDashboard({
                         );
                         
                         if (!alreadyPurchased) {
-                          // Check if it's a package
-                          const pkg = packages.find(p => p.id === itemId);
-                          if (pkg) {
-                            // Create package purchase
-                            const packagePurchase = {
-                              id: `purchase_${timestamp}_${itemId}_${user?.id || 'user_1'}`,
-                              userId: user?.id || 'user_1',
-                              moduleId: itemId,
-                              purchaseDate: new Date().toISOString(),
-                              amount: pkg.price || 0,
-                              status: 'completed' as const,
-                              type: 'package' as const
-                            };
-                            newPurchases.push(packagePurchase);
-                            
-                            // Create purchases for all content in package
-                            const contentPurchases = (pkg.contentIds || []).map((contentId: string, index: number) => ({
-                              id: `purchase_${timestamp}_content_${index}_${user?.id || 'user_1'}`,
-                              userId: user?.id || 'user_1',
-                              moduleId: contentId,
-                              purchaseDate: new Date().toISOString(),
-                              amount: 0,
-                              status: 'completed' as const,
-                              type: 'video' as const,
-                              packageId: itemId
-                            }));
-                            newPurchases.push(...contentPurchases);
-                            
-                            // Update user's purchased modules to include package AND all content
-                            if (user?.id) {
-                              const allContentIds = pkg.contentIds || [];
-                              const updatedUser = {
-                                ...user,
-                                purchasedModules: [...(user.purchasedModules || []), pkg.id, ...allContentIds],
-                                totalSpent: (user.totalSpent || 0) + (pkg.price || 0)
-                              };
-                              await vpsDataStore.updateUser(user.id, updatedUser);
-                              if (setUser) setUser(updatedUser);
-                            }
-                          } else {
-                            // Regular item purchase
-                            const purchase = {
-                              id: `purchase_${timestamp}_${itemId}_${user?.id || 'user_1'}`,
-                              userId: user?.id || 'user_1',
-                              moduleId: itemId,
-                              purchaseDate: new Date().toISOString(),
-                              amount: storeItems.find(item => item.id === itemId)?.price || 0,
-                              status: 'completed' as const,
-                              type: 'video' as const
-                            };
-                            newPurchases.push(purchase);
-                          }
+                          const purchase = {
+                            id: `purchase_${timestamp}_${itemId}_${user?.id || 'user_1'}`,
+                            userId: user?.id || 'user_1',
+                            moduleId: itemId,
+                            purchaseDate: new Date().toISOString(),
+                            amount: storeItems.find(item => item.id === itemId)?.price || 0,
+                            status: 'completed' as const,
+                            type: 'video' as const
+                          };
+                          newPurchases.push(purchase);
                         }
                       }
                       
@@ -3460,7 +3470,6 @@ export default function ProfessionalUserDashboard({
                         handleSetActiveTab('videos');
                       }, 2000);
                     } catch (error) {
-                      console.error('Purchase failed:', error);
                       alert('Purchase failed. Please try again.');
                     }
                   }}
@@ -3528,7 +3537,24 @@ export default function ProfessionalUserDashboard({
           packages={packages}
           allModules={allModules}
           isItemPurchased={isItemPurchased}
-          setSelectedVideo={setSelectedVideo}
+          setSelectedVideo={(content) => {
+            const video: Video = {
+              id: content.id,
+              title: content.title,
+              thumbnail: content.thumbnail || '',
+              duration: content.duration || '',
+              description: content.description || '',
+              videoUrl: content.videoUrl || content.audioUrl || '',
+              category: content.category || 'Videos',
+              isPremium: content.isPremium || false,
+              price: content.price || 0,
+              rating: (content as any).rating,
+              views: (content as any).views,
+              tags: (content as any).tags,
+              isYouTube: content.videoUrl?.includes('youtube') || content.videoUrl?.includes('youtu.be') || false
+            };
+            setSelectedVideo(video);
+          }}
         />
       )}
 
@@ -3611,6 +3637,48 @@ export default function ProfessionalUserDashboard({
 
 
 
+
+      {/* Package Checkout Modal */}
+      <PackageCheckoutModal
+        package={selectedPackageForCheckout}
+        isOpen={showPackageCheckout}
+        onClose={() => {
+          setShowPackageCheckout(false);
+          setSelectedPackageForCheckout(null);
+        }}
+        onPurchase={async (packageId) => {
+          if (!user?.id) return;
+          
+          try {
+            const success = await vpsDataStore.purchasePackage(user.id, packageId);
+            
+            if (success) {
+              // Force refresh all data
+              const vpsData = await vpsDataStore.loadData(true);
+              if (vpsData.purchases) {
+                setLocalPurchases(vpsData.purchases);
+              }
+              if (vpsData.users) {
+                const updatedUser = vpsData.users.find(u => u.id === user.id);
+                if (updatedUser && setUser) {
+                  setUser(updatedUser);
+                }
+              }
+              
+              alert(`🎉 Package purchased successfully!`);
+              
+              // Close modal
+              setShowPackageCheckout(false);
+              setSelectedPackageForCheckout(null);
+            } else {
+              alert('❌ Purchase failed. Please try again.');
+            }
+          } catch (error) {
+            console.error('Package purchase error:', error);
+            alert('❌ Purchase failed. Please try again.');
+          }
+        }}
+      />
 
     </div>
   );

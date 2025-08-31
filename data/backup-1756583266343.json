@@ -1,0 +1,488 @@
+{
+  "users": [
+    {
+      "id": "user_001",
+      "email": "test@example.com",
+      "name": "Test User",
+      "role": "user",
+      "purchasedModules": [],
+      "totalSpent": 0,
+      "createdAt": "2025-08-21T00:06:32.576Z",
+      "lastLogin": "2025-08-21T00:06:32.576Z"
+    },
+    {
+      "id": "user_1755734874231_h1kc4gmq0",
+      "name": "ahm",
+      "email": "yee@yee.com",
+      "role": "user",
+      "createdAt": "2025-08-21T00:07:54.231Z",
+      "purchasedModules": [
+        "explorer-pack"
+      ],
+      "totalSpent": 30
+    },
+    {
+      "id": "user_1755734876118_phhicehde",
+      "name": "ahm",
+      "email": "yee@yee.com",
+      "role": "user",
+      "createdAt": "2025-08-21T00:07:56.118Z",
+      "purchasedModules": [
+        "explorer-pack"
+      ],
+      "totalSpent": 30
+    },
+    {
+      "id": "user_1755734914625_0qaleu8qf",
+      "name": "mdd",
+      "email": "ahmed@gmail.com",
+      "role": "user",
+      "createdAt": "2025-08-21T00:08:34.625Z",
+      "purchasedModules": [
+        "explorer-pack"
+      ],
+      "totalSpent": 30
+    },
+    {
+      "id": "user_1755735000425_7ab2311r5",
+      "name": "ahmed",
+      "email": "aemarkett@gmail.com",
+      "role": "user",
+      "createdAt": "2025-08-21T00:10:00.425Z",
+      "purchasedModules": [
+        "explorer-pack"
+      ],
+      "totalSpent": 30
+    },
+    {
+      "id": "user_1755735284300",
+      "email": "ahmed@mido.com",
+      "password": "amir2023M@@",
+      "name": "mido",
+      "role": "user",
+      "createdAt": "2025-08-21T00:14:44.300Z",
+      "lastLogin": "2025-08-21T00:14:44.300Z",
+      "isActive": true,
+      "purchasedModules": [],
+      "totalSpent": 0
+    },
+    {
+      "id": "user_1755735373580",
+      "email": "ahmed@midoo.com",
+      "password": "test123",
+      "name": "bialo",
+      "role": "user",
+      "createdAt": "2025-08-21T00:16:13.580Z",
+      "lastLogin": "2025-08-21T00:16:13.580Z",
+      "isActive": true,
+      "purchasedModules": [
+        "explorer-pack"
+      ],
+      "totalSpent": 30
+    },
+    {
+      "id": "user_1755735461693",
+      "email": "bilal@billal.com",
+      "password": "test123",
+      "name": "ahmed",
+      "role": "user",
+      "createdAt": "2025-08-21T00:17:41.693Z",
+      "lastLogin": "2025-08-21T00:17:41.693Z",
+      "isActive": true,
+      "purchasedModules": [
+        "explorer-pack"
+      ],
+      "totalSpent": 60
+    },
+    {
+      "id": "user_1755735590980",
+      "email": "ismail@mido.com",
+      "password": "admin123",
+      "name": "ismail",
+      "role": "user",
+      "createdAt": "2025-08-21T00:19:50.980Z",
+      "lastLogin": "2025-08-21T00:19:50.980Z",
+      "isActive": true,
+      "purchasedModules": [
+        "explorer-pack"
+      ],
+      "totalSpent": 60
+    },
+    {
+      "id": "user_1756053506971",
+      "email": "ahmed@maroc.ma",
+      "password": "agadir33",
+      "name": "AHMED MAROC",
+      "role": "user",
+      "createdAt": "2025-08-24T16:38:26.971Z",
+      "lastLogin": "2025-08-24T16:38:26.971Z",
+      "isActive": true,
+      "purchasedModules": [],
+      "totalSpent": 0,
+      "status": "suspended",
+      "avatar": "",
+      "phone": "",
+      "dateOfBirth": "",
+      "subscription": "free",
+      "updatedAt": "2025-08-24T16:53:30.010Z"
+    },
+    {
+      "id": "user_1756076576270",
+      "email": "ahme@dmido.com",
+      "password": "admin123",
+      "name": "ahmed",
+      "role": "user",
+      "createdAt": "2025-08-24T23:02:56.270Z",
+      "lastLogin": "2025-08-24T23:02:56.270Z",
+      "isActive": true,
+      "purchasedModules": [],
+      "totalSpent": 0
+    },
+    {
+      "id": "user-1",
+      "email": "test@example.com",
+      "name": "Test User",
+      "role": "user",
+      "purchasedModules": [
+        "adventurer-pack",
+        "bookie-pack"
+      ],
+      "totalSpent": 105,
+      "createdAt": "2025-08-27T15:42:59.879Z",
+      "lastLogin": "2025-08-27T15:42:59.879Z",
+      "password": "test123",
+      "isActive": true
+    }
+  ],
+  "modules": [
+    {
+      "id": "video_1756309360716",
+      "title": "Sample Video 1",
+      "description": "Educational content for children",
+      "category": "Video Lessons",
+      "videoUrl": "https://vimeo.com/1113868168",
+      "thumbnail": "",
+      "duration": "5:00",
+      "price": 0,
+      "isPremium": false,
+      "createdAt": "2025-08-27T15:42:40.716Z",
+      "updatedAt": "2025-08-27T15:42:40.716Z"
+    },
+    {
+      "id": "video_1756323338364",
+      "title": "Sample Video 2",
+      "description": "More educational content",
+      "category": "Video Lessons",
+      "videoUrl": "https://vimeo.com/1113868168",
+      "thumbnail": "",
+      "duration": "5:00",
+      "price": 0,
+      "isPremium": false,
+      "createdAt": "2025-08-27T19:35:38.364Z",
+      "updatedAt": "2025-08-27T19:35:38.364Z"
+    },
+    {
+      "id": "audio_1756323400001",
+      "title": "Phonics Song A-B-C",
+      "description": "Learn the alphabet with fun songs",
+      "category": "Audio Lessons",
+      "type": "audio",
+      "audioUrl": "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
+      "thumbnail": "",
+      "duration": "3:30",
+      "price": 0,
+      "isPremium": false,
+      "createdAt": "2025-08-27T20:00:00.001Z",
+      "updatedAt": "2025-08-27T20:00:00.001Z"
+    },
+    {
+      "id": "audio_1756323400002",
+      "title": "Letter Sounds Practice",
+      "description": "Practice letter sounds with interactive audio",
+      "category": "Audio Lessons",
+      "type": "audio",
+      "audioUrl": "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
+      "thumbnail": "",
+      "duration": "4:15",
+      "price": 0,
+      "isPremium": false,
+      "createdAt": "2025-08-27T20:05:00.002Z",
+      "updatedAt": "2025-08-27T20:05:00.002Z"
+    }
+  ],
+  "purchases": [
+    {
+      "id": "purchase_1755734874231_wptx6ea91",
+      "userId": "user_1755734874231_h1kc4gmq0",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:07:54.231Z",
+      "amount": 30,
+      "status": "completed",
+      "type": "video"
+    },
+    {
+      "id": "purchase_1755734876118_1tje29z4e",
+      "userId": "user_1755734876118_phhicehde",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:07:56.118Z",
+      "amount": 30,
+      "status": "completed",
+      "type": "video"
+    },
+    {
+      "id": "purchase_1755734914625_h1977teh3",
+      "userId": "user_1755734914625_0qaleu8qf",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:08:34.625Z",
+      "amount": 30,
+      "status": "completed",
+      "type": "video"
+    },
+    {
+      "id": "purchase_1755735000425_unbnh2t5k",
+      "userId": "user_1755735000425_7ab2311r5",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:10:00.425Z",
+      "amount": 30,
+      "status": "completed",
+      "type": "video"
+    },
+    {
+      "id": "purchase_1755735373580_cfsfhj7ge",
+      "userId": "user_1755735373580",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:16:13.580Z",
+      "amount": 30,
+      "status": "completed",
+      "type": "package"
+    },
+    {
+      "id": "purchase_1755735461693_2ghnoz2zx",
+      "userId": "user_1755735461693",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:17:41.693Z",
+      "amount": 30,
+      "status": "completed",
+      "type": "package"
+    },
+    {
+      "id": "purchase_1755735488579_quzge5vg1",
+      "userId": "user_1755735461693",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:18:08.579Z",
+      "amount": 30,
+      "status": "completed",
+      "type": "package"
+    },
+    {
+      "id": "purchase_1755735590980_g9zfouz5z",
+      "userId": "user_1755735590980",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:19:50.980Z",
+      "amount": 30,
+      "status": "completed",
+      "type": "package"
+    },
+    {
+      "id": "purchase_1755735620889_pabm9pgru",
+      "userId": "user_1755735590980",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-21T00:20:20.889Z",
+      "amount": 30,
+      "status": "completed",
+      "type": "package"
+    },
+    {
+      "id": "purchase_1756076748987_pqqcj9woz",
+      "userId": "user-1",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-24T23:05:48.987Z",
+      "amount": 0,
+      "status": "completed"
+    },
+    {
+      "id": "purchase_1756322647662_adventurer-pack_user-1",
+      "userId": "user-1",
+      "moduleId": "adventurer-pack",
+      "purchaseDate": "2025-08-27T19:24:07.662Z",
+      "amount": 45,
+      "status": "completed",
+      "type": "package",
+      "createdAt": "2025-08-27T19:24:07.713Z"
+    },
+    {
+      "id": "upgrade_1756430075224_explorer-pack_user-1",
+      "userId": "user-1",
+      "moduleId": "explorer-pack",
+      "purchaseDate": "2025-08-29T01:14:35.224Z",
+      "amount": 10,
+      "status": "pending",
+      "type": "upgrade",
+      "createdAt": "2025-08-29T01:14:35.224Z"
+    },
+    {
+      "id": "purchase_1756581574198_bookie-pack_user-1",
+      "userId": "user-1",
+      "moduleId": "bookie-pack",
+      "purchaseDate": "2025-08-30T19:19:34.198Z",
+      "amount": 60,
+      "status": "completed",
+      "type": "package",
+      "createdAt": "2025-08-30T19:19:34.198Z"
+    },
+    {
+      "id": "purchase_1756583063231_video_1756309360716_user-1",
+      "userId": "user-1",
+      "moduleId": "video_1756309360716",
+      "purchaseDate": "2025-08-30T19:44:23.231Z",
+      "amount": 0,
+      "status": "completed",
+      "type": "video",
+      "createdAt": "2025-08-30T19:44:23.231Z"
+    }
+  ],
+  "packages": [
+    {
+      "id": "explorer-pack",
+      "name": "Explorer Pack",
+      "description": "Where Letters Come to Life!",
+      "price": 30,
+      "type": "subscription",
+      "isActive": true,
+      "isPopular": false,
+      "icon": "🎒",
+      "features": [
+        "Letter Safari with playful letter recognition games",
+        "Magic Word Builder to create fun words like a word wizard!",
+        "Phonics party - sing along to catchy letter sounds",
+        "Storytime with exciting tales role plays for children",
+        "15 Learning Quests - colorful lessons that feel like playtime"
+      ],
+      "contentIds": [
+        "video_1756309360716",
+        "video_1756323338364",
+        "audio_1756323400001",
+        "audio_1756323400002"
+      ],
+      "ageGroups": [
+        "3-6"
+      ],
+      "billingCycle": "yearly",
+      "createdAt": "2025-08-21T00:06:32.576Z",
+      "updatedAt": "2025-08-27T19:35:50.005Z",
+      "coverImage": ""
+    },
+    {
+      "id": "adventurer-pack",
+      "name": "Adventurer Pack",
+      "description": "Reading Superpowers Unlocked!",
+      "price": 45,
+      "type": "subscription",
+      "isActive": true,
+      "isPopular": true,
+      "icon": "🚀",
+      "features": [
+        "Everything in Explorer Pack PLUS:",
+        "Word Architect: Build bigger",
+        "cooler words!",
+        "25 Learning Quests with more stories",
+        "more adventures",
+        "25 Gold Star Challenges to earn rewards after each lesson"
+      ],
+      "contentIds": [
+        "video_1756309360716"
+      ],
+      "ageGroups": [
+        "3-6"
+      ],
+      "billingCycle": "yearly",
+      "upgradeFrom": "explorer-pack",
+      "upgradePrice": 15,
+      "createdAt": "2025-08-21T00:06:32.576Z",
+      "updatedAt": "2025-08-30T18:08:45.546Z",
+      "coverImage": ""
+    },
+    {
+      "id": "roadtripper-pack",
+      "name": "Roadtripper Pack",
+      "description": "Learning On-The-Go!",
+      "price": 80,
+      "type": "one-time",
+      "isActive": false,
+      "isPopular": false,
+      "icon": "🚗",
+      "features": [
+        "125 Audio adventures, perfect for car rides & travel",
+        "125 Sing-along phonics - turn travel time into learning time",
+        "Story podcasts with African tales that spark imagination"
+      ],
+      "contentIds": [],
+      "ageGroups": [
+        "3-6"
+      ],
+      "billingCycle": "one-time",
+      "upgradeFrom": "adventurer-pack",
+      "upgradePrice": 35,
+      "comingSoon": true,
+      "createdAt": "2025-08-21T00:06:32.576Z",
+      "updatedAt": "2025-08-21T00:06:32.576Z"
+    },
+    {
+      "id": "bookie-pack",
+      "name": "Zingalinga Bookie Pack",
+      "description": "Interactive Learning Device",
+      "price": 60,
+      "type": "physical",
+      "isActive": true,
+      "isPopular": false,
+      "icon": "📚",
+      "features": [
+        "Fully aligned PP1 and PP2 equivalent literacy product",
+        "Learn through stories anywhere anytime",
+        "Battery that lasts 8 hours when fully utilized",
+        "Interactive screen with 20+ interactive lessons"
+      ],
+      "contentIds": [],
+      "ageGroups": [
+        "3-6"
+      ],
+      "billingCycle": "one-time",
+      "isPhysical": true,
+      "createdAt": "2025-08-21T00:06:32.576Z",
+      "updatedAt": "2025-08-21T00:06:32.576Z"
+    }
+  ],
+  "contentFiles": [],
+  "uploadQueue": [],
+  "savedVideos": [],
+  "categories": [
+    "Audio Lessons",
+    "Video Lessons"
+  ],
+  "comments": [],
+  "subscriptions": [],
+  "transactions": [],
+  "notifications": [],
+  "scheduledContent": [],
+  "flaggedContent": [],
+  "accessLogs": [],
+  "bundles": [],
+  "ageGroups": [],
+  "settings": {
+    "siteName": "Zinga Linga",
+    "defaultLanguage": "en",
+    "timezone": "UTC",
+    "features": {
+      "userRegistration": true,
+      "videoComments": true,
+      "videoDownloads": true,
+      "socialSharing": false
+    },
+    "dataSource": "real",
+    "apiEndpoint": "/api/data",
+    "enableRealTimeSync": true
+  },
+  "lastSaved": "2025-08-30T19:44:23.255Z",
+  "lastUpdated": "2025-08-30T19:44:23.231Z",
+  "deploymentProtection": true
+}

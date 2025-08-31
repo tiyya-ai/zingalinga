@@ -1,13 +1,15 @@
 import React, { useEffect } from 'react';
 
-interface Video {
+interface Content {
   id: string;
   title: string;
   thumbnail: string;
   duration: string;
   description: string;
-  videoUrl: string;
+  videoUrl?: string;
+  audioUrl?: string;
   category: string;
+  type?: string;
   isPremium: boolean;
   price?: number;
   rating?: number;
@@ -17,12 +19,12 @@ interface Video {
 }
 
 interface VideoModalWithSidebarProps {
-  selectedVideo: Video;
+  selectedVideo: Content;
   onClose: () => void;
   packages: any[];
   allModules: any[];
   isItemPurchased: (id: string) => boolean;
-  setSelectedVideo: (video: Video) => void;
+  setSelectedVideo: (content: Content) => void;
 }
 
 export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
@@ -108,10 +110,131 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
             </button>
           </div>
           
-          {/* Video Player */}
+          {/* Content Player */}
           <div className="p-2 sm:p-4 flex-1 overflow-y-auto">
-            {selectedVideo.videoUrl && selectedVideo.videoUrl.trim() ? (
-              (() => {
+            {(() => {
+              // Check if this content requires upgrade payment
+              const isPurchased = isItemPurchased(selectedVideo.id);
+              const hasPrice = selectedVideo.price && selectedVideo.price > 0;
+              const isInPackage = packages.some(pkg => pkg.contentIds?.includes(selectedVideo.id));
+              const packageOwned = packages.some(pkg => pkg.contentIds?.includes(selectedVideo.id) && isItemPurchased(pkg.id));
+              const needsUpgrade = hasPrice && isInPackage && packageOwned && !isPurchased;
+              
+              // If content needs upgrade and not purchased, show upgrade screen
+              if (needsUpgrade) {
+                return (
+                  <div className="w-full aspect-video bg-gray-800 rounded-lg flex items-center justify-center">
+                    <div className="text-center text-white p-8">
+                      <div className="w-24 h-24 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span className="text-4xl">⬆️</span>
+                      </div>
+                      <h3 className="text-2xl font-bold mb-4">Upgrade Required</h3>
+                      <p className="text-gray-300 mb-6">This premium content requires an upgrade to access.</p>
+                      <div className="bg-orange-500/20 border border-orange-500/50 rounded-lg p-4 mb-6">
+                        <div className="text-orange-400 font-bold text-xl">${selectedVideo.price}</div>
+                        <div className="text-orange-300 text-sm">One-time upgrade fee</div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          // Add to cart or show purchase modal
+                          alert(`Upgrade for $${selectedVideo.price} to access this content`);
+                        }}
+                        className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-bold transition-colors"
+                      >
+                        Upgrade Now - ${selectedVideo.price}
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+              
+              // If not purchased at all, show lock screen
+              if (!isPurchased && !packageOwned) {
+                return (
+                  <div className="w-full aspect-video bg-gray-800 rounded-lg flex items-center justify-center">
+                    <div className="text-center text-white p-8">
+                      <div className="w-24 h-24 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span className="text-4xl">🔒</span>
+                      </div>
+                      <h3 className="text-2xl font-bold mb-4">Purchase Required</h3>
+                      <p className="text-gray-300 mb-6">You need to purchase this content to watch it.</p>
+                      <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-6">
+                        <div className="text-red-400 font-bold text-xl">${selectedVideo.price || 0}</div>
+                        <div className="text-red-300 text-sm">Purchase price</div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          alert(`Purchase for $${selectedVideo.price || 0} to access this content`);
+                        }}
+                        className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-bold transition-colors"
+                      >
+                        Purchase Now - ${selectedVideo.price || 0}
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+              
+              // If we showed upgrade/purchase screen, don't show anything else
+              return 'BLOCKED';
+            })()}
+            
+            {/* Only show content if not blocked */}
+            {(() => {
+              const isPurchased = isItemPurchased(selectedVideo.id);
+              const hasPrice = selectedVideo.price && selectedVideo.price > 0;
+              const isInPackage = packages.some(pkg => pkg.contentIds?.includes(selectedVideo.id));
+              const packageOwned = packages.some(pkg => pkg.contentIds?.includes(selectedVideo.id) && isItemPurchased(pkg.id));
+              const needsUpgrade = hasPrice && isInPackage && packageOwned && !isPurchased;
+              const canAccess = isPurchased || (packageOwned && !hasPrice);
+              
+              // If blocked, don't render anything
+              if (needsUpgrade || (!isPurchased && !packageOwned)) {
+                return null;
+              }
+              
+              // Audio Content
+              if (canAccess && (selectedVideo.category === 'Audio Lessons' || selectedVideo.type === 'audio') && (selectedVideo.audioUrl || selectedVideo.videoUrl)) {
+                return (
+              <div className="w-full aspect-video bg-gray-800 rounded-lg flex flex-col justify-center p-8">
+                <div className="text-center mb-6">
+                  <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-4xl">🎧</span>
+                  </div>
+                  <h3 className="text-white text-xl font-bold mb-2">{selectedVideo.title}</h3>
+                  <p className="text-gray-400 text-sm">Audio Lesson</p>
+                </div>
+                
+                {(() => {
+                  let audioSrc = selectedVideo.audioUrl || selectedVideo.videoUrl;
+                  
+                  // Handle File objects
+                  if (typeof audioSrc === 'object' && 'type' in audioSrc) {
+                    audioSrc = URL.createObjectURL(audioSrc as unknown as File);
+                  }
+                  
+                  return (
+                    <audio 
+                      controls 
+                      autoPlay
+                      className="w-full"
+                      style={{ height: '54px' }}
+                    >
+                      <source src={audioSrc} type="audio/mpeg" />
+                      <source src={audioSrc} type="audio/mp3" />
+                      <source src={audioSrc} type="audio/wav" />
+                      <source src={audioSrc} type="audio/ogg" />
+                      Your browser does not support the audio element.
+                    </audio>
+                  );
+                })()}
+              </div>
+                );
+              }
+              
+              // Video Content
+              if (canAccess && selectedVideo.videoUrl && selectedVideo.videoUrl.trim()) {
+                return (() => {
                 let videoUrl = selectedVideo.videoUrl;
                 
                 // Handle File objects by creating blob URLs
@@ -216,16 +339,29 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
                     Your browser does not support the video tag.
                   </video>
                 );
-              })()
-            ) : (
-              <div className="w-full aspect-video bg-gray-800 rounded-lg flex items-center justify-center">
-                <div className="text-center text-gray-400">
-                  <div className="text-6xl mb-4">🎬</div>
-                  <div className="text-xl">Video not available</div>
-                  <div className="text-sm mt-2">URL: {selectedVideo.videoUrl ? 'Present but invalid' : 'Missing'}</div>
+              })();
+              }
+              
+              // Fallback for accessible content without valid URLs
+              return (
+                <div className="w-full aspect-video bg-gray-800 rounded-lg flex items-center justify-center">
+                  <div className="text-center text-gray-400">
+                    <div className="text-6xl mb-4">
+                      {selectedVideo.category === 'Audio Lessons' || selectedVideo.type === 'audio' ? '🎧' : 
+                       selectedVideo.category === 'PP1 Program' ? '📚' : '🎬'}
+                    </div>
+                    <div className="text-xl">
+                      {selectedVideo.category === 'Audio Lessons' || selectedVideo.type === 'audio' ? 'Audio not available' :
+                       selectedVideo.category === 'PP1 Program' ? 'Content available' : 'Video not available'}
+                    </div>
+                    <div className="text-sm mt-2">
+                      {selectedVideo.category === 'PP1 Program' ? 'Educational content ready to access' :
+                       `URL: ${(selectedVideo.videoUrl || selectedVideo.audioUrl) ? 'Present but invalid' : 'Missing'}`}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
             
             {/* Video Info */}
             <div className="mt-4 p-4 bg-gray-800 rounded-lg">
@@ -235,8 +371,6 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
               )}
               
               <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400">
-                {selectedVideo.duration && selectedVideo.duration !== '5:00' && <span>⏱️ {selectedVideo.duration}</span>}
-                {selectedVideo.duration && selectedVideo.duration !== '5:00' && <span>•</span>}
                 <span>📦 {(() => {
                   const currentPackage = packages.find(pkg => pkg.contentIds?.includes(selectedVideo.id));
                   return currentPackage ? currentPackage.name : selectedVideo.category;
@@ -257,10 +391,10 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
           <div className="w-full lg:w-80 bg-gray-800 border-t lg:border-t-0 lg:border-l border-gray-700 flex flex-col max-h-64 lg:max-h-none">
             <div className="p-4 border-b border-gray-700 flex-shrink-0">
               <h3 className="text-white font-bold text-sm flex items-center">
-                <span className="mr-2">🎬</span>
-                More Videos
+                <span className="mr-2">📚</span>
+                More Content
               </h3>
-              <p className="text-gray-400 text-xs mt-1">{relatedVideos.length} videos available</p>
+              <p className="text-gray-400 text-xs mt-1">{relatedVideos.length} items available</p>
             </div>
             
             <div className="flex-1 overflow-y-auto min-h-0">
@@ -282,7 +416,9 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
                         duration: video.duration || '',
                         description: video.description || '',
                         videoUrl: video.videoUrl || '',
+                        audioUrl: video.audioUrl || '',
                         category: video.category || 'Videos',
+                        type: video.type,
                         isPremium: video.isPremium || false,
                         price: video.price || 0,
                         isYouTube: video.videoUrl?.includes('youtube'),
@@ -304,7 +440,10 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
                           />
                         ) : (
                           <div className="w-16 h-12 bg-gray-700 rounded flex items-center justify-center">
-                            <span className="text-gray-400 text-xs">🎬</span>
+                            <span className="text-gray-400 text-xs">
+                              {video.category === 'Audio Lessons' || video.type === 'audio' ? '🎧' :
+                               video.category === 'PP1 Program' ? '📚' : '🎬'}
+                            </span>
                           </div>
                         )}
                         {isLocked && (
@@ -318,11 +457,8 @@ export const VideoModalWithSidebar: React.FC<VideoModalWithSidebarProps> = ({
                           {video.title}
                         </h4>
                         <div className="flex items-center gap-2 mt-1">
-                          {video.duration && video.duration !== '5:00' && (
-                            <span className="text-gray-400 text-xs">{video.duration}</span>
-                          )}
                           {video.category && (
-                            <span className="text-gray-500 text-xs">• {video.category}</span>
+                            <span className="text-gray-500 text-xs">{video.category}</span>
                           )}
                         </div>
                         {isLocked && (

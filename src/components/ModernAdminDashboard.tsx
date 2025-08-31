@@ -574,6 +574,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     description: '',
     category: '',
     rating: 0,
+    price: 0,
     duration: '',
     thumbnail: '',
     videoUrl: '',
@@ -952,6 +953,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                   description: '',
                   category: '',
                   rating: 0,
+                  price: 0,
                   duration: '',
                   thumbnail: '',
                   videoUrl: '',
@@ -1125,11 +1127,11 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               </Button>
               <Button 
                 className="h-20 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl rounded-lg"
-                onPress={() => handleSetActiveSection('categories')}
+                onPress={() => handleSetActiveSection('audio-lessons')}
               >
                 <div className="text-center">
-                  <Tag className="h-6 w-6 mx-auto mb-1" />
-                  <span className="text-xs font-semibold">Categories</span>
+                  <Headphones className="h-6 w-6 mx-auto mb-1" />
+                  <span className="text-xs font-semibold">Audio</span>
                 </div>
               </Button>
               <Button 
@@ -1805,15 +1807,27 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
 
   
   // Audio lesson form state
-  const [audioForm, setAudioForm] = useState({
+  const [audioForm, setAudioForm] = useState<{
+    title: string;
+    description: string;
+    price: number;
+    duration: string;
+    audioUrl: string;
+    thumbnail: string;
+    tags: string;
+    aiTags: string[];
+    hasPreview: boolean;
+    previewUrl: string;
+    previewDuration: string;
+  }>({
     title: '',
     description: '',
+    price: 0,
     duration: '',
     audioUrl: '',
     thumbnail: '',
     tags: '',
     aiTags: [] as string[],
-    accessLevel: 'paid' as 'free' | 'paid' | 'premium',
     hasPreview: false,
     previewUrl: '',
     previewDuration: ''
@@ -2027,15 +2041,12 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       price: 0,
       category: '',
       rating: 0,
-      ageGroup: '3-8 years',
       duration: '',
       thumbnail: '',
       videoUrl: '',
       videoType: 'youtube',
       tags: '',
-      language: 'English',
-      status: 'active',
-      packageId: ''
+      status: 'active'
     };
     
     // Force form reset with a small delay to ensure state is cleared
@@ -2152,11 +2163,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         setTimeout(() => setToast(null), 3000);
         return;
       }
-      if (!videoForm.category) {
-        setToast({message: 'Please select a category', type: 'error'});
-        setTimeout(() => setToast(null), 3000);
-        return;
-      }
+
       if (!videoForm.videoUrl) {
         setToast({message: 'Please provide a video URL or upload a video file', type: 'error'});
         setTimeout(() => setToast(null), 3000);
@@ -2226,6 +2233,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           description: videoForm.description,
           category: videoForm.category,
           rating: videoForm.rating,
+          price: videoForm.price || 0,
           thumbnail: persistentThumbnail,
           videoUrl: persistentVideoUrl,
           duration: videoForm.duration,
@@ -2260,6 +2268,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           description: videoForm.description,
           category: videoForm.category,
           rating: videoForm.rating,
+          price: videoForm.price || 0,
           thumbnail: persistentThumbnail,
           videoUrl: persistentVideoUrl,
           duration: videoForm.duration,
@@ -2327,6 +2336,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         description: '',
         category: '',
         rating: 0,
+        price: 0,
         thumbnail: '',
         videoUrl: '',
         duration: '',
@@ -2388,15 +2398,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
 
   const renderEditVideo = () => (
     <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <div className="flex items-center space-x-2">
-          <PackageIcon className="h-5 w-5 text-blue-600" />
-          <h3 className="font-semibold text-blue-800">Package Content Creation</h3>
-        </div>
-        <p className="text-blue-700 text-sm mt-1">
-          This video will be available for inclusion in learning packages. Videos are not sold individually.
-        </p>
-      </div>
+
       <PageHeader 
         title={editingVideo ? `Edit Video: ${editingVideo.title}` : 'Add New Video Content'}
         actions={
@@ -2453,7 +2455,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               </div>
               <div className="space-y-2">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Category *</label>
+                  <label className="text-sm font-medium text-gray-700">Category</label>
                   <Select
                     selectedKeys={videoForm.category ? [videoForm.category] : []}
                     onSelectionChange={(keys) => {
@@ -2561,6 +2563,24 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                 />
 
               </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Price ($)</label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={videoForm.price?.toString() || '0'}
+                  onChange={(e) => setVideoForm({ ...videoForm, price: parseFloat(e.target.value) || 0 })}
+                  placeholder="0.00"
+                  startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
+                  classNames={{
+                    input: "bg-white focus:ring-0 focus:ring-offset-0 shadow-none",
+                    inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
+                  }}
+                />
+                <p className="text-xs text-gray-500">Set to 0 for free with package, or set price for upgrade</p>
+              </div>
+              
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Rating</label>
                 <Input
@@ -2673,7 +2693,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               className="w-full bg-blue-600 text-white hover:bg-blue-700 h-12 text-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               onPress={handleSaveVideo}
               startContent={editingVideo ? <Edit className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-              isDisabled={!videoForm.title.trim() || !videoForm.category || !videoForm.videoUrl}
+              isDisabled={!videoForm.title.trim() || !videoForm.videoUrl}
               aria-label={editingVideo ? 'Update video' : 'Create new video'}
             >
               {editingVideo ? 'Update Video' : 'Create Video'}
@@ -4258,7 +4278,24 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           <Button 
             className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
             startContent={<Plus className="h-4 w-4" />}
-            onPress={() => handleSetActiveSection('add-audio-lesson')}
+            onPress={() => {
+              setEditingVideo(null);
+              setAudioForm({
+                title: '',
+                description: '',
+                price: 0,
+                duration: '',
+                audioUrl: '',
+                thumbnail: '',
+                tags: '',
+                aiTags: [],
+
+                hasPreview: false,
+                previewUrl: '',
+                previewDuration: ''
+              });
+              handleSetActiveSection('add-audio-lesson');
+            }}
           >
             Add Audio Lesson
           </Button>
@@ -4391,12 +4428,12 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                               setAudioForm({
                                 title: lesson.title,
                                 description: lesson.description || '',
+                                price: lesson.price || 0,
                                 duration: lesson.duration || '',
                                 audioUrl: lesson.audioUrl || '',
                                 thumbnail: lesson.thumbnail || '',
                                 tags: lesson.tags?.join(', ') || '',
                                 aiTags: lesson.aiTags || [],
-                                accessLevel: lesson.accessLevel || 'paid',
                                 hasPreview: lesson.hasPreview || false,
                                 previewUrl: lesson.previewUrl || '',
                                 previewDuration: ''
@@ -4685,12 +4722,12 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           ...editingVideo,
           title: audioForm.title,
           description: audioForm.description,
+          price: audioForm.price || 0,
           audioUrl: audioForm.audioUrl,
           thumbnail: audioForm.thumbnail || editingVideo.thumbnail,
           duration: audioForm.duration,
           tags: audioForm.tags ? audioForm.tags.split(',').map(tag => tag.trim()) : [],
           aiTags: audioForm.aiTags,
-          accessLevel: audioForm.accessLevel,
           hasPreview: audioForm.hasPreview,
           previewUrl: audioForm.previewUrl
         };
@@ -4709,6 +4746,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           id: `audio_${Date.now()}`,
           title: audioForm.title,
           description: audioForm.description,
+          price: audioForm.price || 0,
           category: 'Audio Lessons',
           type: 'audio',
           audioUrl: audioForm.audioUrl, // Keep the actual URL (blob or regular)
@@ -4716,7 +4754,6 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           duration: audioForm.duration,
           tags: audioForm.tags ? audioForm.tags.split(',').map(tag => tag.trim()) : [],
           aiTags: audioForm.aiTags,
-          accessLevel: audioForm.accessLevel,
           hasPreview: audioForm.hasPreview,
           previewUrl: audioForm.previewUrl,
           isActive: true,
@@ -4741,12 +4778,12 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       setAudioForm({
         title: '',
         description: '',
+        price: 0,
         duration: '',
         audioUrl: '',
         thumbnail: '',
         tags: '',
         aiTags: [],
-        accessLevel: 'paid',
         hasPreview: false,
         previewUrl: '',
         previewDuration: ''
@@ -4920,25 +4957,24 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                   HTML tags supported: &lt;b&gt;, &lt;i&gt;, &lt;u&gt;, &lt;br&gt;, &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;
                 </div>
               </div>
-              <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Access Level</label>
-                  <Select
-                    selectedKeys={[audioForm.accessLevel]}
-                    onSelectionChange={(keys) => {
-                      const selected = Array.from(keys)[0] as 'free' | 'paid' | 'premium';
-                      setAudioForm({ ...audioForm, accessLevel: selected });
-                    }}
-                    classNames={{
-                      trigger: "bg-white border-gray-300 hover:border-blue-400 focus:border-blue-500"
-                    }}
-                  >
-                    <SelectItem key="free" value="free">Free</SelectItem>
-                    <SelectItem key="paid" value="paid">Paid</SelectItem>
-                    <SelectItem key="premium" value="premium">Premium</SelectItem>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Price ($)</label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={audioForm.price?.toString() || '0'}
+                  onChange={(e) => setAudioForm({ ...audioForm, price: parseFloat(e.target.value) || 0 })}
+                  placeholder="0.00"
+                  startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
+                  classNames={{
+                    input: "bg-white",
+                    inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
+                  }}
+                />
+                <p className="text-xs text-gray-500">Set to 0 for free with package, or set price for upgrade</p>
               </div>
+
             </CardBody>
           </Card>
 
@@ -5334,18 +5370,21 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Price *</label>
+                    <label className="text-sm font-medium text-gray-700">Price ($)</label>
                     <Input
                       type="number"
+                      min="0"
+                      step="0.01"
                       value={pp1Form.price.toString()}
                       onChange={(e) => setPP1Form({ ...pp1Form, price: parseFloat(e.target.value) || 0 })}
                       placeholder="0.00"
                       startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
                       classNames={{
-                        input: "bg-white",
-                        inputWrapper: "bg-white border-gray-300 hover:border-green-400 focus-within:border-green-500"
+                        input: "bg-white focus:ring-0 focus:ring-offset-0 shadow-none",
+                        inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
                       }}
                     />
+                    <p className="text-xs text-gray-500">Set to 0 for free with package, or set price for upgrade</p>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">Content Type</label>

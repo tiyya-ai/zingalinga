@@ -552,8 +552,7 @@
       ],
       "contentIds": [
         "video_1756323338364",
-        "audio_1756323400002",
-        "video_1756595238852"
+        "audio_1756323400002"
       ],
       "ageGroups": [
         "3-6"
@@ -563,7 +562,7 @@
       "upgradePrice": 35,
       "comingSoon": true,
       "createdAt": "2025-08-21T00:06:32.576Z",
-      "updatedAt": "2025-08-30T23:07:35.637Z",
+      "updatedAt": "2025-08-30T22:41:17.942Z",
       "coverImage": ""
     },
     {
@@ -621,7 +620,7 @@
     "apiEndpoint": "/api/data",
     "enableRealTimeSync": true
   },
-  "lastSaved": "2025-08-30T23:07:35.670Z",
-  "lastUpdated": "2025-08-30T23:07:35.637Z",
+  "lastSaved": "2025-08-30T23:07:18.884Z",
+  "lastUpdated": "2025-08-30T23:07:18.857Z",
   "deploymentProtection": true
 }

@@ -264,15 +264,10 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
     try {
       const success = await vpsDataStore.purchasePackage(user.id, packageId);
       if (success) {
-        // Reload user data to reflect the purchase
-        const data = await vpsDataStore.loadData();
-        const updatedUser = data.users?.find(u => u.id === user.id);
-        if (updatedUser) {
-          setUser(updatedUser);
-        }
-        alert('Package purchased successfully!');
+        // Purchase is created in PENDING state. Notify user and ask admin/payment gateway
+        alert('Purchase recorded as PENDING. It will be activated after payment confirmation.');
       } else {
-        alert('Package purchase failed. Please try again.');
+        alert('Failed to create purchase. Please try again.');
       }
     } catch (error) {
       console.error('Package purchase error:', error);

@@ -245,28 +245,6 @@
       "videoType": "youtube",
       "language": "English",
       "price": 10
-    },
-    {
-      "id": "video_1756595238852",
-      "title": "update 2026",
-      "description": "",
-      "category": "",
-      "rating": 0,
-      "price": 15,
-      "thumbnail": "https://img.youtube.com/vi/ghzaUEWRVVY/maxresdefault.jpg",
-      "videoUrl": "https://www.youtube.com/watch?v=ghzaUEWRVVY",
-      "duration": "5:00",
-      "estimatedDuration": "5:00",
-      "tags": [],
-      "isActive": true,
-      "isVisible": true,
-      "createdAt": "2025-08-30T23:07:18.852Z",
-      "updatedAt": "2025-08-30T23:07:18.856Z",
-      "totalRatings": 0,
-      "features": [],
-      "fullContent": [],
-      "difficulty": "beginner",
-      "audioUrl": ""
     }
   ],
   "purchases": [
@@ -552,8 +530,7 @@
       ],
       "contentIds": [
         "video_1756323338364",
-        "audio_1756323400002",
-        "video_1756595238852"
+        "audio_1756323400002"
       ],
       "ageGroups": [
         "3-6"
@@ -563,7 +540,7 @@
       "upgradePrice": 35,
       "comingSoon": true,
       "createdAt": "2025-08-21T00:06:32.576Z",
-      "updatedAt": "2025-08-30T23:07:35.637Z",
+      "updatedAt": "2025-08-30T22:41:17.942Z",
       "coverImage": ""
     },
     {
@@ -621,7 +598,7 @@
     "apiEndpoint": "/api/data",
     "enableRealTimeSync": true
   },
-  "lastSaved": "2025-08-30T23:07:35.670Z",
-  "lastUpdated": "2025-08-30T23:07:35.637Z",
+  "lastSaved": "2025-08-30T23:05:04.756Z",
+  "lastUpdated": "2025-08-30T23:05:04.730Z",
   "deploymentProtection": true
 }
