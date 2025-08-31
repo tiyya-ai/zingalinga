@@ -600,13 +600,15 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     try {
       setDataLoaded(false);
       
-      // FORCE clear all caches to ensure fresh data
-      vpsDataStore.clearMemoryCache();
-      localStorage.removeItem('zinga-linga-app-data-cache');
-      localStorage.removeItem('zinga-linga-app-data');
+      // Only clear caches if explicitly requested
+      if (skipCache) {
+        vpsDataStore.clearMemoryCache();
+        localStorage.removeItem('zinga-linga-app-data-cache');
+        localStorage.removeItem('zinga-linga-app-data');
+      }
       
-      // FORCE load fresh data from VPS API
-      const data = await vpsDataStore.loadData(true);
+      // Load data from VPS API
+      const data = await vpsDataStore.loadData(skipCache);
       const realUsers = await vpsDataStore.getUsers();
       const realVideos = await vpsDataStore.getProducts();
       const realOrders = await vpsDataStore.getOrders();
@@ -2359,31 +2361,77 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   };
 
   const handleDeleteVideo = async (videoId: string) => {
-    const success = await vpsDataStore.deleteProduct(videoId);
-    if (success) {
-      // FORCE clear all caches and full data refresh to sync admin/user views
-      vpsDataStore.clearMemoryCache();
-      localStorage.removeItem('zinga-linga-app-data-cache');
-      localStorage.removeItem('zinga-linga-app-data');
-      await loadRealData(true);
-      setToast({message: 'Video deleted successfully!', type: 'success'});
-      setTimeout(() => setToast(null), 3000);
-    } else {
-      setToast({message: 'Failed to delete video', type: 'error'});
+    try {
+      console.log('🗑️ Starting video deletion:', videoId);
+      
+      const success = await vpsDataStore.deleteProduct(videoId);
+      
+      if (success) {
+        console.log('✅ Video deleted from data store, updating UI...');
+        
+        // Update local state immediately
+        setVideos(prev => {
+          const updated = prev.filter(v => v.id !== videoId);
+          console.log('🔄 Updated videos list, new count:', updated.length);
+          return updated;
+        });
+        
+        // Clear caches and reload to ensure consistency
+        vpsDataStore.clearMemoryCache();
+        localStorage.removeItem('zinga-linga-app-data-cache');
+        localStorage.removeItem('zinga-linga-app-data');
+        
+        // Reload data in background
+        setTimeout(() => loadRealData(true), 100);
+        
+        setToast({message: 'Video deleted successfully!', type: 'success'});
+        setTimeout(() => setToast(null), 3000);
+      } else {
+        console.error('❌ Failed to delete video from data store');
+        setToast({message: 'Failed to delete video', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
+      }
+    } catch (error) {
+      console.error('❌ Error in handleDeleteVideo:', error);
+      setToast({message: 'Error deleting video', type: 'error'});
       setTimeout(() => setToast(null), 3000);
     }
   };
 
   const handleDeleteAudio = async (audioId: string) => {
-    const success = await vpsDataStore.deleteProduct(audioId);
-    if (success) {
-      // Force clear cache and full data refresh to sync admin/user views
-      vpsDataStore.clearMemoryCache();
-      await loadRealData(true);
-      setToast({message: 'Audio lesson deleted successfully!', type: 'success'});
-      setTimeout(() => setToast(null), 3000);
-    } else {
-      setToast({message: 'Failed to delete audio lesson', type: 'error'});
+    try {
+      console.log('🗑️ Starting audio deletion:', audioId);
+      
+      const success = await vpsDataStore.deleteProduct(audioId);
+      
+      if (success) {
+        console.log('✅ Audio deleted from data store, updating UI...');
+        
+        // Update local state immediately
+        setVideos(prev => {
+          const updated = prev.filter(v => v.id !== audioId);
+          console.log('🔄 Updated videos list, new count:', updated.length);
+          return updated;
+        });
+        
+        // Clear caches and reload to ensure consistency
+        vpsDataStore.clearMemoryCache();
+        localStorage.removeItem('zinga-linga-app-data-cache');
+        localStorage.removeItem('zinga-linga-app-data');
+        
+        // Reload data in background
+        setTimeout(() => loadRealData(true), 100);
+        
+        setToast({message: 'Audio lesson deleted successfully!', type: 'success'});
+        setTimeout(() => setToast(null), 3000);
+      } else {
+        console.error('❌ Failed to delete audio from data store');
+        setToast({message: 'Failed to delete audio lesson', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
+      }
+    } catch (error) {
+      console.error('❌ Error in handleDeleteAudio:', error);
+      setToast({message: 'Error deleting audio lesson', type: 'error'});
       setTimeout(() => setToast(null), 3000);
     }
   };
@@ -2744,17 +2792,33 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const handleBulkDelete = async () => {
     if (selectedVideos.length === 0) return;
     
-    if (confirm(`Delete ${selectedVideos.length} selected videos?`)) {
+    if (confirm(`Delete ${selectedVideos.length} selected videos? This action cannot be undone.`)) {
       try {
-        const deletePromises = selectedVideos.map(videoId => vpsDataStore.deleteProduct(videoId));
-        await Promise.all(deletePromises);
+        console.log('🗑️ Starting bulk delete of', selectedVideos.length, 'videos');
         
-        const updatedVideos = await vpsDataStore.getProducts();
-        setVideos(updatedVideos);
+        // Delete videos one by one to ensure proper handling
+        let deletedCount = 0;
+        for (const videoId of selectedVideos) {
+          const success = await vpsDataStore.deleteProduct(videoId);
+          if (success) {
+            deletedCount++;
+          }
+        }
+        
+        // Update local state
+        setVideos(prev => prev.filter(v => !selectedVideos.includes(v.id)));
         setSelectedVideos([]);
-        alert(`- ${selectedVideos.length} videos deleted successfully!`);
+        
+        // Clear caches and reload
+        vpsDataStore.clearMemoryCache();
+        setTimeout(() => loadRealData(true), 100);
+        
+        setToast({message: `${deletedCount} videos deleted successfully!`, type: 'success'});
+        setTimeout(() => setToast(null), 3000);
       } catch (error) {
-        alert('- Failed to delete some videos. Please try again.');
+        console.error('❌ Bulk delete error:', error);
+        setToast({message: 'Failed to delete some videos. Please try again.', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
       }
     }
   };

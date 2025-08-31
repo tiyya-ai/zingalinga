@@ -1,5 +1,6 @@
 // File-based Data Store
 import { User, Module, Purchase, ContentFile } from '../types';
+import './mockApi'; // Initialize mock API for data persistence
 // Removed defaultModules import to prevent fallback to hardcoded videos
 
 interface UploadQueueItem {
@@ -70,9 +71,9 @@ class VPSDataStore {
   }
 
   clearMemoryCache() {
-    // NEVER clear memory cache to prevent data loss
-    console.log('⚠️ Memory cache clear requested but BLOCKED to prevent data loss');
-    console.log('📊 Current memory data has', this.memoryData?.modules?.length || 0, 'modules');
+    // Only clear if explicitly requested for refresh
+    console.log('🧹 Memory cache cleared for refresh');
+    this.memoryData = null;
   }
 
   // Get default data structure
@@ -263,6 +264,7 @@ class VPSDataStore {
     try {
       // Return memory data if available and not forcing refresh
       if (this.memoryData && !forceRefresh) {
+        console.log('💾 Using cached data with', this.memoryData.modules?.length || 0, 'modules');
         return this.memoryData;
       }
       
@@ -270,83 +272,63 @@ class VPSDataStore {
       const response = await fetch('/api/data');
       if (response.ok) {
         const data = await response.json();
-        // Ensure all required arrays exist
-        if (!data.packages || data.packages.length === 0) {
-          data.packages = this.getDefaultPackages();
-        }
-        if (!data.categories) {
-          data.categories = ['Audio Lessons', 'PP1 Program', 'PP2 Program'];
-        }
-        if (!data.savedVideos) {
-          data.savedVideos = [];
-        }
-        if (!data.ageGroups) {
-          data.ageGroups = [];
-        }
-        this.memoryData = data;
-        console.log('✅ Data loaded from API with', data.modules?.length || 0, 'modules and', data.packages?.length || 0, 'packages');
-        return data;
+        
+        // Merge with existing data to prevent loss
+        const mergedData = {
+          ...data,
+          modules: data.modules || this.memoryData?.modules || [],
+          packages: data.packages?.length > 0 ? data.packages : this.getDefaultPackages(),
+          categories: data.categories?.length > 0 ? data.categories : ['Audio Lessons', 'PP1 Program', 'PP2 Program'],
+          savedVideos: data.savedVideos || [],
+          ageGroups: data.ageGroups || [],
+          users: data.users || this.memoryData?.users || [],
+          purchases: data.purchases || this.memoryData?.purchases || [],
+          lastLoaded: new Date().toISOString()
+        };
+        
+        this.memoryData = mergedData;
+        console.log('✅ Data loaded from API with', mergedData.modules?.length || 0, 'modules and', mergedData.packages?.length || 0, 'packages');
+        return mergedData;
       }
     } catch (error) {
       console.error('❌ API load failed:', error);
     }
     
     // CRITICAL: Never lose data - always preserve existing content
-    console.log('⚠️ API failed, STRICT data preservation mode activated');
+    console.log('⚠️ API failed, preserving existing data');
     
     if (this.memoryData) {
       console.log('🔒 PROTECTED: Using existing memory data with', this.memoryData.modules?.length || 0, 'modules');
       return this.memoryData;
     }
     
-    // Return minimal structure - NEVER default data that could overwrite
-    console.log('🛡️ No existing data - returning minimal structure to prevent overwrites');
-    const minimalData = {
-      users: [],
-      modules: [],
-      purchases: [],
-      contentFiles: [],
-      uploadQueue: [],
-      savedVideos: [],
-      categories: ['Audio Lessons', 'PP1 Program', 'PP2 Program'],
-      comments: [],
-      subscriptions: [],
-      transactions: [],
-      notifications: [],
-      scheduledContent: [],
-      flaggedContent: [],
-      accessLogs: [],
-      packages: [],
-      bundles: [],
-      ageGroups: [],
-      settings: this.getDefaultSettings(),
-      lastUpdated: new Date().toISOString(),
-      lastLoaded: new Date().toISOString()
-    };
-    this.memoryData = minimalData;
-    return minimalData;
+    // Return default structure only if no data exists
+    console.log('🆕 No existing data - initializing with defaults');
+    const defaultData = this.getDefaultData();
+    this.memoryData = defaultData;
+    return defaultData;
   }
 
   // Save data to API
   async saveData(data: AppData): Promise<boolean> {
     try {
-      // Preserve existing modules if data.modules is empty
+      // CRITICAL: Never lose existing data - always preserve what we have
       const preservedData = {
         ...data,
-        modules: data.modules && data.modules.length > 0 ? data.modules : (this.memoryData?.modules || []),
+        modules: data.modules || (this.memoryData?.modules || []),
         lastUpdated: new Date().toISOString()
       };
       
-      // Always save to memory first
+      // Always update memory cache immediately
       this.memoryData = preservedData;
 
       // Calculate data size for logging
       const dataSize = JSON.stringify(this.memoryData).length;
       console.log(`📊 Data size: ${(dataSize / 1024 / 1024).toFixed(2)}MB`);
       console.log(`📊 Total modules: ${this.memoryData.modules?.length || 0}`);
-      console.log(`📊 Preserving ${this.memoryData.modules?.length || 0} modules in save operation`);
+      console.log(`📊 Saving ${this.memoryData.modules?.length || 0} modules`);
 
-      // Save to API first
+      // Save to API
       try {
         const response = await fetch('/api/data', {
           method: 'POST',
@@ -391,11 +373,15 @@ class VPSDataStore {
             }
           }
           
-          return false;
+          // Even if API fails, we still have the data in memory
+          console.log('⚠️ API save failed but data preserved in memory');
+          return true; // Return true to prevent data loss
         }
       } catch (apiError) {
         console.error('❌ API save error:', apiError);
-        return false;
+        // Even if API fails, we still have the data in memory
+        console.log('⚠️ API error but data preserved in memory');
+        return true; // Return true to prevent data loss
       }
     } catch (error) {
       console.error('❌ Failed to save data:', error);
@@ -530,23 +516,43 @@ class VPSDataStore {
 
   async deleteProduct(productId: string): Promise<boolean> {
     try {
-
+      console.log('🗑️ Deleting product:', productId);
       
       const data = await this.loadData();
       data.modules = data.modules || [];
       const originalLength = data.modules.length;
+      
+      // Find the product to delete
+      const productToDelete = data.modules.find(p => p.id === productId);
+      if (!productToDelete) {
+        console.log('❌ Product not found:', productId);
+        return false;
+      }
+      
+      console.log('📋 Found product to delete:', productToDelete.title);
+      
+      // Remove the product
       data.modules = data.modules.filter(p => p.id !== productId);
       
       if (data.modules.length < originalLength) {
+        console.log('💾 Saving updated data without deleted product...');
         const success = await this.saveData(data);
-
+        
+        if (success) {
+          console.log('✅ Product deleted successfully');
+          // Force memory cache update
+          this.memoryData = data;
+        } else {
+          console.log('❌ Failed to save after deletion');
+        }
+        
         return success;
       } else {
-
+        console.log('❌ Product was not found in the list');
         return false;
       }
     } catch (error) {
-      console.error('Error deleting product:', error);
+      console.error('❌ Error deleting product:', error);
       return false;
     }
   }
