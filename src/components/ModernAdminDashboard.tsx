@@ -2301,9 +2301,6 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         };
         
         console.log('Ã°Å¸â€™Â¾ Saving new video to data store...');
-        const data = await vpsDataStore.loadData();
-        data.modules = data.modules || [];
-        data.modules.push(newVideo);
         let success = await vpsDataStore.addProduct(newVideo);
         
         // If failed due to large file, save metadata only
@@ -2316,9 +2313,6 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
             originalVideoSize: `${(newVideo.videoUrl.length / 1024 / 1024).toFixed(1)}MB`,
             videoStatus: 'metadata_only'
           };
-          const lightData = await vpsDataStore.loadData();
-          lightData.modules = lightData.modules || [];
-          lightData.modules.push(lightVideo);
           success = await vpsDataStore.addProduct(lightVideo);
           if (success) {
             console.log('Ã¢Å“â€¦ Video metadata saved successfully');
@@ -2427,9 +2421,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     try {
       console.log('🗑️ Starting audio deletion:', audioId);
       
-      const data = await vpsDataStore.loadData();
-      data.modules = data.modules?.filter(m => m.id !== audioId) || [];
-      const success = await vpsDataStore.saveData(data);
+      const success = await vpsDataStore.deleteProduct(audioId);
       
       if (success) {
         console.log('✅ Audio deleted from data store, updating UI...');
