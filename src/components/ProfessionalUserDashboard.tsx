@@ -1118,16 +1118,16 @@ export default function ProfessionalUserDashboard({
             <div className="bg-purple-800/60 backdrop-blur-sm rounded-xl p-6 border border-purple-600/50 shadow-lg relative z-10">
               <h2 className="text-2xl font-bold text-emerald-400 mb-4 flex items-center">
                 <span className="mr-2">📚</span>
-                All Learning Content
+                My Learning Content
               </h2>
-              <p className="text-white">Browse all available content types - Audio, Video, Programs & More</p>
+              <p className="text-white">Browse your purchased content - Audio, Video, Programs & More</p>
             </div>
             
-            {/* Package Filter Tabs */}
+            {/* Package Filter Tabs - Only show purchased packages */}
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
               <h3 className="text-lg font-bold text-white mb-3 flex items-center">
                 <span className="mr-2">📦</span>
-                Filter by Package
+                Filter by Purchased Package
               </h3>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -1138,9 +1138,9 @@ export default function ProfessionalUserDashboard({
                       : 'bg-white/20 text-white hover:bg-white/30'
                   }`}
                 >
-                  All Content
+                  All My Content
                 </button>
-                {packages.map(pkg => (
+                {packages.filter(pkg => isItemPurchased(pkg.id)).map(pkg => (
                   <button
                     key={pkg.id}
                     onClick={() => setSelectedCategory(pkg.name)}
@@ -1152,7 +1152,7 @@ export default function ProfessionalUserDashboard({
                   >
                     {pkg.name}
                     <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded-full">
-                      {pkg.contentIds?.length || 0}
+                      {pkg.contentIds?.filter(contentId => isItemPurchased(contentId)).length || 0}
                     </span>
                   </button>
                 ))}
@@ -1161,6 +1161,10 @@ export default function ProfessionalUserDashboard({
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
               {allContent.filter(content => {
+                // Only show purchased content
+                const isPurchased = isItemPurchased(content.id);
+                if (!isPurchased) return false;
+                
                 if (selectedCategory === 'All') return true;
                 
                 // Check if content belongs to selected package
@@ -1332,6 +1336,10 @@ export default function ProfessionalUserDashboard({
             </div>
             
             {allContent.filter(content => {
+              // Only show purchased content
+              const isPurchased = isItemPurchased(content.id);
+              if (!isPurchased) return false;
+              
               if (selectedCategory === 'All') return true;
               
               // Check if content belongs to selected package
@@ -1346,14 +1354,20 @@ export default function ProfessionalUserDashboard({
               <div className="text-center py-12 bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-700 shadow-lg">
                 <div className="text-6xl mb-4">📚</div>
                 <div className="text-brand-yellow text-xl mb-2 font-mali font-bold">
-                  {selectedCategory === 'All' ? 'No content available' : `No content in ${selectedCategory}`}
+                  {selectedCategory === 'All' ? 'No purchased content yet' : `No content in ${selectedCategory}`}
                 </div>
-                <div className="text-gray-300 text-sm font-mali">
+                <div className="text-gray-300 text-sm font-mali mb-4">
                   {selectedCategory === 'All' 
-                    ? 'Admin needs to add content through the admin panel'
-                    : 'Try selecting a different package or category'
+                    ? 'Purchase packages to access content'
+                    : 'Try selecting a different package or purchase this package'
                   }
                 </div>
+                <button 
+                  onClick={() => handleSetActiveTab('packages')}
+                  className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold px-6 py-3 rounded-lg transition-all duration-200"
+                >
+                  Browse Packages
+                </button>
               </div>
             )}
           </section>
@@ -1370,7 +1384,7 @@ export default function ProfessionalUserDashboard({
           };
           
           const categoryName = categoryMap[tabId];
-          const filteredContent = allContent.filter(content => content.category === categoryName);
+          const filteredContent = allContent.filter(content => content.category === categoryName && isItemPurchased(content.id));
           
           return activeTab === tabId && (
             <section key={tabId} className="space-y-6">
@@ -1636,13 +1650,14 @@ export default function ProfessionalUserDashboard({
               {filteredContent.length === 0 && (
                 <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                   <div className="text-6xl mb-4">{getContentIcon('', categoryName)}</div>
-                  <div className="text-white text-xl mb-2">No {categoryName} available</div>
-                  <div className="text-purple-200 text-sm mb-4">Check back later for new content</div>
-                  {user?.role === 'admin' && (
-                    <div className="text-yellow-400 text-sm">
-                      💡 Admin tip: Add content with category "{categoryName}" to populate this section
-                    </div>
-                  )}
+                  <div className="text-white text-xl mb-2">No {categoryName} purchased</div>
+                  <div className="text-purple-200 text-sm mb-4">Purchase packages to access {categoryName.toLowerCase()}</div>
+                  <button 
+                    onClick={() => handleSetActiveTab('packages')}
+                    className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold px-6 py-3 rounded-lg transition-all duration-200"
+                  >
+                    Browse Packages
+                  </button>
                 </div>
               )}
             </section>

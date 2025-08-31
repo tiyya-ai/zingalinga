@@ -101,7 +101,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
           </p>
 
           <div className="flex justify-center px-4 mt-8">
-            <div className="aspect-video w-full max-w-2xl">
+            <div className="aspect-video w-full max-w-2xl relative group">
               <iframe
                 src="https://player.vimeo.com/video/1113868282?autoplay=0&loop=0&title=0&byline=0&portrait=0"
                 className="w-full h-full rounded-2xl"
@@ -110,6 +110,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
                 allowFullScreen
                 title="Zingalinga Demo Video"
               ></iframe>
+              
+              {/* Centered Play Icon Overlay */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none group-hover:opacity-80 transition-opacity duration-300">
+                <div className="w-20 h-20 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-2xl border-4 border-brand-yellow/50 animate-pulse hover:animate-none transition-all duration-300">
+                  <PlayCircle className="w-12 h-12 text-brand-red" />
+                </div>
+              </div>
             </div>
           </div>
 
