@@ -2,9 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, readFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'global-app-data.json');
+
+// Security: Input sanitization
+const sanitizeInput = (input: string): string => {
+  return input.replace(/[\r\n\x00-\x1f\x7f-\x9f]/g, '').trim();
+};
+
+// Security: Path validation
+const validatePath = (filePath: string): boolean => {
+  const resolvedPath = path.resolve(filePath);
+  const resolvedDataDir = path.resolve(DATA_DIR);
+  return resolvedPath.startsWith(resolvedDataDir);
+};
 
 async function ensureDataDir() {
   if (!existsSync(DATA_DIR)) {
@@ -88,12 +101,12 @@ export async function GET() {
     const existingData = await loadData();
     
     if (existingData) {
-      console.log('📊 Loading existing data with', existingData.modules?.length || 0, 'modules');
+      console.info('Loading existing data with modules:', existingData.modules?.length || 0);
       return NextResponse.json(existingData);
     }
     
     // NEVER create default data automatically - this prevents data loss
-    console.log('⚠️ No existing data found - returning empty structure to prevent data loss');
+    console.warn('No existing data found - returning empty structure to prevent data loss');
     return NextResponse.json({
       users: [],
       modules: [],
@@ -116,9 +129,9 @@ export async function GET() {
       }
     });
   } catch (error) {
-    console.error('❌ API GET error:', error);
+    console.error('API GET error:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
-      { error: 'Failed to load data', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to load data', details: error instanceof Error ? sanitizeInput(error.message) : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -139,21 +152,31 @@ export async function POST(request: NextRequest) {
     // Create backup before saving
     const existingData = await loadData();
     if (existingData) {
-      const backupFile = path.join(DATA_DIR, `backup-${Date.now()}.json`);
+      const backupId = crypto.randomUUID();
+      const backupFile = path.join(DATA_DIR, `backup-${backupId}.json`);
+      
+      if (!validatePath(backupFile)) {
+        throw new Error('Invalid backup path');
+      }
+      
       await writeFile(backupFile, JSON.stringify(existingData, null, 2));
-      console.log('🔒 Backup created:', backupFile);
+      console.info('Backup created:', sanitizeInput(backupFile));
     }
     
     // CRITICAL: Refuse to save if we would lose existing modules
     if (existingData?.modules?.length > 0 && (!data.modules || data.modules.length === 0)) {
-      console.error('🚨 CRITICAL: Refusing to save - would delete', existingData.modules.length, 'modules!');
+      console.error('CRITICAL: Refusing to save - would delete modules:', existingData.modules.length);
       
       // Try to restore from permanent backup
       try {
         const backupPath = path.join(DATA_DIR, 'backup-permanent.json');
-        if (existsSync(backupPath)) {
-          const backupData = JSON.parse(await readFile(backupPath, 'utf-8'));
-          console.log('🔄 Restoring from permanent backup with', backupData.modules?.length || 0, 'modules');
+        
+        if (!validatePath(backupPath) || !existsSync(backupPath)) {
+          throw new Error('Invalid or missing backup path');
+        }
+        
+        const backupData = JSON.parse(await readFile(backupPath, 'utf-8'));
+        console.info('Restoring from permanent backup with modules:', backupData.modules?.length || 0);
           
           // Merge backup data with current data
           const restoredData = {
@@ -168,7 +191,7 @@ export async function POST(request: NextRequest) {
           };
           
           await writeFile(dataFile, JSON.stringify(restoredData, null, 2));
-          console.log('✅ Data restored from permanent backup!');
+          console.info('Data restored from permanent backup');
           
           return NextResponse.json({ 
             success: true, 
@@ -178,7 +201,7 @@ export async function POST(request: NextRequest) {
           });
         }
       } catch (restoreError) {
-        console.error('❌ Failed to restore from backup:', restoreError);
+        console.error('Failed to restore from backup:', restoreError instanceof Error ? restoreError.message : 'Unknown error');
       }
       
       return NextResponse.json({ 
@@ -214,20 +237,25 @@ export async function POST(request: NextRequest) {
       deploymentProtection: true
     };
     
-    console.log('🛡️ DATA PROTECTION ACTIVE:');
-    console.log('📊 Existing modules:', existingData?.modules?.length || 0);
-    console.log('📊 Incoming modules:', data.modules?.length || 0);
-    console.log('📊 Final modules:', preservedData.modules?.length || 0);
-    console.log('💾 PROTECTED SAVE - Preserving', preservedData.modules?.length || 0, 'modules,', preservedData.users?.length || 0, 'users');
+    console.info('DATA PROTECTION ACTIVE');
+    console.info('Existing modules:', existingData?.modules?.length || 0);
+    console.info('Incoming modules:', data.modules?.length || 0);
+    console.info('Final modules:', preservedData.modules?.length || 0);
+    console.info('PROTECTED SAVE - Preserving modules:', preservedData.modules?.length || 0, 'users:', preservedData.users?.length || 0);
     
     // Create permanent backup if we have significant data
     if (preservedData.modules?.length > 0) {
       try {
         const permanentBackupPath = path.join(DATA_DIR, 'backup-permanent.json');
+        
+        if (!validatePath(permanentBackupPath)) {
+          throw new Error('Invalid permanent backup path');
+        }
+        
         await writeFile(permanentBackupPath, JSON.stringify(preservedData, null, 2));
-        console.log('🔒 Permanent backup updated with', preservedData.modules.length, 'modules');
+        console.info('Permanent backup updated with modules:', preservedData.modules.length);
       } catch (backupError) {
-        console.error('⚠️ Failed to create permanent backup:', backupError);
+        console.error('Failed to create permanent backup:', backupError instanceof Error ? backupError.message : 'Unknown error');
       }
     }
     await writeFile(dataFile, JSON.stringify(preservedData, null, 2));
@@ -240,9 +268,9 @@ export async function POST(request: NextRequest) {
       backupCreated: !!existingData
     });
   } catch (error) {
-    console.error('❌ API POST error:', error);
+    console.error('API POST error:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
-      { success: false, error: 'Failed to save data', details: error instanceof Error ? error.message : 'Unknown error' },
+      { success: false, error: 'Failed to save data', details: error instanceof Error ? sanitizeInput(error.message) : 'Unknown error' },
       { status: 500 }
     );
   }

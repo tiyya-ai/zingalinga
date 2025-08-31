@@ -1,7 +1,21 @@
-// File-based Data Store
+// VPS Data Store - Manages application data with localStorage persistence and API fallback
 import { User, Module, Purchase, ContentFile } from '../types';
-// Mock API removed to fix build error
-// Removed defaultModules import to prevent fallback to hardcoded videos
+
+// Security: Input sanitization
+const sanitizeInput = (input: string): string => {
+  return input.replace(/[\r\n\x00-\x1f\x7f-\x9f]/g, '').trim();
+};
+
+// Security: Validate date strings
+const isValidDate = (dateString: string): boolean => {
+  const date = new Date(dateString);
+  return !isNaN(date.getTime());
+};
+
+// Security: Generate secure IDs
+const generateSecureId = (prefix: string = 'id'): string => {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
 
 interface UploadQueueItem {
   id: string;
@@ -14,6 +28,41 @@ interface UploadQueueItem {
   duration?: string;
   errorMessage?: string;
   formData?: FormData | Record<string, unknown>;
+  hasLargeVideo?: boolean;
+  videoStorageType?: string;
+}
+
+interface Package {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  type: string;
+  isActive: boolean;
+  contentIds?: string[];
+  lastContentUpdate?: string;
+  createdAt: string;
+  updatedAt: string;
+  upgradeFrom?: string;
+  upgradePrice?: number;
+}
+
+interface ProfileData {
+  profileImage?: string;
+  avatar?: string;
+  theme?: string;
+  [key: string]: unknown;
+}
+
+interface AudioLesson {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  type: string;
+  audioUrl?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface AppSettings {
@@ -40,18 +89,18 @@ interface AppData {
   contentFiles: ContentFile[];
   uploadQueue: UploadQueueItem[];
   settings?: AppSettings;
-  savedVideos?: any[];
+  savedVideos?: Array<{id: string; userId: string; savedAt: string; [key: string]: unknown}>;
   categories?: string[];
-  comments?: any[];
-  subscriptions?: any[];
-  transactions?: any[];
-  notifications?: any[];
-  scheduledContent?: any[];
-  flaggedContent?: any[];
-  accessLogs?: any[];
-  packages?: any[];
-  bundles?: any[];
-  ageGroups?: any[];
+  comments?: Array<{id: string; userId: string; content: string; createdAt: string; status?: string}>;
+  subscriptions?: Array<{id: string; userId: string; type: string; createdAt: string}>;
+  transactions?: Array<{id: string; userId: string; amount: number; createdAt: string}>;
+  notifications?: Array<{id: string; userId: string; message: string; createdAt: string}>;
+  scheduledContent?: Array<{id: string; title: string; scheduledAt: string; createdAt: string}>;
+  flaggedContent?: Array<{id: string; contentId: string; reason: string; createdAt: string}>;
+  accessLogs?: Array<{id: string; userId: string; action: string; timestamp: string}>;
+  packages?: Package[];
+  bundles?: Array<{id: string; name: string; moduleIds: string[]; price: number}>;
+  ageGroups?: Array<{id: string; name: string; minAge: number; maxAge: number}>;
   lastUpdated?: string;
   lastLoaded?: string;
 }
@@ -274,16 +323,27 @@ class VPSDataStore {
         try {
           const data = JSON.parse(stored);
           this.memoryData = data;
-          console.log('✅ Data loaded from localStorage with', data.modules?.length || 0, 'modules');
+          console.info('Data loaded from localStorage with modules:', data.modules?.length || 0);
           return data;
         } catch (error) {
-          console.error('Failed to parse stored data:', error);
+          console.error('Failed to parse stored data:', error instanceof Error ? error.message : 'Unknown error');
         }
       }
       
       // Fallback to API if available
       try {
-        const response = await fetch('/api/data');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const response = await fetch('/api/data', {
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        
         if (response.ok) {
           const data = await response.json();
           
@@ -302,28 +362,28 @@ class VPSDataStore {
           
           this.memoryData = mergedData;
           localStorage.setItem('zinga-linga-persistent-data', JSON.stringify(mergedData));
-          console.log('✅ Data loaded from API with', mergedData.modules?.length || 0, 'modules and', mergedData.packages?.length || 0, 'packages');
+          console.info('Data loaded from API with modules:', mergedData.modules?.length || 0, 'packages:', mergedData.packages?.length || 0);
           return mergedData;
         }
       } catch (error) {
-        console.error('❌ API load failed:', error);
+        console.error('API load failed:', error instanceof Error ? error.message : 'Unknown error');
       }
     
       // CRITICAL: Never lose data - always preserve existing content
-      console.log('⚠️ API failed, preserving existing data');
+      console.warn('API failed, preserving existing data');
       
       if (this.memoryData) {
-        console.log('🔒 PROTECTED: Using existing memory data with', this.memoryData.modules?.length || 0, 'modules');
+        console.info('PROTECTED: Using existing memory data with modules:', this.memoryData.modules?.length || 0);
         return this.memoryData;
       }
       
       // Return default structure only if no data exists
-      console.log('🆕 No existing data - initializing with defaults');
+      console.info('No existing data - initializing with defaults');
       const defaultData = this.getDefaultData();
       this.memoryData = defaultData;
       return defaultData;
     } catch (error) {
-      console.error('❌ Failed to load data:', error);
+      console.error('Failed to load data:', error instanceof Error ? error.message : 'Unknown error');
       const defaultData = this.getDefaultData();
       this.memoryData = defaultData;
       return defaultData;
@@ -346,14 +406,14 @@ class VPSDataStore {
       // Save to localStorage for persistence
       try {
         localStorage.setItem('zinga-linga-persistent-data', JSON.stringify(this.memoryData));
-        console.log('✅ Data saved to localStorage with', this.memoryData.modules?.length || 0, 'modules');
+        console.info('Data saved to localStorage with modules:', this.memoryData.modules?.length || 0);
         return true;
       } catch (error) {
-        console.error('❌ localStorage save failed:', error);
+        console.error('localStorage save failed:', error instanceof Error ? error.message : 'Unknown error');
         return false;
       }
     } catch (error) {
-      console.error('❌ Failed to save data:', error);
+      console.error('Failed to save data:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }
@@ -364,7 +424,7 @@ class VPSDataStore {
       const data = await this.loadData();
       return data.settings || this.getDefaultSettings();
     } catch (error) {
-
+      console.error('Error getting settings:', error instanceof Error ? error.message : 'Unknown error');
       return this.getDefaultSettings();
     }
   }
@@ -391,14 +451,14 @@ class VPSDataStore {
     }
   }
 
-  async addProduct(product: any): Promise<boolean> {
+  async addProduct(product: Module): Promise<boolean> {
     try {
-      console.log('🎬 Adding product:', { title: product.title, videoUrl: product.videoUrl?.substring(0, 50), thumbnail: product.thumbnail?.substring(0, 50) });
+      console.info('Adding product:', { title: sanitizeInput(product.title || ''), id: sanitizeInput(product.id || '') });
       const data = await this.loadData();
       
       const newProduct = {
         ...product,
-        id: product.id || `video_${Date.now()}`,
+        id: product.id || generateSecureId('video'),
         createdAt: product.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         isActive: product.isActive !== undefined ? product.isActive : true,
@@ -419,22 +479,22 @@ class VPSDataStore {
       
       // Check if adding this product would exceed reasonable limits
       const currentVideoCount = data.modules.length;
-      console.log(`📊 Current video count: ${currentVideoCount}`);
+      console.info('Current video count:', currentVideoCount);
       
       // Remove any artificial limits - allow unlimited videos
       data.modules.push(newProduct);
       
-      console.log('💾 Saving product to data store...');
+      console.info('Saving product to data store...');
       const success = await this.saveData(data);
-      console.log(success ? '✅ Product saved successfully' : '❌ Product save failed');
+      console.info(success ? 'Product saved successfully' : 'Product save failed');
       
       if (!success) {
-        console.log('🔄 Attempting to save with reduced data size...');
+        console.info('Attempting to save with reduced data size...');
         // If save fails, try with smaller data
         const lightProduct = {
           ...newProduct,
           videoUrl: newProduct.videoUrl?.startsWith('data:') ? '' : newProduct.videoUrl,
-          thumbnail: newProduct.thumbnail?.length > 50000 ? '' : newProduct.thumbnail,
+          thumbnail: newProduct.thumbnail && newProduct.thumbnail.length > 50000 ? '' : newProduct.thumbnail,
           audioUrl: newProduct.audioUrl?.startsWith('data:') ? '' : newProduct.audioUrl,
           originalSize: newProduct.videoUrl?.length || 0
         };
@@ -442,13 +502,13 @@ class VPSDataStore {
         // Replace the last added product with the light version
         data.modules[data.modules.length - 1] = lightProduct;
         const lightSuccess = await this.saveData(data);
-        console.log(lightSuccess ? '✅ Light product saved successfully' : '❌ Light product save failed');
+        console.info(lightSuccess ? 'Light product saved successfully' : 'Light product save failed');
         return lightSuccess;
       }
       
       return success;
     } catch (error) {
-      console.error('❌ Error adding product:', error);
+      console.error('Error adding product:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }
@@ -951,17 +1011,24 @@ class VPSDataStore {
 
   async hasNewContentSincePurchase(packageId: string, userPurchaseDate: string): Promise<boolean> {
     try {
+      if (!isValidDate(userPurchaseDate)) {
+        console.error('Invalid purchase date provided:', sanitizeInput(userPurchaseDate));
+        return false;
+      }
+      
       const data = await this.loadData();
       const pkg = data.packages?.find(p => p.id === packageId);
       
-      if (!pkg || !pkg.lastContentUpdate) return false;
+      if (!pkg || !pkg.lastContentUpdate || !isValidDate(pkg.lastContentUpdate)) {
+        return false;
+      }
       
       const purchaseDate = new Date(userPurchaseDate);
       const lastUpdate = new Date(pkg.lastContentUpdate);
       
       return lastUpdate > purchaseDate;
     } catch (error) {
-      console.error('Error checking new content:', error);
+      console.error('Error checking new content:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }
@@ -985,8 +1052,13 @@ class VPSDataStore {
 
   // Categories management
   async getCategories(): Promise<string[]> {
-    const data = await this.loadData();
-    return data.categories || ['Audio Lessons', 'PP1 Program', 'PP2 Program'];
+    try {
+      const data = await this.loadData();
+      return data.categories || ['Audio Lessons', 'PP1 Program', 'PP2 Program'];
+    } catch (error) {
+      console.error('Error getting categories:', error instanceof Error ? error.message : 'Unknown error');
+      return ['Audio Lessons', 'PP1 Program', 'PP2 Program'];
+    }
   }
 
   async addCategory(category: string): Promise<boolean> {
@@ -1057,10 +1129,10 @@ class VPSDataStore {
     try {
       const data = await this.loadData();
       data.comments = data.comments || [];
-      data.comments.push({ ...comment, id: `comment_${Date.now()}`, createdAt: new Date().toISOString() });
+      data.comments.push({ ...comment, id: generateSecureId('comment'), createdAt: new Date().toISOString() });
       return await this.saveData(data);
     } catch (error) {
-      console.error('Error adding comment:', error);
+      console.error('Error adding comment:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }
@@ -1082,19 +1154,24 @@ class VPSDataStore {
   }
 
   // Subscriptions management
-  async getSubscriptions(): Promise<any[]> {
-    const data = await this.loadData();
-    return data.subscriptions || [];
+  async getSubscriptions(): Promise<Array<{id: string; userId: string; type: string; createdAt: string}>> {
+    try {
+      const data = await this.loadData();
+      return data.subscriptions || [];
+    } catch (error) {
+      console.error('Error getting subscriptions:', error instanceof Error ? error.message : 'Unknown error');
+      return [];
+    }
   }
 
   async addSubscription(subscription: any): Promise<boolean> {
     try {
       const data = await this.loadData();
       data.subscriptions = data.subscriptions || [];
-      data.subscriptions.push({ ...subscription, id: `sub_${Date.now()}`, createdAt: new Date().toISOString() });
+      data.subscriptions.push({ ...subscription, id: generateSecureId('sub'), createdAt: new Date().toISOString() });
       return await this.saveData(data);
     } catch (error) {
-      console.error('Error adding subscription:', error);
+      console.error('Error adding subscription:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }
@@ -1109,10 +1186,10 @@ class VPSDataStore {
     try {
       const data = await this.loadData();
       data.notifications = data.notifications || [];
-      data.notifications.unshift({ ...notification, id: `notif_${Date.now()}`, createdAt: new Date().toISOString() });
+      data.notifications.unshift({ ...notification, id: generateSecureId('notif'), createdAt: new Date().toISOString() });
       return await this.saveData(data);
     } catch (error) {
-      console.error('Error adding notification:', error);
+      console.error('Error adding notification:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }
@@ -1127,10 +1204,10 @@ class VPSDataStore {
     try {
       const data = await this.loadData();
       data.scheduledContent = data.scheduledContent || [];
-      data.scheduledContent.push({ ...content, id: `schedule_${Date.now()}`, createdAt: new Date().toISOString() });
+      data.scheduledContent.push({ ...content, id: generateSecureId('schedule'), createdAt: new Date().toISOString() });
       return await this.saveData(data);
     } catch (error) {
-      console.error('Error adding scheduled content:', error);
+      console.error('Error adding scheduled content:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }
@@ -1189,14 +1266,14 @@ class VPSDataStore {
       // Ensure purchases are created in a PENDING state by default.
       const newPurchase = {
         ...purchase,
-        id: purchase.id || `purchase_${Date.now()}`,
+        id: purchase.id || generateSecureId('purchase'),
         status: purchase.status || 'pending',
         createdAt: new Date().toISOString()
       };
       data.purchases.push(newPurchase);
       return await this.saveData(data);
     } catch (error) {
-      console.error('Error adding purchase:', error);
+      console.error('Error adding purchase:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }

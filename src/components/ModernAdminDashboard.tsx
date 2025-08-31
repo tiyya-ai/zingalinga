@@ -628,8 +628,20 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       
 
       
-      setComments(realComments);
-      setSubscriptions(realSubscriptions);
+      setComments(
+        realComments.map((c: any) => ({
+          ...c,
+          status: c.status === 'pending' || c.status === 'approved' || c.status === 'rejected'
+            ? c.status
+            : 'pending'
+        }))
+      );
+      setSubscriptions(
+        realSubscriptions.map((s: any) => ({
+          ...s,
+          status: s.status || 'active'
+        }))
+      );
       setNotifications(realNotifications);
       setScheduledContent(realScheduledContent);
       setContentBundles(realContentBundles);
@@ -2283,7 +2295,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       } else {
         console.log('Ã°Å¸â€ â€¢ Creating new video...');
         const newVideo: Module = {
-          id: `video_${Date.now()}`,
+          id: `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           title: videoForm.title,
           description: videoForm.description,
           category: videoForm.category,
