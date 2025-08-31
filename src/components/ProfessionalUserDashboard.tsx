@@ -1152,7 +1152,7 @@ export default function ProfessionalUserDashboard({
                   >
                     {pkg.name}
                     <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded-full">
-                      {pkg.contentIds?.filter(contentId => isItemPurchased(contentId)).length || 0}
+                      {pkg.contentIds?.filter((contentId: string) => isItemPurchased(contentId)).length || 0}
                     </span>
                   </button>
                 ))}
