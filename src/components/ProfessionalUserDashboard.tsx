@@ -805,9 +805,9 @@ export default function ProfessionalUserDashboard({
             {[
               { id: 'dashboard', label: '🏠 Home', count: null },
               { id: 'all-content', label: '📚 Content', count: allContent.length },
+              { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
               { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
               { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
-              { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
               { id: 'packages', label: '🛍️ Store', count: packages.length },
               { id: 'playlist', label: '📋 Playlist', count: playlist.length },
               { id: 'profile', label: '👤 Profile', count: null }
@@ -835,9 +835,9 @@ export default function ProfessionalUserDashboard({
               {[
                 { id: 'dashboard', label: '🏠 Home', count: null },
                 { id: 'all-content', label: '📚 Content', count: allContent.length },
+                { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
                 { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
                 { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
-                { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
                 { id: 'packages', label: '🛍️ Store', count: packages.length },
                 { id: 'playlist', label: '📋 Playlist', count: playlist.length }
               ].map(tab => (

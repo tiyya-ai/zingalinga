@@ -31,11 +31,42 @@ jobs:
         password: ${{ secrets.VPS_PASSWORD }}
         script: |
           cd /var/www/zinga-linga || mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
+          
+          # Backup live data before deployment
+          echo "🔄 Backing up live data..."
+          if [ -d "data" ]; then
+            cp -r data data-backup-$(date +%Y%m%d-%H%M%S)
+            echo "✅ Live data backed up"
+          else
+            echo "ℹ️ No existing data directory found"
+          fi
+          
+          # Store current data in temp location
+          if [ -f "data/global-app-data.json" ]; then
+            cp data/global-app-data.json /tmp/live-data-backup.json
+            echo "✅ Current data preserved in temp"
+          fi
+          
           git fetch --all
           git reset --hard origin/main
+          
+          # Restore live data after git reset
+          echo "🔄 Restoring live data..."
+          mkdir -p data
+          if [ -f "/tmp/live-data-backup.json" ]; then
+            cp /tmp/live-data-backup.json data/global-app-data.json
+            echo "✅ Live data restored"
+          else
+            echo "ℹ️ No live data to restore, using default"
+          fi
+          
           npm install --production=false
           npm run build
           pm2 stop zinga-linga || true
           pm2 delete zinga-linga || true
           pm2 start npm --name "zinga-linga" -- start
-          echo "Deployment complete - $(date)"
+          
+          # Clean up temp backup
+          rm -f /tmp/live-data-backup.json
+          
+          echo "✅ Deployment complete with data preservation - $(date)"
