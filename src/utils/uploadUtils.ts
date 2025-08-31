@@ -71,7 +71,7 @@ export const processRealUpload = async (
       fullContent: [],
       isActive: true,
       isVisible: true,
-      difficulty: 'beginner',
+      difficulty: 'beginner' as const,
       estimatedDuration: '15 minutes',
       tags: [formData.category],
       createdAt: new Date().toISOString(),

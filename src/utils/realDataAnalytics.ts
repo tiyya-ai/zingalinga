@@ -320,7 +320,7 @@ class RealDataAnalytics {
             type: 'notification',
             user: 'System',
             action: 'System Notification',
-            details: notification.message || notification.title || 'System notification',
+            details: notification.message || 'System notification',
             timestamp: notification.createdAt,
             icon: '🔔',
             color: '#6B7280'

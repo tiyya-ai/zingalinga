@@ -199,7 +199,6 @@ export async function POST(request: NextRequest) {
             moduleCount: restoredData.modules?.length || 0,
             restored: true
           });
-        }
       } catch (restoreError) {
         console.error('Failed to restore from backup:', restoreError instanceof Error ? restoreError.message : 'Unknown error');
       }

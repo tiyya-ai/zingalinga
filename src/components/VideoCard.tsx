@@ -124,7 +124,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                   const { vpsDataStore } = await import('../utils/vpsDataStore');
                   const savedList = JSON.parse(localStorage.getItem('savedVideos') || '[]');
                   if (!savedList.find((v: any) => v.id === id)) {
-                    const videoData = { id, title, thumbnail, duration, description, price, category, savedAt: new Date().toISOString() };
+                    const videoData = { id, title, thumbnail, duration, description, price, category, savedAt: new Date().toISOString(), userId: 'current-user' };
                     savedList.push(videoData);
                     localStorage.setItem('savedVideos', JSON.stringify(savedList));
                     
@@ -168,7 +168,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                   const { vpsDataStore } = await import('../utils/vpsDataStore');
                   const savedList = JSON.parse(localStorage.getItem('savedVideos') || '[]');
                   if (!savedList.find((v: any) => v.id === id)) {
-                    const videoData = { id, title, thumbnail, duration, description, price, category, savedAt: new Date().toISOString() };
+                    const videoData = { id, title, thumbnail, duration, description, price, category, savedAt: new Date().toISOString(), userId: 'current-user' };
                     savedList.push(videoData);
                     localStorage.setItem('savedVideos', JSON.stringify(savedList));
                     
