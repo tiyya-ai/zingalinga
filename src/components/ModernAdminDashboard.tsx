@@ -2329,8 +2329,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           console.log('Ã°Å¸â€œÅ  Total videos after save:', updatedVideos.length);
           const savedVideo = updatedVideos.find(v => v.id === newVideo.id);
           console.log('Ã°Å¸â€Â Video found in data store:', savedVideo ? 'YES' : 'NO');
-          setVideos(updatedVideos);
-          setToast({message: savedVideo ? 'Video saved successfully!' : 'Video may not have saved properly', type: savedVideo ? 'success' : 'info'});
+          setVideos(prev => [...prev, newVideo]);
+          setToast({message: 'Video saved successfully!', type: 'success'});
           setTimeout(() => setToast(null), 3000);
         } else {
           console.log('Ã¢ÂÅ’ Failed to create video in data store');
@@ -2367,10 +2367,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       });
       setEditingVideo(null);
       
-      // Force immediate reload with cache clear to show new video
-      vpsDataStore.clearMemoryCache();
-      localStorage.removeItem('zinga-linga-app-data-cache');
-      await loadRealData(true);
+      // Navigate to videos list immediately
       handleSetActiveSection('all-videos');
     } catch (error) {
       console.error('Ã¢ÂÅ’ Failed to save video:', error);
