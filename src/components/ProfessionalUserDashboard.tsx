@@ -808,12 +808,7 @@ export default function ProfessionalUserDashboard({
               { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
               { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
               { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
-              { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => {
-                const isPurchased = localPurchases.some(purchase => purchase.moduleId === item.id && purchase.userId === user?.id && purchase.status === 'completed');
-                const isPartOfPackage = packages.some(pkg => pkg.contentIds && pkg.contentIds.includes(item.id));
-                return !isPurchased && !isPartOfPackage;
-              }).length },
-              { id: 'packages', label: '📦 Packages', count: packages.length },
+              { id: 'packages', label: '🛍️ Store', count: packages.length },
               { id: 'playlist', label: '📋 Playlist', count: playlist.length },
               { id: 'profile', label: '👤 Profile', count: null }
             ].map(tab => (
@@ -843,18 +838,7 @@ export default function ProfessionalUserDashboard({
                 { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
                 { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
                 { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
-                { id: 'store', label: '🛍️ Store', count: storeItems.filter(item => {
-                  const isPurchased = localPurchases.some(purchase => 
-                    purchase.moduleId === item.id && 
-                    purchase.userId === user?.id && 
-                    purchase.status === 'completed'
-                  );
-                  const isPartOfPackage = packages.some(pkg => 
-                    pkg.contentIds && pkg.contentIds.includes(item.id)
-                  );
-                  return !isPurchased && !isPartOfPackage;
-                }).length },
-                { id: 'packages', label: '📦 Packages', count: packages.length },
+                { id: 'packages', label: '🛍️ Store', count: packages.length },
                 { id: 'playlist', label: '📋 Playlist', count: playlist.length }
               ].map(tab => (
                 <button
@@ -987,7 +971,7 @@ export default function ProfessionalUserDashboard({
                       <div className="text-2xl mb-2">🎬</div>
                       <div className="text-sm">No videos yet</div>
                       <button 
-                        onClick={() => handleSetActiveTab('store')}
+                        onClick={() => handleSetActiveTab('packages')}
                         className="text-yellow-400 hover:text-yellow-300 text-xs mt-1"
                       >
                         Add Videos
@@ -1106,7 +1090,7 @@ export default function ProfessionalUserDashboard({
               </button>
               
               <button 
-                onClick={() => handleSetActiveTab('store')}
+                onClick={() => handleSetActiveTab('packages')}
                 className="bg-gradient-to-r from-brand-red to-brand-pink hover:from-red-600 hover:to-pink-600 text-white p-4 rounded-xl transition-all duration-200 text-center group shadow-lg"
               >
                 <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">🛍️</div>
@@ -2000,8 +1984,8 @@ export default function ProfessionalUserDashboard({
           </section>
         )}
 
-        {/* Enhanced Store Tab */}
-        {activeTab === 'store' && (
+        {/* Enhanced Store Tab - Removed */}
+        {activeTab === 'store-removed' && (
           <section className="space-y-6">
             {/* Categories at Top with Glass Effect */}
             <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl mb-8">
@@ -2503,22 +2487,22 @@ export default function ProfessionalUserDashboard({
           </section>
         )}
 
-        {/* Packages Tab */}
+        {/* Store Tab (formerly Packages) */}
         {activeTab === 'packages' && (
           <section className="space-y-6">
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
               <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
-                <span className="mr-2">📦</span>
-                Learning Packages
+                <span className="mr-2">🛍️</span>
+                Store
               </h2>
               <p className="text-purple-200">Discover bundled content packages with special pricing</p>
             </div>
             
             {packages.length === 0 ? (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-                <div className="text-6xl mb-4">📦</div>
-                <div className="text-white text-xl mb-2">No Packages Available</div>
-                <div className="text-purple-200 text-sm">Check back later for new learning packages</div>
+                <div className="text-6xl mb-4">🛍️</div>
+                <div className="text-white text-xl mb-2">No Items Available</div>
+                <div className="text-purple-200 text-sm">Check back later for new items</div>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -2874,7 +2858,7 @@ export default function ProfessionalUserDashboard({
                 </button>
                 
                 <button 
-                  onClick={() => setActiveTab('store')}
+                  onClick={() => setActiveTab('packages')}
                   className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white p-6 rounded-xl transition-all hover:scale-105 shadow-lg text-center"
                 >
                   <div className="text-3xl mb-3">🛍️</div>
@@ -3053,7 +3037,7 @@ export default function ProfessionalUserDashboard({
                 {[
                   { label: 'Home', action: () => handleSetActiveTab('dashboard') },
                 { label: 'Videos', action: () => handleSetActiveTab('videos') },
-                { label: 'Store', action: () => handleSetActiveTab('store') },
+                { label: 'Store', action: () => handleSetActiveTab('packages') },
                 { label: 'My Library', action: () => handleSetActiveTab('library') }
                 ].map(link => (
                   <button

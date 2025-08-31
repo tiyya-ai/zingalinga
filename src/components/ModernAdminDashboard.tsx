@@ -1462,7 +1462,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           </Tab>
           
           <Tab key="engagement" title="User Engagement">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <Card className="shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader>
               <h3 className="text-xl font-semibold">User Engagement Metrics</h3>
@@ -1614,7 +1614,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           </Tab>
           
           <Tab key="performance" title="Performance">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Conversion & Performance Metrics */}
           <Card className="shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader>
@@ -4497,7 +4497,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           <h3 className="text-lg font-semibold text-gray-900">Video Lessons ({videos.filter(v => v.category === 'Video Lessons').length})</h3>
         </CardHeader>
         <CardBody>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {videos.filter(v => v.category === 'Video Lessons').map((lesson) => (
               <div key={lesson.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="aspect-video bg-gray-100 rounded-lg mb-3 overflow-hidden">
@@ -4573,7 +4573,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           <h3 className="text-lg font-semibold text-gray-900">PP1 Program Content ({videos.filter(v => v.category === 'PP1 Program').length})</h3>
         </CardHeader>
         <CardBody>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {videos.filter(v => v.category === 'PP1 Program').map((program) => (
               <div key={program.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-3 mb-3">
