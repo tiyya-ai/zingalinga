@@ -103,7 +103,7 @@ export const PackageCheckoutModal: React.FC<PackageCheckoutModalProps> = ({
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
                   <div className="flex items-center justify-between">
                     <span className="text-white font-semibold">All package content</span>
-                    <span className="text-sm text-yellow-400 bg-white/20 px-2 py-1 rounded-full font-bold">{pkg.contentIds.length} items</span>
+                    <span className="text-sm text-yellow-400 bg-white/20 px-2 py-1 rounded-full font-bold">{pkg.contentIds?.length || 0} items</span>
                   </div>
                 </div>
               </div>
@@ -145,7 +145,7 @@ export const PackageCheckoutModal: React.FC<PackageCheckoutModalProps> = ({
                       <span className="font-bold text-white">{pkg.name}</span>
                       <span className="font-bold text-yellow-400">${pkg.price.toFixed(2)}</span>
                     </div>
-                    <div className="text-sm text-white/70 font-semibold">🎁 {pkg.contentIds.length} items included</div>
+                    <div className="text-sm text-white/70 font-semibold">🎁 {pkg.contentIds?.length || 0} items included</div>
                   </div>
                 </div>
               </div>
