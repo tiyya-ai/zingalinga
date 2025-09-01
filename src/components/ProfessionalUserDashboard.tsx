@@ -808,6 +808,7 @@ export default function ProfessionalUserDashboard({
               { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
               { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
               { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
+              { id: 'pp2-program', label: '📖 PP2', count: allContent.filter(c => c.category === 'PP2 Program').length },
               { id: 'packages', label: '🛍️ Store', count: packages.length },
               { id: 'playlist', label: '📋 Playlist', count: playlist.length },
               { id: 'profile', label: '👤 Profile', count: null }
@@ -838,6 +839,7 @@ export default function ProfessionalUserDashboard({
                 { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
                 { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
                 { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
+                { id: 'pp2-program', label: '📖 PP2', count: allContent.filter(c => c.category === 'PP2 Program').length },
                 { id: 'packages', label: '🛍️ Store', count: packages.length },
                 { id: 'playlist', label: '📋 Playlist', count: playlist.length }
               ].map(tab => (
@@ -1371,13 +1373,13 @@ export default function ProfessionalUserDashboard({
         )}
 
         {/* Category-specific tabs */}
-        {['audio-lessons', 'video-lessons', 'pp1-program'].map(tabId => {
+        {['audio-lessons', 'video-lessons', 'pp1-program', 'pp2-program'].map(tabId => {
           // Map tab IDs to proper category names
           const categoryMap: { [key: string]: string } = {
             'audio-lessons': 'Audio Lessons',
             'video-lessons': 'Video Lessons', 
             'pp1-program': 'PP1 Program',
-
+            'pp2-program': 'PP2 Program'
           };
           
           const categoryName = categoryMap[tabId];
@@ -1907,10 +1909,10 @@ export default function ProfessionalUserDashboard({
                 <div className="text-white text-xl mb-2">No videos available</div>
                 <div className="text-purple-200 text-sm mb-6">Videos will appear here when added</div>
                 <button 
-                  onClick={() => handleSetActiveTab('store')}
+                  onClick={() => handleSetActiveTab('packages')}
                   className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold px-6 py-3 rounded-lg transition-all duration-200"
                 >
-                  Browse Store
+                  Browse Packages
                 </button>
               </div>
             )}
@@ -1934,10 +1936,10 @@ export default function ProfessionalUserDashboard({
                 <div className="text-white text-xl mb-2">Your cart is empty</div>
                 <div className="text-purple-200 text-sm mb-6">Add some videos to your cart to get started</div>
                 <button 
-                  onClick={() => handleSetActiveTab('store')}
+                  onClick={() => handleSetActiveTab('packages')}
                   className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold px-6 py-3 rounded-lg transition-all duration-200"
                 >
-                  Browse Store
+                  Browse Packages
                 </button>
               </div>
             ) : (
@@ -2267,10 +2269,10 @@ export default function ProfessionalUserDashboard({
                       <div className="text-4xl mb-2">🎬</div>
                       <div>No videos purchased yet</div>
                       <button 
-                        onClick={() => handleSetActiveTab('store')}
+                        onClick={() => handleSetActiveTab('packages')}
                         className="mt-2 text-yellow-400 hover:text-yellow-300 text-sm"
                       >
-                        Browse Store →
+                        Browse Packages →
                       </button>
                     </div>
                   )}
@@ -2339,10 +2341,10 @@ export default function ProfessionalUserDashboard({
                 <div className="text-white text-xl mb-2">No saved videos</div>
                 <div className="text-purple-200 text-sm mb-6">Save videos to watch them later</div>
                 <button 
-                  onClick={() => handleSetActiveTab('store')}
+                  onClick={() => handleSetActiveTab('packages')}
                   className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold px-6 py-3 rounded-lg transition-all duration-200"
                 >
-                  Browse Videos
+                  Browse Packages
                 </button>
               </div>
             ) : (
@@ -2630,10 +2632,10 @@ export default function ProfessionalUserDashboard({
                   <div className="text-white text-xl mb-2">No orders yet</div>
                   <div className="text-purple-200 text-sm mb-6">Your purchase history will appear here</div>
                   <button 
-                    onClick={() => handleSetActiveTab('store')}
+                    onClick={() => handleSetActiveTab('packages')}
                     className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold px-6 py-3 rounded-lg transition-all duration-200"
                   >
-                    Browse Store
+                    Browse Packages
                   </button>
                 </div>
               )}

@@ -5792,7 +5792,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     );
   };
 
-  const renderAddPP2Content = () => {
+  const renderAddPP2ContentLocal = () => {
 
     const handleCoverImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];

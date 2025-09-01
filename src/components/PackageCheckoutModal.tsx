@@ -34,6 +34,11 @@ export const PackageCheckoutModal: React.FC<PackageCheckoutModalProps> = ({
 
   if (!isOpen) return null;
 
+  const handleClose = () => {
+    setStep('cart');
+    onClose();
+  };
+
   const colors = pkg.colorScheme || {
     primary: '#8B5CF6',
     secondary: '#A78BFA', 
@@ -54,16 +59,20 @@ export const PackageCheckoutModal: React.FC<PackageCheckoutModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={handleClose}>
+      <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-white/20" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div 
           className="p-6 text-white relative"
           style={{ background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})` }}
         >
           <button
-            onClick={onClose}
-            className="absolute top-4 right-4 text-white/80 hover:text-white text-2xl w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-all"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleClose();
+            }}
+            className="absolute top-4 right-4 text-white/80 hover:text-white text-2xl w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-all z-10"
           >
             ×
           </button>
@@ -110,8 +119,13 @@ export const PackageCheckoutModal: React.FC<PackageCheckoutModalProps> = ({
 
               <button
                 onClick={() => setStep('checkout')}
-                className="w-full py-4 rounded-2xl font-bold text-white transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-amber-400"
-                style={{ background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})` }}
+                disabled={!pkg.contentIds || pkg.contentIds.length === 0}
+                className={`w-full py-4 rounded-2xl font-bold text-white transition-all duration-300 shadow-xl border-2 ${
+                  !pkg.contentIds || pkg.contentIds.length === 0 
+                    ? 'opacity-50 cursor-not-allowed bg-gray-500 border-gray-400' 
+                    : 'hover:shadow-2xl transform hover:scale-105 border-amber-400'
+                }`}
+                style={!pkg.contentIds || pkg.contentIds.length === 0 ? {} : { background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})` }}
               >
                 🛒 Continue to Checkout
               </button>
@@ -154,8 +168,13 @@ export const PackageCheckoutModal: React.FC<PackageCheckoutModalProps> = ({
                 </button>
                 <button
                   onClick={handlePurchase}
-                  className="flex-1 py-4 rounded-2xl font-bold text-white transition-all duration-300 shadow-xl hover:shadow-2xl border-2 border-amber-400"
-                  style={{ background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})` }}
+                  disabled={!pkg.contentIds || pkg.contentIds.length === 0}
+                  className={`flex-1 py-4 rounded-2xl font-bold text-white transition-all duration-300 shadow-xl border-2 ${
+                    !pkg.contentIds || pkg.contentIds.length === 0 
+                      ? 'opacity-50 cursor-not-allowed bg-gray-500 border-gray-400' 
+                      : 'hover:shadow-2xl border-amber-400'
+                  }`}
+                  style={!pkg.contentIds || pkg.contentIds.length === 0 ? {} : { background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})` }}
                 >
                   🛒 Buy Now
                 </button>
