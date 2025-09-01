@@ -1,7 +1,10 @@
 # Dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Testing
 /coverage
@@ -13,18 +16,11 @@
 # Production
 /build
 
-# Misc
-.DS_Store
-*.pem
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Local env files
-.env*.local
+# Environment files
+.env*
+.env.local
 .env.production
+.env.development
 
 # Vercel
 .vercel
@@ -33,13 +29,20 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Backup files
+# Data and backups
+/data/
 backup-files/
+data/backup-*.json
+data/global-app-data.json
+*.backup.json
 
 # Deployment files
 *.tar.gz
 *.zip
 deployment-progress.json
+trigger-deploy.txt
+commit_message.txt
+test-notifications.js
 
 # Logs
 *.log
@@ -51,9 +54,44 @@ pids
 *.seed
 *.pid.lock
 
-# Data directory - preserve live data
-/data/
-*.json
+# SSH Keys and sensitive files
+*.pem
+*.key
+*.pub
+%USERPROFILE%/
+.ssh/
+*_key
+*_key.pub
+
+# Documentation (temporary)
+*_ANALYSIS_REPORT.md
+*_CLEANUP_SUMMARY.md
+*_PRESERVATION_GUIDE.md
+*_REMOVAL_COMMIT.md
+*_FIXES_SUMMARY.md
+*_FIX.md
+*_IMPROVEMENTS.md
+fix-vps-*.md
+
+# Scripts (deployment/diagnostic)
+check-*.bat
+check-*.ps1
+diagnose-*.sh
+fix-*.bat
+fix-*.js
+fix-*.cjs
+manual-*.bat
+ssh-*.bat
+test-*.js
+
+# Backup files
+*_backup.*
+*.backup
+*Fix.md
+
+# Test files
+*TestComponent.*
+test-video-card/
 
 # IDE
 .vscode/
@@ -62,4 +100,5 @@ pids
 *.swo
 
 # OS
+.DS_Store
 Thumbs.db

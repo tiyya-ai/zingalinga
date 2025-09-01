@@ -243,6 +243,7 @@ interface UserProgress {
 }
 import { renderAddPackage as renderAddPackageComponent, renderAllPackages as renderAllPackagesComponent, renderLearningPackages as renderLearningPackagesComponent } from './ModernAdminDashboardPackages';
 import { renderAddBundle as renderAddBundleComponent, renderAllBundles as renderAllBundlesComponent } from './ModernAdminDashboardBundles';
+import { renderPP2Program, renderAddPP2Content } from './PP2Components';
 
 const AdminSuccessModal = ({ isOpen, onClose, message }: { isOpen: boolean; onClose: () => void; message: string }) => (
   <Modal isOpen={isOpen} onClose={onClose} size="sm" backdrop="blur">
@@ -824,7 +825,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       color: 'text-purple-600',
       children: [
         { id: 'audio-lessons', label: 'Audio Lessons', icon: <Headphones className="h-4 w-4" /> },
-        { id: 'pp1-program', label: 'PP1 Program', icon: <BookOpen className="h-4 w-4" /> }
+        { id: 'pp1-program', label: 'PP1 Program', icon: <BookOpen className="h-4 w-4" /> },
+        { id: 'pp2-program', label: 'PP2 Program', icon: <BookOpen className="h-4 w-4" /> }
       ]
     },
     {
@@ -1477,20 +1479,20 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           </Tab>
           
           <Tab key="engagement" title="User Engagement">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader>
               <h3 className="text-xl font-semibold">User Engagement Metrics</h3>
             </CardHeader>
             <CardBody className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
                       <Users className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-blue-600">{users.length}</p>
+                      <p className="text-xl sm:text-2xl font-bold text-blue-600">{users.length}</p>
                       <p className="text-sm text-blue-700">Total Users</p>
                     </div>
                   </div>
@@ -1502,7 +1504,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                       <Activity className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-green-600">{userEngagementData.newUsers}</p>
+                      <p className="text-xl sm:text-2xl font-bold text-green-600">{userEngagementData.newUsers}</p>
                       <p className="text-sm text-green-700">New Users</p>
                     </div>
                   </div>
@@ -1514,7 +1516,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                       <Clock className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-purple-600">{userEngagementData.avgSessionDuration}</p>
+                      <p className="text-xl sm:text-2xl font-bold text-purple-600">{userEngagementData.avgSessionDuration}</p>
                       <p className="text-sm text-purple-700">Avg Session</p>
                     </div>
                   </div>
@@ -1526,7 +1528,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                       <RotateCcw className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-orange-600">{userEngagementData.returnVisitors}</p>
+                      <p className="text-xl sm:text-2xl font-bold text-orange-600">{userEngagementData.returnVisitors}</p>
                       <p className="text-sm text-orange-700">Return Users</p>
                     </div>
                   </div>
@@ -1535,7 +1537,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               
               <div className="space-y-4">
                 <div>
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-1">
                     <span className="text-sm font-medium text-gray-700">User Retention Rate</span>
                     <span className="text-sm font-semibold text-green-600">
                       {((userEngagementData.returnVisitors / users.length) * 100).toFixed(1)}%
@@ -1549,7 +1551,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                 </div>
                 
                 <div>
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-1">
                     <span className="text-sm font-medium text-gray-700">Bounce Rate</span>
                     <span className="text-sm font-semibold text-orange-600">
                       {userEngagementData.bounceRate.toFixed(1)}%
@@ -1571,30 +1573,30 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
             </CardHeader>
             <CardBody className="space-y-6">
               <div className="grid grid-cols-1 gap-4">
-                <div className="bg-gradient-to-r from-green-50 to-emerald-100 rounded-2xl p-6">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-100 rounded-2xl p-4 sm:p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-3xl font-bold text-green-600">
+                      <p className="text-2xl sm:text-3xl font-bold text-green-600">
                         {formatCurrency(dashboardStats.totalRevenue)}
                       </p>
                       <p className="text-sm text-green-700">Total Revenue</p>
                     </div>
-                    <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
-                      <DollarSign className="h-6 w-6 text-white" />
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-500 rounded-xl flex items-center justify-center">
+                      <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-6">
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-4 sm:p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-3xl font-bold text-blue-600">
+                      <p className="text-2xl sm:text-3xl font-bold text-blue-600">
                         {formatCurrency(dashboardStats.totalRevenue / Math.max(orders.length, 1))}
                       </p>
                       <p className="text-sm text-blue-700">Avg Order Value</p>
                     </div>
-                    <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
-                      <TrendingUp className="h-6 w-6 text-white" />
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                      <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                     </div>
                   </div>
                 </div>
@@ -1602,26 +1604,28 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               
               <div className="space-y-4">
                 <h4 className="font-semibold text-gray-900">Top Performing Videos</h4>
-                {videoPerformanceData.slice(0, 5).map((video, index) => (
-                  <div key={video.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
-                        index === 0 ? 'bg-yellow-500' : 
-                        index === 1 ? 'bg-gray-400' : 
-                        index === 2 ? 'bg-orange-500' : 'bg-blue-500'
-                      }`}>
-                        {index + 1}
+                <div className="space-y-3">
+                  {videoPerformanceData.slice(0, 5).map((video, index) => (
+                    <div key={video.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
+                        <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-bold flex-shrink-0 ${
+                          index === 0 ? 'bg-yellow-500' : 
+                          index === 1 ? 'bg-gray-400' : 
+                          index === 2 ? 'bg-orange-500' : 'bg-blue-500'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 text-sm truncate">{video.title}</p>
+                          <p className="text-xs text-gray-500">{video.views} views</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900 text-sm">{video.title}</p>
-                        <p className="text-xs text-gray-500">{video.views} views</p>
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-semibold text-green-600 text-sm">{formatCurrency(video.revenue)}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-green-600">{formatCurrency(video.revenue)}</p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </CardBody>
           </Card>
@@ -1629,21 +1633,21 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           </Tab>
           
           <Tab key="performance" title="Performance">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Conversion & Performance Metrics */}
           <Card className="shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader>
               <h3 className="text-xl font-semibold">Conversion & Performance</h3>
             </CardHeader>
             <CardBody className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gradient-to-r from-green-50 to-emerald-100 rounded-2xl p-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
                       <Target className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-green-600">{advancedAnalytics.conversionRate}%</p>
+                      <p className="text-xl sm:text-2xl font-bold text-green-600">{advancedAnalytics.conversionRate}%</p>
                       <p className="text-sm text-green-700">Conversion Rate</p>
                     </div>
                   </div>
@@ -1655,7 +1659,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                       <DollarSign className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-purple-600">${advancedAnalytics.customerLifetimeValue}</p>
+                      <p className="text-xl sm:text-2xl font-bold text-purple-600">${advancedAnalytics.customerLifetimeValue}</p>
                       <p className="text-sm text-purple-700">Avg CLV</p>
                     </div>
                   </div>
@@ -1667,7 +1671,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                       <TrendingDown className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-red-600">{advancedAnalytics.churnRate}%</p>
+                      <p className="text-xl sm:text-2xl font-bold text-red-600">{advancedAnalytics.churnRate}%</p>
                       <p className="text-sm text-red-700">Churn Rate</p>
                     </div>
                   </div>
@@ -1679,7 +1683,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                       <RotateCcw className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-blue-600">${advancedAnalytics.monthlyRecurringRevenue}</p>
+                      <p className="text-xl sm:text-2xl font-bold text-blue-600">${advancedAnalytics.monthlyRecurringRevenue}</p>
                       <p className="text-sm text-blue-700">MRR</p>
                     </div>
                   </div>
@@ -1688,7 +1692,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               
               <div className="space-y-4">
                 <div>
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-1">
                     <span className="text-sm font-medium text-gray-700">Top Category: {advancedAnalytics.topPerformingCategory}</span>
                     <span className="text-sm font-semibold text-green-600">Leading</span>
                   </div>
@@ -1696,7 +1700,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                 </div>
                 
                 <div>
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-1">
                     <span className="text-sm font-medium text-gray-700">Peak Hours: {advancedAnalytics.peakUsageHours.join(', ')}</span>
                     <span className="text-sm font-semibold text-blue-600">Active</span>
                   </div>
@@ -1721,7 +1725,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                       <span className="text-sm font-medium">Mobile</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Progress value={advancedAnalytics.deviceBreakdown.mobile} className="w-20" size="sm" color="primary" />
+                      <Progress value={advancedAnalytics.deviceBreakdown.mobile} className="w-16 sm:w-20" size="sm" color="primary" />
                       <span className="text-sm font-semibold">{advancedAnalytics.deviceBreakdown.mobile}%</span>
                     </div>
                   </div>
@@ -1731,7 +1735,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                       <span className="text-sm font-medium">Desktop</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Progress value={advancedAnalytics.deviceBreakdown.desktop} className="w-20" size="sm" color="success" />
+                      <Progress value={advancedAnalytics.deviceBreakdown.desktop} className="w-16 sm:w-20" size="sm" color="success" />
                       <span className="text-sm font-semibold">{advancedAnalytics.deviceBreakdown.desktop}%</span>
                     </div>
                   </div>
@@ -1741,7 +1745,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                       <span className="text-sm font-medium">Tablet</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Progress value={advancedAnalytics.deviceBreakdown.tablet} className="w-20" size="sm" color="secondary" />
+                      <Progress value={advancedAnalytics.deviceBreakdown.tablet} className="w-16 sm:w-20" size="sm" color="secondary" />
                       <span className="text-sm font-semibold">{advancedAnalytics.deviceBreakdown.tablet}%</span>
                     </div>
                   </div>
@@ -1753,21 +1757,21 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                 <div className="space-y-3">
                   {advancedAnalytics.geographicData.slice(0, 5).map((country, index) => (
                     <div key={country.country} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
+                        <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-bold flex-shrink-0 ${
                           index === 0 ? 'bg-yellow-500' : 
                           index === 1 ? 'bg-gray-400' : 
                           index === 2 ? 'bg-orange-500' : 'bg-blue-500'
                         }`}>
                           {index + 1}
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900 text-sm">{country.country}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 text-sm truncate">{country.country}</p>
                           <p className="text-xs text-gray-500">{country.users} users</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-green-600">{formatCurrency(country.revenue)}</p>
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-semibold text-green-600 text-sm">{formatCurrency(country.revenue)}</p>
                       </div>
                     </div>
                   ))}
@@ -1909,6 +1913,20 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     tags: ''
   });
 
+  // PP2 form state
+  const [editingPP2, setEditingPP2] = useState<Module | null>(null);
+  
+  const [pp2Form, setPP2Form] = useState({
+    title: '',
+    description: '',
+    price: 0,
+    contentType: 'text',
+    coverImage: '',
+    contentUrl: '',
+    duration: '',
+    tags: ''
+  });
+
   // Content Scheduling State
   const [scheduledContent, setScheduledContent] = useState<any[]>([]);
   const [scheduleForm, setScheduleForm] = useState({
@@ -1982,6 +2000,87 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         )
       );
       alert('- Content published successfully!');
+    }
+  };
+
+  const handleSavePP2 = async () => {
+    try {
+      if (!pp2Form.title.trim()) {
+        setToast({message: 'Please enter a title for the PP2 content', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
+        return;
+      }
+
+      if (editingPP2) {
+        const updatedContent = {
+          ...editingPP2,
+          title: pp2Form.title,
+          description: pp2Form.description,
+          price: pp2Form.price || 0,
+          category: 'PP2 Program',
+          thumbnail: pp2Form.coverImage,
+          videoUrl: pp2Form.contentUrl,
+          duration: pp2Form.duration,
+          tags: pp2Form.tags ? pp2Form.tags.split(',').map(tag => tag.trim()) : [],
+          updatedAt: new Date().toISOString()
+        };
+
+        const success = await vpsDataStore.updateProduct(updatedContent);
+        if (success) {
+          vpsDataStore.clearMemoryCache();
+          await loadRealData(true);
+          setToast({message: 'PP2 content updated successfully!', type: 'success'});
+          setTimeout(() => setToast(null), 3000);
+          handleSetActiveSection('pp2-program');
+        } else {
+          setToast({message: 'Failed to update PP2 content', type: 'error'});
+          setTimeout(() => setToast(null), 3000);
+        }
+      } else {
+        const newContent = {
+          id: `pp2_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          title: pp2Form.title,
+          description: pp2Form.description,
+          price: pp2Form.price || 0,
+          category: 'PP2 Program',
+          thumbnail: pp2Form.coverImage,
+          videoUrl: pp2Form.contentUrl,
+          duration: pp2Form.duration,
+          tags: pp2Form.tags ? pp2Form.tags.split(',').map(tag => tag.trim()) : [],
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        const success = await vpsDataStore.addProduct(newContent);
+        if (success) {
+          vpsDataStore.clearMemoryCache();
+          await loadRealData(true);
+          setToast({message: 'PP2 content created successfully!', type: 'success'});
+          setTimeout(() => setToast(null), 3000);
+          handleSetActiveSection('pp2-program');
+        } else {
+          setToast({message: 'Failed to create PP2 content', type: 'error'});
+          setTimeout(() => setToast(null), 3000);
+        }
+      }
+
+      // Reset form
+      setPP2Form({
+        title: '',
+        description: '',
+        price: 0,
+        contentType: 'text',
+        coverImage: '',
+        contentUrl: '',
+        duration: '',
+        tags: ''
+      });
+      setEditingPP2(null);
+    } catch (error) {
+      console.error('Error saving PP2 content:', error);
+      setToast({message: 'Error saving PP2 content', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
@@ -7789,8 +7888,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       case 'add-video-lesson': return renderAddVideoLesson();
       case 'pp1-program': return renderPP1Program();
       case 'add-pp1-content': return renderAddPP1Content();
-      case 'pp2-program': return renderPP1Program();
-      case 'add-pp2-content': return renderAddPP2Content();
+      case 'pp2-program': return renderPP2Program(videos, handleSetActiveSection);
+      case 'add-pp2-content': return renderAddPP2Content(pp2Form, setPP2Form, editingPP2, handleSavePP2, handleSetActiveSection, categories);
 
       case 'categories': return renderCategoriesPage();
       
