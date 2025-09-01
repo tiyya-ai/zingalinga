@@ -729,7 +729,7 @@ export default function ProfessionalUserDashboard({
               </div>
               <div className="text-center sm:text-left">
                 <h1 className="text-xl font-bold text-white hidden sm:block">Zinga Linga</h1>
-                <p className="text-emerald-100 text-xs hidden md:block">Educational Entertainment Platform for Kids</p>
+                <p className="text-emerald-100 text-xs hidden md:block">Foundational education for young learners</p>
               </div>
             </div>
             
@@ -804,13 +804,9 @@ export default function ProfessionalUserDashboard({
           <div className="grid grid-cols-2 gap-2">
             {[
               { id: 'dashboard', label: '🏠 Home', count: null },
-              { id: 'all-content', label: '📚 Content', count: allContent.length },
               { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
               { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
-              { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
-              { id: 'pp2-program', label: '📖 PP2', count: allContent.filter(c => c.category === 'PP2 Program').length },
               { id: 'packages', label: '🛍️ Store', count: packages.length },
-              { id: 'playlist', label: '📋 Playlist', count: playlist.length },
               { id: 'profile', label: '👤 Profile', count: null }
             ].map(tab => (
               <button
@@ -835,13 +831,9 @@ export default function ProfessionalUserDashboard({
             <div className="flex flex-col md:flex-row md:flex-wrap gap-2 bg-white/10 backdrop-blur-sm rounded-xl p-2 border border-white/20">
               {[
                 { id: 'dashboard', label: '🏠 Home', count: null },
-                { id: 'all-content', label: '📚 Content', count: allContent.length },
                 { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
                 { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
-                { id: 'pp1-program', label: '📚 PP1', count: allContent.filter(c => c.category === 'PP1 Program').length },
-                { id: 'pp2-program', label: '📖 PP2', count: allContent.filter(c => c.category === 'PP2 Program').length },
-                { id: 'packages', label: '🛍️ Store', count: packages.length },
-                { id: 'playlist', label: '📋 Playlist', count: playlist.length }
+                { id: 'packages', label: '🛍️ Store', count: packages.length }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -3026,7 +3018,7 @@ export default function ProfessionalUserDashboard({
                 </div>
                 <div>
                   <h3 className="text-white font-mali font-bold text-xl">Zinga Linga</h3>
-                  <p className="text-yellow-100 text-sm font-mali">Educational Entertainment Platform for Kids</p>
+                  <p className="text-yellow-100 text-sm font-mali">Foundational education for young learners</p>
                 </div>
               </div>
               <p className="text-yellow-100 text-sm mb-4 font-mali">
@@ -3083,7 +3075,7 @@ export default function ProfessionalUserDashboard({
           
           <div className="border-t border-orange-200/30 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
             <div className="text-yellow-100 text-sm font-mali">
-              © 2024 Zinga Linga. All rights reserved.
+              2025 nurtura™ All rights reserved
             </div>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <button className="text-yellow-100 hover:text-brand-yellow transition-colors text-sm font-mali">
