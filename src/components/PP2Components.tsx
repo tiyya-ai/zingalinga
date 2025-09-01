@@ -106,7 +106,7 @@ export const renderAddPP2Content = (
         return;
       }
       const imageUrl = URL.createObjectURL(file);
-      setPP2Form(prev => ({ ...prev, coverImage: imageUrl }));
+      setPP2Form((prev: any) => ({ ...prev, coverImage: imageUrl }));
     }
   };
 
