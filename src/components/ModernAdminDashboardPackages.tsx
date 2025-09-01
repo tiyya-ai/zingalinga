@@ -359,13 +359,36 @@ export const renderAddPackage = (
 
                 {/* Selected Content */}
                 <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">Selected Content ({packageForm.contentIds?.filter((id: string) => availableContent?.some(c => c.id === id)).length || 0})</h4>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Selected Content ({packageForm.contentIds?.length || 0})</h4>
                   <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg bg-white">
                     {packageForm.contentIds && packageForm.contentIds.length > 0 ? (
                       <div className="divide-y divide-gray-100">
-                        {packageForm.contentIds.filter((contentId: string) => availableContent?.some(c => c.id === contentId)).map((contentId: string) => {
+                        {packageForm.contentIds.map((contentId: string) => {
                           const content = availableContent?.find(c => c.id === contentId);
-                          if (!content) return null;
+                          if (!content) {
+                            return (
+                              <div key={contentId} className="p-3 bg-red-50 border-l-4 border-red-400">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-100">
+                                    <X className="h-4 w-4 text-red-600" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-red-900">Deleted Content</p>
+                                    <p className="text-xs text-red-600">ID: {contentId}</p>
+                                  </div>
+                                  <button 
+                                    onClick={() => {
+                                      const currentIds = packageForm.contentIds || [];
+                                      setPackageForm({ ...packageForm, contentIds: currentIds.filter((id: string) => id !== contentId) });
+                                    }}
+                                    className="text-red-500 hover:text-red-700"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          }
                           
                           const contentType = content.category === 'Audio Lessons' || content.type === 'audio' ? 'audio' : 
                                             content.category === 'PP1 Program' ? 'pp1' : 'video';

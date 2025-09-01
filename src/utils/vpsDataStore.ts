@@ -563,6 +563,17 @@ class VPSDataStore {
       // Remove the product
       data.modules = data.modules.filter(p => p.id !== productId);
       
+      // Also remove from all package contentIds
+      if (data.packages) {
+        data.packages.forEach(pkg => {
+          if (pkg.contentIds && pkg.contentIds.includes(productId)) {
+            pkg.contentIds = pkg.contentIds.filter(id => id !== productId);
+            pkg.updatedAt = new Date().toISOString();
+            console.log('📦 Removed product from package:', pkg.name);
+          }
+        });
+      }
+      
       if (data.modules.length < originalLength) {
         console.log('💾 Saving updated data without deleted product...');
         const success = await this.saveData(data);
