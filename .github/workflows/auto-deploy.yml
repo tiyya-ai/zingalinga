@@ -32,33 +32,72 @@ jobs:
         script: |
           cd /var/www/zinga-linga || mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
           
-          # Backup live data before deployment
-          echo "🔄 Backing up live data..."
+          # CRITICAL: Backup ALL data before deployment
+          echo "🔄 Backing up all live data..."
+          
+          # Create comprehensive backup directory
+          BACKUP_DIR="/tmp/zinga-backup-$(date +%Y%m%d-%H%M%S)"
+          mkdir -p "$BACKUP_DIR"
+          
+          # Backup data directory (contains videos, user data, etc.)
           if [ -d "data" ]; then
-            cp -r data data-backup-$(date +%Y%m%d-%H%M%S)
-            echo "✅ Live data backed up"
-          else
-            echo "ℹ️ No existing data directory found"
+            cp -r data "$BACKUP_DIR/data"
+            echo "✅ Data directory backed up to $BACKUP_DIR/data"
           fi
           
-          # Store current data in temp location
-          if [ -f "data/global-app-data.json" ]; then
-            cp data/global-app-data.json /tmp/live-data-backup.json
-            echo "✅ Current data preserved in temp"
+          # Backup uploads directory if it exists
+          if [ -d "uploads" ]; then
+            cp -r uploads "$BACKUP_DIR/uploads"
+            echo "✅ Uploads directory backed up"
           fi
           
+          # Backup any media directories
+          for dir in public/uploads public/media public/videos public/audio; do
+            if [ -d "$dir" ]; then
+              mkdir -p "$BACKUP_DIR/$(dirname $dir)"
+              cp -r "$dir" "$BACKUP_DIR/$dir"
+              echo "✅ $dir backed up"
+            fi
+          done
+          
+          # Safe git update (preserve local changes to data)
           git fetch --all
+          
+          # Stash any local changes to preserve them
+          git add -A
+          git stash push -m "Pre-deployment backup $(date)"
+          
+          # Reset only code files, not data
           git reset --hard origin/main
           
-          # Restore live data after git reset
-          echo "🔄 Restoring live data..."
-          mkdir -p data
-          if [ -f "/tmp/live-data-backup.json" ]; then
-            cp /tmp/live-data-backup.json data/global-app-data.json
-            echo "✅ Live data restored"
-          else
-            echo "ℹ️ No live data to restore, using default"
+          # CRITICAL: Restore ALL backed up data
+          echo "🔄 Restoring all live data..."
+          
+          # Restore data directory
+          if [ -d "$BACKUP_DIR/data" ]; then
+            cp -r "$BACKUP_DIR/data" .
+            echo "✅ Data directory restored"
           fi
+          
+          # Restore uploads
+          if [ -d "$BACKUP_DIR/uploads" ]; then
+            cp -r "$BACKUP_DIR/uploads" .
+            echo "✅ Uploads directory restored"
+          fi
+          
+          # Restore media directories
+          for dir in public/uploads public/media public/videos public/audio; do
+            if [ -d "$BACKUP_DIR/$dir" ]; then
+              mkdir -p "$(dirname $dir)"
+              cp -r "$BACKUP_DIR/$dir" "$dir"
+              echo "✅ $dir restored"
+            fi
+          done
+          
+          # Set proper permissions
+          chmod -R 755 data/ 2>/dev/null || true
+          chmod -R 755 uploads/ 2>/dev/null || true
+          chmod -R 755 public/uploads/ 2>/dev/null || true
           
           npm install --production=false
           npm run build
@@ -66,7 +105,10 @@ jobs:
           pm2 delete zinga-linga || true
           pm2 start npm --name "zinga-linga" -- start
           
-          # Clean up temp backup
-          rm -f /tmp/live-data-backup.json
+          # Clean up backup (keep for 24 hours for safety)
+          echo "🧹 Cleaning up old backups (keeping last 5)..."
+          find /tmp -name "zinga-backup-*" -type d -mtime +1 | head -n -5 | xargs rm -rf 2>/dev/null || true
+          
+          echo "📁 Current backup stored at: $BACKUP_DIR (will auto-delete in 24h)"
           
           echo "✅ Deployment complete with data preservation - $(date)"

@@ -211,12 +211,17 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
-    // STRICT data preservation - never lose existing content
+    // SMART data preservation - protect critical content but allow legitimate operations
     const preservedData = {
-      users: data.users && data.users.length > 0 ? data.users : (existingData?.users || []),
-      modules: data.modules && data.modules.length > 0 ? data.modules : (existingData?.modules || []),
-      purchases: data.purchases && data.purchases.length > 0 ? data.purchases : (existingData?.purchases || []),
-      packages: data.packages && data.packages.length > 0 ? data.packages : (existingData?.packages || []),
+      // Allow user changes (including deletions) when explicitly provided
+      users: data.users !== undefined ? data.users : (existingData?.users || []),
+      // Protect modules from accidental deletion but allow explicit updates
+      modules: data.modules !== undefined ? data.modules : (existingData?.modules || []),
+      // Allow purchase updates (including deletions for refunds/cleanup)
+      purchases: data.purchases !== undefined ? data.purchases : (existingData?.purchases || []),
+      // Allow package updates
+      packages: data.packages !== undefined ? data.packages : (existingData?.packages || []),
+      // Preserve other data with fallbacks
       contentFiles: data.contentFiles || existingData?.contentFiles || [],
       uploadQueue: data.uploadQueue || existingData?.uploadQueue || [],
       savedVideos: data.savedVideos || existingData?.savedVideos || [],
