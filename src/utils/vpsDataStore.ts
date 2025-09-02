@@ -739,14 +739,48 @@ class VPSDataStore {
       const data = await this.loadData();
       data.users = data.users || [];
       const originalLength = data.users.length;
+      
+      // Find and remove the user
+      const userToDelete = data.users.find(u => u.id === userId);
+      if (!userToDelete) {
+        console.log('❌ User not found:', userId);
+        return false;
+      }
+      
+      console.log('📋 Found user to delete:', userToDelete.name);
       data.users = data.users.filter(u => u.id !== userId);
       
+      // Also remove user's purchases and related data
+      if (data.purchases) {
+        data.purchases = data.purchases.filter(p => p.userId !== userId);
+      }
+      if (data.savedVideos) {
+        data.savedVideos = data.savedVideos.filter(v => v.userId !== userId);
+      }
+      if (data.comments) {
+        data.comments = data.comments.filter(c => c.userId !== userId);
+      }
+      
       if (data.users.length < originalLength) {
+        console.log('💾 Saving updated data without deleted user...');
         const success = await this.saveData(data);
+        
         if (success) {
-          console.log('✅ User deleted successfully');
+          console.log('✅ User and related data deleted successfully');
+          // Force memory cache update
           this.memoryData = data;
+          
+          // Also clear localStorage to ensure persistence
+          try {
+            localStorage.setItem('zinga-linga-persistent-data', JSON.stringify(data));
+            console.log('💾 Updated localStorage with deleted user data');
+          } catch (error) {
+            console.error('Failed to update localStorage:', error);
+          }
+        } else {
+          console.log('❌ Failed to save after user deletion');
         }
+        
         return success;
       }
       return false;
