@@ -118,8 +118,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
     try {
       // Sanitize inputs
-      const sanitizedEmail = sanitizeInput(email);
-      const sanitizedPassword = sanitizeInput(password);
+      // Temporarily bypass sanitization to test JSON issue
+    const sanitizedEmail = email.trim().toLowerCase();
+    const sanitizedPassword = password;
       const sanitizedName = sanitizeInput(name);
       
       if (!validateEmail(sanitizedEmail)) {
@@ -450,15 +451,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
       } else {
         // Login logic - use secure API endpoint first, then fallback
         try {
+          const requestBody = {
+            email: sanitizedEmail,
+            password: sanitizedPassword
+          };
+          
+          const jsonString = JSON.stringify(requestBody);
+          
           const response = await fetch('/api/auth/login', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              email: sanitizedEmail,
-              password: sanitizedPassword
-            })
+            body: jsonString
           });
 
           const result = await response.json();

@@ -37,6 +37,7 @@ function checkLoginRateLimit(ip: string): { allowed: boolean; lockUntil?: number
 }
 
 export async function POST(request: NextRequest) {
+  console.log('🚀 Login API endpoint called');
   try {
     // Rate limiting
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
@@ -54,7 +55,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, password } = await request.json();
+    let email, password;
+    try {
+      const requestData = await request.json();
+      email = requestData.email;
+      password = requestData.password;
+    } catch (parseError) {
+      console.error('❌ JSON parse error:', parseError.message);
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
 
     if (!email || !password) {
       return NextResponse.json(
@@ -92,14 +104,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('🔍 Login attempt for:', sanitizedEmail);
+    console.log('📊 Available users:', data.users?.map((u: any) => ({ email: u.email, role: u.role })) || []);
+    
     const user = data.users?.find((u: any) => u.email === sanitizedEmail);
     
     if (!user) {
+      console.log('❌ User not found for email:', sanitizedEmail);
       return NextResponse.json(
         { success: false, error: 'Invalid email or password' },
         { status: 401 }
       );
     }
+    
+    console.log('✅ User found:', { email: user.email, role: user.role, hasPassword: !!user.password });
 
     // Check if account is locked
     if (user.accountLocked) {
@@ -111,12 +129,22 @@ export async function POST(request: NextRequest) {
 
     // Verify password (handle both hashed and legacy plain text)
     let passwordValid = false;
+    console.log('🔐 Password verification:', { 
+      storedPassword: user.password, 
+      providedPassword: password, 
+      storedLength: user.password.length 
+    });
+    
     if (user.password.length === 64) { // Hashed password (SHA-256 produces 64 char hex)
+      console.log('🔒 Using hashed password verification');
       passwordValid = await verifyPassword(password, user.password);
     } else {
       // Legacy plain text password (for backward compatibility)
+      console.log('🔓 Using plain text password verification');
       passwordValid = user.password === password;
     }
+    
+    console.log('🎯 Password validation result:', passwordValid);
 
     if (!passwordValid) {
       // Track failed login attempts
