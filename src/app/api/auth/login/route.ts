@@ -136,8 +136,15 @@ export async function POST(request: NextRequest) {
       status: user.status
     });
 
-    // Check if account is locked
-    if (user.accountLocked) {
+    // Auto-unlock admin accounts
+    if (user.role === 'admin' && user.accountLocked) {
+      user.accountLocked = false;
+      user.loginAttempts = 0;
+      console.log('🔓 Auto-unlocked admin account');
+    }
+    
+    // Check if account is locked (non-admin)
+    if (user.accountLocked && user.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Account is locked. Please contact support.' },
         { status: 403 }
