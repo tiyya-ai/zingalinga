@@ -633,12 +633,17 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       const vpsUsers = data.users || [];
       const currentUserIds = new Set(currentUsers.map(u => u.id));
       
-      // Only include VPS users that still exist locally (preserves deletions)
-      // Plus any new users from VPS that weren't in local data
+      // FIXED LOGIC: Only include VPS users that still exist locally (preserves deletions)
+      // This ensures deleted users don't come back from VPS
       const realUsers = vpsUsers.filter(vpsUser => {
-        const existsLocally = currentUserIds.has(vpsUser.id);
-        const isNewUser = !currentUsers.some(localUser => localUser.id === vpsUser.id);
-        return existsLocally || isNewUser;
+        return currentUserIds.has(vpsUser.id);
+      });
+      
+      console.log('🔄 Smart refresh applied:', {
+        vpsUsers: vpsUsers.length,
+        currentUsers: currentUsers.length,
+        realUsers: realUsers.length,
+        deletedCount: vpsUsers.length - realUsers.length
       });
       const realVideos = data.modules || [];
       const realOrders = data.purchases || [];
