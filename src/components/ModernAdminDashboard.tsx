@@ -618,6 +618,9 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     try {
       setDataLoaded(false);
       
+      // Store current users to preserve local deletions
+      const currentUsers = users;
+      
       // Always clear caches for admin to ensure real-time data
       vpsDataStore.clearMemoryCache();
       localStorage.removeItem('zinga-linga-app-data-cache');
@@ -625,7 +628,18 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       
       // Load data from VPS API without cache
       const data = await vpsDataStore.loadData(true);
-      const realUsers = data.users || [];
+      
+      // Smart user merging: preserve local deletions while getting updates
+      const vpsUsers = data.users || [];
+      const currentUserIds = new Set(currentUsers.map(u => u.id));
+      
+      // Only include VPS users that still exist locally (preserves deletions)
+      // Plus any new users from VPS that weren't in local data
+      const realUsers = vpsUsers.filter(vpsUser => {
+        const existsLocally = currentUserIds.has(vpsUser.id);
+        const isNewUser = !currentUsers.some(localUser => localUser.id === vpsUser.id);
+        return existsLocally || isNewUser;
+      });
       const realVideos = data.modules || [];
       const realOrders = data.purchases || [];
       const realUploadQueue = data.uploadQueue || [];
