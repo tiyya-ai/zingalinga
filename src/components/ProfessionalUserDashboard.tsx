@@ -184,7 +184,7 @@ export default function ProfessionalUserDashboard({
       window.removeEventListener('userProfileUpdated', handleProfileUpdate as EventListener);
       window.removeEventListener('navigateToContent', handleNavigateToContent as EventListener);
     };
-  }, [setUser]);
+  }, []); // Removed setUser dependency to prevent continuous refresh cycles
 
   // Read URL parameters and set activeTab
   useEffect(() => {
@@ -224,7 +224,7 @@ export default function ProfessionalUserDashboard({
       achievements: achievements,
       level: Math.min(5, Math.floor(userPurchases.length / 2) + 1)
     });
-  }, [purchases, user?.id, allModules]);
+  }, [purchases, allModules]); // Removed user?.id to prevent continuous refresh cycles
 
   // Update live modules when prop changes and clear cache
   useEffect(() => {
@@ -263,78 +263,50 @@ export default function ProfessionalUserDashboard({
     setNewContentNotifications(notifications);
   };
 
-  // Real-time data loading with multiple triggers
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        // FORCE clear all caches to ensure fresh data
-        vpsDataStore.clearMemoryCache();
-        localStorage.removeItem('zinga-linga-app-data-cache');
-        localStorage.removeItem('zinga-linga-app-data');
-        
-        // Force fresh data load from API/VPS
-        const vpsData = await vpsDataStore.loadData(true);
-        
-        if (vpsData.modules) {
-          setLiveModules(vpsData.modules);
-        }
-        
-        // Load packages from VPS
-        const packagesData = await vpsDataStore.getPackages();
-        setPackages(packagesData);
-        
-        // Load available upgrades from VPS
-        if (user?.id) {
-          const upgrades = await vpsDataStore.getAvailableUpgrades(user.id);
-          setAvailableUpgrades(upgrades);
-        }
-        
-        // Check for new content after data loads
-        setTimeout(() => checkForNewContent(), 1000);
-        
-        // Load saved videos from VPS
-        if (user?.id) {
-          const userSavedVideos = await vpsDataStore.getSavedVideos(user.id);
-          setSavedVideosList(userSavedVideos);
-        }
-      } catch (error) {
-        console.error('Failed to load data:', error);
-      }
-    };
-    
-    if (mounted) {
-      // Load data immediately on mount
-      loadData();
-      
-      // Real-time updates with multiple triggers
-      const handleVisibilityChange = () => {
-        if (!document.hidden) {
-          vpsDataStore.clearMemoryCache();
-          localStorage.removeItem('zinga-linga-app-data-cache');
-          loadData();
-        }
-      };
-      const handleFocus = () => {
-        vpsDataStore.clearMemoryCache();
-        localStorage.removeItem('zinga-linga-app-data-cache');
-        loadData();
-      };
-      
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-      window.addEventListener('focus', handleFocus);
-      
-      // DISABLED: Auto-sync was causing deleted users to reappear
-      // const interval = setInterval(() => {
-      //   loadData();
-      // }, 30000);
-      
-      return () => {
-          document.removeEventListener('visibilitychange', handleVisibilityChange);
-          window.removeEventListener('focus', handleFocus);
-          // clearInterval(interval); // Disabled since interval is disabled
-        };
-    }
-  }, [mounted, user?.id]);
+  // DISABLED: Real-time data loading was causing continuous API refresh cycles
+  // useEffect(() => {
+  //   const loadData = async () => {
+  //     try {
+  //       // FORCE clear all caches to ensure fresh data
+  //       vpsDataStore.clearMemoryCache();
+  //       localStorage.removeItem('zinga-linga-app-data-cache');
+  //       localStorage.removeItem('zinga-linga-app-data');
+  //       
+  //       // Force fresh data load from API/VPS
+  //       const vpsData = await vpsDataStore.loadData(true);
+  //       
+  //       if (vpsData.modules) {
+  //         setLiveModules(vpsData.modules);
+  //       }
+  //       
+  //       // Load packages from VPS
+  //       const packagesData = await vpsDataStore.getPackages();
+  //       setPackages(packagesData);
+  //       
+  //       // Load available upgrades from VPS
+  //       if (user?.id) {
+  //         const upgrades = await vpsDataStore.getAvailableUpgrades(user.id);
+  //         setAvailableUpgrades(upgrades);
+  //       }
+  //       
+  //       // Check for new content after data loads
+  //       setTimeout(() => checkForNewContent(), 1000);
+  //       
+  //       // Load saved videos from VPS
+  //       if (user?.id) {
+  //         const userSavedVideos = await vpsDataStore.getSavedVideos(user.id);
+  //         setSavedVideosList(userSavedVideos);
+  //       }
+  //     } catch (error) {
+  //       console.error('Failed to load data:', error);
+  //     }
+  //   };
+  //   
+  //   if (mounted) {
+  //     // Load data immediately on mount
+  //     loadData();
+  //   }
+  // }, [mounted]); // DISABLED to prevent continuous refresh cycles
 
 
 

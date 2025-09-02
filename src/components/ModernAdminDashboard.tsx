@@ -434,9 +434,10 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
 
     loadPendingPayments();
     
-    // Refresh pending payments count every 30 seconds
-    const interval = setInterval(loadPendingPayments, 30000);
-    return () => clearInterval(interval);
+    // DISABLED: Auto-refresh was causing continuous API calls and interfering with admin operations
+    // const interval = setInterval(loadPendingPayments, 30000);
+    // return () => clearInterval(interval);
+    return () => {}; // Cleanup function still needed
   }, []);
 
   const [dataLoaded, setDataLoaded] = useState(true);
@@ -532,17 +533,23 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load real data from vpsDataStore
+  // DISABLED: Load real data from vpsDataStore - was causing continuous API calls
+  // useEffect(() => {
+  //   loadRealData();
+  //   loadExistingLogo();
+  //   
+  //   // DISABLED: Auto-refresh was causing continuous API calls and interfering with admin operations
+  //   // const interval = setInterval(() => {
+  //   //   loadRealData();
+  //   // }, 10000);
+  //   
+  //   // return () => clearInterval(interval);
+  //   return () => {}; // Cleanup function still needed
+  // }, []);
+  
+  // Load existing logo only on mount
   useEffect(() => {
-    loadRealData();
     loadExistingLogo();
-    
-    // Auto-refresh every 10 seconds for real-time sync
-    const interval = setInterval(() => {
-      loadRealData();
-    }, 10000);
-    
-    return () => clearInterval(interval);
   }, []);
 
   // Load packages from data store
