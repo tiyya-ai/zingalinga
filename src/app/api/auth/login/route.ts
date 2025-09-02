@@ -43,6 +43,9 @@ function checkLoginRateLimit(ip: string): { allowed: boolean; lockUntil?: number
 
 export async function POST(request: NextRequest) {
   console.log('🚀 Login API endpoint called');
+  console.log('🌍 Environment:', process.env.NODE_ENV);
+  console.log('📁 Data file path:', DATA_FILE);
+  console.log('📂 Data file exists:', existsSync(DATA_FILE));
   try {
     // Rate limiting
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
@@ -110,7 +113,8 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🔍 Login attempt for:', sanitizeInput(sanitizedEmail));
-    console.log('📊 Available users:', data.users?.map((u: any) => ({ email: u.email, role: u.role })) || []);
+    console.log('📊 Total users in database:', data.users?.length || 0);
+    console.log('📊 Available users:', data.users?.map((u: any) => ({ email: u.email, role: u.role, locked: u.accountLocked, attempts: u.loginAttempts })) || []);
     
     const user = data.users?.find((u: any) => u.email === sanitizedEmail);
     
@@ -122,7 +126,15 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.log('✅ User found:', { email: sanitizeForLog(user.email), role: sanitizeForLog(user.role), hasPassword: !!user.password });
+    console.log('✅ User found:', { 
+      email: sanitizeForLog(user.email), 
+      role: sanitizeForLog(user.role), 
+      hasPassword: !!user.password,
+      passwordLength: user.password?.length,
+      accountLocked: user.accountLocked,
+      loginAttempts: user.loginAttempts,
+      status: user.status
+    });
 
     // Check if account is locked
     if (user.accountLocked) {
