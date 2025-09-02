@@ -537,12 +537,12 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     loadRealData();
     loadExistingLogo();
     
-    // Auto-refresh every 5 seconds for real-time sync
-    const interval = setInterval(() => {
-      loadRealData();
-    }, 5000);
-    
-    return () => clearInterval(interval);
+    // Disabled auto-refresh to prevent deleted items from reappearing
+    // const interval = setInterval(() => {
+    //   loadRealData();
+    // }, 5000);
+    // 
+    // return () => clearInterval(interval);
   }, []);
 
   // Load packages from data store
@@ -3480,19 +3480,12 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                         onPress={async () => {
                           if (confirm(`Are you sure you want to delete user "${user.name}"? This action cannot be undone.`)) {
                             try {
-                              // Delete user from VPS data store
-                              const data = await vpsDataStore.loadData();
-                              data.users = data.users?.filter(u => u.id !== user.id) || [];
-                              const success = await vpsDataStore.saveData(data);
+                              // Delete user using proper VPS method
+                              const success = await vpsDataStore.deleteUser(user.id);
                               
                               if (success) {
                                 // Update local state immediately
                                 setUsers(prev => prev.filter(u => u.id !== user.id));
-                                
-                                // Clear caches to ensure consistency
-                                vpsDataStore.clearMemoryCache();
-                                localStorage.removeItem('zinga-linga-app-data-cache');
-                                localStorage.removeItem('zinga-linga-app-data');
                                 
                                 setToast({message: 'User deleted successfully!', type: 'success'});
                                 setTimeout(() => setToast(null), 3000);
