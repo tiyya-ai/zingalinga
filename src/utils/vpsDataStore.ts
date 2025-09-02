@@ -840,15 +840,16 @@ class VPSDataStore {
       if (data.users.length < originalLength) {
         console.log('💾 Saving updated data without deleted user...');
         
-        // Force immediate save to all storage locations
-        this.memoryData = data;
-        const dataString = JSON.stringify(data);
-        localStorage.setItem('zinga-linga-persistent-data', dataString);
-        localStorage.setItem('zinga-linga-backup-data', dataString);
-        localStorage.setItem('zinga-linga-app-data', dataString);
+        // CRITICAL FIX: Use saveData to persist through API and all storage locations
+        const success = await this.saveData(data);
         
-        console.log('✅ User and related data deleted successfully');
-        return true;
+        if (success) {
+          console.log('✅ User and related data deleted and persisted successfully');
+          return true;
+        } else {
+          console.error('❌ Failed to persist user deletion');
+          return false;
+        }
       }
       return false;
     } catch (error) {
