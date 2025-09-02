@@ -129,25 +129,102 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
       }
 
       if (isRegisterMode) {
-        // Registration logic - client-side for static deployment
+        // Registration logic - use secure API endpoint
         if (sanitizedPassword !== sanitizeInput(confirmPassword)) {
           setError('Passwords do not match');
           setIsLoading(false);
           return;
         }
         
-        // Password strength validation
-        if (sanitizedPassword.length < 6) {
-          setError('Password must be at least 6 characters long');
+        // Enhanced password strength validation
+        const passwordValidation = checkPasswordStrength(sanitizedPassword);
+        if (passwordValidation.score < 3) {
+          setError('Password is too weak. Please use a stronger password with uppercase, lowercase, numbers, and special characters.');
           setIsLoading(false);
           return;
         }
         
         // Name validation
-        if (!sanitizedName.trim()) {
-          setError('Full name is required');
+        if (!sanitizedName.trim() || sanitizedName.length < 2) {
+          setError('Full name must be at least 2 characters long');
           setIsLoading(false);
           return;
+        }
+
+        // Try API registration first
+        try {
+          const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: sanitizedEmail,
+              password: sanitizedPassword,
+              confirmPassword: sanitizeInput(confirmPassword),
+              name: sanitizedName
+            })
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            // Handle pending purchases if any
+            const pendingPurchase = localStorage.getItem('pendingPurchase');
+            if (pendingPurchase) {
+              const purchaseData = JSON.parse(pendingPurchase);
+              if (purchaseData.email === sanitizedEmail) {
+                setPurchasedItems(purchaseData.items);
+                setShowSuccessModal(true);
+              }
+              localStorage.removeItem('pendingPurchase');
+            }
+
+            setSuccess(result.message || 'Account created successfully! You can now login.');
+            
+            // Auto-login after successful registration
+            setTimeout(async () => {
+              try {
+                const loginResponse = await fetch('/api/auth/login', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    email: sanitizedEmail,
+                    password: sanitizedPassword
+                  })
+                });
+
+                const loginResult = await loginResponse.json();
+                if (loginResult.success) {
+                  // Create session
+                  const sessionDuration = 8 * 60 * 60 * 1000; // 8 hours
+                  const session = {
+                    user: loginResult.user,
+                    token: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+                    expiresAt: Date.now() + sessionDuration,
+                    loginTime: Date.now(),
+                    lastActivity: Date.now(),
+                    userAgent: navigator.userAgent,
+                  };
+                  localStorage.setItem('zinga-linga-session', JSON.stringify(session));
+                  onLogin(loginResult.user);
+                }
+              } catch (loginError) {
+                console.error('Auto-login failed:', loginError);
+                setSuccess('Account created successfully! Please login with your credentials.');
+              }
+            }, 1500);
+            
+            setIsLoading(false);
+            return;
+          } else {
+            // If API registration fails, fall back to client-side registration
+            console.log('API registration failed, falling back to client-side:', result.error);
+          }
+        } catch (apiError) {
+          console.log('API registration error, falling back to client-side:', apiError);
         }
 
         // Save new user to database
@@ -371,7 +448,57 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
           setError('Network error. Please check your connection and try again.');
         }
       } else {
-        // Login logic - check both static users and database users
+        // Login logic - use secure API endpoint first, then fallback
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: sanitizedEmail,
+              password: sanitizedPassword
+            })
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            // Create session
+            const sessionDuration = 8 * 60 * 60 * 1000; // 8 hours
+            const session = {
+              user: result.user,
+              token: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+              expiresAt: Date.now() + sessionDuration,
+              loginTime: Date.now(),
+              lastActivity: Date.now(),
+              userAgent: navigator.userAgent,
+            };
+            localStorage.setItem('zinga-linga-session', JSON.stringify(session));
+
+            setSuccess('Login successful! Redirecting to dashboard...');
+            setTimeout(() => {
+              onLogin(result.user);
+            }, 1000);
+            setIsLoading(false);
+            return;
+          } else {
+            // Handle specific error cases
+            if (response.status === 429) {
+              setError(result.error || 'Too many login attempts. Please try again later.');
+            } else if (response.status === 403) {
+              setError(result.error || 'Account access restricted.');
+            } else {
+              setError(result.error || 'Invalid email or password.');
+            }
+            setIsLoading(false);
+            return;
+          }
+        } catch (apiError) {
+          console.log('API login failed, falling back to client-side:', apiError);
+        }
+
+        // Fallback to client-side authentication for static users
         const { getStaticUsers } = await import('../utils/staticUsers');
         const staticUsers = getStaticUsers();
 

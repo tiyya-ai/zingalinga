@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
-import { sanitizeInput, validateEmail, hashPassword } from '../../../utils/securityUtils';
+import { sanitizeInput, validateEmail, hashPassword } from '../../../../utils/securityUtils';
 
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'global-app-data.json');
@@ -113,58 +113,111 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Ensure data directory exists
+    if (!existsSync(DATA_DIR)) {
+      await mkdir(DATA_DIR, { recursive: true });
+    }
+
     let data;
     if (existsSync(DATA_FILE)) {
-      data = JSON.parse(await readFile(DATA_FILE, 'utf-8'));
+      try {
+        const fileContent = await readFile(DATA_FILE, 'utf-8');
+        data = JSON.parse(fileContent);
+      } catch (error) {
+        console.error('Error reading data file:', error);
+        data = { users: [] };
+      }
     } else {
       data = { users: [] };
     }
 
-    const existingUser = data.users?.find((u: any) => u.email === email);
+    // Check for existing user with sanitized email
+    const existingUser = data.users?.find((u: any) => u.email?.toLowerCase() === sanitizedEmail);
     if (existingUser) {
       return NextResponse.json(
-        { success: false, error: 'User already exists' },
+        { success: false, error: 'An account with this email already exists' },
         { status: 409 }
       );
     }
 
+    // Hash password securely
+    const hashedPassword = await hashPassword(password);
+
+    // Generate secure user ID
+    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     const newUser = {
-      id: `user_${Date.now()}`,
-      email,
-      password,
-      name,
+      id: userId,
+      email: sanitizedEmail,
+      password: hashedPassword,
+      name: sanitizedName,
       role: 'user',
       status: 'active',
       purchasedModules: [],
       totalSpent: 0,
       createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString()
+      lastLogin: new Date().toISOString(),
+      registrationIp: ip,
+      emailVerified: false,
+      loginAttempts: 0,
+      lastLoginAttempt: null,
+      accountLocked: false
     };
 
     data.users = data.users || [];
     data.users.push(newUser);
 
-    await writeFile(DATA_FILE, JSON.stringify(data, null, 2));
-
-    // Also save to VPS data endpoint
+    // Save to local file with error handling
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/data`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
+      await writeFile(DATA_FILE, JSON.stringify(data, null, 2));
     } catch (error) {
-      console.error('Failed to sync to VPS:', error);
+      console.error('Error writing to data file:', error);
+      return NextResponse.json(
+        { success: false, error: 'Failed to save user data' },
+        { status: 500 }
+      );
     }
+
+    // Also save to VPS data endpoint with retry logic
+    let syncSuccess = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/data`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'User-Agent': 'ZingaLinga-Registration-Service'
+          },
+          body: JSON.stringify(data),
+          signal: AbortSignal.timeout(10000) // 10 second timeout
+        });
+        
+        if (response.ok) {
+          syncSuccess = true;
+          break;
+        }
+      } catch (error) {
+        console.error(`VPS sync attempt ${attempt + 1} failed:`, error);
+        if (attempt === 2) {
+          console.error('All VPS sync attempts failed, but user was created locally');
+        }
+      }
+    }
+
+    // Log successful registration (without sensitive data)
+    console.log(`User registered successfully: ${sanitizedEmail} (ID: ${userId})`);
 
     return NextResponse.json({
       success: true,
+      message: 'Account created successfully',
       user: {
         id: newUser.id,
         email: newUser.email,
         name: newUser.name,
-        role: newUser.role
-      }
+        role: newUser.role,
+        createdAt: newUser.createdAt
+      },
+      syncedToVPS: syncSuccess
     });
   } catch (error) {
     return NextResponse.json(
