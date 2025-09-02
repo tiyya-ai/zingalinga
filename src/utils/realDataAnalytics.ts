@@ -235,6 +235,10 @@ class RealDataAnalytics {
   async getRecentActivity(): Promise<any[]> {
     try {
       const data = await vpsDataStore.loadData();
+      if (!data) {
+        console.warn('No data available for recent activity');
+        return [];
+      }
       const activities: any[] = [];
       
       // Filter out demo/admin accounts
@@ -329,8 +333,8 @@ class RealDataAnalytics {
       }
       
       // Sort by timestamp (most recent first)
-      return activities
-        .filter(activity => activity.timestamp)
+      return (activities || [])
+        .filter(activity => activity && activity.timestamp)
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         
     } catch (error) {
