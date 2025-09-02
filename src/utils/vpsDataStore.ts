@@ -308,7 +308,7 @@ class VPSDataStore {
     };
   }
 
-  // Load data from API
+  // Load data from VPS API
   async loadData(forceRefresh = false): Promise<AppData> {
     try {
       // Return memory data if available and not forcing refresh
@@ -317,16 +317,51 @@ class VPSDataStore {
         return this.memoryData;
       }
       
-      // Try to load from localStorage first
-      const stored = localStorage.getItem('zinga-linga-persistent-data');
+      // Try to load from VPS API first
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
+        const response = await fetch('/api/data', {
+          method: 'GET',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = await response.json();
+          this.memoryData = data;
+          console.info('✅ Data loaded from VPS API with modules:', data.modules?.length || 0, 'users:', data.users?.length || 0);
+          return data;
+        } else {
+          console.error('❌ VPS API response not ok:', response.status);
+        }
+      } catch (error) {
+        console.error('❌ VPS API load failed:', error instanceof Error ? error.message : 'Unknown error');
+      }
+      
+      // Fallback to localStorage if API fails
+      let stored = localStorage.getItem('zinga-linga-persistent-data');
+      if (!stored) {
+        stored = localStorage.getItem('zinga-linga-backup-data');
+      }
+      if (!stored) {
+        stored = localStorage.getItem('zinga-linga-app-data');
+      }
+      
       if (stored) {
         try {
           const data = JSON.parse(stored);
           this.memoryData = data;
-          console.info('Data loaded from localStorage with modules:', data.modules?.length || 0);
+          console.info('⚠️ Using localStorage fallback with modules:', data.modules?.length || 0, 'users:', data.users?.length || 0);
           return data;
         } catch (error) {
-          console.error('Failed to parse stored data:', error instanceof Error ? error.message : 'Unknown error');
+          console.error('❌ Failed to parse stored data:', error instanceof Error ? error.message : 'Unknown error');
         }
       }
       
@@ -390,30 +425,71 @@ class VPSDataStore {
     }
   }
 
-  // Save data to API
+  // Save data to VPS API with localStorage backup
   async saveData(data: AppData): Promise<boolean> {
     try {
       // CRITICAL: Never lose existing data - always preserve what we have
       const preservedData = {
         ...data,
         modules: data.modules || (this.memoryData?.modules || []),
+        users: data.users || (this.memoryData?.users || []),
+        categories: data.categories || (this.memoryData?.categories || []),
         lastUpdated: new Date().toISOString()
       };
       
       // Always update memory cache immediately
       this.memoryData = preservedData;
       
-      // Save to localStorage for persistence
+      // Try to save to VPS API first
       try {
-        localStorage.setItem('zinga-linga-persistent-data', JSON.stringify(this.memoryData));
-        console.info('Data saved to localStorage with modules:', this.memoryData.modules?.length || 0);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
+        const response = await fetch('/api/data', {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(preservedData)
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          console.info('✅ Data saved to VPS API with modules:', preservedData.modules?.length || 0, 'users:', preservedData.users?.length || 0);
+          
+          // Also save to localStorage as backup
+          try {
+            const dataString = JSON.stringify(preservedData);
+            localStorage.setItem('zinga-linga-persistent-data', dataString);
+            localStorage.setItem('zinga-linga-backup-data', dataString);
+          } catch (localError) {
+            console.warn('⚠️ localStorage backup failed:', localError);
+          }
+          
+          return true;
+        } else {
+          console.error('❌ VPS API save failed:', response.status);
+        }
+      } catch (error) {
+        console.error('❌ VPS API save error:', error instanceof Error ? error.message : 'Unknown error');
+      }
+      
+      // Fallback to localStorage if API fails
+      try {
+        const dataString = JSON.stringify(preservedData);
+        localStorage.setItem('zinga-linga-persistent-data', dataString);
+        localStorage.setItem('zinga-linga-backup-data', dataString);
+        localStorage.setItem('zinga-linga-app-data', dataString);
+        console.info('⚠️ Data saved to localStorage fallback with modules:', preservedData.modules?.length || 0, 'users:', preservedData.users?.length || 0);
         return true;
       } catch (error) {
-        console.error('localStorage save failed:', error instanceof Error ? error.message : 'Unknown error');
+        console.error('❌ localStorage save failed:', error instanceof Error ? error.message : 'Unknown error');
         return false;
       }
     } catch (error) {
-      console.error('Failed to save data:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('❌ Failed to save data:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }
@@ -736,7 +812,7 @@ class VPSDataStore {
   async deleteUser(userId: string): Promise<boolean> {
     try {
       console.log('🗑️ Deleting user:', userId);
-      const data = await this.loadData();
+      const data = await this.loadData(true); // Force fresh load
       data.users = data.users || [];
       const originalLength = data.users.length;
       
@@ -763,29 +839,20 @@ class VPSDataStore {
       
       if (data.users.length < originalLength) {
         console.log('💾 Saving updated data without deleted user...');
-        const success = await this.saveData(data);
         
-        if (success) {
-          console.log('✅ User and related data deleted successfully');
-          // Force memory cache update
-          this.memoryData = data;
-          
-          // Also clear localStorage to ensure persistence
-          try {
-            localStorage.setItem('zinga-linga-persistent-data', JSON.stringify(data));
-            console.log('💾 Updated localStorage with deleted user data');
-          } catch (error) {
-            console.error('Failed to update localStorage:', error);
-          }
-        } else {
-          console.log('❌ Failed to save after user deletion');
-        }
+        // Force immediate save to all storage locations
+        this.memoryData = data;
+        const dataString = JSON.stringify(data);
+        localStorage.setItem('zinga-linga-persistent-data', dataString);
+        localStorage.setItem('zinga-linga-backup-data', dataString);
+        localStorage.setItem('zinga-linga-app-data', dataString);
         
-        return success;
+        console.log('✅ User and related data deleted successfully');
+        return true;
       }
       return false;
     } catch (error) {
-      console.error('Error deleting user:', error);
+      console.error('❌ Error deleting user:', error);
       return false;
     }
   }
@@ -1123,7 +1190,7 @@ class VPSDataStore {
 
   async updateCategory(oldCategory: string, newCategory: string): Promise<boolean> {
     try {
-      const data = await this.loadData();
+      const data = await this.loadData(true); // Force fresh load
       data.categories = data.categories || [];
       
       // Check if new category already exists
@@ -1143,11 +1210,19 @@ class VPSDataStore {
             : module
         ) || [];
         
-        return await this.saveData(data);
+        // Force immediate save
+        this.memoryData = data;
+        const dataString = JSON.stringify(data);
+        localStorage.setItem('zinga-linga-persistent-data', dataString);
+        localStorage.setItem('zinga-linga-backup-data', dataString);
+        localStorage.setItem('zinga-linga-app-data', dataString);
+        
+        console.log('✅ Category updated and saved successfully');
+        return true;
       }
       return false;
     } catch (error) {
-      console.error('Error updating category:', error);
+      console.error('❌ Error updating category:', error);
       return false;
     }
   }

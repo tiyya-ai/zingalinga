@@ -537,12 +537,12 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     loadRealData();
     loadExistingLogo();
     
-    // Disabled auto-refresh to prevent deleted items from reappearing
-    // const interval = setInterval(() => {
-    //   loadRealData();
-    // }, 5000);
-    // 
-    // return () => clearInterval(interval);
+    // Auto-refresh every 10 seconds for real-time sync
+    const interval = setInterval(() => {
+      loadRealData();
+    }, 10000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   // Load packages from data store
@@ -3147,6 +3147,17 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               </div>
             )}
             <Button 
+              variant="flat"
+              startContent={<RotateCcw className="h-4 w-4" />}
+              onPress={async () => {
+                await loadRealData();
+                setToast({message: 'Content refreshed!', type: 'success'});
+                setTimeout(() => setToast(null), 3000);
+              }}
+            >
+              Refresh
+            </Button>
+            <Button 
               className="bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
               startContent={<Plus className="h-4 w-4" />}
               onPress={handleAddVideo}
@@ -3331,28 +3342,41 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       <PageHeader 
         title="All Users" 
         actions={
-          <Button 
-            className="bg-green-600 text-white hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg"
-            startContent={<Plus className="h-4 w-4" />}
-            onPress={() => {
-              setUserForm({
-                name: '',
-                email: '',
-                password: '',
-                role: 'user',
-                status: 'active',
-                avatar: '',
-                phone: '',
-                dateOfBirth: '',
-                subscription: 'free'
-              });
-              setEditingUser(null);
-              onUserModalOpen();
-            }}
-            aria-label="Add new user"
-          >
-            Add New User
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="flat"
+              startContent={<RotateCcw className="h-4 w-4" />}
+              onPress={async () => {
+                await loadRealData();
+                setToast({message: 'Users refreshed!', type: 'success'});
+                setTimeout(() => setToast(null), 3000);
+              }}
+            >
+              Refresh
+            </Button>
+            <Button 
+              className="bg-green-600 text-white hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg"
+              startContent={<Plus className="h-4 w-4" />}
+              onPress={() => {
+                setUserForm({
+                  name: '',
+                  email: '',
+                  password: '',
+                  role: 'user',
+                  status: 'active',
+                  avatar: '',
+                  phone: '',
+                  dateOfBirth: '',
+                  subscription: 'free'
+                });
+                setEditingUser(null);
+                onUserModalOpen();
+              }}
+              aria-label="Add new user"
+            >
+              Add New User
+            </Button>
+          </div>
         }
       />
       
@@ -3361,20 +3385,6 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           <div className="flex justify-between items-center w-full">
             <h3 className="text-lg font-semibold text-gray-900">All Users ({users.length})</h3>
             <div className="flex space-x-2">
-              <Button 
-                size="sm"
-                variant="flat"
-                className="bg-blue-50 text-blue-600 hover:bg-blue-100"
-                startContent={<RotateCcw className="h-4 w-4" />}
-                onPress={async () => {
-                  vpsDataStore.clearMemoryCache();
-                  await loadRealData(true);
-                  setToast({message: 'User data refreshed!', type: 'success'});
-                  setTimeout(() => setToast(null), 3000);
-                }}
-              >
-                Refresh
-              </Button>
               <Input
                 placeholder="Search users..."
                 value={userSearchTerm}
@@ -3581,8 +3591,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                   // Update user
                   const success = await vpsDataStore.updateUser(editingUser.id, userForm);
                   if (success) {
-                    setUsers(prev => prev.map(u => u.id === editingUser.id ? {...u, ...userForm} : u));
-                    setTimeout(() => loadRealData(true), 100);
+                    await loadRealData();
                     setToast({message: 'User updated successfully!', type: 'success'});
                     setTimeout(() => setToast(null), 3000);
                   } else {
@@ -3598,9 +3607,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                   }
                   const success = await vpsDataStore.addUser(userForm);
                   if (success) {
-                    const newUser = {...userForm, id: `user_${Date.now()}`, createdAt: new Date().toISOString()};
-                    setUsers(prev => [...prev, newUser]);
-                    setTimeout(() => loadRealData(true), 100);
+                    await loadRealData();
                     setToast({message: 'User created successfully!', type: 'success'});
                     setTimeout(() => setToast(null), 3000);
                   } else {
@@ -3627,35 +3634,29 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     }
     
     if (categories.includes(newCategory.trim())) {
-      alert('Category already exists');
+      setToast({message: 'Category already exists', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
       return;
     }
-    
-
     
     try {
       // Update category in data store
       const success = await vpsDataStore.updateCategory(oldCategory, newCategory.trim());
       if (success) {
-        const updatedCategories = await vpsDataStore.getCategories();
-        setCategories(updatedCategories);
-        
-        // Update videos that use this category
-        const updatedVideos = videos.map(video => 
-          video.category === oldCategory 
-            ? { ...video, category: newCategory.trim() }
-            : video
-        );
-        setVideos(updatedVideos);
+        // Force reload all data to ensure sync
+        await loadRealData();
         
         setEditingCategory(null);
-        alert('Category updated successfully!');
+        setToast({message: 'Category updated successfully!', type: 'success'});
+        setTimeout(() => setToast(null), 3000);
       } else {
-        alert('Failed to update category');
+        setToast({message: 'Failed to update category', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
       }
     } catch (error) {
       console.error('Error updating category:', error);
-      alert('Failed to update category');
+      setToast({message: 'Failed to update category', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
@@ -3664,24 +3665,39 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       <PageHeader 
         title="Categories" 
         actions={
-          <Button 
-            className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
-            startContent={<Plus className="h-4 w-4" />}
-            onPress={async () => {
-              if (newCategory.trim()) {
-                const success = await vpsDataStore.addCategory(newCategory.trim());
-                if (success) {
-                  const updatedCategories = await vpsDataStore.getCategories();
-                  setCategories(updatedCategories);
-                  setNewCategory('');
-                } else {
-                  alert('Category already exists or failed to add');
+          <div className="flex gap-2">
+            <Button 
+              variant="flat"
+              startContent={<RotateCcw className="h-4 w-4" />}
+              onPress={async () => {
+                await loadRealData();
+                setToast({message: 'Data refreshed!', type: 'success'});
+                setTimeout(() => setToast(null), 3000);
+              }}
+            >
+              Refresh
+            </Button>
+            <Button 
+              className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
+              startContent={<Plus className="h-4 w-4" />}
+              onPress={async () => {
+                if (newCategory.trim()) {
+                  const success = await vpsDataStore.addCategory(newCategory.trim());
+                  if (success) {
+                    await loadRealData();
+                    setNewCategory('');
+                    setToast({message: 'Category added successfully!', type: 'success'});
+                    setTimeout(() => setToast(null), 3000);
+                  } else {
+                    setToast({message: 'Category already exists or failed to add', type: 'error'});
+                    setTimeout(() => setToast(null), 3000);
+                  }
                 }
-              }
-            }}
-          >
-            Add Category
-          </Button>
+              }}
+            >
+              Add Category
+            </Button>
+          </div>
         }
       />
       
@@ -3787,12 +3803,13 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                                   if (confirm(`Delete category "${category}"?`)) {
                                     const success = await vpsDataStore.deleteCategory(category);
                                     if (success) {
-                                      const updatedCategories = await vpsDataStore.getCategories();
-                                      setCategories(updatedCategories);
-                                      // Reload videos to reflect changes
-                                      await loadRealData(true);
+                                      // Force reload all data to ensure sync
+                                      await loadRealData();
+                                      setToast({message: 'Category deleted successfully!', type: 'success'});
+                                      setTimeout(() => setToast(null), 3000);
                                     } else {
-                                      alert('Failed to delete category');
+                                      setToast({message: 'Failed to delete category', type: 'error'});
+                                      setTimeout(() => setToast(null), 3000);
                                     }
                                   }
                                 }}
