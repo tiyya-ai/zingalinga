@@ -316,7 +316,7 @@ class VPSDataStore {
     };
   }
 
-  // Load data from VPS API only
+  // Load data from local VPS database only
   async loadData(forceRefresh = false): Promise<AppData> {
     try {
       // Return memory data if available and not forcing refresh
@@ -325,7 +325,7 @@ class VPSDataStore {
         return this.memoryData;
       }
       
-      // Load from VPS API only
+      // Load from VPS local database only - no external API calls
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
       
@@ -343,22 +343,22 @@ class VPSDataStore {
       if (response.ok) {
         const data = await response.json();
         this.memoryData = data;
-        console.info('✅ Data loaded from VPS API with modules:', data.modules?.length || 0, 'users:', data.users?.length || 0);
+        console.info('✅ Data loaded from VPS database with modules:', data.modules?.length || 0, 'users:', data.users?.length || 0);
         return data;
       }
       
-      throw new Error(`API failed with status: ${response.status}`);
+      throw new Error(`Database failed with status: ${response.status}`);
     } catch (error) {
-      console.error('❌ VPS API load failed:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('❌ VPS database load failed:', error instanceof Error ? error.message : 'Unknown error');
       
-      // Return default data if API fails
+      // Return default data if database fails
       const defaultData = this.getDefaultData();
       this.memoryData = defaultData;
       return defaultData;
     }
   }
 
-  // Save data to VPS API only
+  // Save data to VPS local database only
   async saveData(data: AppData): Promise<boolean> {
     try {
       const preservedData = {
@@ -369,7 +369,7 @@ class VPSDataStore {
       // Update memory cache
       this.memoryData = preservedData;
       
-      // Save to VPS API only
+      // Save to VPS local database only
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
       
@@ -385,13 +385,13 @@ class VPSDataStore {
       clearTimeout(timeoutId);
       
       if (response.ok) {
-        console.info('✅ Data saved to VPS API with modules:', preservedData.modules?.length || 0, 'users:', preservedData.users?.length || 0);
+        console.info('✅ Data saved to VPS database with modules:', preservedData.modules?.length || 0, 'users:', preservedData.users?.length || 0);
         return true;
       }
       
-      throw new Error(`API save failed with status: ${response.status}`);
+      throw new Error(`Database save failed with status: ${response.status}`);
     } catch (error) {
-      console.error('❌ VPS API save failed:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('❌ VPS database save failed:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }
