@@ -536,6 +536,13 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   useEffect(() => {
     loadRealData();
     loadExistingLogo();
+    
+    // Auto-refresh every 5 seconds for real-time sync
+    const interval = setInterval(() => {
+      loadRealData();
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   // Load packages from data store
@@ -599,20 +606,18 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     };
   }, [videoForm.videoUrl, videoForm.thumbnail]);
 
-  const loadRealData = async (skipCache = false) => {
+  const loadRealData = async (skipCache = true) => {
     
     try {
       setDataLoaded(false);
       
-      // Only clear caches if explicitly requested
-      if (skipCache) {
-        vpsDataStore.clearMemoryCache();
-        localStorage.removeItem('zinga-linga-app-data-cache');
-        localStorage.removeItem('zinga-linga-app-data');
-      }
+      // Always clear caches for admin to ensure real-time data
+      vpsDataStore.clearMemoryCache();
+      localStorage.removeItem('zinga-linga-app-data-cache');
+      localStorage.removeItem('zinga-linga-app-data');
       
-      // Load data from VPS API
-      const data = await vpsDataStore.loadData(skipCache);
+      // Load data from VPS API without cache
+      const data = await vpsDataStore.loadData(true);
       const realUsers = data.users || [];
       const realVideos = data.modules || [];
       const realOrders = data.purchases || [];
@@ -1132,7 +1137,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               >
                 <div className="text-center">
                   <Plus className="h-6 w-6 mx-auto mb-1" />
-                  <span className="text-xs font-semibold">Add Video</span>
+                  <span className="text-xs font-semibold">Add Content</span>
                 </div>
               </Button>
               <Button 
@@ -2279,13 +2284,16 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       
       // Validate required fields
       if (!videoForm.title.trim()) {
-        setToast({message: 'Please enter a video title', type: 'error'});
+        setToast({message: 'Please enter a title', type: 'error'});
         setTimeout(() => setToast(null), 3000);
         return;
       }
 
-      if (!videoForm.videoUrl) {
-        setToast({message: 'Please provide a video URL or upload a video file', type: 'error'});
+      // Check for content URL based on type
+      const contentUrl = videoForm.contentType === 'audio' ? videoForm.audioUrl : videoForm.videoUrl;
+      if (!contentUrl) {
+        const contentType = videoForm.contentType === 'audio' ? 'audio' : 'video';
+        setToast({message: `Please provide a ${contentType} URL or upload a ${contentType} file`, type: 'error'});
         setTimeout(() => setToast(null), 3000);
         return;
       }
@@ -2391,14 +2399,16 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       } else {
         console.log('Ã°Å¸â€ â€¢ Creating new video...');
         const newVideo: Module = {
-          id: `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `${videoForm.contentType}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           title: videoForm.title,
           description: videoForm.description,
           category: videoForm.category,
+          type: videoForm.contentType as 'video' | 'audio',
           rating: videoForm.rating,
           price: videoForm.price || 0,
           thumbnail: persistentThumbnail,
-          videoUrl: persistentVideoUrl,
+          videoUrl: videoForm.contentType === 'video' ? persistentVideoUrl : '',
+          audioUrl: videoForm.contentType === 'audio' ? (videoForm.audioUrl || persistentVideoUrl) : '',
           duration: videoForm.duration,
           estimatedDuration: videoForm.duration,
           tags: (typeof videoForm.tags === 'string' && videoForm.tags) ? videoForm.tags.split(',').map(tag => tag.trim()) : [],
@@ -2438,11 +2448,12 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
           const savedVideo = updatedVideos.find(v => v.id === newVideo.id);
           console.log('Ã°Å¸â€Â Video found in data store:', savedVideo ? 'YES' : 'NO');
           setVideos(prev => [...prev, newVideo]);
-          setToast({message: 'Video saved successfully!', type: 'success'});
+          const contentType = videoForm.contentType === 'audio' ? 'Audio' : 'Video';
+          setToast({message: `${contentType} saved successfully!`, type: 'success'});
           setTimeout(() => setToast(null), 3000);
         } else {
           console.log('Ã¢ÂÅ’ Failed to create video in data store');
-          setToast({message: 'Failed to save. Try YouTube URL instead.', type: 'error'});
+          setToast({message: 'Failed to save. Please check your URL format.', type: 'error'});
           setTimeout(() => setToast(null), 3000);
           return;
         }
@@ -2495,20 +2506,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       if (success) {
         console.log('✅ Video deleted from data store, updating UI...');
         
-        // Update local state immediately
-        setVideos(prev => {
-          const updated = prev.filter(v => v.id !== videoId);
-          console.log('🔄 Updated videos list, new count:', updated.length);
-          return updated;
-        });
-        
-        // Clear caches and reload to ensure consistency
-        vpsDataStore.clearMemoryCache();
-        localStorage.removeItem('zinga-linga-app-data-cache');
-        localStorage.removeItem('zinga-linga-app-data');
-        
-        // Reload data in background
-        setTimeout(() => loadRealData(true), 100);
+        // Reload all data immediately without cache
+        await loadRealData();
         
         setToast({message: 'Video deleted successfully!', type: 'success'});
         setTimeout(() => setToast(null), 3000);
@@ -2533,20 +2532,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       if (success) {
         console.log('✅ Audio deleted from data store, updating UI...');
         
-        // Update local state immediately
-        setVideos(prev => {
-          const updated = prev.filter(v => v.id !== audioId);
-          console.log('🔄 Updated videos list, new count:', updated.length);
-          return updated;
-        });
-        
-        // Clear caches and reload to ensure consistency
-        vpsDataStore.clearMemoryCache();
-        localStorage.removeItem('zinga-linga-app-data-cache');
-        localStorage.removeItem('zinga-linga-app-data');
-        
-        // Reload data in background
-        setTimeout(() => loadRealData(true), 100);
+        // Reload all data immediately without cache
+        await loadRealData();
         
         setToast({message: 'Audio lesson deleted successfully!', type: 'success'});
         setTimeout(() => setToast(null), 3000);
@@ -2689,36 +2676,69 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
 
           {/* Content Uploader - Video or Audio based on content type */}
           {videoForm.contentType === 'video' ? (
-            <SimpleVideoUploader 
-              initialData={editingVideo ? {
-                title: videoForm.title,
-                videoUrl: videoForm.videoUrl,
-                thumbnail: videoForm.thumbnail,
-                duration: videoForm.duration
-              } : undefined}
-              onVideoUploaded={(videoData) => {
-                setVideoForm({
-                  ...videoForm,
-                  videoUrl: videoData.videoUrl,
-                  duration: videoData.duration,
-                  thumbnail: videoData.thumbnail || videoForm.thumbnail,
-                  videoType: videoData.videoUrl.includes('youtube.com') || videoData.videoUrl.includes('youtu.be') ? 'youtube' : 
-                            videoData.videoUrl.includes('vimeo.com') ? 'vimeo' : 'external'
-                });
-              }}
-            />
-          ) : (
             <Card className="bg-white border border-gray-200">
               <CardHeader className="border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Audio Upload</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Video Content</h3>
               </CardHeader>
               <CardBody className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Audio File or URL</label>
+                  <label className="text-sm font-medium text-gray-700">Video URL (Vimeo, YouTube, etc.)</label>
+                  <Input
+                    value={videoForm.videoUrl}
+                    onChange={(e) => setVideoForm({ ...videoForm, videoUrl: e.target.value })}
+                    placeholder="https://vimeo.com/123456789 or https://youtube.com/watch?v=..."
+                    startContent={<Video className="h-4 w-4 text-blue-500" />}
+                    classNames={{
+                      input: "bg-white focus:ring-0 focus:ring-offset-0 shadow-none",
+                      inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
+                    }}
+                  />
+                </div>
+                {videoForm.videoUrl && (
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-700 mb-2">Video Preview:</p>
+                    <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                      {videoForm.videoUrl.includes('vimeo.com') ? (
+                        <iframe
+                          src={`https://player.vimeo.com/video/${videoForm.videoUrl.split('/').pop()?.split('?')[0]}?autoplay=0&loop=0`}
+                          className="w-full h-full"
+                          frameBorder="0"
+                          allow="autoplay; fullscreen; picture-in-picture"
+                        />
+                      ) : videoForm.videoUrl.includes('youtube.com') || videoForm.videoUrl.includes('youtu.be') ? (
+                        <iframe
+                          src={getVideoEmbedUrl(videoForm.videoUrl)}
+                          className="w-full h-full"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        />
+                      ) : (
+                        <video
+                          src={videoForm.videoUrl}
+                          className="w-full h-full object-cover"
+                          controls
+                          onError={() => {
+                            console.log('Video load error, might be external URL');
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          ) : (
+            <Card className="bg-white border border-gray-200">
+              <CardHeader className="border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Audio Content</h3>
+              </CardHeader>
+              <CardBody className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Audio URL (Vimeo Audio, SoundCloud, etc.)</label>
                   <Input
                     value={videoForm.audioUrl}
                     onChange={(e) => setVideoForm({ ...videoForm, audioUrl: e.target.value })}
-                    placeholder="Enter audio URL or upload file"
+                    placeholder="https://vimeo.com/123456789 (audio) or direct audio URL"
                     startContent={<Headphones className="h-4 w-4 text-blue-500" />}
                     classNames={{
                       input: "bg-white focus:ring-0 focus:ring-offset-0 shadow-none",
@@ -2726,45 +2746,30 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                     }}
                   />
                 </div>
-                <div className="border-2 border-dashed border-blue-300 rounded-xl p-6 text-center hover:border-blue-500 transition-all duration-300 bg-blue-50/30">
-                  <div className="space-y-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                      <Headphones className="h-6 w-6 text-blue-500" />
+                {videoForm.audioUrl && (
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-700 mb-2">Audio Preview:</p>
+                    <div className="bg-gray-100 rounded-lg p-4">
+                      {videoForm.audioUrl.includes('vimeo.com') ? (
+                        <iframe
+                          src={`https://player.vimeo.com/video/${videoForm.audioUrl.split('/').pop()?.split('?')[0]}?autoplay=0&loop=0`}
+                          className="w-full h-32"
+                          frameBorder="0"
+                          allow="autoplay; fullscreen; picture-in-picture"
+                        />
+                      ) : (
+                        <audio
+                          src={videoForm.audioUrl}
+                          className="w-full"
+                          controls
+                          onError={() => {
+                            console.log('Audio load error, might be external URL');
+                          }}
+                        />
+                      )}
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Upload Audio File</p>
-                      <p className="text-xs text-gray-500">MP3, WAV, M4A up to 50MB</p>
-                    </div>
-                    <Button 
-                      color="primary" 
-                      variant="flat"
-                      startContent={<Upload className="h-4 w-4" />}
-                      onPress={() => {
-                        const fileInput = document.getElementById('audio-file-input') as HTMLInputElement;
-                        fileInput?.click();
-                      }}
-                    >
-                      Choose Audio File
-                    </Button>
                   </div>
-                  <input
-                    id="audio-file-input"
-                    type="file"
-                    accept="audio/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                          const audioUrl = e.target?.result as string;
-                          setVideoForm({ ...videoForm, audioUrl });
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    className="hidden"
-                  />
-                </div>
+                )}
               </CardBody>
             </Card>
           )}
@@ -2958,10 +2963,10 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               className="w-full bg-blue-600 text-white hover:bg-blue-700 h-12 text-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               onPress={handleSaveVideo}
               startContent={editingVideo ? <Edit className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-              isDisabled={!videoForm.title.trim() || !videoForm.videoUrl}
+              isDisabled={!videoForm.title.trim() || (!videoForm.videoUrl && !videoForm.audioUrl)}
               aria-label={editingVideo ? 'Update video' : 'Create new video'}
             >
-              {editingVideo ? 'Update Video' : 'Create Video'}
+              {editingVideo ? 'Update Content' : 'Create Content'}
             </Button>
             
             {editingVideo && (
@@ -3147,7 +3152,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               onPress={handleAddVideo}
               aria-label="Add new content"
             >
-              Add New Content
+              + Add Content
             </Button>
           </div>
         }
