@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readFile, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
-import { sanitizeInput, validateEmail, verifyPassword } from '../../../../utils/securityUtils';
+import { sanitizeInput, sanitizeForLog, validateEmail, verifyPassword } from '../../../../utils/securityUtils';
 
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'global-app-data.json');
@@ -109,20 +109,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🔍 Login attempt for:', sanitizedEmail);
+    console.log('🔍 Login attempt for:', sanitizeInput(sanitizedEmail));
     console.log('📊 Available users:', data.users?.map((u: any) => ({ email: u.email, role: u.role })) || []);
     
     const user = data.users?.find((u: any) => u.email === sanitizedEmail);
     
     if (!user) {
-      console.log('❌ User not found for email:', sanitizedEmail);
+      console.log('❌ User not found for email:', sanitizeInput(sanitizedEmail));
       return NextResponse.json(
         { success: false, error: 'Invalid email or password' },
         { status: 401 }
       );
     }
     
-    console.log('✅ User found:', { email: user.email, role: user.role, hasPassword: !!user.password });
+    console.log('✅ User found:', { email: sanitizeForLog(user.email), role: sanitizeForLog(user.role), hasPassword: !!user.password });
 
     // Check if account is locked
     if (user.accountLocked) {
@@ -135,8 +135,8 @@ export async function POST(request: NextRequest) {
     // Verify password (handle both hashed and legacy plain text)
     let passwordValid = false;
     console.log('🔐 Password verification:', { 
-      storedPassword: user.password, 
-      providedPassword: password, 
+      storedPassword: '[REDACTED]', 
+      providedPassword: '[REDACTED]', 
       storedLength: user.password.length 
     });
     
@@ -146,7 +146,15 @@ export async function POST(request: NextRequest) {
     } else {
       // Legacy plain text password (for backward compatibility)
       console.log('🔓 Using plain text password verification');
-      passwordValid = user.password === password;
+      // Use timing-safe comparison for passwords
+      const userPasswordBuffer = Buffer.from(user.password, 'utf8');
+      const providedPasswordBuffer = Buffer.from(password, 'utf8');
+      
+      if (userPasswordBuffer.length === providedPasswordBuffer.length) {
+        passwordValid = require('crypto').timingSafeEqual(userPasswordBuffer, providedPasswordBuffer);
+      } else {
+        passwordValid = false;
+      }
     }
     
     console.log('🎯 Password validation result:', passwordValid);
@@ -207,7 +215,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log successful login (without sensitive data)
-    console.log(`User logged in successfully: ${user.email} (ID: ${user.id})`);
+    console.log(`User logged in successfully: ${sanitizeForLog(user.email)} (ID: ${sanitizeForLog(user.id)})`);
 
     return NextResponse.json({
       success: true,

@@ -1,14 +1,20 @@
 // Security utilities to prevent injection attacks
 export const sanitizeInput = (input: any): string => {
+  if (input === null || input === undefined) {
+    return '';
+  }
+  
   if (typeof input !== 'string') {
     input = String(input);
   }
   
-  // Remove potential NoSQL injection characters
+  // Remove potential injection characters
   return input
     .replace(/[\$\{\}]/g, '') // Remove MongoDB operators
-    .replace(/[<>]/g, '') // Remove HTML/XML tags
-    .replace(/[\r\n]/g, ' ') // Replace newlines for log safety
+    .replace(/[<>"']/g, '') // Remove HTML/XML tags and quotes
+    .replace(/[\r\n\t]/g, ' ') // Replace control characters for log safety
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/on\w+=/gi, '') // Remove event handlers
     .trim()
     .slice(0, 1000); // Limit length
 };
@@ -54,7 +60,17 @@ export const hashPassword = async (password: string): Promise<string> => {
 
 export const verifyPassword = async (password: string, hash: string): Promise<boolean> => {
   const hashedInput = await hashPassword(password);
-  return hashedInput === hash;
+  
+  // Use timing-safe comparison
+  const hashedBuffer = Buffer.from(hashedInput, 'utf8');
+  const storedBuffer = Buffer.from(hash, 'utf8');
+  
+  if (hashedBuffer.length !== storedBuffer.length) {
+    return false;
+  }
+  
+  const crypto = require('crypto');
+  return crypto.timingSafeEqual(hashedBuffer, storedBuffer);
 };
 
 // Generate secure random token

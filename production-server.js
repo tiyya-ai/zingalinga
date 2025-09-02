@@ -29,6 +29,11 @@ const PERM_BACKUP = path.join(DATA_DIR, 'backup-permanent.json');
 server.use(cors());
 server.use(express.json({ limit: '50mb' }));
 
+// Serve Next.js static files
+server.use('/_next', express.static(path.join(__dirname, '.next')));
+server.use('/static', express.static(path.join(__dirname, 'public')));
+server.use(express.static(path.join(__dirname, 'public')));
+
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });

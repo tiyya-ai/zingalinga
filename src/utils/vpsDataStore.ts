@@ -1,10 +1,8 @@
 // VPS Data Store - Manages application data with localStorage persistence and API fallback
 import { User, Module, Purchase, ContentFile } from '../types';
+import { sanitizeInput, sanitizeForLog } from './securityUtils';
 
-// Security: Input sanitization
-const sanitizeInput = (input: string): string => {
-  return input.replace(/[\r\n\x00-\x1f\x7f-\x9f]/g, '').trim();
-};
+// Remove duplicate sanitizeInput function - using imported one
 
 // Security: Validate date strings
 const isValidDate = (dateString: string): boolean => {
@@ -433,7 +431,7 @@ class VPSDataStore {
 
   async addProduct(product: Module): Promise<boolean> {
     try {
-      console.info('Adding product:', { title: sanitizeInput(product.title || ''), id: sanitizeInput(product.id || '') });
+      console.info('Adding product:', { title: sanitizeForLog(product.title || 'untitled'), id: sanitizeForLog(product.id || 'no-id') });
       const data = await this.loadData();
       
       const newProduct = {
@@ -525,23 +523,23 @@ class VPSDataStore {
 
   async deleteProduct(productId: string): Promise<boolean> {
     try {
-      console.log('🗑️ Deleting product:', productId);
+      console.log('🗑️ Deleting product:', sanitizeForLog(productId));
       
       const data = await this.loadData();
       data.modules = data.modules || [];
       const originalLength = data.modules.length;
       
       // Find the product to delete
-      const productToDelete = data.modules.find(p => p.id === productId);
+      const productToDelete = data.modules.find(p => p && typeof p.id === 'string' && sanitizeInput(p.id) === sanitizeInput(productId));
       if (!productToDelete) {
         console.log('❌ Product not found:', productId);
         return false;
       }
       
-      console.log('📋 Found product to delete:', productToDelete.title);
+      console.log('📋 Found product to delete:', sanitizeForLog(productToDelete.title || 'untitled'));
       
       // Remove the product
-      data.modules = data.modules.filter(p => p.id !== productId);
+      data.modules = data.modules.filter(p => p && typeof p.id === 'string' && sanitizeInput(p.id) !== sanitizeInput(productId));
       
       // Also remove from all package contentIds
       if (data.packages) {
@@ -549,7 +547,7 @@ class VPSDataStore {
           if (pkg.contentIds && pkg.contentIds.includes(productId)) {
             pkg.contentIds = pkg.contentIds.filter(id => id !== productId);
             pkg.updatedAt = new Date().toISOString();
-            console.log('📦 Removed product from package:', pkg.name);
+            console.log('📦 Removed product from package:', sanitizeForLog(pkg.name || 'unnamed'));
           }
         });
       }
@@ -669,12 +667,12 @@ class VPSDataStore {
 
   async updateUser(userId: string, updatedUser: any): Promise<boolean> {
     try {
-      console.log('updateUser called with:', { userId, updatedUser });
+      console.log('updateUser called with:', { userId: sanitizeForLog(userId), updatedUser: sanitizeForLog(JSON.stringify(updatedUser)) });
       const data = await this.loadData();
       data.users = data.users || [];
-      console.log('Current users:', data.users.map(u => ({ id: u.id, name: u.name })));
+      console.log('Current users:', data.users.map(u => ({ id: sanitizeForLog(u.id || ''), name: sanitizeForLog(u.name || '') })));
       
-      const index = data.users.findIndex(u => u.id === userId);
+      const index = data.users.findIndex(u => u && typeof u.id === 'string' && sanitizeInput(u.id) === sanitizeInput(userId));
       console.log('User index found:', index);
       
       if (index !== -1) {
@@ -715,20 +713,20 @@ class VPSDataStore {
 
   async deleteUser(userId: string): Promise<boolean> {
     try {
-      console.log('🗑️ Deleting user:', userId);
+      console.log('🗑️ Deleting user:', sanitizeForLog(userId));
       const data = await this.loadData(true); // Force fresh load
       data.users = data.users || [];
       const originalLength = data.users.length;
       
       // Find and remove the user
-      const userToDelete = data.users.find(u => u.id === userId);
+      const userToDelete = data.users.find(u => u && typeof u.id === 'string' && sanitizeInput(u.id) === sanitizeInput(userId));
       if (!userToDelete) {
         console.log('❌ User not found:', userId);
         return false;
       }
       
-      console.log('📋 Found user to delete:', userToDelete.name);
-      data.users = data.users.filter(u => u.id !== userId);
+      console.log('📋 Found user to delete:', sanitizeForLog(userToDelete.name || 'unnamed'));
+      data.users = data.users.filter(u => u && typeof u.id === 'string' && sanitizeInput(u.id) !== sanitizeInput(userId));
       
       // Also remove user's purchases and related data
       if (data.purchases) {
@@ -1029,7 +1027,7 @@ class VPSDataStore {
   async hasNewContentSincePurchase(packageId: string, userPurchaseDate: string): Promise<boolean> {
     try {
       if (!isValidDate(userPurchaseDate)) {
-        console.error('Invalid purchase date provided:', sanitizeInput(userPurchaseDate));
+        console.error('Invalid purchase date provided:', sanitizeForLog(userPurchaseDate || 'no-date'));
         return false;
       }
       

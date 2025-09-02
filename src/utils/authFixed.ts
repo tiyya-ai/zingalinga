@@ -30,7 +30,7 @@ class AuthManager {
     {
       id: 'admin-1',
       email: 'admin@zinga-linga.com',
-      password: 'admin123',
+      password: process.env.NEXT_PUBLIC_DEMO_ADMIN_PASSWORD || 'change-me-admin',
       name: 'Admin User',
       role: 'admin' as 'user' | 'admin',
       createdAt: new Date().toISOString(),
@@ -41,7 +41,7 @@ class AuthManager {
     {
       id: 'user-1',
       email: 'user@example.com',
-      password: 'user123',
+      password: process.env.NEXT_PUBLIC_DEMO_USER_PASSWORD || 'change-me-user',
       name: 'Test User',
       role: 'user' as 'user' | 'admin',
       createdAt: new Date().toISOString(),

@@ -22,7 +22,7 @@ export async function GET() {
           filename: file,
           timestamp: parseInt(timestamp),
           date: new Date(parseInt(timestamp)).toISOString(),
-          path: path.join(DATA_DIR, file)
+          path: path.basename(file) // Only return filename for security
         };
       })
       .sort((a, b) => b.timestamp - a.timestamp);
@@ -48,7 +48,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const backupFile = path.join(DATA_DIR, filename);
+    // Sanitize filename to prevent path traversal
+    const sanitizedFilename = path.basename(filename);
+    if (!sanitizedFilename.startsWith('backup-') || !sanitizedFilename.endsWith('.json')) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid backup filename format' },
+        { status: 400 }
+      );
+    }
+    
+    const backupFile = path.join(DATA_DIR, sanitizedFilename);
     
     if (!existsSync(backupFile)) {
       return NextResponse.json(

@@ -131,8 +131,12 @@ export async function POST(request: NextRequest) {
       data = { users: [] };
     }
 
-    // Check for existing user with sanitized email
-    const existingUser = data.users?.find((u: any) => u.email?.toLowerCase() === sanitizedEmail);
+    // Check for existing user with sanitized email (safe comparison)
+    const existingUser = data.users?.find((u: any) => {
+      if (!u || typeof u.email !== 'string') return false;
+      const userEmail = sanitizeInput(u.email).toLowerCase();
+      return userEmail === sanitizedEmail;
+    });
     if (existingUser) {
       return NextResponse.json(
         { success: false, error: 'An account with this email already exists' },
@@ -211,11 +215,11 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Account created successfully',
       user: {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role,
-        createdAt: newUser.createdAt
+        id: sanitizeInput(newUser.id),
+        email: sanitizeInput(newUser.email),
+        name: sanitizeInput(newUser.name),
+        role: sanitizeInput(newUser.role),
+        createdAt: sanitizeInput(newUser.createdAt)
       },
       syncedToVPS: syncSuccess
     });

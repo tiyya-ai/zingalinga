@@ -34,7 +34,7 @@ function getDefaultData() {
       {
         id: 'admin_001',
         email: 'admin@zingalinga.com',
-        password: process.env.ADMIN_PASSWORD || 'admin123',
+        password: process.env.ADMIN_PASSWORD || process.env.DEFAULT_ADMIN_PASSWORD || 'change-me-admin',
         name: 'Admin User',
         role: 'admin',
         purchasedModules: [],

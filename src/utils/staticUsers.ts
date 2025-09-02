@@ -5,7 +5,7 @@ export const getStaticUsers = () => {
       {
         id: 'user-1',
         email: 'test@example.com',
-        password: 'test123',
+        password: process.env.NEXT_PUBLIC_DEMO_USER_PASSWORD || 'change-me-user',
         name: 'Test User',
         role: 'user' as const,
         createdAt: new Date().toISOString(),
@@ -15,7 +15,7 @@ export const getStaticUsers = () => {
       {
         id: 'admin-1',
         email: 'admin@zingalinga.com',
-        password: 'admin123',
+        password: process.env.NEXT_PUBLIC_DEMO_ADMIN_PASSWORD || 'change-me-admin',
         name: 'Admin User',
         role: 'admin' as const,
         createdAt: new Date().toISOString(),
