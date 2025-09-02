@@ -19,14 +19,15 @@ export const AdminPendingPayments: React.FC = () => {
     loadOverduePayments();
     loadPaymentStats();
     
-    // Refresh data every 5 minutes
-    const interval = setInterval(() => {
-      loadPendingPayments();
-      loadOverduePayments();
-      loadPaymentStats();
-    }, 5 * 60 * 1000);
+    // DISABLED: Auto-refresh was interfering with user management
+    // const interval = setInterval(() => {
+    //   loadPendingPayments();
+    //   loadOverduePayments();
+    //   loadPaymentStats();
+    // }, 5 * 60 * 1000);
     
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
+    return () => {}; // Cleanup function still needed
   }, []);
 
   const loadPendingPayments = () => {

@@ -323,16 +323,16 @@ export default function ProfessionalUserDashboard({
       document.addEventListener('visibilitychange', handleVisibilityChange);
       window.addEventListener('focus', handleFocus);
       
-      // Auto-sync every 30 seconds for updates
-      const interval = setInterval(() => {
-        loadData();
-      }, 30000);
+      // DISABLED: Auto-sync was causing deleted users to reappear
+      // const interval = setInterval(() => {
+      //   loadData();
+      // }, 30000);
       
       return () => {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-        window.removeEventListener('focus', handleFocus);
-        clearInterval(interval);
-      };
+          document.removeEventListener('visibilitychange', handleVisibilityChange);
+          window.removeEventListener('focus', handleFocus);
+          // clearInterval(interval); // Disabled since interval is disabled
+        };
     }
   }, [mounted, user?.id]);
 

@@ -214,9 +214,11 @@ export function useDataPerformance() {
 
   useEffect(() => {
     updateStats();
-    const interval = setInterval(updateStats, 5000); // Update every 5 seconds
+    // DISABLED: Auto-refresh was interfering with user management
+    // const interval = setInterval(updateStats, 5000); // Update every 5 seconds
     
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
+    return () => {}; // Cleanup function still needed
   }, [updateStats]);
 
   return {

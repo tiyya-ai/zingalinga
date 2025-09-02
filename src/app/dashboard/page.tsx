@@ -65,12 +65,15 @@ export default function DashboardPage() {
       };
       loadData();
       
-      // Set up periodic sync for profile updates
-      const syncInterval = setInterval(() => {
-        vpsDataStore.clearMemoryCache();
-        loadData();
-      }, 5000);
-      return () => clearInterval(syncInterval);
+      // DISABLED: Auto-sync was causing deleted users to reappear
+      // const syncInterval = setInterval(() => {
+      //   vpsDataStore.clearMemoryCache();
+      //   loadData();
+      // }, 5000);
+      // return () => clearInterval(syncInterval);
+      
+      // Manual refresh only - no automatic data reloading
+      return () => {}; // Cleanup function still needed
     }
   }, [user]);
 
