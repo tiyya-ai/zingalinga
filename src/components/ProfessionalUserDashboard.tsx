@@ -90,6 +90,7 @@ export default function ProfessionalUserDashboard({
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [showCartPopup, setShowCartPopup] = useState(false);
+  const [ppFilter, setPpFilter] = useState('all');
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showAllInvoices, setShowAllInvoices] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -1380,18 +1381,43 @@ export default function ProfessionalUserDashboard({
           return activeTab === tabId && (
             <section key={tabId} className="space-y-6">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
-                  <span className="mr-2">{getContentIcon('', categoryName)}</span>
-                  {categoryName}
-                </h2>
-                <p className="text-purple-200">Specialized {categoryName.toLowerCase()} content for your learning journey</p>
-                <div className="mt-2 text-sm text-purple-300">
-                  {filteredContent.length} items available
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                      <span className="mr-2">{getContentIcon('', categoryName)}</span>
+                      {categoryName}
+                    </h2>
+                    <p className="text-purple-200">Specialized {categoryName.toLowerCase()} content for your learning journey</p>
+                    <div className="mt-2 text-sm text-purple-300">
+                      {filteredContent.length} items available
+                    </div>
+                  </div>
+                  
+                  {/* PP1/PP2 Filter - Only visible on audio tab */}
+                  {tabId === 'audio-lessons' && (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-white text-sm font-medium">Filter by:</span>
+                      <select
+                        value={ppFilter}
+                        onChange={(e) => setPpFilter(e.target.value)}
+                        className="bg-white/20 text-white border border-white/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-400"
+                      >
+                        <option value="all">All Audio</option>
+                        <option value="PP1">PP1 Program</option>
+                        <option value="PP2">PP2 Program</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredContent.map((content) => {
+                {filteredContent.filter(content => {
+                  if (tabId !== 'audio-lessons') return true;
+                  return ppFilter === 'all' || 
+                    (ppFilter === 'PP1' && content.category === 'PP1 Program') ||
+                    (ppFilter === 'PP2' && content.category === 'PP2 Program');
+                }).map((content) => {
                   const isPurchased = isItemPurchased(content.id);
                   
                   return (
@@ -1668,6 +1694,20 @@ export default function ProfessionalUserDashboard({
                   </span>
                 </div>
                 
+                {/* PP1/PP2 Filter - Only visible on video tab */}
+                <div className="flex items-center space-x-2">
+                  <span className="text-white text-sm font-medium">Filter by:</span>
+                  <select
+                    value={ppFilter}
+                    onChange={(e) => setPpFilter(e.target.value)}
+                    className="bg-white/20 text-white border border-white/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-400"
+                  >
+                    <option value="all">All Content</option>
+                    <option value="PP1">PP1 Program</option>
+                    <option value="PP2">PP2 Program</option>
+                  </select>
+                </div>
+                
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center space-x-2">
                     <button
@@ -1747,7 +1787,14 @@ export default function ProfessionalUserDashboard({
 
             {/* Video Cards - Only Show Purchased Videos */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).map(module => {
+              {allModules.filter(module => {
+                const isVideo = module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons';
+                const isPurchased = isItemPurchased(module.id);
+                const matchesPpFilter = ppFilter === 'all' || 
+                  (ppFilter === 'PP1' && module.category === 'PP1 Program') ||
+                  (ppFilter === 'PP2' && module.category === 'PP2 Program');
+                return isVideo && isPurchased && matchesPpFilter;
+              }).map(module => {
                 const isPurchased = isItemPurchased(module.id);
                 let thumbnail = module.thumbnail || '';
                 

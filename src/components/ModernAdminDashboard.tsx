@@ -569,17 +569,19 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     }
   };
   
-  // Video form state - moved before useEffect
+  // Content form state - moved before useEffect
   const [editingVideo, setEditingVideo] = useState<Module | null>(null);
   const [videoForm, setVideoForm] = useState({
     title: '',
     description: '',
     category: '',
+    contentType: 'video',
     rating: 0,
     price: 0,
     duration: '',
     thumbnail: '',
     videoUrl: '',
+    audioUrl: '',
     videoType: 'upload',
     tags: '',
     status: 'active'
@@ -818,27 +820,15 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         { id: 'user-roles', label: 'User Roles', icon: <Shield className="h-4 w-4" /> }
       ]
     },
+
     {
       id: 'content',
-      label: 'Content Categories',
-      icon: <BookOpen className="h-5 w-5" />,
-      color: 'text-purple-600',
-      children: [
-        { id: 'audio-lessons', label: 'Audio Lessons', icon: <Headphones className="h-4 w-4" /> },
-        { id: 'pp1-program', label: 'PP1 Program', icon: <BookOpen className="h-4 w-4" /> },
-        { id: 'pp2-program', label: 'PP2 Program', icon: <BookOpen className="h-4 w-4" /> }
-      ]
-    },
-    {
-      id: 'videos',
-      label: 'Video Management',
+      label: 'Content Management',
       icon: <Video className="h-5 w-5" />,
       color: 'text-green-600',
       children: [
-        { id: 'all-videos', label: 'All Videos', icon: <Folder className="h-4 w-4" /> },
-        { id: 'add-video', label: 'Add New', icon: <Plus className="h-4 w-4" /> },
-        { id: 'categories', label: 'Categories', icon: <Tag className="h-4 w-4" /> },
-
+        { id: 'all-videos', label: 'All Content', icon: <Folder className="h-4 w-4" /> },
+        { id: 'add-video', label: 'Add Content', icon: <Plus className="h-4 w-4" /> },
         { id: 'upload-queue', label: 'Upload Queue', icon: <Upload className="h-4 w-4" />, badge: uploadQueue.length > 0 ? uploadQueue.length.toString() : undefined }
       ]
     },
@@ -2575,7 +2565,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     <div className="space-y-6">
 
       <PageHeader 
-        title={editingVideo ? `Edit Video: ${editingVideo.title}` : 'Add New Video Content'}
+        title={editingVideo ? `Edit Content: ${editingVideo.title}` : 'Add New Content'}
         actions={
           <div className="flex gap-2">
             {editingVideo && (
@@ -2629,55 +2619,146 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
 
               </div>
               <div className="space-y-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Category</label>
-                  <Select
-                    selectedKeys={videoForm.category ? [videoForm.category] : []}
-                    onSelectionChange={(keys) => {
-                      const selected = Array.from(keys)[0] as string;
-                      setVideoForm({ ...videoForm, category: selected });
-                    }}
-                    placeholder="Select category"
-                    size="lg"
-                    radius="lg"
-                    classNames={{
-                      trigger: "bg-white border-2 border-gray-200 hover:border-blue-400 focus:border-blue-500 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-3",
-                      value: "text-gray-900 flex items-center gap-3 flex-1",
-                      popoverContent: "bg-white border border-gray-200 shadow-lg",
-                      listbox: "bg-white"
-                    }}
-                  >
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </Select>
-
-                </div>
+                <label className="text-sm font-medium text-gray-700">Content Type *</label>
+                <Select
+                  selectedKeys={videoForm.contentType ? [videoForm.contentType] : []}
+                  onSelectionChange={(keys) => {
+                    const selected = Array.from(keys)[0] as string;
+                    setVideoForm({ ...videoForm, contentType: selected });
+                  }}
+                  placeholder="Select content type"
+                  size="lg"
+                  radius="lg"
+                  classNames={{
+                    trigger: "bg-white border-2 border-gray-200 hover:border-blue-400 focus:border-blue-500 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-3",
+                    value: "text-gray-900 flex items-center gap-3 flex-1",
+                    popoverContent: "bg-white border border-gray-200 shadow-lg",
+                    listbox: "bg-white"
+                  }}
+                >
+                  <SelectItem key="video" value="video">
+                    <div className="flex items-center gap-2">
+                      <Video className="h-4 w-4" />
+                      Video Content
+                    </div>
+                  </SelectItem>
+                  <SelectItem key="audio" value="audio">
+                    <div className="flex items-center gap-2">
+                      <Headphones className="h-4 w-4" />
+                      Audio Content
+                    </div>
+                  </SelectItem>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Category</label>
+                <Select
+                  selectedKeys={videoForm.category ? [videoForm.category] : []}
+                  onSelectionChange={(keys) => {
+                    const selected = Array.from(keys)[0] as string;
+                    setVideoForm({ ...videoForm, category: selected });
+                  }}
+                  placeholder="Select category"
+                  size="lg"
+                  radius="lg"
+                  classNames={{
+                    trigger: "bg-white border-2 border-gray-200 hover:border-blue-400 focus:border-blue-500 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-3",
+                    value: "text-gray-900 flex items-center gap-3 flex-1",
+                    popoverContent: "bg-white border border-gray-200 shadow-lg",
+                    listbox: "bg-white"
+                  }}
+                >
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </Select>
               </div>
             </CardBody>
           </Card>
 
-          {/* Simple Video Uploader */}
-          <SimpleVideoUploader 
-            initialData={editingVideo ? {
-              title: videoForm.title,
-              videoUrl: videoForm.videoUrl,
-              thumbnail: videoForm.thumbnail,
-              duration: videoForm.duration
-            } : undefined}
-            onVideoUploaded={(videoData) => {
-              setVideoForm({
-                ...videoForm,
-                videoUrl: videoData.videoUrl,
-                duration: videoData.duration,
-                thumbnail: videoData.thumbnail || videoForm.thumbnail,
-                videoType: videoData.videoUrl.includes('youtube.com') || videoData.videoUrl.includes('youtu.be') ? 'youtube' : 
-                          videoData.videoUrl.includes('vimeo.com') ? 'vimeo' : 'external'
-              });
-            }}
-          />
+          {/* Content Uploader - Video or Audio based on content type */}
+          {videoForm.contentType === 'video' ? (
+            <SimpleVideoUploader 
+              initialData={editingVideo ? {
+                title: videoForm.title,
+                videoUrl: videoForm.videoUrl,
+                thumbnail: videoForm.thumbnail,
+                duration: videoForm.duration
+              } : undefined}
+              onVideoUploaded={(videoData) => {
+                setVideoForm({
+                  ...videoForm,
+                  videoUrl: videoData.videoUrl,
+                  duration: videoData.duration,
+                  thumbnail: videoData.thumbnail || videoForm.thumbnail,
+                  videoType: videoData.videoUrl.includes('youtube.com') || videoData.videoUrl.includes('youtu.be') ? 'youtube' : 
+                            videoData.videoUrl.includes('vimeo.com') ? 'vimeo' : 'external'
+                });
+              }}
+            />
+          ) : (
+            <Card className="bg-white border border-gray-200">
+              <CardHeader className="border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Audio Upload</h3>
+              </CardHeader>
+              <CardBody className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Audio File or URL</label>
+                  <Input
+                    value={videoForm.audioUrl}
+                    onChange={(e) => setVideoForm({ ...videoForm, audioUrl: e.target.value })}
+                    placeholder="Enter audio URL or upload file"
+                    startContent={<Headphones className="h-4 w-4 text-blue-500" />}
+                    classNames={{
+                      input: "bg-white focus:ring-0 focus:ring-offset-0 shadow-none",
+                      inputWrapper: "bg-white border-gray-300 hover:border-blue-400 focus-within:border-blue-500"
+                    }}
+                  />
+                </div>
+                <div className="border-2 border-dashed border-blue-300 rounded-xl p-6 text-center hover:border-blue-500 transition-all duration-300 bg-blue-50/30">
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                      <Headphones className="h-6 w-6 text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Upload Audio File</p>
+                      <p className="text-xs text-gray-500">MP3, WAV, M4A up to 50MB</p>
+                    </div>
+                    <Button 
+                      color="primary" 
+                      variant="flat"
+                      startContent={<Upload className="h-4 w-4" />}
+                      onPress={() => {
+                        const fileInput = document.getElementById('audio-file-input') as HTMLInputElement;
+                        fileInput?.click();
+                      }}
+                    >
+                      Choose Audio File
+                    </Button>
+                  </div>
+                  <input
+                    id="audio-file-input"
+                    type="file"
+                    accept="audio/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                          const audioUrl = e.target?.result as string;
+                          setVideoForm({ ...videoForm, audioUrl });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                </div>
+              </CardBody>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-6">
@@ -3008,7 +3089,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     <div className="space-y-6">
 
       <PageHeader 
-        title="All Videos (Package Content)" 
+        title="All Content (Videos & Audio)" 
         actions={
           <div className="flex gap-2">
             {selectedVideos.length > 0 && (
@@ -3055,9 +3136,9 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               className="bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
               startContent={<Plus className="h-4 w-4" />}
               onPress={handleAddVideo}
-              aria-label="Add new video"
+              aria-label="Add new content"
             >
-              Add New Video
+              Add New Content
             </Button>
           </div>
         }
@@ -3067,8 +3148,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         <CardHeader className="border-b border-gray-200 p-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 w-full">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Video Content Library ({videos.filter(v => v.category !== 'Audio Lessons' && v.type !== 'audio').length})</h3>
-              <p className="text-sm text-gray-600">Content for package creation - not sold individually</p>
+              <h3 className="text-lg font-semibold text-gray-900">Content Library ({videos.length})</h3>
+              <p className="text-sm text-gray-600">Video and audio content for package creation</p>
             </div>
             <div className="flex gap-2">
               <Input
@@ -3119,14 +3200,13 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                   />
                 </TableColumn>
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-left w-2/5">TITLE</TableColumn>
+                <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-1/6">TYPE</TableColumn>
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-1/6">CATEGORY</TableColumn>
-
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-1/6">RATING</TableColumn>
                 <TableColumn className="bg-gray-50 text-gray-700 font-semibold py-4 px-6 text-center w-1/6">ACTIONS</TableColumn>
               </TableHeader>
               <TableBody emptyContent="No videos found">
                 {videos
-                  .filter(video => video.category !== 'Audio Lessons' && video.type !== 'audio')
                   .filter(video => {
                     const matchesSearch = videoSearchTerm === '' || 
                       video.title.toLowerCase().includes(videoSearchTerm.toLowerCase()) ||
@@ -3165,12 +3245,21 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                               }}
                             />
                           ) : null}
-                          <Video className="h-6 w-6 text-white fallback-icon" style={{ display: video.thumbnail && video.thumbnail.trim() ? 'none' : 'block' }} />
+                          {(video.type === 'audio' || video.category === 'Audio Lessons') ? (
+                            <Headphones className="h-6 w-6 text-white fallback-icon" style={{ display: video.thumbnail && video.thumbnail.trim() ? 'none' : 'block' }} />
+                          ) : (
+                            <Video className="h-6 w-6 text-white fallback-icon" style={{ display: video.thumbnail && video.thumbnail.trim() ? 'none' : 'block' }} />
+                          )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-gray-900 truncate">{video.title}</p>
                         </div>
                       </div>
+                    </TableCell>
+                    <TableCell className="py-4 px-6 text-center">
+                      <Chip size="sm" variant="flat" className={video.type === 'audio' || video.category === 'Audio Lessons' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}>
+                        {(video.type === 'audio' || video.category === 'Audio Lessons') ? 'Audio' : 'Video'}
+                      </Chip>
                     </TableCell>
                     <TableCell className="py-4 px-6 text-center">
                       <Chip size="sm" variant="flat" className="bg-gray-100 text-gray-700">
@@ -3376,15 +3465,30 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                         className="hover:bg-red-50 transition-colors"
                         onPress={async () => {
                           if (confirm(`Are you sure you want to delete user "${user.name}"? This action cannot be undone.`)) {
-                            const success = await vpsDataStore.deleteUser(user.id);
-                            if (success) {
-                              setUsers(prev => prev.filter(u => u.id !== user.id));
-                              vpsDataStore.clearMemoryCache();
-                              setTimeout(() => loadRealData(true), 100);
-                              setToast({message: 'User deleted successfully!', type: 'success'});
-                              setTimeout(() => setToast(null), 3000);
-                            } else {
-                              setToast({message: 'Failed to delete user', type: 'error'});
+                            try {
+                              // Delete user from VPS data store
+                              const data = await vpsDataStore.loadData();
+                              data.users = data.users?.filter(u => u.id !== user.id) || [];
+                              const success = await vpsDataStore.saveData(data);
+                              
+                              if (success) {
+                                // Update local state immediately
+                                setUsers(prev => prev.filter(u => u.id !== user.id));
+                                
+                                // Clear caches to ensure consistency
+                                vpsDataStore.clearMemoryCache();
+                                localStorage.removeItem('zinga-linga-app-data-cache');
+                                localStorage.removeItem('zinga-linga-app-data');
+                                
+                                setToast({message: 'User deleted successfully!', type: 'success'});
+                                setTimeout(() => setToast(null), 3000);
+                              } else {
+                                setToast({message: 'Failed to delete user from server', type: 'error'});
+                                setTimeout(() => setToast(null), 3000);
+                              }
+                            } catch (error) {
+                              console.error('Error deleting user:', error);
+                              setToast({message: 'Error deleting user', type: 'error'});
                               setTimeout(() => setToast(null), 3000);
                             }
                           }
