@@ -242,7 +242,8 @@ class RealDataAnalytics {
       const activities: any[] = [];
       
       // Filter out demo/admin accounts
-      const realUsers = data.users.filter(user => 
+      const realUsers = (data.users || []).filter(user => 
+        user && user.email &&
         !user.email.includes('admin@videostore.com') && 
         !user.email.includes('parent@example.com') &&
         !user.email.includes('@example.com') &&

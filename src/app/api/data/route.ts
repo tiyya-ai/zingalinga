@@ -105,29 +105,10 @@ export async function GET() {
       return NextResponse.json(existingData);
     }
     
-    // NEVER create default data automatically - this prevents data loss
-    console.warn('No existing data found - returning empty structure to prevent data loss');
-    return NextResponse.json({
-      users: [],
-      modules: [],
-      purchases: [],
-      contentFiles: [],
-      uploadQueue: [],
-      packages: [],
-      settings: {
-        siteName: 'Zinga Linga',
-        defaultLanguage: 'en',
-        timezone: 'UTC',
-        features: {
-          userRegistration: true,
-          videoComments: true,
-          videoDownloads: true,
-          socialSharing: false
-        },
-        dataSource: 'vps',
-        enableRealTimeSync: true
-      }
-    });
+    // Create default data if none exists
+    console.info('No existing data found - creating default data');
+    const defaultData = await createDefaultData();
+    return NextResponse.json(defaultData);
   } catch (error) {
     console.error('API GET error:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
