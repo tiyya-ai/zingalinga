@@ -39,7 +39,7 @@ function checkLoginRateLimit(ip: string): { allowed: boolean; lockUntil?: number
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
-    const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     const rateLimitCheck = checkLoginRateLimit(ip);
     
     if (!rateLimitCheck.allowed) {

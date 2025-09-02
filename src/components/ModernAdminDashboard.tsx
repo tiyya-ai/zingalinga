@@ -533,19 +533,11 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // DISABLED: Load real data from vpsDataStore - was causing continuous API calls
-  // useEffect(() => {
-  //   loadRealData();
-  //   loadExistingLogo();
-  //   
-  //   // DISABLED: Auto-refresh was causing continuous API calls and interfering with admin operations
-  //   // const interval = setInterval(() => {
-  //   //   loadRealData();
-  //   // }, 10000);
-  //   
-  //   // return () => clearInterval(interval);
-  //   return () => {}; // Cleanup function still needed
-  // }, []);
+  // Load real data from vpsDataStore on component mount
+  useEffect(() => {
+    loadRealData();
+    loadExistingLogo();
+  }, []);
   
   // Load existing logo only on mount
   useEffect(() => {
