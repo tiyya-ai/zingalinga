@@ -829,6 +829,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       children: [
         { id: 'all-videos', label: 'All Content', icon: <Folder className="h-4 w-4" /> },
         { id: 'add-video', label: 'Add Content', icon: <Plus className="h-4 w-4" /> },
+        { id: 'categories', label: 'Categories', icon: <Tag className="h-4 w-4" /> },
         { id: 'upload-queue', label: 'Upload Queue', icon: <Upload className="h-4 w-4" />, badge: uploadQueue.length > 0 ? uploadQueue.length.toString() : undefined }
       ]
     },
@@ -4677,6 +4678,12 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                             }
                             
                             if (audioUrl && audioUrl.trim() !== '') {
+                              // For external URLs, open in new tab
+                              if (audioUrl.startsWith('http') && !audioUrl.startsWith('data:')) {
+                                window.open(audioUrl, '_blank');
+                                return;
+                              }
+                              
                               const audioId = `audio-${lesson.id}`;
                               let audio = document.getElementById(audioId) as HTMLAudioElement;
                               
@@ -4686,36 +4693,25 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                                 audio.id = audioId;
                                 audio.preload = 'metadata';
                                 audio.controls = false;
+                                audio.style.display = 'none';
                                 document.body.appendChild(audio);
                               }
                               
-                              // Set source with multiple format support
+                              // Set source if different
                               if (audio.src !== audioUrl) {
-                                audio.innerHTML = '';
-                                
-                                // Add multiple source elements for better compatibility
-                                const source1 = document.createElement('source');
-                                source1.src = audioUrl;
-                                source1.type = 'audio/mpeg';
-                                audio.appendChild(source1);
-                                
-                                const source2 = document.createElement('source');
-                                source2.src = audioUrl;
-                                source2.type = 'audio/wav';
-                                audio.appendChild(source2);
-                                
-                                const source3 = document.createElement('source');
-                                source3.src = audioUrl;
-                                source3.type = 'audio/ogg';
-                                audio.appendChild(source3);
-                                
+                                audio.src = audioUrl;
                                 audio.load();
                               }
                               
                               if (audio.paused) {
                                 audio.play().catch((error) => {
                                   console.error('Audio play failed:', error);
-                                  alert('Audio format not supported or file corrupted.');
+                                  // Fallback: try to open as link
+                                  if (audioUrl.startsWith('http')) {
+                                    window.open(audioUrl, '_blank');
+                                  } else {
+                                    alert('Audio format not supported. Please check the audio file.');
+                                  }
                                 });
                               } else {
                                 audio.pause();
@@ -4726,7 +4722,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                           }}
                           aria-label={`Play audio lesson ${lesson.title}`}
                         >
-                          <span className="text-white text-sm">-</span>
+                          <Play className="h-4 w-4 text-white" />
                         </Button>
                       </td>
                       <td className="px-4 py-3">
