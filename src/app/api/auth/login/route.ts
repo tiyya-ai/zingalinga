@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       email = requestData.email;
       password = requestData.password;
     } catch (parseError) {
-      console.error('❌ JSON parse error:', parseError.message);
+      console.error('❌ JSON parse error:', parseError instanceof Error ? parseError.message : 'Unknown error');
       return NextResponse.json(
         { success: false, error: 'Invalid JSON in request body' },
         { status: 400 }
