@@ -1,4 +1,5 @@
 import express from 'express';
+import next from 'next';
 import fs from 'fs';
 import path from 'path';
 import cors from 'cors';
@@ -7,8 +8,16 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
-const PORT = process.env.PORT || 3001;
+const dev = process.env.NODE_ENV !== 'production';
+const hostname = 'localhost';
+const port = process.env.PORT || 3000;
+
+// Initialize Next.js
+const app = next({ dev, hostname, port });
+const handle = app.getRequestHandler();
+
+// Express server
+const server = express();
 
 // Use a canonical DATA_DIR so both Next API routes and this server read/write the
 // same data file. Allow override via env (useful in deployments).
@@ -17,10 +26,8 @@ const DATA_FILE = path.join(DATA_DIR, 'global-app-data.json');
 const PERM_BACKUP = path.join(DATA_DIR, 'backup-permanent.json');
 
 // Middleware
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.static('.next/static'));
-app.use(express.static('public'));
+server.use(cors());
+server.use(express.json({ limit: '50mb' }));
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -28,8 +35,6 @@ if (!fs.existsSync(DATA_DIR)) {
 }
 
 // Initialize data file if it doesn't exist.
-// If a permanent backup exists, restore from it. Otherwise create a minimal
-// default file to avoid failing reads (but prefer permanent backup to seed data).
 if (!fs.existsSync(DATA_FILE)) {
   if (fs.existsSync(PERM_BACKUP)) {
     try {
@@ -40,8 +45,7 @@ if (!fs.existsSync(DATA_FILE)) {
       console.error('❌ Failed to restore permanent backup:', restoreErr);
     }
   } else {
-    // Minimal default (keeps modules empty by default). This mirrors the
-    // previous behavior but we favor permanent backups for real data.
+    // Minimal default data
     const defaultData = {
       users: [
         {
@@ -53,7 +57,10 @@ if (!fs.existsSync(DATA_FILE)) {
           purchasedModules: [],
           totalSpent: 0,
           createdAt: new Date().toISOString(),
-          lastLogin: new Date().toISOString()
+          lastLogin: new Date().toISOString(),
+          loginAttempts: 0,
+          lastLoginAttempt: null,
+          accountLocked: false
         }
       ],
       modules: [],
@@ -86,8 +93,8 @@ if (!fs.existsSync(DATA_FILE)) {
   }
 }
 
-// API Routes
-app.get('/api/data', (req, res) => {
+// API Routes for data management
+server.get('/api/data', (req, res) => {
   try {
     const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     data.lastLoaded = new Date().toISOString();
@@ -98,7 +105,7 @@ app.get('/api/data', (req, res) => {
   }
 });
 
-app.post('/api/data', (req, res) => {
+server.post('/api/data', (req, res) => {
   try {
     const incoming = req.body || {};
 
@@ -123,26 +130,13 @@ app.post('/api/data', (req, res) => {
       }
     }
 
-    // Protect against destructive saves that would delete existing modules
+    // Protect against destructive saves
     if (existing?.modules?.length > 0 && (!incoming.modules || incoming.modules.length === 0)) {
       console.error('🚨 Refusing to save: incoming payload would delete', existing.modules.length, 'modules');
-
-      // Try to restore from permanent backup if available
-      if (fs.existsSync(PERM_BACKUP)) {
-        try {
-          const perm = fs.readFileSync(PERM_BACKUP, 'utf8');
-          fs.writeFileSync(DATA_FILE, perm);
-          console.log('🔁 Restored data from permanent backup');
-          return res.status(400).json({ success: false, error: 'Refusing to delete existing modules. Restored from permanent backup.' });
-        } catch (restoreErr) {
-          console.error('Failed to restore from permanent backup:', restoreErr);
-        }
-      }
-
       return res.status(400).json({ success: false, error: 'Refusing to delete existing modules' });
     }
 
-    // Merge/preserve data: prefer incoming if it has content, otherwise keep existing
+    // Merge/preserve data
     const preserved = {
       users: incoming.users && incoming.users.length > 0 ? incoming.users : (existing?.users || []),
       modules: incoming.modules && incoming.modules.length > 0 ? incoming.modules : (existing?.modules || []),
@@ -186,27 +180,14 @@ app.post('/api/data', (req, res) => {
   }
 });
 
-// Serve Next.js app
-app.get('*', (req, res) => {
-  // For production, we need to handle this differently
-  // Let Next.js handle the routing
-  res.status(404).json({ error: 'Route not found. Please use Next.js server for frontend.' });
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
-// Confirm pending payments and mark purchases as completed.
-// Body: { purchaseIds: string[], confirmBy: 'admin' | 'gateway' }
-app.post('/api/payments/confirm', (req, res) => {
+// Payment confirmation endpoint
+server.post('/api/payments/confirm', (req, res) => {
   try {
     const { purchaseIds } = req.body || {};
     if (!Array.isArray(purchaseIds) || purchaseIds.length === 0) {
       return res.status(400).json({ success: false, error: 'purchaseIds required' });
     }
 
-    // Read existing data
     const raw = fs.readFileSync(DATA_FILE, 'utf8');
     const data = JSON.parse(raw || '{}');
     data.purchases = data.purchases || [];
@@ -214,51 +195,22 @@ app.post('/api/payments/confirm', (req, res) => {
 
     let changed = false;
 
-    // For each purchase ID, if it's pending, mark completed and update user
     for (const pid of purchaseIds) {
       const pIndex = data.purchases.findIndex(p => p.id === pid);
-      if (pIndex === -1) continue; // ignore unknown
+      if (pIndex === -1) continue;
 
       const purchase = data.purchases[pIndex];
-      if (purchase.status === 'completed') continue; // idempotent
+      if (purchase.status === 'completed') continue;
 
-      // Mark as completed
       purchase.status = 'completed';
       purchase.confirmedAt = new Date().toISOString();
 
-      // Update user's purchasedModules and totalSpent
       const user = data.users.find(u => u.id === purchase.userId);
       if (user) {
         user.purchasedModules = user.purchasedModules || [];
-        // If purchase is a package/bundle, add package id and content ids if present
-        if (purchase.type === 'package' || purchase.type === 'bundle') {
-          if (!user.purchasedModules.includes(purchase.packageId || purchase.moduleId)) {
-            user.purchasedModules.push(purchase.packageId || purchase.moduleId);
-          }
-        }
-        // If purchase has packageId or bundleId and contentIds are present in data.packages/bundles, include them
-        if (purchase.packageId && data.packages) {
-          const pkg = (data.packages || []).find(p => p.id === purchase.packageId);
-          if (pkg && Array.isArray(pkg.contentIds)) {
-            for (const cid of pkg.contentIds) {
-              if (!user.purchasedModules.includes(cid)) user.purchasedModules.push(cid);
-            }
-          }
-        }
-        if (purchase.bundleId && data.bundles) {
-          const b = (data.bundles || []).find(x => x.id === purchase.bundleId);
-          if (b && Array.isArray(b.contentIds)) {
-            for (const cid of b.contentIds) {
-              if (!user.purchasedModules.includes(cid)) user.purchasedModules.push(cid);
-            }
-          }
-        }
-
-        // For single content purchase
         if (purchase.moduleId && !user.purchasedModules.includes(purchase.moduleId)) {
           user.purchasedModules.push(purchase.moduleId);
         }
-
         user.totalSpent = (user.totalSpent || 0) + (purchase.amount || 0);
       }
 
@@ -266,14 +218,6 @@ app.post('/api/payments/confirm', (req, res) => {
     }
 
     if (changed) {
-      // Backup then write
-      try {
-        const backupFile = path.join(DATA_DIR, `backup-payconfirm-${Date.now()}.json`);
-        fs.writeFileSync(backupFile, raw);
-      } catch (bErr) {
-        console.error('Failed to create backup before payment confirm:', bErr);
-      }
-
       fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
       return res.json({ success: true, processed: purchaseIds.length });
     }
@@ -283,4 +227,18 @@ app.post('/api/payments/confirm', (req, res) => {
     console.error('Error confirming payments:', err);
     return res.status(500).json({ success: false, error: 'internal error' });
   }
+});
+
+// Let Next.js handle all other requests
+server.all('*', (req, res) => {
+  return handle(req, res);
+});
+
+app.prepare().then(() => {
+  server.listen(port, (err) => {
+    if (err) throw err;
+    console.log(`🚀 Server ready on http://${hostname}:${port}`);
+    console.log(`📁 Data directory: ${DATA_DIR}`);
+    console.log(`📄 Data file: ${DATA_FILE}`);
+  });
 });

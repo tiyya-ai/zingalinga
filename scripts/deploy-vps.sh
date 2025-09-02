@@ -15,7 +15,7 @@ npm run build
 
 # Create deployment package
 echo "📦 Creating deployment package..."
-tar -czf $DEPLOY_PACKAGE .next node_modules package.json package-lock.json public
+tar -czf $DEPLOY_PACKAGE .next node_modules package.json package-lock.json public src production-server.js .env.production data
 
 # Upload to VPS
 echo "📤 Uploading to VPS..."
@@ -36,11 +36,18 @@ ssh $VPS_USER@$VPS_IP << 'EOF'
     cd /var/www/zinga-linga
     tar -xzf /root/zinga-linga-vps.tar.gz
 
+    # Create data directory if it doesn't exist
+    mkdir -p data
+    
+    # Set proper permissions
+    chown -R root:root /var/www/zinga-linga
+    chmod -R 755 /var/www/zinga-linga
+    
     # Install production dependencies
     npm install --production
 
-    # Start with PM2
-    pm2 start npm --name "zinga-linga" -- start
+    # Start with PM2 using production server
+    pm2 start production-server.js --name "zinga-linga"
 
     # Clean up
     rm /root/zinga-linga-vps.tar.gz

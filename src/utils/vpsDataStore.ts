@@ -130,6 +130,16 @@ class VPSDataStore {
     return {
       users: [
         {
+          id: 'admin_001',
+          email: 'admin@zingalinga.com',
+          name: 'Admin User',
+          role: 'admin' as 'user' | 'admin',
+          purchasedModules: [],
+          totalSpent: 0,
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        },
+        {
           id: 'user_001',
           email: 'test@example.com',
           name: 'Test User',
@@ -308,7 +318,7 @@ class VPSDataStore {
     };
   }
 
-  // Load data from VPS API
+  // Load data from VPS API only
   async loadData(forceRefresh = false): Promise<AppData> {
     try {
       // Return memory data if available and not forcing refresh
@@ -317,181 +327,73 @@ class VPSDataStore {
         return this.memoryData;
       }
       
-      // Try to load from VPS API first
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        
-        const response = await fetch('/api/data', {
-          method: 'GET',
-          signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
-          }
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          const data = await response.json();
-          this.memoryData = data;
-          console.info('✅ Data loaded from VPS API with modules:', data.modules?.length || 0, 'users:', data.users?.length || 0);
-          return data;
-        } else {
-          console.error('❌ VPS API response not ok:', response.status);
+      // Load from VPS API only
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      
+      const response = await fetch('/api/data', {
+        method: 'GET',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
         }
-      } catch (error) {
-        console.error('❌ VPS API load failed:', error instanceof Error ? error.message : 'Unknown error');
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const data = await response.json();
+        this.memoryData = data;
+        console.info('✅ Data loaded from VPS API with modules:', data.modules?.length || 0, 'users:', data.users?.length || 0);
+        return data;
       }
       
-      // Fallback to localStorage if API fails
-      let stored = localStorage.getItem('zinga-linga-persistent-data');
-      if (!stored) {
-        stored = localStorage.getItem('zinga-linga-backup-data');
-      }
-      if (!stored) {
-        stored = localStorage.getItem('zinga-linga-app-data');
-      }
-      
-      if (stored) {
-        try {
-          const data = JSON.parse(stored);
-          this.memoryData = data;
-          console.info('⚠️ Using localStorage fallback with modules:', data.modules?.length || 0, 'users:', data.users?.length || 0);
-          return data;
-        } catch (error) {
-          console.error('❌ Failed to parse stored data:', error instanceof Error ? error.message : 'Unknown error');
-        }
-      }
-      
-      // Fallback to API if available
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-        
-        const response = await fetch('/api/data', {
-          signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          const data = await response.json();
-          
-          // Merge with existing data to prevent loss
-          const mergedData = {
-            ...data,
-            modules: data.modules || this.memoryData?.modules || [],
-            packages: data.packages?.length > 0 ? data.packages : this.getDefaultPackages(),
-            categories: data.categories?.length > 0 ? data.categories : ['Audio Lessons', 'PP1 Program', 'PP2 Program'],
-            savedVideos: data.savedVideos || [],
-            ageGroups: data.ageGroups || [],
-            users: data.users || this.memoryData?.users || [],
-            purchases: data.purchases || this.memoryData?.purchases || [],
-            lastLoaded: new Date().toISOString()
-          };
-          
-          this.memoryData = mergedData;
-          localStorage.setItem('zinga-linga-persistent-data', JSON.stringify(mergedData));
-          console.info('Data loaded from API with modules:', mergedData.modules?.length || 0, 'packages:', mergedData.packages?.length || 0);
-          return mergedData;
-        }
-      } catch (error) {
-        console.error('API load failed:', error instanceof Error ? error.message : 'Unknown error');
-      }
-    
-      // CRITICAL: Never lose data - always preserve existing content
-      console.warn('API failed, preserving existing data');
-      
-      if (this.memoryData) {
-        console.info('PROTECTED: Using existing memory data with modules:', this.memoryData.modules?.length || 0);
-        return this.memoryData;
-      }
-      
-      // Return default structure only if no data exists
-      console.info('No existing data - initializing with defaults');
-      const defaultData = this.getDefaultData();
-      this.memoryData = defaultData;
-      return defaultData;
+      throw new Error(`API failed with status: ${response.status}`);
     } catch (error) {
-      console.error('Failed to load data:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('❌ VPS API load failed:', error instanceof Error ? error.message : 'Unknown error');
+      
+      // Return default data if API fails
       const defaultData = this.getDefaultData();
       this.memoryData = defaultData;
       return defaultData;
     }
   }
 
-  // Save data to VPS API with localStorage backup
+  // Save data to VPS API only
   async saveData(data: AppData): Promise<boolean> {
     try {
-      // FIXED: Use the actual data being passed, don't fall back to cached data
-      // This was causing deleted users to reappear because it preserved cached users
       const preservedData = {
         ...data,
-        // Only preserve from cache if data is explicitly undefined (not empty arrays)
-        modules: data.modules !== undefined ? data.modules : (this.memoryData?.modules || []),
-        users: data.users !== undefined ? data.users : (this.memoryData?.users || []),
-        categories: data.categories !== undefined ? data.categories : (this.memoryData?.categories || []),
         lastUpdated: new Date().toISOString()
       };
       
-      // Always update memory cache immediately
+      // Update memory cache
       this.memoryData = preservedData;
       
-      // Try to save to VPS API first
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        
-        const response = await fetch('/api/data', {
-          method: 'POST',
-          signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(preservedData)
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          console.info('✅ Data saved to VPS API with modules:', preservedData.modules?.length || 0, 'users:', preservedData.users?.length || 0);
-          
-          // Also save to localStorage as backup
-          try {
-            const dataString = JSON.stringify(preservedData);
-            localStorage.setItem('zinga-linga-persistent-data', dataString);
-            localStorage.setItem('zinga-linga-backup-data', dataString);
-          } catch (localError) {
-            console.warn('⚠️ localStorage backup failed:', localError);
-          }
-          
-          return true;
-        } else {
-          console.error('❌ VPS API save failed:', response.status);
-        }
-      } catch (error) {
-        console.error('❌ VPS API save error:', error instanceof Error ? error.message : 'Unknown error');
+      // Save to VPS API only
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      
+      const response = await fetch('/api/data', {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(preservedData)
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        console.info('✅ Data saved to VPS API with modules:', preservedData.modules?.length || 0, 'users:', preservedData.users?.length || 0);
+        return true;
       }
       
-      // Fallback to localStorage if API fails
-      try {
-        const dataString = JSON.stringify(preservedData);
-        localStorage.setItem('zinga-linga-persistent-data', dataString);
-        localStorage.setItem('zinga-linga-backup-data', dataString);
-        localStorage.setItem('zinga-linga-app-data', dataString);
-        console.info('⚠️ Data saved to localStorage fallback with modules:', preservedData.modules?.length || 0, 'users:', preservedData.users?.length || 0);
-        return true;
-      } catch (error) {
-        console.error('❌ localStorage save failed:', error instanceof Error ? error.message : 'Unknown error');
-        return false;
-      }
+      throw new Error(`API save failed with status: ${response.status}`);
     } catch (error) {
-      console.error('❌ Failed to save data:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('❌ VPS API save failed:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }

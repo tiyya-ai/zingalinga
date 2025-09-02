@@ -11,10 +11,15 @@ const DATA_FILE = path.join(DATA_DIR, 'global-app-data.json');
 const loginAttempts = new Map<string, { count: number; resetTime: number; lockUntil?: number }>();
 
 function checkLoginRateLimit(ip: string): { allowed: boolean; lockUntil?: number } {
+  // Skip rate limiting for admin access during development
+  if (process.env.NODE_ENV === 'development') {
+    return { allowed: true };
+  }
+  
   const now = Date.now();
   const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxAttempts = 5;
-  const lockDuration = 30 * 60 * 1000; // 30 minutes lockout
+  const maxAttempts = 10; // Increased from 5 to 10
+  const lockDuration = 5 * 60 * 1000; // Reduced from 30 to 5 minutes
   
   const record = loginAttempts.get(ip);
   
