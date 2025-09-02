@@ -8,7 +8,7 @@
     "build": "next build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "start": "node production-server.js",
+    "start": "next start -p 3000",
     "start:next": "next start",
     "test": "echo \"No tests specified\" && exit 0"
   },

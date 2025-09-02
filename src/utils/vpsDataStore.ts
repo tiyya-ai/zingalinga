@@ -493,7 +493,7 @@ class VPSDataStore {
 
   async updateProduct(updatedProduct: any): Promise<boolean> {
     try {
-      console.log('🔄 Updating product:', { id: updatedProduct.id, title: updatedProduct.title, videoUrl: updatedProduct.videoUrl?.substring(0, 50) });
+      console.log('🔄 Updating product:', { id: sanitizeForLog(updatedProduct.id || ''), title: sanitizeForLog(updatedProduct.title || ''), videoUrl: '[REDACTED]' });
       const data = await this.loadData();
       data.modules = data.modules || [];
       const index = data.modules.findIndex(p => p.id === updatedProduct.id);
@@ -980,7 +980,7 @@ class VPSDataStore {
       // Clean up video memory cache if item exists
       if (this.videoMemoryCache?.has(uploadId)) {
         this.videoMemoryCache.delete(uploadId);
-        console.log('🗑️ Removed video from memory cache:', uploadId);
+        console.log('🗑️ Removed video from memory cache:', sanitizeForLog(uploadId));
       }
       
       data.uploadQueue = data.uploadQueue.filter(item => item.id !== uploadId);
@@ -1335,7 +1335,7 @@ class VPSDataStore {
 
   async addPackage(packageData: any): Promise<boolean> {
     try {
-      console.log('📦 Adding package:', packageData.name);
+      console.log('📦 Adding package:', sanitizeForLog(packageData.name || 'unnamed'));
       const data = await this.loadData();
       
       // Check if package with same name already exists
@@ -1368,7 +1368,7 @@ class VPSDataStore {
 
   async updatePackage(updatedPackage: any): Promise<boolean> {
     try {
-      console.log('🔄 Updating package:', updatedPackage.id);
+      console.log('🔄 Updating package:', sanitizeForLog(updatedPackage.id || 'no-id'));
       const data = await this.loadData();
       data.packages = data.packages || [];
       const index = data.packages.findIndex(p => p.id === updatedPackage.id);
@@ -1391,7 +1391,7 @@ class VPSDataStore {
 
   async deletePackage(packageId: string): Promise<boolean> {
     try {
-      console.log('🗑️ Deleting package:', packageId);
+      console.log('🗑️ Deleting package:', sanitizeForLog(packageId));
       const data = await this.loadData();
       data.packages = data.packages || [];
       const originalLength = data.packages.length;
