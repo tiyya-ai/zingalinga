@@ -428,12 +428,14 @@ class VPSDataStore {
   // Save data to VPS API with localStorage backup
   async saveData(data: AppData): Promise<boolean> {
     try {
-      // CRITICAL: Never lose existing data - always preserve what we have
+      // FIXED: Use the actual data being passed, don't fall back to cached data
+      // This was causing deleted users to reappear because it preserved cached users
       const preservedData = {
         ...data,
-        modules: data.modules || (this.memoryData?.modules || []),
-        users: data.users || (this.memoryData?.users || []),
-        categories: data.categories || (this.memoryData?.categories || []),
+        // Only preserve from cache if data is explicitly undefined (not empty arrays)
+        modules: data.modules !== undefined ? data.modules : (this.memoryData?.modules || []),
+        users: data.users !== undefined ? data.users : (this.memoryData?.users || []),
+        categories: data.categories !== undefined ? data.categories : (this.memoryData?.categories || []),
         lastUpdated: new Date().toISOString()
       };
       
