@@ -1393,9 +1393,8 @@ export default function ProfessionalUserDashboard({
 
                           
                           {/* Play icon for videos and audio */}
-                          {isPurchased && (
-                            <div 
-                              className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors group-hover:bg-black/30 cursor-pointer"
+                          <div 
+                            className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors group-hover:bg-black/30 cursor-pointer"
                               onClick={() => {
                                 if (content.category === 'Audio Lessons' || content.type === 'audio') {
                                   let audioUrl = content.audioUrl || content.videoUrl;
@@ -1489,7 +1488,6 @@ export default function ProfessionalUserDashboard({
                                 )}
                               </div>
                             </div>
-                          )}
                         </div>
                         
                         {!isPurchased && (
@@ -1600,18 +1598,51 @@ export default function ProfessionalUserDashboard({
                               content.category === 'Audio Lessons' || content.type === 'audio' ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
                             }`}
                           >
-                            {content.category === 'Audio Lessons' || content.type === 'audio' ? 'Play' : 'Access Content'}
+                            {content.category === 'Audio Lessons' || content.type === 'audio' ? 'Play Audio' : 'Access Content'}
                           </button>
                         ) : (
                           <button 
                             onClick={() => {
-                              addToCart(content.id);
-                              setShowCartPopup(true);
-                              setTimeout(() => setShowCartPopup(false), 2000);
+                              // For audio lessons, allow preview/play even if not purchased
+                              if (content.category === 'Audio Lessons' || content.type === 'audio') {
+                                let audioUrl = content.audioUrl || content.videoUrl;
+                                
+                                if (content.audioUrl && typeof content.audioUrl === 'object' && 'type' in content.audioUrl) {
+                                  audioUrl = URL.createObjectURL(content.audioUrl as unknown as File);
+                                } else if (content.videoUrl && typeof content.videoUrl === 'object' && 'type' in content.videoUrl) {
+                                  audioUrl = URL.createObjectURL(content.videoUrl as unknown as File);
+                                }
+                                
+                                if (audioUrl) {
+                                  setSelectedAudio({
+                                    ...content,
+                                    audioUrl: audioUrl,
+                                    audioFile: content.audioUrl && typeof content.audioUrl === 'object' && 'type' in content.audioUrl ? content.audioUrl : (content.videoUrl && typeof content.videoUrl === 'object' && 'type' in content.videoUrl ? content.videoUrl : null)
+                                  });
+                                  setShowAudioModal(true);
+                                } else {
+                                  // If no audio available, show purchase option
+                                  addToCart(content.id);
+                                  setShowCartPopup(true);
+                                  setTimeout(() => setShowCartPopup(false), 2000);
+                                }
+                              } else {
+                                // For other content, show purchase option
+                                addToCart(content.id);
+                                setShowCartPopup(true);
+                                setTimeout(() => setShowCartPopup(false), 2000);
+                              }
                             }}
-                            className={`w-full px-4 py-2 rounded-lg font-semibold transition-colors bg-gradient-to-r ${getContentColor(content.category || '')} hover:shadow-lg text-white`}
+                            className={`w-full px-4 py-2 rounded-lg font-semibold transition-colors ${
+                              content.category === 'Audio Lessons' || content.type === 'audio' 
+                                ? 'bg-blue-500 hover:bg-blue-600 text-white' 
+                                : `bg-gradient-to-r ${getContentColor(content.category || '')} hover:shadow-lg text-white`
+                            }`}
                           >
-                            Buy ${content.price || 0}
+                            {content.category === 'Audio Lessons' || content.type === 'audio' 
+                              ? 'Play Audio' 
+                              : `Buy $${content.price || 0}`
+                            }
                           </button>
                         )}
                       </div>
@@ -1623,8 +1654,8 @@ export default function ProfessionalUserDashboard({
               {filteredContent.length === 0 && (
                 <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                   <div className="text-6xl mb-4">{getContentIcon('', categoryName)}</div>
-                  <div className="text-white text-xl mb-2">No {categoryName} purchased</div>
-                  <div className="text-purple-200 text-sm mb-4">Purchase packages to access {categoryName.toLowerCase()}</div>
+                  <div className="text-white text-xl mb-2">No {categoryName} available</div>
+                  <div className="text-purple-200 text-sm mb-4">Check back later for new {categoryName.toLowerCase()}</div>
                   <button 
                     onClick={() => handleSetActiveTab('packages')}
                     className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold px-6 py-3 rounded-lg transition-all duration-200"
@@ -2507,7 +2538,7 @@ export default function ProfessionalUserDashboard({
               <p className="text-purple-200">Discover bundled content packages with special pricing</p>
             </div>
             
-            {packages.length > 0 ? (
+            {packages.length === 0 ? (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <div className="text-6xl mb-4">🛍️</div>
                 <div className="text-white text-xl mb-2">No Items Available</div>

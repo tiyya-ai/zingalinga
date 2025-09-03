@@ -621,15 +621,9 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       // Load data from VPS API without cache
       const data = await vpsDataStore.loadData(true);
       
-      // Smart user merging: preserve local deletions while getting updates
+      // Load all users from VPS - show all registered users
       const vpsUsers = data.users || [];
-      const currentUserIds = new Set(currentUsers.map(u => u.id));
-      
-      // FIXED LOGIC: Only include VPS users that still exist locally (preserves deletions)
-      // This ensures deleted users don't come back from VPS
-      const realUsers = vpsUsers.filter(vpsUser => {
-        return currentUserIds.has(vpsUser.id);
-      });
+      const realUsers = vpsUsers; // Show all users from VPS
       
       console.log('🔄 Smart refresh applied:', {
         vpsUsers: vpsUsers.length,
