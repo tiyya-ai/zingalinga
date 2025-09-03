@@ -1768,9 +1768,7 @@ export default function ProfessionalUserDashboard({
               {allModules.filter(module => {
                 const isVideo = module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons';
                 const isPurchased = isItemPurchased(module.id);
-                const matchesPpFilter = ppFilter === 'all' || 
-                  (ppFilter === 'PP1' && module.category === 'PP1 Program') ||
-                  (ppFilter === 'PP2' && module.category === 'PP2 Program');
+                const matchesPpFilter = ppFilter === 'all' || module.category === ppFilter;
                 return isVideo && isPurchased && matchesPpFilter;
               }).map(module => {
                 const isPurchased = isItemPurchased(module.id);
