@@ -761,9 +761,9 @@ export default function ProfessionalUserDashboard({
           <div className="grid grid-cols-2 gap-2">
             {[
               { id: 'dashboard', label: '🏠 Home', count: null },
-              { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
-              { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
-              { id: 'packages', label: '🛍️ Store', count: packages.length },
+              { id: 'videos', label: '🎬 Videos', count: null },
+              { id: 'audio-lessons', label: '🎧 Audio', count: null },
+              { id: 'packages', label: '🛍️ Store', count: null },
               { id: 'profile', label: '👤 Profile', count: null }
             ].map(tab => (
               <button
@@ -788,9 +788,9 @@ export default function ProfessionalUserDashboard({
             <div className="flex flex-col md:flex-row md:flex-wrap gap-2 bg-white/10 backdrop-blur-sm rounded-xl p-2 border border-white/20">
               {[
                 { id: 'dashboard', label: '🏠 Home', count: null },
-                { id: 'videos', label: '🎬 Videos', count: allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length },
-                { id: 'audio-lessons', label: '🎧 Audio', count: allContent.filter(c => c.category === 'Audio Lessons' || c.type === 'audio').length },
-                { id: 'packages', label: '🛍️ Store', count: packages.length }
+                { id: 'videos', label: '🎬 Videos', count: null },
+                { id: 'audio-lessons', label: '🎧 Audio', count: null },
+                { id: 'packages', label: '🛍️ Store', count: null }
               ].map(tab => (
                 <button
                   key={tab.id}

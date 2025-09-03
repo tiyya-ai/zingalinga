@@ -143,7 +143,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
         {/* Package Stats */}
         <div className="flex items-center justify-between mb-6 p-4 bg-white/10 rounded-2xl border border-white/20">
           <div>
-            <div className="text-sm font-semibold text-white">{pkg.contentIds?.length || 0} Items</div>
+            <div className="text-sm font-semibold text-white">{pkg.contentIds?.filter(id => id && id.trim()).length || 0} Items</div>
             <div className="text-xs text-white/60">Included</div>
           </div>
           
