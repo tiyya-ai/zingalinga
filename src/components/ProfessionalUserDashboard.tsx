@@ -444,12 +444,10 @@ export default function ProfessionalUserDashboard({
     // Also check user's purchased modules list
     const inUserList = user.purchasedModules?.includes(itemId) || false;
     
-    // Check if item is part of a purchased package (only for items with no price)
-    const content = allModules.find(m => m.id === itemId);
+    // Check if item is part of a purchased package
     const isInPurchasedPackage = packages.some(pkg => 
       user.purchasedModules?.includes(pkg.id) && 
-      pkg.contentIds?.includes(itemId) &&
-      (!content?.price || content.price === 0) // Only free content is included with package
+      pkg.contentIds?.includes(itemId)
     );
     
     // For packages, check if the package itself is purchased
@@ -1327,7 +1325,10 @@ export default function ProfessionalUserDashboard({
           };
           
           const categoryName = categoryMap[tabId];
-          const filteredContent = allContent.filter(content => content.category === categoryName && isItemPurchased(content.id));
+          const filteredContent = allContent.filter(content => {
+            const matchesCategory = content.category === categoryName || (categoryName === 'Audio Lessons' && content.type === 'audio');
+            return matchesCategory && isItemPurchased(content.id);
+          });
           
           return activeTab === tabId && (
             <section key={tabId} className="space-y-6">
@@ -1348,15 +1349,21 @@ export default function ProfessionalUserDashboard({
                   {tabId === 'audio-lessons' && (
                     <div className="flex items-center space-x-2">
                       <span className="text-white text-sm font-medium">Filter by:</span>
-                      <select
-                        value={ppFilter}
-                        onChange={(e) => setPpFilter(e.target.value)}
-                        className="bg-white/20 text-white border border-white/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-400"
-                      >
-                        <option value="all">All Audio</option>
-                        <option value="PP1">PP1 Program</option>
-                        <option value="PP2">PP2 Program</option>
-                      </select>
+                      <div className="flex space-x-2">
+                        {['all', 'PP1', 'PP2'].map(filter => (
+                          <button
+                            key={filter}
+                            onClick={() => setPpFilter(filter)}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              ppFilter === filter
+                                ? 'bg-yellow-400 text-purple-900'
+                                : 'bg-white/20 text-white hover:bg-white/30'
+                            }`}
+                          >
+                            {filter === 'all' ? 'All Audio' : `${filter} Program`}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
