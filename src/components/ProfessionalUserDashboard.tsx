@@ -226,9 +226,8 @@ export default function ProfessionalUserDashboard({
     });
   }, [purchases, allModules]); // Removed user?.id to prevent continuous refresh cycles
 
-  // Update live modules when prop changes and clear cache
+  // Update live modules when prop changes
   useEffect(() => {
-    vpsDataStore.clearMemoryCache();
     setLiveModules(modules);
   }, [modules]);
   
@@ -269,20 +268,16 @@ export default function ProfessionalUserDashboard({
       try {
         let packagesData = await vpsDataStore.getPackages();
         
-        // Always populate packages with all available content
-        const updatedPackages = packagesData.map(pkg => {
-          const allContentIds = allModules.map(m => m.id);
-          return { ...pkg, contentIds: allContentIds, isActive: true };
-        });
+        // Use packages as they are from admin, don't auto-populate with all content
+        const updatedPackages = packagesData.map(pkg => ({
+          ...pkg,
+          isActive: pkg.isActive !== undefined ? pkg.isActive : true
+        }));
         
         setPackages(updatedPackages);
       } catch (error) {
         console.error('Failed to load packages:', error);
-        const defaultPackages = vpsDataStore.getDefaultPackages().map(pkg => ({
-          ...pkg,
-          contentIds: allModules.map(m => m.id),
-          isActive: true
-        }));
+        const defaultPackages = [];
         setPackages(defaultPackages);
       }
     };
@@ -3689,7 +3684,7 @@ export default function ProfessionalUserDashboard({
                 }
               }
               
-              alert(`🎉 Package purchased successfully!`);
+              // Package purchased - modal will handle success message
               
               // Close modal
               setShowPackageCheckout(false);

@@ -343,7 +343,7 @@ class VPSDataStore {
       if (response.ok) {
         const data = await response.json();
         this.memoryData = data;
-        console.info('✅ Data loaded from VPS database with modules:', data.modules?.length || 0, 'users:', data.users?.length || 0);
+        // console.info('✅ Data loaded from VPS database with modules:', data.modules?.length || 0, 'users:', data.users?.length || 0);
         return data;
       }
       
@@ -1488,21 +1488,9 @@ class VPSDataStore {
         type: 'package' as const
       };
       
-      // Create individual purchase records for each content item in the package
-      const contentPurchases = (package_.contentIds || []).map((contentId: string, index: number) => ({
-        id: `purchase_${Date.now()}_${index}`,
-        userId,
-        moduleId: contentId,
-        packageId,
-        purchaseDate: new Date().toISOString(),
-        amount: 0,
-        status: 'completed' as const,
-        type: 'video' as const
-      }));
-      
-      // Add all purchases
+      // Only create the package purchase record, not individual content purchases
       data.purchases = data.purchases || [];
-      data.purchases.push(packagePurchase, ...contentPurchases);
+      data.purchases.push(packagePurchase);
       
       // Update user's purchased modules
       const user = data.users?.find(u => u.id === userId);
