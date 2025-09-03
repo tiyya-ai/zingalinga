@@ -926,29 +926,70 @@ export default function ProfessionalUserDashboard({
                 </div>
               </div>
 
-              {/* Quick Stats */}
+              {/* My Audios */}
               <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 border border-white/20 shadow-2xl">
-                <h3 className="text-lg font-bold text-teal-400 mb-4 flex items-center">
-                  <span className="mr-2">📊</span>
-                  Your Progress
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-400">{userStats.videosWatched}</div>
-                    <div className="text-purple-200 text-xs">Videos</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-400">{Math.round(userStats.watchTime)}m</div>
-                    <div className="text-purple-200 text-xs">Watch Time</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-400">{userStats.purchasedItems}</div>
-                    <div className="text-purple-200 text-xs">Purchases</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-yellow-400">{userStats.achievements.length}</div>
-                    <div className="text-purple-200 text-xs">Achievements</div>
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-blue-400 flex items-center">
+                    <span className="mr-2">🎧</span>
+                    My Audios
+                  </h3>
+                  <button 
+                    onClick={() => handleSetActiveTab('audio-lessons')}
+                    className="text-brand-red hover:text-brand-pink text-sm font-mali"
+                  >
+                    View All →
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {(() => {
+                    const myAudios = allModules.filter(module => module && (module.category === 'Audio Lessons' || module.type === 'audio') && isItemPurchased(module.id));
+                    return myAudios.slice(0, 3).map(module => (
+                      <div key={module.id} className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer" onClick={() => {
+                        let audioUrl = module.audioUrl || module.videoUrl;
+                        let audioFile = null;
+                        
+                        if (module.audioUrl && typeof module.audioUrl === 'object' && 'type' in module.audioUrl) {
+                          audioUrl = URL.createObjectURL(module.audioUrl as unknown as File);
+                          audioFile = module.audioUrl;
+                        } else if (module.videoUrl && typeof module.videoUrl === 'object' && 'type' in module.videoUrl) {
+                          audioUrl = URL.createObjectURL(module.videoUrl as unknown as File);
+                          audioFile = module.videoUrl;
+                        }
+                        
+                        if (audioUrl) {
+                          setSelectedAudio({
+                            ...module,
+                            audioUrl: audioUrl,
+                            audioFile: audioFile
+                          });
+                          setShowAudioModal(true);
+                        }
+                      }}>
+                        <div className="w-12 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded flex items-center justify-center flex-shrink-0">
+                          <span className="text-white text-xs">🎧</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-white font-medium truncate">{module.title || 'Untitled Audio'}</div>
+                          <div className="text-purple-200 text-xs">{module.duration || ''}</div>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                  {(() => {
+                    const myAudios = allModules.filter(module => module && (module.category === 'Audio Lessons' || module.type === 'audio') && isItemPurchased(module.id));
+                    return myAudios.length === 0 ? (
+                    <div className="text-center py-4 text-purple-200">
+                      <div className="text-2xl mb-2">🎧</div>
+                      <div className="text-sm">No audios yet</div>
+                      <button 
+                        onClick={() => handleSetActiveTab('packages')}
+                        className="text-yellow-400 hover:text-yellow-300 text-xs mt-1"
+                      >
+                        Add Audios
+                      </button>
+                    </div>
+                    ) : null;
+                  })()}
                 </div>
               </div>
 
@@ -1046,10 +1087,7 @@ export default function ProfessionalUserDashboard({
                 className="bg-gradient-to-r from-brand-blue to-brand-green hover:from-blue-600 hover:to-green-600 text-white p-4 rounded-xl transition-all duration-200 text-center group shadow-lg"
               >
                 <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">🎬</div>
-                <div className="font-mali font-bold text-sm">My Videos ({(() => {
-                  const counts = getRealCounts();
-                  return counts.myVideos;
-                })()})</div>
+                <div className="font-mali font-bold text-sm">My Videos</div>
               </button>
             </div>
           </div>
