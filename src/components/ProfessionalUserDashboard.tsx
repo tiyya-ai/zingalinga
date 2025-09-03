@@ -1275,17 +1275,27 @@ export default function ProfessionalUserDashboard({
                         </div>
                       )}
                       
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          {needsUpgrade && (
-                            <span className="text-orange-400 text-xs">📦 Package Upgrade</span>
-                          )}
-                          {content.hasPreview && (
-                            <span className="text-blue-400 text-xs">👁️ Preview</span>
-                          )}
+                      {isPurchased && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            {content.hasPreview && (
+                              <span className="text-blue-400 text-xs">👁️ Preview</span>
+                            )}
+                          </div>
                         </div>
-                        
-                        {!isPurchased && (
+                      )}
+                      
+                      {!isPurchased && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            {needsUpgrade && (
+                              <span className="text-orange-400 text-xs">📦 Package Upgrade</span>
+                            )}
+                            {content.hasPreview && (
+                              <span className="text-blue-400 text-xs">👁️ Preview</span>
+                            )}
+                          </div>
+                          
                           <button 
                             onClick={() => {
                               addToCart(content.id);
@@ -1300,8 +1310,8 @@ export default function ProfessionalUserDashboard({
                           >
                             {needsUpgrade ? `Upgrade $${content.price}` : 'Buy Now'}
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
