@@ -833,10 +833,7 @@ export default function ProfessionalUserDashboard({
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-emerald-400 flex items-center">
                     <span className="mr-2">🎬</span>
-                    My Videos ({(() => {
-                      const counts = getRealCounts();
-                      return counts.myVideos;
-                    })()})
+                    My Videos
                   </h3>
                   <button 
                     onClick={() => handleSetActiveTab('videos')}
@@ -1068,10 +1065,7 @@ export default function ProfessionalUserDashboard({
                 className="bg-gradient-to-r from-brand-yellow to-brand-red hover:from-yellow-500 hover:to-red-500 text-white p-4 rounded-xl transition-all duration-200 text-center group shadow-lg"
               >
                 <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">🎧</div>
-                <div className="font-mali font-bold text-sm">Audio ({(() => {
-                  const counts = getRealCounts();
-                  return counts.audioContent;
-                })()})</div>
+                <div className="font-mali font-bold text-sm">Audio</div>
               </button>
               
               <button 
@@ -1410,9 +1404,10 @@ export default function ProfessionalUserDashboard({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredContent.filter(content => {
                   if (tabId !== 'audio-lessons') return true;
-                  return ppFilter === 'all' || 
-                    (ppFilter === 'PP1' && content.category === 'PP1 Program') ||
-                    (ppFilter === 'PP2' && content.category === 'PP2 Program');
+                  if (ppFilter === 'all') return true;
+                  if (ppFilter === 'PP1') return content.category === 'PP1 Program';
+                  if (ppFilter === 'PP2') return content.category === 'PP2 Program';
+                  return true;
                 }).map((content) => {
                   const isPurchased = isItemPurchased(content.id);
                   
