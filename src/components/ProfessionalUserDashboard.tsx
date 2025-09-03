@@ -267,32 +267,27 @@ export default function ProfessionalUserDashboard({
   useEffect(() => {
     const loadData = async () => {
       try {
-        const packagesData = await vpsDataStore.getPackages();
+        let packagesData = await vpsDataStore.getPackages();
         
-        // Populate packages with content IDs from modules
+        // Always populate packages with all available content
         const updatedPackages = packagesData.map(pkg => {
-          if (!pkg.contentIds || pkg.contentIds.length === 0) {
-            // Auto-assign content based on package type
-            const relevantContent = allModules.filter(module => {
-              if (pkg.name.includes('Explorer')) return module.category === 'PP1 Program';
-              if (pkg.name.includes('Adventurer')) return module.category === 'PP1 Program' || module.category === 'PP2 Program';
-              if (pkg.name.includes('Roadtripper')) return module.category === 'Audio Lessons';
-              return false;
-            }).map(m => m.id);
-            
-            return { ...pkg, contentIds: relevantContent };
-          }
-          return pkg;
+          const allContentIds = allModules.map(m => m.id);
+          return { ...pkg, contentIds: allContentIds, isActive: true };
         });
         
         setPackages(updatedPackages);
       } catch (error) {
         console.error('Failed to load packages:', error);
-        setPackages(vpsDataStore.getDefaultPackages());
+        const defaultPackages = vpsDataStore.getDefaultPackages().map(pkg => ({
+          ...pkg,
+          contentIds: allModules.map(m => m.id),
+          isActive: true
+        }));
+        setPackages(defaultPackages);
       }
     };
     
-    if (mounted && allModules.length > 0) {
+    if (mounted) {
       loadData();
     }
   }, [mounted, allModules]);
@@ -2512,7 +2507,7 @@ export default function ProfessionalUserDashboard({
               <p className="text-purple-200">Discover bundled content packages with special pricing</p>
             </div>
             
-            {packages.filter(pkg => pkg.isActive !== false).length === 0 ? (
+            {packages.length > 0 ? (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <div className="text-6xl mb-4">🛍️</div>
                 <div className="text-white text-xl mb-2">No Items Available</div>

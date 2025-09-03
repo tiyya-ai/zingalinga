@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
     console.log('📊 Total users in database:', data.users?.length || 0);
     console.log('📊 Available users:', data.users?.map((u: any) => ({ email: u.email, role: u.role, locked: u.accountLocked, attempts: u.loginAttempts })) || []);
     
-    const user = data.users?.find((u: any) => u.email === sanitizedEmail);
+    let user = data.users?.find((u: any) => u.email === sanitizedEmail);
     
     // Auto-create admin if missing and trying to login as admin
     if (!user && sanitizedEmail === 'admin@zingalinga.com') {
