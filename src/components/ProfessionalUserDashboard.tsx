@@ -1387,22 +1387,32 @@ export default function ProfessionalUserDashboard({
                     </div>
                   </div>
                   
-                  {/* PP1/PP2 Filter - Only visible on audio tab */}
+                  {/* Category Filter - Only visible on audio tab */}
                   {tabId === 'audio-lessons' && (
                     <div className="flex items-center space-x-2">
                       <span className="text-white text-sm font-medium">Filter by:</span>
                       <div className="flex space-x-2">
-                        {['all', 'PP1', 'PP2'].map(filter => (
+                        <button
+                          onClick={() => setPpFilter('all')}
+                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            ppFilter === 'all'
+                              ? 'bg-yellow-400 text-purple-900'
+                              : 'bg-white/20 text-white hover:bg-white/30'
+                          }`}
+                        >
+                          All Audio
+                        </button>
+                        {[...new Set(allModules.filter(m => m.category === 'Audio Lessons' || m.type === 'audio').map(m => m.category).filter(Boolean))].map(category => (
                           <button
-                            key={filter}
-                            onClick={() => setPpFilter(filter)}
+                            key={category}
+                            onClick={() => setPpFilter(category)}
                             className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                              ppFilter === filter
+                              ppFilter === category
                                 ? 'bg-yellow-400 text-purple-900'
                                 : 'bg-white/20 text-white hover:bg-white/30'
                             }`}
                           >
-                            {filter === 'all' ? 'All Audio' : `${filter} Program`}
+                            {category}
                           </button>
                         ))}
                       </div>
@@ -1415,9 +1425,7 @@ export default function ProfessionalUserDashboard({
                 {filteredContent.filter(content => {
                   if (tabId !== 'audio-lessons') return true;
                   if (ppFilter === 'all') return true;
-                  if (ppFilter === 'PP1') return content.category === 'PP1 Program';
-                  if (ppFilter === 'PP2') return content.category === 'PP2 Program';
-                  return true;
+                  return content.category === ppFilter;
                 }).map((content) => {
                   const isPurchased = isItemPurchased(content.id);
                   
