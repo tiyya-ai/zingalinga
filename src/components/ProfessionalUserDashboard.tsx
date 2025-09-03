@@ -1414,7 +1414,7 @@ export default function ProfessionalUserDashboard({
                           >
                             {category}
                           </button>
-                        ))
+                        ))}
                       </div>
                     </div>
                   )}
@@ -1724,105 +1724,43 @@ export default function ProfessionalUserDashboard({
         {/* Videos Tab (Legacy) */}
         {activeTab === 'videos' && (
           <section className="space-y-6">
-            {/* Enhanced Filters */}
+            {/* Video Library Header */}
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
                 <div className="flex items-center space-x-4">
                   <h2 className="text-2xl font-bold text-white">Video Library</h2>
-                  <span className="bg-yellow-400 text-purple-900 px-3 py-1 rounded-full text-sm font-bold">
-                    {allModules.filter(module => module && (module.type === 'video' || !module.type) && module.category !== 'Audio Lessons' && isItemPurchased(module.id)).length} my videos
-                  </span>
                 </div>
                 
-                {/* PP1/PP2 Filter - Only visible on video tab */}
+                {/* Category Filter */}
                 <div className="flex items-center space-x-2">
                   <span className="text-white text-sm font-medium">Filter by:</span>
-                  <select
-                    value={ppFilter}
-                    onChange={(e) => setPpFilter(e.target.value)}
-                    className="bg-white/20 text-white border border-white/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-400"
-                  >
-                    <option value="all">All Content</option>
-                    <option value="PP1">PP1 Program</option>
-                    <option value="PP2">PP2 Program</option>
-                  </select>
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex space-x-2">
                     <button
-                      onClick={() => setViewMode('grid')}
-                      className={`p-2 rounded-lg transition-colors ${
-                        viewMode === 'grid' ? 'bg-yellow-400 text-purple-900' : 'bg-white/20 text-white hover:bg-white/30'
+                      onClick={() => setPpFilter('all')}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        ppFilter === 'all'
+                          ? 'bg-yellow-400 text-purple-900'
+                          : 'bg-white/20 text-white hover:bg-white/30'
                       }`}
                     >
-                      ⊞
+                      All Content
                     </button>
-                    <button
-                      onClick={() => setViewMode('list')}
-                      className={`p-2 rounded-lg transition-colors ${
-                        viewMode === 'list' ? 'bg-yellow-400 text-purple-900' : 'bg-white/20 text-white hover:bg-white/30'
-                      }`}
-                    >
-                      ☰
-                    </button>
+                    {[...new Set(allModules.filter(m => (m.type === 'video' || !m.type) && m.category !== 'Audio Lessons').map(m => m.category).filter(Boolean))].map(category => (
+                      <button
+                        key={category}
+                        onClick={() => setPpFilter(category || 'all')}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          ppFilter === category
+                            ? 'bg-yellow-400 text-purple-900'
+                            : 'bg-white/20 text-white hover:bg-white/30'
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    ))}
                   </div>
-                  
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="bg-white/20 text-white border border-white/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-400"
-                  >
-                    <option value="newest">Newest</option>
-                    <option value="oldest">Oldest</option>
-                    <option value="rating">Highest Rated</option>
-                    <option value="views">Most Viewed</option>
-                    <option value="duration">Duration</option>
-                  </select>
-                  
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-                  >
-                    🔍 Filters
-                  </button>
                 </div>
               </div>
-              
-              {showFilters && (
-                <div className="mt-6 pt-6 border-t border-white/20">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-white text-sm font-medium mb-2">Search</label>
-                      <input
-                        type="text"
-                        placeholder="Search videos..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-4 py-2 bg-white/20 text-white rounded-lg border border-white/30 focus:border-yellow-400 focus:outline-none placeholder-white/60"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-white text-sm font-medium mb-2">Category</label>
-                      <div className="flex flex-wrap gap-2">
-                        {categories.map(category => (
-                          <button
-                            key={category}
-                            onClick={() => setSelectedCategory(category)}
-                            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                              selectedCategory === category
-                                ? 'bg-yellow-400 text-purple-900'
-                                : 'bg-white/20 text-white hover:bg-white/30'
-                            }`}
-                          >
-                            {category}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Video Cards - Only Show Purchased Videos */}
