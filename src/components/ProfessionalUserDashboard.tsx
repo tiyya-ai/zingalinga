@@ -1405,7 +1405,7 @@ export default function ProfessionalUserDashboard({
                         {[...new Set(allModules.filter(m => m.category === 'Audio Lessons' || m.type === 'audio').map(m => m.category).filter(Boolean))].map(category => (
                           <button
                             key={category}
-                            onClick={() => setPpFilter(category)}
+                            onClick={() => setPpFilter(category || 'all')}
                             className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                               ppFilter === category
                                 ? 'bg-yellow-400 text-purple-900'
@@ -1414,7 +1414,7 @@ export default function ProfessionalUserDashboard({
                           >
                             {category}
                           </button>
-                        ))}
+                        ))
                       </div>
                     </div>
                   )}
