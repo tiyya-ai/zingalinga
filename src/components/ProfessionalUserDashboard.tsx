@@ -277,7 +277,7 @@ export default function ProfessionalUserDashboard({
         setPackages(updatedPackages);
       } catch (error) {
         console.error('Failed to load packages:', error);
-        const defaultPackages = [];
+        const defaultPackages: any[] = [];
         setPackages(defaultPackages);
       }
     };
