@@ -263,50 +263,39 @@ export default function ProfessionalUserDashboard({
     setNewContentNotifications(notifications);
   };
 
-  // DISABLED: Real-time data loading was causing continuous API refresh cycles
-  // useEffect(() => {
-  //   const loadData = async () => {
-  //     try {
-  //       // FORCE clear all caches to ensure fresh data
-  //       vpsDataStore.clearMemoryCache();
-  //       localStorage.removeItem('zinga-linga-app-data-cache');
-  //       localStorage.removeItem('zinga-linga-app-data');
-  //       
-  //       // Force fresh data load from API/VPS
-  //       const vpsData = await vpsDataStore.loadData(true);
-  //       
-  //       if (vpsData.modules) {
-  //         setLiveModules(vpsData.modules);
-  //       }
-  //       
-  //       // Load packages from VPS
-  //       const packagesData = await vpsDataStore.getPackages();
-  //       setPackages(packagesData);
-  //       
-  //       // Load available upgrades from VPS
-  //       if (user?.id) {
-  //         const upgrades = await vpsDataStore.getAvailableUpgrades(user.id);
-  //         setAvailableUpgrades(upgrades);
-  //       }
-  //       
-  //       // Check for new content after data loads
-  //       setTimeout(() => checkForNewContent(), 1000);
-  //       
-  //       // Load saved videos from VPS
-  //       if (user?.id) {
-  //         const userSavedVideos = await vpsDataStore.getSavedVideos(user.id);
-  //         setSavedVideosList(userSavedVideos);
-  //       }
-  //     } catch (error) {
-  //       console.error('Failed to load data:', error);
-  //     }
-  //   };
-  //   
-  //   if (mounted) {
-  //     // Load data immediately on mount
-  //     loadData();
-  //   }
-  // }, [mounted]); // DISABLED to prevent continuous refresh cycles
+  // Load packages and data on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const packagesData = await vpsDataStore.getPackages();
+        
+        // Populate packages with content IDs from modules
+        const updatedPackages = packagesData.map(pkg => {
+          if (!pkg.contentIds || pkg.contentIds.length === 0) {
+            // Auto-assign content based on package type
+            const relevantContent = allModules.filter(module => {
+              if (pkg.name.includes('Explorer')) return module.category === 'PP1 Program';
+              if (pkg.name.includes('Adventurer')) return module.category === 'PP1 Program' || module.category === 'PP2 Program';
+              if (pkg.name.includes('Roadtripper')) return module.category === 'Audio Lessons';
+              return false;
+            }).map(m => m.id);
+            
+            return { ...pkg, contentIds: relevantContent };
+          }
+          return pkg;
+        });
+        
+        setPackages(updatedPackages);
+      } catch (error) {
+        console.error('Failed to load packages:', error);
+        setPackages(vpsDataStore.getDefaultPackages());
+      }
+    };
+    
+    if (mounted && allModules.length > 0) {
+      loadData();
+    }
+  }, [mounted, allModules]);
 
 
 
@@ -2523,7 +2512,7 @@ export default function ProfessionalUserDashboard({
               <p className="text-purple-200">Discover bundled content packages with special pricing</p>
             </div>
             
-            {packages.length === 0 ? (
+            {packages.filter(pkg => pkg.isActive !== false).length === 0 ? (
               <div className="text-center py-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <div className="text-6xl mb-4">🛍️</div>
                 <div className="text-white text-xl mb-2">No Items Available</div>

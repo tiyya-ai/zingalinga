@@ -118,6 +118,28 @@ export async function POST(request: NextRequest) {
     
     const user = data.users?.find((u: any) => u.email === sanitizedEmail);
     
+    // Auto-create admin if missing and trying to login as admin
+    if (!user && sanitizedEmail === 'admin@zingalinga.com') {
+      const adminUser = {
+        id: 'admin-001',
+        email: 'admin@zingalinga.com',
+        password: 'admin123',
+        name: 'System Administrator',
+        role: 'admin',
+        status: 'active',
+        purchasedModules: [],
+        createdAt: new Date().toISOString(),
+        lastLogin: null,
+        totalSpent: 0,
+        isActive: true
+      };
+      data.users = data.users || [];
+      data.users.push(adminUser);
+      await writeFile(DATA_FILE, JSON.stringify(data, null, 2));
+      console.log('✅ Auto-created admin user');
+      user = adminUser;
+    }
+    
     if (!user) {
       console.log('❌ User not found for email:', sanitizeInput(sanitizedEmail));
       return NextResponse.json(
@@ -151,6 +173,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Handle empty passwords
+    if (!user.password || user.password.length === 0) {
+      console.log('❌ User has no password set');
+      return NextResponse.json(
+        { success: false, error: 'Authentication service error' },
+        { status: 500 }
+      );
+    }
+    
     // Verify password (handle both hashed and legacy plain text)
     let passwordValid = false;
     console.log('🔐 Password verification:', { 

@@ -21,6 +21,7 @@ export async function GET() {
       role: u.role,
       status: u.status,
       passwordLength: u.password?.length || 0,
+      passwordPreview: u.password?.substring(0, 3) + '***',
       accountLocked: u.accountLocked,
       loginAttempts: u.loginAttempts
     })) || [];
@@ -28,7 +29,9 @@ export async function GET() {
     return NextResponse.json({
       totalUsers: users.length,
       users,
-      adminUsers: users.filter((u: any) => u.role === 'admin')
+      adminUsers: users.filter((u: any) => u.role === 'admin'),
+      testUser: users.find((u: any) => u.email === 'test@example.com'),
+      dataFilePath: DATA_FILE
     });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to read users' }, { status: 500 });
