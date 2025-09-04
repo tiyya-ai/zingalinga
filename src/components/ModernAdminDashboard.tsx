@@ -637,10 +637,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       setVideos([]);
       setPackages([]);
       
-      console.log('📊 Data loaded:', {
-        vpsUsers: vpsUsers.length,
-        realUsers: realUsers.length
-      });
+      // Data loaded successfully
       const realVideos = data.modules || [];
       const realOrders = data.purchases || [];
       const realUploadQueue = data.uploadQueue || [];

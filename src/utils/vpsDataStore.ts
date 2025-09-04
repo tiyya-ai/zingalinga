@@ -1,6 +1,7 @@
-// VPS Data Store - Manages application data with localStorage persistence and API fallback
+// VPS Data Store - Manages application data with database persistence
 import { User, Module, Purchase, ContentFile } from '../types';
 import { sanitizeInput, sanitizeForLog } from './securityUtils';
+import { executeQuery } from './database';
 
 // Remove duplicate sanitizeInput function - using imported one
 
@@ -110,7 +111,23 @@ class VPSDataStore {
   private videoMemoryCache: Map<string, string> | null = null;
 
   constructor() {
-    // File-based data store initialized
+    // Database-based data store initialized
+    this.initializeDatabase();
+  }
+
+  private async initializeDatabase() {
+    try {
+      // Only insert default packages, not users
+      const defaultPackages = this.getDefaultPackages();
+      for (const pkg of defaultPackages) {
+        await executeQuery(
+          'INSERT IGNORE INTO packages (id, name, description, price, type, isActive, contentIds, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [pkg.id, pkg.name, pkg.description, pkg.price, pkg.type, pkg.isActive, JSON.stringify(pkg.contentIds), pkg.createdAt, pkg.updatedAt]
+        );
+      }
+    } catch (error) {
+      console.error('Database initialization error:', error);
+    }
   }
 
   setCurrentUser(user: User | null) {
@@ -121,6 +138,127 @@ class VPSDataStore {
     // Only clear if explicitly requested for refresh
     console.log('Memory cache cleared for refresh');
     this.memoryData = null;
+  }
+
+  // Database methods
+  async loadData(): Promise<AppData> {
+    try {
+      const [users, modules, purchases, packages] = await Promise.all([
+        executeQuery('SELECT * FROM users'),
+        executeQuery('SELECT * FROM modules'),
+        executeQuery('SELECT * FROM purchases'),
+        executeQuery('SELECT * FROM packages')
+      ]);
+
+      return {
+        users: (users as any[]).map(user => ({
+          ...user,
+          purchasedModules: JSON.parse(user.purchasedModules || '[]')
+        })),
+        modules: (modules as any[]).map(module => ({
+          ...module,
+          tags: JSON.parse(module.tags || '[]')
+        })),
+        purchases: purchases as any[],
+        packages: (packages as any[]).map(pkg => ({
+          ...pkg,
+          contentIds: JSON.parse(pkg.contentIds || '[]')
+        })),
+        contentFiles: [],
+        uploadQueue: [],
+        savedVideos: [],
+        categories: ['Audio Lessons', 'PP1 Program', 'PP2 Program'],
+        comments: [],
+        subscriptions: [],
+        transactions: [],
+        notifications: [],
+        scheduledContent: [],
+        flaggedContent: [],
+        accessLogs: [],
+        bundles: [],
+        ageGroups: [],
+        settings: this.getDefaultSettings(),
+        lastUpdated: new Date().toISOString(),
+        lastLoaded: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Database load error:', error);
+      // Don't fall back to default data - throw error to maintain database consistency
+      throw error;
+    }
+  }
+
+  async addProduct(product: Module): Promise<boolean> {
+    try {
+      await executeQuery(
+        'INSERT INTO modules (id, title, description, category, type, rating, price, thumbnail, videoUrl, audioUrl, duration, tags, isActive) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [product.id, product.title, product.description, product.category, product.type, product.rating, product.price, product.thumbnail, product.videoUrl, product.audioUrl || '', product.duration || '', JSON.stringify(product.tags || []), product.isActive !== false]
+      );
+      return true;
+    } catch (error) {
+      console.error('Add product error:', error);
+      return false;
+    }
+  }
+
+  async updateProduct(product: Module): Promise<boolean> {
+    try {
+      await executeQuery(
+        'UPDATE modules SET title=?, description=?, category=?, type=?, rating=?, price=?, thumbnail=?, videoUrl=?, audioUrl=?, duration=?, tags=?, isActive=?, updatedAt=NOW() WHERE id=?',
+        [product.title, product.description, product.category, product.type, product.rating, product.price, product.thumbnail, product.videoUrl, product.audioUrl || '', product.duration || '', JSON.stringify(product.tags || []), product.isActive !== false, product.id]
+      );
+      return true;
+    } catch (error) {
+      console.error('Update product error:', error);
+      return false;
+    }
+  }
+
+  async deleteProduct(productId: string): Promise<boolean> {
+    try {
+      await executeQuery('DELETE FROM modules WHERE id=?', [productId]);
+      return true;
+    } catch (error) {
+      console.error('Delete product error:', error);
+      return false;
+    }
+  }
+
+  async addUser(userData: any): Promise<boolean> {
+    try {
+      const userId = generateSecureId('user');
+      await executeQuery(
+        'INSERT INTO users (id, email, name, role, purchasedModules, totalSpent, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [userId, userData.email, userData.name, userData.role, JSON.stringify([]), 0, userData.status || 'active']
+      );
+      return true;
+    } catch (error) {
+      console.error('Add user error:', error);
+      return false;
+    }
+  }
+
+  async updateUser(userId: string, userData: any): Promise<boolean> {
+    try {
+      await executeQuery(
+        'UPDATE users SET name=?, email=?, role=?, status=?, lastLogin=NOW() WHERE id=?',
+        [userData.name, userData.email, userData.role, userData.status, userId]
+      );
+      return true;
+    } catch (error) {
+      console.error('Update user error:', error);
+      return false;
+    }
+  }
+
+  async deleteUser(userId: string): Promise<boolean> {
+    try {
+      await executeQuery('DELETE FROM users WHERE id=?', [userId]);
+      return true;
+    } catch (error) {
+      console.error('Delete user error:', error);
+      return false;
+    }
   }
 
   // Get default data structure
