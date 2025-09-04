@@ -3658,17 +3658,9 @@ export default function ProfessionalUserDashboard({
             const success = await vpsDataStore.purchasePackage(user.id, packageId);
             
             if (success) {
-              // Reload data to update state
-              const vpsData = await vpsDataStore.loadData(true);
-              if (vpsData.purchases) {
-                setLocalPurchases(vpsData.purchases);
-              }
-              if (vpsData.users && setUser) {
-                const updatedUser = vpsData.users.find(u => u.id === user.id);
-                if (updatedUser) {
-                  setUser(updatedUser);
-                }
-              }
+              // Force immediate re-render by updating mounted state
+              setMounted(false);
+              setTimeout(() => setMounted(true), 100);
               
               // Close modal
               setShowPackageCheckout(false);
