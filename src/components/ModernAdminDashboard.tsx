@@ -621,15 +621,13 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       // Load data from VPS API without cache
       const data = await vpsDataStore.loadData(true);
       
-      // Load all users from VPS - show all registered users
+      // Use VPS data as the source of truth
       const vpsUsers = data.users || [];
-      const realUsers = vpsUsers; // Show all users from VPS
+      const realUsers = vpsUsers;
       
-      console.log('🔄 Smart refresh applied:', {
+      console.log('📊 Data loaded:', {
         vpsUsers: vpsUsers.length,
-        currentUsers: currentUsers.length,
-        realUsers: realUsers.length,
-        deletedCount: vpsUsers.length - realUsers.length
+        realUsers: realUsers.length
       });
       const realVideos = data.modules || [];
       const realOrders = data.purchases || [];
