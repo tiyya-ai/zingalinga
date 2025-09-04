@@ -3658,6 +3658,18 @@ export default function ProfessionalUserDashboard({
             const success = await vpsDataStore.purchasePackage(user.id, packageId);
             
             if (success) {
+              // Reload data to update state
+              const vpsData = await vpsDataStore.loadData(true);
+              if (vpsData.purchases) {
+                setLocalPurchases(vpsData.purchases);
+              }
+              if (vpsData.users && setUser) {
+                const updatedUser = vpsData.users.find(u => u.id === user.id);
+                if (updatedUser) {
+                  setUser(updatedUser);
+                }
+              }
+              
               // Close modal
               setShowPackageCheckout(false);
               setSelectedPackageForCheckout(null);
