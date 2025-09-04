@@ -30,7 +30,7 @@ jobs:
         username: ${{ secrets.VPS_USER }}
         password: ${{ secrets.VPS_PASSWORD }}
         script: |
-          cd /var/www/zinga-linga || mkdir -p /var/www/zinga-linga && cd /var/www/zinga-linga
+          cd /root/zingalinga || mkdir -p /root/zingalinga && cd /root/zingalinga
           
           # CRITICAL: Backup ALL data before deployment
           echo "🔄 Backing up all live data..."
@@ -99,6 +99,7 @@ jobs:
           chmod -R 755 uploads/ 2>/dev/null || true
           chmod -R 755 public/uploads/ 2>/dev/null || true
           
+          npm install mysql2 --save
           npm install --production=false
           npm run build
           pm2 stop zinga-linga || true

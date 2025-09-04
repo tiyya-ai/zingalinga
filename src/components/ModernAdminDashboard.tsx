@@ -610,15 +610,12 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     try {
       setDataLoaded(false);
       
-      // FORCE COMPLETE CACHE CLEAR
+      // FORCE COMPLETE CACHE CLEAR - ONLY USE DATABASE
       vpsDataStore.clearMemoryCache();
       if (typeof window !== 'undefined') {
-        // Clear all possible localStorage keys
-        localStorage.removeItem('zinga-linga-app-data-cache');
-        localStorage.removeItem('zinga-linga-app-data');
-        localStorage.removeItem('zinga-linga-persistent-data');
-        localStorage.removeItem('zinga-linga-backup-data');
-        localStorage.clear(); // Nuclear option - clear everything
+        // Clear ALL localStorage to prevent conflicts with database
+        localStorage.clear();
+        console.log('🧹 Cleared all localStorage - using database only');
       }
       
       // Load data from VPS API without cache
