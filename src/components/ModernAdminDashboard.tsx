@@ -174,21 +174,6 @@ interface FlaggedContent {
   reason: string;
 }
 
-interface UploadItem {
-  id: string;
-  filename: string;
-  status: string;
-  title?: string;
-  name?: string;
-  category?: string;
-  progress?: number;
-  size?: number;
-  type?: string;
-  formData?: any;
-  videoUrl?: string;
-  localUrl?: string;
-}
-
 interface UploadQueueItem {
   id: string;
   filename: string;
@@ -203,6 +188,8 @@ interface UploadQueueItem {
   videoUrl?: string;
   localUrl?: string;
 }
+
+type UploadItem = UploadQueueItem;
 
 interface AccessLog {
   id: string;
@@ -292,23 +279,31 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const [activeSection, setActiveSection] = useState('overview');
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
+  // Security: Sanitize section parameter
+  const sanitizeSection = (section: string): string => {
+    const allowedSections = ['overview', 'analytics', 'users', 'all-users', 'add-user', 'user-roles', 'content', 'all-videos', 'add-video', 'categories', 'upload-queue', 'packages', 'all-packages', 'add-package', 'scheduling', 'commerce', 'orders', 'pending-payments', 'subscriptions', 'transactions', 'moderation', 'comments', 'flagged-content', 'chat', 'recent-activity', 'admin-profile', 'settings', 'general-settings', 'email-settings', 'security-settings', 'notification-settings', 'content-settings'];
+    return allowedSections.includes(section) ? section : 'overview';
+  };
+
   // Handle URL-based navigation for admin sections
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const section = urlParams.get('section');
       if (section) {
-        handleSetActiveSection(section);
+        const sanitizedSection = sanitizeSection(section);
+        handleSetActiveSection(sanitizedSection);
       }
     }
   }, []);
 
   // Custom setActiveSection that updates URL
   const handleSetActiveSection = (section: string) => {
-    setActiveSection(section);
+    const sanitizedSection = sanitizeSection(section);
+    setActiveSection(sanitizedSection);
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
-      url.searchParams.set('section', section);
+      url.searchParams.set('section', sanitizedSection);
       window.history.pushState({}, '', url.toString());
     }
   };
@@ -3807,9 +3802,16 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                                   if (videosInCategory.length > 0) {
                                     const moveVideos = confirm(`This category has ${videosInCategory.length} videos. Do you want to move them to "Uncategorized" before deleting the category?`);
                                     if (moveVideos) {
-                                      // Move videos to Uncategorized
-                                      for (const video of videosInCategory) {
-                                        await vpsDataStore.updateProduct({ ...video, category: 'Uncategorized' });
+                                      // Move videos to Uncategorized with error handling
+                                      try {
+                                        await Promise.all(videosInCategory.map(video => 
+                                          vpsDataStore.updateProduct({ ...video, category: 'Uncategorized' })
+                                        ));
+                                      } catch (error) {
+                                        console.error('Error moving videos:', error);
+                                        setToast({message: 'Some videos failed to move to Uncategorized', type: 'error'});
+                                        setTimeout(() => setToast(null), 3000);
+                                        return;
                                       }
                                     } else {
                                       return; // Cancel deletion
@@ -4709,9 +4711,30 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                             }
                             
                             if (audioUrl && audioUrl.trim() !== '') {
-                              // For external URLs, open in new tab
+                              // Security: Validate URL before opening
+                              const isValidUrl = (url: string): boolean => {
+                                try {
+                                  const urlObj = new URL(url);
+                                  const allowedProtocols = ['http:', 'https:', 'data:', 'blob:'];
+                                  const allowedDomains = ['vimeo.com', 'youtube.com', 'youtu.be', 'soundcloud.com'];
+                                  
+                                  if (!allowedProtocols.includes(urlObj.protocol)) return false;
+                                  if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
+                                    return allowedDomains.some(domain => urlObj.hostname.includes(domain));
+                                  }
+                                  return true;
+                                } catch {
+                                  return false;
+                                }
+                              };
+                              
+                              // For external URLs, validate before opening
                               if (audioUrl.startsWith('http') && !audioUrl.startsWith('data:')) {
-                                window.open(audioUrl, '_blank');
+                                if (isValidUrl(audioUrl)) {
+                                  window.open(audioUrl, '_blank');
+                                } else {
+                                  alert('Invalid or unsafe URL detected');
+                                }
                                 return;
                               }
                               

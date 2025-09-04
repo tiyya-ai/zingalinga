@@ -431,6 +431,16 @@ class VPSDataStore {
     }
   }
 
+  async getAudioLessons(): Promise<any[]> {
+    try {
+      const data = await this.loadData();
+      return data.modules?.filter(m => m.category === 'Audio Lessons' || m.type === 'audio') || [];
+    } catch (error) {
+      console.error('Error getting audio lessons:', error);
+      return [];
+    }
+  }
+
   // Upload Queue management methods
   async getUploadQueue(): Promise<UploadQueueItem[]> {
     try {
