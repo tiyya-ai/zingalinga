@@ -429,33 +429,25 @@ export default function ProfessionalUserDashboard({
   const isItemPurchased = (itemId: string) => {
     if (!user?.id) return false;
     
-    // Get unique purchases only
-    const uniquePurchases = localPurchases.filter((purchase, index, self) => 
-      index === self.findIndex(p => p.moduleId === purchase.moduleId && p.userId === purchase.userId)
-    );
-    
-    // Check if purchased directly
-    const hasPurchase = uniquePurchases.some(purchase => 
-      purchase.moduleId === itemId && 
-      purchase.userId === user.id && 
-      purchase.status === 'completed'
-    );
-    
-    // Also check user's purchased modules list
+    // Check user's purchased modules list first (most reliable)
     const inUserList = user.purchasedModules?.includes(itemId) || false;
+    if (inUserList) return true;
     
     // Check if item is part of a purchased package
     const isInPurchasedPackage = packages.some(pkg => 
       user.purchasedModules?.includes(pkg.id) && 
       pkg.contentIds?.includes(itemId)
     );
+    if (isInPurchasedPackage) return true;
     
-    // For packages, check if the package itself is purchased
-    const isPackagePurchased = packages.some(pkg => 
-      pkg.id === itemId && user.purchasedModules?.includes(pkg.id)
+    // Check direct purchases as fallback
+    const hasPurchase = localPurchases.some(purchase => 
+      purchase.moduleId === itemId && 
+      purchase.userId === user.id && 
+      purchase.status === 'completed'
     );
     
-    return hasPurchase || inUserList || isInPurchasedPackage || isPackagePurchased;
+    return hasPurchase;
   };
 
 
@@ -3666,20 +3658,6 @@ export default function ProfessionalUserDashboard({
             const success = await vpsDataStore.purchasePackage(user.id, packageId);
             
             if (success) {
-              // Force refresh all data
-              const vpsData = await vpsDataStore.loadData(true);
-              if (vpsData.purchases) {
-                setLocalPurchases(vpsData.purchases);
-              }
-              if (vpsData.users) {
-                const updatedUser = vpsData.users.find(u => u.id === user.id);
-                if (updatedUser && setUser) {
-                  setUser(updatedUser);
-                }
-              }
-              
-              // Package purchased - modal will handle success message
-              
               // Close modal
               setShowPackageCheckout(false);
               setSelectedPackageForCheckout(null);
