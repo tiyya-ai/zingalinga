@@ -301,10 +301,15 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const handleSetActiveSection = (section: string) => {
     const sanitizedSection = sanitizeSection(section);
     setActiveSection(sanitizedSection);
+    
     if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.set('section', sanitizedSection);
-      window.history.pushState({}, '', url.toString());
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('section', sanitizedSection);
+        window.history.pushState({}, '', url.toString());
+      } catch (error) {
+        console.error('Error updating URL:', error);
+      }
     }
   };
 
@@ -3651,12 +3656,9 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     }
     
     try {
-      // Update category in data store
       const success = await vpsDataStore.updateCategory(oldCategory, newCategory.trim());
       if (success) {
-        // Force reload all data to ensure sync
         await loadRealData();
-        
         setEditingCategory(null);
         setToast({message: 'Category updated successfully!', type: 'success'});
         setTimeout(() => setToast(null), 3000);
@@ -3667,6 +3669,39 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     } catch (error) {
       console.error('Error updating category:', error);
       setToast({message: 'Failed to update category', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  const handleDeleteCategory = async (category: string) => {
+    try {
+      const videosInCategory = videos.filter(v => v.category === category);
+      
+      if (videosInCategory.length > 0) {
+        const moveVideos = confirm(`This category has ${videosInCategory.length} videos. Move them to "Uncategorized"?`);
+        if (moveVideos) {
+          await Promise.all(videosInCategory.map(video => 
+            vpsDataStore.updateProduct({ ...video, category: 'Uncategorized' })
+          ));
+        } else {
+          return;
+        }
+      }
+      
+      if (confirm(`Delete category "${category}"?`)) {
+        const success = await vpsDataStore.deleteCategory(category);
+        if (success) {
+          await loadRealData();
+          setToast({message: 'Category deleted successfully!', type: 'success'});
+          setTimeout(() => setToast(null), 3000);
+        } else {
+          setToast({message: 'Failed to delete category', type: 'error'});
+          setTimeout(() => setToast(null), 3000);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      setToast({message: 'Error deleting category', type: 'error'});
       setTimeout(() => setToast(null), 3000);
     }
   };
@@ -3796,41 +3831,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                                 size="sm" 
                                 variant="light" 
                                 className="hover:bg-red-50"
-                                onPress={async () => {
-                                  // Check if category has videos
-                                  const videosInCategory = videos.filter(v => v.category === category);
-                                  if (videosInCategory.length > 0) {
-                                    const moveVideos = confirm(`This category has ${videosInCategory.length} videos. Do you want to move them to "Uncategorized" before deleting the category?`);
-                                    if (moveVideos) {
-                                      // Move videos to Uncategorized with error handling
-                                      try {
-                                        await Promise.all(videosInCategory.map(video => 
-                                          vpsDataStore.updateProduct({ ...video, category: 'Uncategorized' })
-                                        ));
-                                      } catch (error) {
-                                        console.error('Error moving videos:', error);
-                                        setToast({message: 'Some videos failed to move to Uncategorized', type: 'error'});
-                                        setTimeout(() => setToast(null), 3000);
-                                        return;
-                                      }
-                                    } else {
-                                      return; // Cancel deletion
-                                    }
-                                  }
-                                  
-                                  if (confirm(`Delete category "${category}"?`)) {
-                                    const success = await vpsDataStore.deleteCategory(category);
-                                    if (success) {
-                                      // Force reload all data to ensure sync
-                                      await loadRealData();
-                                      setToast({message: 'Category deleted successfully!', type: 'success'});
-                                      setTimeout(() => setToast(null), 3000);
-                                    } else {
-                                      setToast({message: 'Failed to delete category', type: 'error'});
-                                      setTimeout(() => setToast(null), 3000);
-                                    }
-                                  }
-                                }}
+                                onPress={() => handleDeleteCategory(category)}
                               >
                                 <Trash2 className="h-4 w-4 text-red-600" />
                               </Button>

@@ -1,14 +1,16 @@
 module.exports = {
   apps: [{
-    name: 'zinga-linga',
-    script: 'server.js',
+    name: 'zingalinga',
+    script: 'npm',
+    args: 'start',
+    cwd: '/var/www/zingalinga',
     instances: 1,
     autorestart: true,
     watch: false,
     max_memory_restart: '1G',
     env: {
       NODE_ENV: 'production',
-      PORT: 3001
+      PORT: 3000
     }
   }]
 };

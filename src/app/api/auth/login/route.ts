@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
     const sanitizedEmail = sanitizeInput(email).toLowerCase();
 
-    // Get user from database
+    // Get user from database only
     const users = await executeQuery('SELECT * FROM users WHERE email = ?', [sanitizedEmail]);
     
     if (!Array.isArray(users) || users.length === 0) {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const user = users[0] as any;
 
     // Verify password
-    const passwordValid = user.password === password; // Simple comparison for now
+    const passwordValid = user.password === password;
 
     if (!passwordValid) {
       return NextResponse.json(
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { success: false, error: 'Authentication service error' },
+      { success: false, error: 'Database connection required' },
       { status: 500 }
     );
   }
