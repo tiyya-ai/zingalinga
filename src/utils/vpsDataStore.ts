@@ -714,54 +714,31 @@ class VPSDataStore {
   async deleteUser(userId: string): Promise<boolean> {
     try {
       console.log('🗑️ Deleting user:', sanitizeForLog(userId));
-      const data = await this.loadData(true); // Force fresh load
-      data.users = data.users || [];
-      const originalLength = data.users.length;
       
-      // Find and remove the user
-      const userToDelete = data.users.find(u => u && typeof u.id === 'string' && sanitizeInput(u.id) === sanitizeInput(userId));
-      if (!userToDelete) {
-        console.log('❌ User not found:', userId);
-        return false;
-      }
+      // Load fresh data and delete user
+      const data = await this.loadData(true);
+      const originalLength = data.users?.length || 0;
       
-      console.log('📋 Found user to delete:', sanitizeForLog(userToDelete.name || 'unnamed'));
-      data.users = data.users.filter(u => u && typeof u.id === 'string' && sanitizeInput(u.id) !== sanitizeInput(userId));
+      // Filter out the user
+      data.users = (data.users || []).filter(u => u.id !== userId);
       
-      // Also remove user's purchases and related data
-      if (data.purchases) {
-        data.purchases = data.purchases.filter(p => p.userId !== userId);
-      }
-      if (data.savedVideos) {
-        data.savedVideos = data.savedVideos.filter(v => v.userId !== userId);
-      }
-      if (data.comments) {
-        data.comments = data.comments.filter(c => c.userId !== userId);
-      }
+      // Remove user's related data
+      data.purchases = (data.purchases || []).filter(p => p.userId !== userId);
+      data.savedVideos = (data.savedVideos || []).filter(v => v.userId !== userId);
+      data.comments = (data.comments || []).filter(c => c.userId !== userId);
       
       if (data.users.length < originalLength) {
-        console.log('💾 Saving updated data without deleted user...');
-        
-        // CRITICAL FIX: Clear all possible storage locations
-        this.memoryData = data;
-        
-        // Clear from all localStorage keys that might restore the user
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('zinga-linga-persistent-data');
-          localStorage.removeItem('zinga-linga-backup-data');
-          localStorage.removeItem('zinga-linga-app-data');
-        }
-        
+        // Clear memory cache and save
+        this.memoryData = null;
         const success = await this.saveData(data);
         
         if (success) {
-          console.log('✅ User deleted and all storage cleared');
+          console.log('✅ User deleted successfully');
           return true;
-        } else {
-          console.error('❌ Failed to persist user deletion');
-          return false;
         }
       }
+      
+      console.log('❌ User not found or deletion failed');
       return false;
     } catch (error) {
       console.error('❌ Error deleting user:', error);
