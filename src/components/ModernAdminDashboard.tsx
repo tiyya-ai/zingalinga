@@ -610,13 +610,16 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     try {
       setDataLoaded(false);
       
-      // Store current users to preserve local deletions
-      const currentUsers = users;
-      
-      // Always clear caches for admin to ensure real-time data
+      // FORCE COMPLETE CACHE CLEAR
       vpsDataStore.clearMemoryCache();
-      localStorage.removeItem('zinga-linga-app-data-cache');
-      localStorage.removeItem('zinga-linga-app-data');
+      if (typeof window !== 'undefined') {
+        // Clear all possible localStorage keys
+        localStorage.removeItem('zinga-linga-app-data-cache');
+        localStorage.removeItem('zinga-linga-app-data');
+        localStorage.removeItem('zinga-linga-persistent-data');
+        localStorage.removeItem('zinga-linga-backup-data');
+        localStorage.clear(); // Nuclear option - clear everything
+      }
       
       // Load data from VPS API without cache
       const data = await vpsDataStore.loadData(true);
