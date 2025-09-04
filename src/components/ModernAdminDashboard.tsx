@@ -624,9 +624,18 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       // Load data from VPS API without cache
       const data = await vpsDataStore.loadData(true);
       
+      // FORCE COMPLETE DATA REFRESH - ignore any cached users
+      console.log('🔄 Raw VPS data users:', data.users?.length || 0);
+      
       // Use VPS data as the source of truth
       const vpsUsers = data.users || [];
       const realUsers = vpsUsers;
+      
+      // NUCLEAR OPTION: Clear all component state
+      setUsers([]);
+      setOrders([]);
+      setVideos([]);
+      setPackages([]);
       
       console.log('📊 Data loaded:', {
         vpsUsers: vpsUsers.length,

@@ -119,7 +119,7 @@ class VPSDataStore {
 
   clearMemoryCache() {
     // Only clear if explicitly requested for refresh
-    console.log('🧹 Memory cache cleared for refresh');
+    console.log('Memory cache cleared for refresh');
     this.memoryData = null;
   }
 
