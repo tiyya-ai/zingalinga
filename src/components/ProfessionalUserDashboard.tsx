@@ -3658,13 +3658,12 @@ export default function ProfessionalUserDashboard({
             const success = await vpsDataStore.purchasePackage(user.id, packageId);
             
             if (success) {
-              // Force immediate re-render by updating mounted state
-              setMounted(false);
-              setTimeout(() => setMounted(true), 100);
-              
               // Close modal
               setShowPackageCheckout(false);
               setSelectedPackageForCheckout(null);
+              
+              // Redirect to content
+              handleSetActiveTab('all-content');
             } else {
               alert('❌ Purchase failed. Please try again.');
             }
