@@ -24,7 +24,8 @@
     "react-dom": "^19.1.1",
     "tailwindcss": "^3.3.3",
     "autoprefixer": "^10.4.14",
-    "postcss": "^8.4.27"
+    "postcss": "^8.4.27",
+    "mysql2": "^3.6.5"
   },
   "devDependencies": {
     "@types/node": "24.2.0",
