@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery } from '../../../../utils/database';
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const userId = params.id;
+    const { id: userId } = await params;
     const userData = await request.json();
     
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -29,9 +29,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const userId = params.id;
+    const { id: userId } = await params;
     
     // Delete user and related purchases
     await executeQuery('DELETE FROM purchases WHERE userId = ?', [userId]);

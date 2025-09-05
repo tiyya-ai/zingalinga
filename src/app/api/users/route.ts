@@ -18,11 +18,11 @@ export async function POST(request: NextRequest) {
   try {
     const user = await request.json();
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    
-    await executeQuery(
-      'INSERT INTO users (id, email, name, role, password, purchasedModules, totalSpent, status, createdAt, lastLogin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+
+    // Insert without manual id if AUTO_INCREMENT
+    const result = await executeQuery(
+      'INSERT INTO users (email, name, role, password, purchasedModules, totalSpent, status, createdAt, lastLogin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
-        user.id,
         user.email,
         user.name,
         user.role || 'user',
@@ -34,10 +34,18 @@ export async function POST(request: NextRequest) {
         now
       ]
     );
-    
-    return NextResponse.json({ success: true });
+
+    // Return the new user object with inserted id
+    return NextResponse.json({
+      id: (result as any).insertId,
+      ...user,
+      purchasedModules: user.purchasedModules || [],
+      createdAt: now,
+      lastLogin: now
+    });
   } catch (error) {
     console.error('Error creating user:', error);
-    return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: 'Failed to create user', details: errorMessage }, { status: 500 });
   }
 }
