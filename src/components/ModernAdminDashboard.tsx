@@ -144,9 +144,10 @@ interface Order {
   id: string;
   amount: number;
   date: Date;
-  customer: { name: string; email: string };
-  item: { name: string; count: number };
+  customer: { name: string; email: string; avatar?: string };
+  item: { name: string; count: number; type?: string };
   status: string;
+  orderType?: string;
   paymentMethod: string;
   transactionId: string;
 }
@@ -322,6 +323,9 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const [uploadQueue, setUploadQueue] = useState<UploadItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [contentBundles, setContentBundles] = useState<ContentBundle[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [scheduledContent, setScheduledContent] = useState<any[]>([]);
+  const [flaggedContent, setFlaggedContent] = useState<any[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editCategoryValue, setEditCategoryValue] = useState('');
@@ -345,8 +349,20 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const [adminSuccessModal, setAdminSuccessModal] = useState({ isOpen: false, message: '' });
   const [notifications, setNotifications] = useState<any[]>([]);
   const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
 
-  // Removed unused toast and confirmDialog states
+  // Toast notification display
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  // Helper function for showing toast notifications
+  const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+    setToast({ message, type });
+  };
   
   // Generate real notifications
   useEffect(() => {
@@ -593,12 +609,11 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     try {
       setDataLoaded(false);
       
-      // FORCE COMPLETE CACHE CLEAR - ONLY USE DATABASE
+      // Clear cache and localStorage for fresh data
       vpsDataStore.clearMemoryCache();
       if (typeof window !== 'undefined') {
-        // Clear ALL localStorage to prevent conflicts with database
         localStorage.clear();
-        console.log('🧹 Cleared all localStorage - using database only');
+        console.log('🧹 Cleared localStorage - using database only');
       }
       
       // Load data from database API
@@ -690,7 +705,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       setVideos(processedVideos);
 
       // Convert real purchases to orders format
-      const convertedOrders = realOrders.map((purchase: any) => {
+      const convertedOrders = realOrders.map((purchase: any): Order => {
         const user = realUsers.find((u: any) => u.id === purchase.userId);
         const video = realVideos.find((v: any) => v.id === purchase.moduleId);
         
@@ -741,7 +756,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       });
 
       // Add recent orders
-      convertedOrders.slice(-5).forEach(order => {
+      convertedOrders.slice(-5).forEach((order: Order) => {
         activities.push({
           id: `order_${order.id}`,
           type: 'purchase',
@@ -1887,7 +1902,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     selectedVideos: [] as string[],
     isActive: true
   });
-  // Removed unused editingBundle state
+  const [editingBundle, setEditingBundle] = useState<any>(null);
   
   // PP1 form state
   const [editingPP1, setEditingPP1] = useState<Module | null>(null);
@@ -1918,7 +1933,6 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   });
 
   // Content Scheduling State
-  const [scheduledContent, setScheduledContent] = useState<any[]>([]);
   const [scheduleForm, setScheduleForm] = useState({
     contentId: '',
     publishDate: '',
@@ -2018,7 +2032,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         const success = await vpsDataStore.updateProduct(updatedContent);
         if (success) {
           vpsDataStore.clearMemoryCache();
-          await loadRealData(true);
+          await loadRealData();
           setToast({message: 'PP2 content updated successfully!', type: 'success'});
           setTimeout(() => setToast(null), 3000);
           handleSetActiveSection('pp2-program');
@@ -2045,7 +2059,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         const success = await vpsDataStore.addProduct(newContent);
         if (success) {
           vpsDataStore.clearMemoryCache();
-          await loadRealData(true);
+          await loadRealData();
           setToast({message: 'PP2 content created successfully!', type: 'success'});
           setTimeout(() => setToast(null), 3000);
           handleSetActiveSection('pp2-program');
@@ -2984,7 +2998,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         
         // Clear caches and reload
         vpsDataStore.clearMemoryCache();
-        setTimeout(() => loadRealData(true), 100);
+        setTimeout(() => loadRealData(), 100);
         
         setToast({message: `${deletedCount} videos deleted successfully!`, type: 'success'});
         setTimeout(() => setToast(null), 3000);
@@ -4083,7 +4097,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                             const success = await vpsDataStore.deleteOrder(order.id);
                             if (success) {
                               vpsDataStore.clearMemoryCache();
-                              await loadRealData(true);
+                              await loadRealData();
                               setToast({message: 'Order deleted successfully!', type: 'success'});
                               setTimeout(() => setToast(null), 3000);
                             } else {
