@@ -223,27 +223,25 @@ class VPSDataStore {
   // User methods
   async addUser(userData: any): Promise<boolean> {
     try {
-      const newUser = {
-        ...userData,
-        id: userData.id || generateSecureId('user'),
-        createdAt: new Date().toISOString(),
-        purchasedModules: userData.purchasedModules || []
-      };
-
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser)
+        body: JSON.stringify(userData)
       });
 
       if (!response.ok) {
         throw new Error('Failed to save user to database');
       }
 
+      const savedUser = await response.json(); // <- contains the real DB ID
+
       // Update memory cache only if DB insert succeeded
       if (this.memoryData) {
         this.memoryData.users = this.memoryData.users || [];
-        this.memoryData.users.push(newUser);
+        this.memoryData.users.push({
+          ...savedUser,
+          purchasedModules: savedUser.purchasedModules || []
+        });
       }
 
       return true;
