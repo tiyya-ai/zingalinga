@@ -63,7 +63,14 @@ export default function Header({
             <button onClick={() => onNavigate('about')} className="text-white hover:text-yellow-400 transition-colors font-medium text-sm xl:text-base">
               About
             </button>
-            <button onClick={() => onNavigate('packages')} className="text-white hover:text-yellow-400 transition-colors font-medium text-sm xl:text-base">
+            <button onClick={() => {
+              const packagesSection = document.getElementById('modules');
+              if (packagesSection) {
+                packagesSection.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                onNavigate('packages');
+              }
+            }} className="text-white hover:text-yellow-400 transition-colors font-medium text-sm xl:text-base">
               Packages
             </button>
             <button onClick={() => onNavigate('contact')} className="text-white hover:text-yellow-400 transition-colors font-medium text-sm xl:text-base">
@@ -130,7 +137,15 @@ export default function Header({
                 ℹ️ About
               </button>
               <button 
-                onClick={() => { onNavigate('packages'); setIsMenuOpen(false); }}
+                onClick={() => { 
+                  const packagesSection = document.getElementById('modules');
+                  if (packagesSection) {
+                    packagesSection.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    onNavigate('packages');
+                  }
+                  setIsMenuOpen(false); 
+                }}
                 className="text-white hover:text-yellow-400 hover:bg-white/10 transition-all font-medium text-left py-2 px-4 rounded-lg block w-full"
               >
                 📦 Packages
