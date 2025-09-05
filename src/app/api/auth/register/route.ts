@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for existing user in database
-    const existingUsers = await executeQuery('SELECT id FROM users WHERE email = ?', [sanitizedEmail]);
+    const existingUsers = await executeQuery('SELECT id FROM users WHERE email = ?', [sanitizedEmail]) as any[];
     if (existingUsers.length > 0) {
       return NextResponse.json(
         { success: false, error: 'An account with this email already exists' },
