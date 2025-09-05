@@ -121,13 +121,24 @@ class VPSDataStore {
 
   async loadData(forceRefresh?: boolean): Promise<AppData> {
     try {
-      const response = await fetch('/api/data');
-      if (response.ok) {
-        const data = await response.json();
-        this.memoryData = data;
-        return data;
-      }
-      return this.getDefaultData();
+      const [usersRes, modulesRes, purchasesRes] = await Promise.all([
+        fetch('/api/users'),
+        fetch('/api/modules'),
+        fetch('/api/purchases')
+      ]);
+
+      const users = usersRes.ok ? await usersRes.json() : [];
+      const modules = modulesRes.ok ? await modulesRes.json() : [];
+      const purchases = purchasesRes.ok ? await purchasesRes.json() : [];
+
+      this.memoryData = {
+        ...this.getDefaultData(),
+        users,
+        modules,
+        purchases
+      };
+
+      return this.memoryData;
     } catch (error) {
       console.error('Data load error:', error);
       return this.getDefaultData();
@@ -294,8 +305,9 @@ class VPSDataStore {
 
   async getUsers(): Promise<any[]> {
     try {
-      const data = await this.loadData();
-      return data.users || [];
+      const response = await fetch('/api/users');
+      if (!response.ok) throw new Error('Failed to fetch users from database');
+      return await response.json();
     } catch (error) {
       console.error('Error getting users:', error);
       return [];
