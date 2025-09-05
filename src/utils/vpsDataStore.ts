@@ -212,16 +212,30 @@ class VPSDataStore {
   // User methods
   async addUser(userData: any): Promise<boolean> {
     try {
-      const data = await this.loadData();
-      data.users = data.users || [];
       const newUser = {
         ...userData,
         id: userData.id || generateSecureId('user'),
         createdAt: new Date().toISOString(),
         purchasedModules: userData.purchasedModules || []
       };
-      data.users.push(newUser);
-      return await this.saveData(data);
+
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save user to database');
+      }
+
+      // Update memory cache only if DB insert succeeded
+      if (this.memoryData) {
+        this.memoryData.users = this.memoryData.users || [];
+        this.memoryData.users.push(newUser);
+      }
+
+      return true;
     } catch (error) {
       console.error('Add user error:', error);
       return false;
@@ -230,14 +244,25 @@ class VPSDataStore {
 
   async updateUser(userId: string, userData: any): Promise<boolean> {
     try {
-      const data = await this.loadData();
-      data.users = data.users || [];
-      const index = data.users.findIndex(u => u.id === userId);
-      if (index !== -1) {
-        data.users[index] = { ...data.users[index], ...userData };
-        return await this.saveData(data);
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user in database');
       }
-      return false;
+
+      // Update memory cache only if DB update succeeded
+      if (this.memoryData && this.memoryData.users) {
+        const index = this.memoryData.users.findIndex(u => u.id === userId);
+        if (index !== -1) {
+          this.memoryData.users[index] = { ...this.memoryData.users[index], ...userData };
+        }
+      }
+
+      return true;
     } catch (error) {
       console.error('Update user error:', error);
       return false;
@@ -246,11 +271,21 @@ class VPSDataStore {
 
   async deleteUser(userId: string): Promise<boolean> {
     try {
-      const data = await this.loadData();
-      data.users = data.users || [];
-      data.users = data.users.filter(u => u.id !== userId);
-      data.purchases = data.purchases?.filter(p => p.userId !== userId) || [];
-      return await this.saveData(data);
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete user from database');
+      }
+
+      // Update memory cache only if DB delete succeeded
+      if (this.memoryData) {
+        this.memoryData.users = this.memoryData.users?.filter(u => u.id !== userId) || [];
+        this.memoryData.purchases = this.memoryData.purchases?.filter(p => p.userId !== userId) || [];
+      }
+
+      return true;
     } catch (error) {
       console.error('Delete user error:', error);
       return false;
