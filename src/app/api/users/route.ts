@@ -4,6 +4,7 @@ import { executeQuery } from '../../../utils/database';
 export async function POST(request: NextRequest) {
   try {
     const user = await request.json();
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     
     await executeQuery(
       'INSERT INTO users (id, email, name, role, password, purchasedModules, totalSpent, status, createdAt, lastLogin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -16,8 +17,8 @@ export async function POST(request: NextRequest) {
         JSON.stringify(user.purchasedModules || []),
         user.totalSpent || 0,
         user.status || 'active',
-        user.createdAt || new Date().toISOString(),
-        user.lastLogin || new Date().toISOString()
+        now,
+        now
       ]
     );
     

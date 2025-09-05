@@ -3565,9 +3565,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                   // Create new user object
                   const newUser = {
                     id: `user_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
-                    ...userForm,
-                    createdAt: new Date().toISOString(),
-                    lastLogin: new Date().toISOString()
+                    ...userForm
                   };
                   
                   // Save to database
