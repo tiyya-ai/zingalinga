@@ -3433,24 +3433,16 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                         onPress={async () => {
                           if (confirm(`Are you sure you want to delete user "${user.name}"? This action cannot be undone.`)) {
                             try {
-                              // Delete user - REMOVE FROM DATABASE
-                              const response = await fetch('/api/data');
-                              const currentData = await response.json();
-                              const updatedUsers = currentData.users.filter((u: any) => u.id !== user.id);
-                              
-                              // Save to database
-                              const saveResponse = await fetch('/api/data', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ ...currentData, users: updatedUsers })
+                              const response = await fetch(`/api/users/${user.id}`, {
+                                method: 'DELETE'
                               });
                               
-                              if (saveResponse.ok) {
-                                await loadRealData(); // Refresh from database
+                              if (response.ok) {
+                                await loadRealData();
                                 setToast({message: 'User deleted successfully!', type: 'success'});
                                 setTimeout(() => setToast(null), 3000);
                               } else {
-                                setToast({message: 'Failed to delete user from database', type: 'error'});
+                                setToast({message: 'Failed to delete user', type: 'error'});
                                 setTimeout(() => setToast(null), 3000);
                               }
                             } catch (error) {
@@ -3578,16 +3570,11 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                     lastLogin: new Date().toISOString()
                   };
                   
-                  // Get current data and add new user
-                  const response = await fetch('/api/data');
-                  const currentData = await response.json();
-                  const updatedUsers = [...(currentData.users || []), newUser];
-                  
                   // Save to database
-                  const saveResponse = await fetch('/api/data', {
+                  const saveResponse = await fetch('/api/users', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...currentData, users: updatedUsers })
+                    body: JSON.stringify(newUser)
                   });
                   
                   if (saveResponse.ok) {
