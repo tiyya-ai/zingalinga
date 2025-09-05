@@ -469,6 +469,9 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 1000; // Show all activities
+  
+  // Add missing childrenProfiles state
+  const [childrenProfiles, setChildrenProfiles] = useState<ChildProfile[]>([]);
 
   // Load recent activities for main dashboard
   useEffect(() => {
@@ -604,7 +607,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     };
   }, [videoForm.videoUrl, videoForm.thumbnail]);
 
-  const loadRealData = async () => {
+  const loadRealData = async (): Promise<void> => {
     
     try {
       setDataLoaded(false);
@@ -4954,7 +4957,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                             }
                             if (success) {
                               vpsDataStore.clearMemoryCache();
-                              await loadRealData(true);
+                              await loadRealData();
                               setToast({message: 'Video removed from PP1 Program!', type: 'success'});
                               setTimeout(() => setToast(null), 3000);
                             } else {
@@ -6458,7 +6461,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                           const success = await vpsDataStore.saveData(updatedData);
                           if (success) {
                             vpsDataStore.clearMemoryCache();
-                            await loadRealData(true);
+                            await loadRealData();
                             setToast({message: 'Bundle deleted successfully!', type: 'success'});
                             setTimeout(() => setToast(null), 3000);
                           }
