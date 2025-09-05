@@ -619,8 +619,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         console.log('🧹 Cleared localStorage - using database only');
       }
       
-      // Load data from database API
-      const response = await fetch('/api/data');
+      // Load data from database API with cache busting
+      const response = await fetch(`/api/data?t=${Date.now()}`);
       const data = await response.json();
       
       // FORCE COMPLETE DATA REFRESH - ignore any cached users
@@ -3580,7 +3580,9 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                     setToast({message: 'User created successfully!', type: 'success'});
                     setTimeout(() => setToast(null), 3000);
                   } else {
-                    setToast({message: 'Failed to create user', type: 'error'});
+                    const errorData = await saveResponse.text();
+                    console.error('User creation failed:', errorData);
+                    setToast({message: `Failed to create user: ${errorData}`, type: 'error'});
                     setTimeout(() => setToast(null), 3000);
                   }
                 }

@@ -71,6 +71,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Save users to database if provided
+    if (data.users && Array.isArray(data.users)) {
+      for (const user of data.users) {
+        const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        
+        // Check if user exists
+        const existingUsers = await executeQuery('SELECT id FROM users WHERE id = ?', [user.id]);
+        
+        if ((existingUsers as any[]).length === 0) {
+          // Insert new user
+          await executeQuery(
+            'INSERT INTO users (id, email, name, role, password, purchasedModules, totalSpent, status, createdAt, lastLogin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+              user.id,
+              user.email,
+              user.name,
+              user.role || 'user',
+              user.password || 'defaultpass',
+              JSON.stringify(user.purchasedModules || []),
+              user.totalSpent || 0.00,
+              user.status || 'active',
+              now,
+              now
+            ]
+          );
+        }
+      }
+    }
+
     return NextResponse.json({ 
       success: true, 
       message: 'Data saved successfully'
