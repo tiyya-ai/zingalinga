@@ -212,18 +212,16 @@ class VPSDataStore {
   // User methods
   async addUser(userData: any): Promise<boolean> {
     try {
+      const data = await this.loadData();
+      data.users = data.users || [];
       const newUser = {
         ...userData,
         id: userData.id || generateSecureId('user'),
+        createdAt: new Date().toISOString(),
         purchasedModules: userData.purchasedModules || []
       };
-      
-      const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser)
-      });
-      return response.ok;
+      data.users.push(newUser);
+      return await this.saveData(data);
     } catch (error) {
       console.error('Add user error:', error);
       return false;
