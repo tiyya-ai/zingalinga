@@ -50,22 +50,21 @@ export class PurchaseManager {
   }
 
   /**
-   * Save purchase to VPS data store
+   * Save purchase to database
    */
   private async savePurchaseToVPS(purchase: Purchase): Promise<void> {
     try {
-      const data = await vpsDataStore.loadData();
-      if (!data.purchases) data.purchases = [];
+      const response = await fetch('/api/purchases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(purchase)
+      });
       
-      // Remove any existing purchase for this user/module
-      data.purchases = data.purchases.filter(p => 
-        !(p.userId === purchase.userId && p.moduleId === purchase.moduleId)
-      );
-      
-      data.purchases.push(purchase);
-      await vpsDataStore.saveData(data);
+      if (!response.ok) {
+        throw new Error('Failed to save purchase to database');
+      }
     } catch (error) {
-      console.error('Error saving purchase to VPS:', error);
+      console.error('Error saving purchase to database:', error);
       throw error;
     }
   }
@@ -95,14 +94,25 @@ export class PurchaseManager {
    */
   private async updateUserPurchasedModules(userId: string, moduleId: string): Promise<void> {
     try {
-      const data = await vpsDataStore.loadData();
+      // Get current user data
+      const userResponse = await fetch('/api/data');
+      const data = await userResponse.json();
       const user = data.users?.find((u: User) => u.id === userId);
       
       if (user) {
         if (!user.purchasedModules) user.purchasedModules = [];
         if (!user.purchasedModules.includes(moduleId)) {
           user.purchasedModules.push(moduleId);
-          await vpsDataStore.saveData(data);
+          
+          // Update user in database
+          await fetch(`/api/users/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...user,
+              purchasedModules: user.purchasedModules
+            })
+          });
         }
       }
     } catch (error) {

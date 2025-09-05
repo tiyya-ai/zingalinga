@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile, writeFile, mkdir } from 'fs/promises';
-import { existsSync } from 'fs';
-import path from 'path';
 import { sanitizeInput, validateEmail, hashPassword } from '../../../../utils/securityUtils';
-
-const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
-const DATA_FILE = path.join(DATA_DIR, 'global-app-data.json');
+import { executeQuery } from '../../../../utils/database';
 
 // Rate limiting store (in production, use Redis or similar)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
@@ -113,31 +108,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ensure data directory exists
-    if (!existsSync(DATA_DIR)) {
-      await mkdir(DATA_DIR, { recursive: true });
-    }
-
-    let data;
-    if (existsSync(DATA_FILE)) {
-      try {
-        const fileContent = await readFile(DATA_FILE, 'utf-8');
-        data = JSON.parse(fileContent);
-      } catch (error) {
-        console.error('Error reading data file:', error);
-        data = { users: [] };
-      }
-    } else {
-      data = { users: [] };
-    }
-
-    // Check for existing user with sanitized email (safe comparison)
-    const existingUser = data.users?.find((u: any) => {
-      if (!u || typeof u.email !== 'string') return false;
-      const userEmail = sanitizeInput(u.email).toLowerCase();
-      return userEmail === sanitizedEmail;
-    });
-    if (existingUser) {
+    // Check for existing user in database
+    const existingUsers = await executeQuery('SELECT id FROM users WHERE email = ?', [sanitizedEmail]);
+    if (existingUsers.length > 0) {
       return NextResponse.json(
         { success: false, error: 'An account with this email already exists' },
         { status: 409 }
@@ -150,63 +123,32 @@ export async function POST(request: NextRequest) {
     // Generate secure user ID
     const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+    // Save user to database
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    
+    await executeQuery(
+      'INSERT INTO users (id, email, name, role, password, purchasedModules, totalSpent, status, createdAt, lastLogin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        userId,
+        sanitizedEmail,
+        sanitizedName,
+        'user',
+        hashedPassword,
+        JSON.stringify([]),
+        0,
+        'active',
+        now,
+        now
+      ]
+    );
+
     const newUser = {
       id: userId,
       email: sanitizedEmail,
-      password: hashedPassword,
       name: sanitizedName,
       role: 'user',
-      status: 'active',
-      purchasedModules: [],
-      totalSpent: 0,
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
-      registrationIp: ip,
-      emailVerified: false,
-      loginAttempts: 0,
-      lastLoginAttempt: null,
-      accountLocked: false
+      createdAt: now
     };
-
-    data.users = data.users || [];
-    data.users.push(newUser);
-
-    // Save to local file with error handling
-    try {
-      await writeFile(DATA_FILE, JSON.stringify(data, null, 2));
-    } catch (error) {
-      console.error('Error writing to data file:', error);
-      return NextResponse.json(
-        { success: false, error: 'Failed to save user data' },
-        { status: 500 }
-      );
-    }
-
-    // Also save to VPS data endpoint with retry logic
-    let syncSuccess = false;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/data`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'User-Agent': 'ZingaLinga-Registration-Service'
-          },
-          body: JSON.stringify(data),
-          signal: AbortSignal.timeout(10000) // 10 second timeout
-        });
-        
-        if (response.ok) {
-          syncSuccess = true;
-          break;
-        }
-      } catch (error) {
-        console.error(`VPS sync attempt ${attempt + 1} failed:`, error);
-        if (attempt === 2) {
-          console.error('All VPS sync attempts failed, but user was created locally');
-        }
-      }
-    }
 
     // Log successful registration (without sensitive data)
     console.log(`User registered successfully: ${sanitizedEmail} (ID: ${userId})`);
@@ -220,8 +162,7 @@ export async function POST(request: NextRequest) {
         name: sanitizeInput(newUser.name),
         role: sanitizeInput(newUser.role),
         createdAt: sanitizeInput(newUser.createdAt)
-      },
-      syncedToVPS: syncSuccess
+      }
     });
   } catch (error) {
     return NextResponse.json(
