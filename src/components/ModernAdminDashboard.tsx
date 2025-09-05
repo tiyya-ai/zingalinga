@@ -5228,7 +5228,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       const success = await vpsDataStore.deletePackage(packageId);
       if (success) {
         vpsDataStore.clearMemoryCache();
-        await loadRealData(true);
+        await loadRealData();
         setToast({message: 'Package deleted successfully!', type: 'success'});
         setTimeout(() => setToast(null), 3000);
       } else {
