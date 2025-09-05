@@ -121,13 +121,13 @@ class VPSDataStore {
 
   async loadData(forceRefresh?: boolean): Promise<AppData> {
     try {
-      if (!forceRefresh && this.memoryData) {
-        return this.memoryData;
+      const response = await fetch('/api/data');
+      if (response.ok) {
+        const data = await response.json();
+        this.memoryData = data;
+        return data;
       }
-
-      // For build compatibility, return default data
-      this.memoryData = this.getDefaultData();
-      return this.memoryData;
+      return this.getDefaultData();
     } catch (error) {
       console.error('Data load error:', error);
       return this.getDefaultData();
@@ -136,11 +136,20 @@ class VPSDataStore {
 
   async saveData(data: AppData): Promise<boolean> {
     try {
-      this.memoryData = {
-        ...data,
-        lastUpdated: new Date().toISOString()
-      };
-      return true;
+      const response = await fetch('/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...data,
+          lastUpdated: new Date().toISOString()
+        })
+      });
+      
+      if (response.ok) {
+        this.memoryData = data;
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error('Data save failed:', error);
       return false;
@@ -150,10 +159,12 @@ class VPSDataStore {
   // Product/Module methods
   async addProduct(product: Module): Promise<boolean> {
     try {
-      const data = await this.loadData();
-      data.modules = data.modules || [];
-      data.modules.push(product);
-      return await this.saveData(data);
+      const response = await fetch('/api/modules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(product)
+      });
+      return response.ok;
     } catch (error) {
       console.error('Add product error:', error);
       return false;
@@ -201,16 +212,18 @@ class VPSDataStore {
   // User methods
   async addUser(userData: any): Promise<boolean> {
     try {
-      const data = await this.loadData();
-      data.users = data.users || [];
       const newUser = {
         ...userData,
         id: userData.id || generateSecureId('user'),
-        createdAt: new Date().toISOString(),
         purchasedModules: userData.purchasedModules || []
       };
-      data.users.push(newUser);
-      return await this.saveData(data);
+      
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser)
+      });
+      return response.ok;
     } catch (error) {
       console.error('Add user error:', error);
       return false;
