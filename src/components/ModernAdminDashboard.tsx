@@ -318,17 +318,10 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const [packages, setPackages] = useState<Package[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [flaggedContent, setFlaggedContent] = useState<FlaggedContent[]>([]);
   const [uploadQueue, setUploadQueue] = useState<UploadItem[]>([]);
-  const [uploadQueueSearch, setUploadQueueSearch] = useState('');
-  const [accessLogs, setAccessLogs] = useState<AccessLog[]>([]);
-  const [childrenProfiles, setChildrenProfiles] = useState<ChildProfile[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [contentBundles, setContentBundles] = useState<ContentBundle[]>([]);
-  const [userProgress, setUserProgress] = useState<UserProgress[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editCategoryValue, setEditCategoryValue] = useState('');
@@ -353,19 +346,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const [notifications, setNotifications] = useState<any[]>([]);
   const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
 
-  const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, message: string, onConfirm: () => void} | null>(null);
-
-  // Helper function to show toast notifications instead of alerts
-  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  // Helper function to show confirmation dialog instead of confirm()
-  const showConfirm = (message: string, onConfirm: () => void) => {
-    setConfirmDialog({ isOpen: true, message, onConfirm });
-  };
+  // Removed unused toast and confirmDialog states
   
   // Generate real notifications
   useEffect(() => {
@@ -440,7 +421,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     return () => {}; // Cleanup function still needed
   }, []);
 
-  const [dataLoaded, setDataLoaded] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [analyticsActiveTab, setAnalyticsActiveTab] = useState('overview');
 
   // Memoized dashboard stats calculation for performance
@@ -547,7 +528,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   // Load packages from data store
   const loadPackages = async () => {
     try {
-      const data = await vpsDataStore.loadData();
+      const response = await fetch('/api/data');
+      const data = await response.json();
       const packageData = data.packages || [];
       setPackages(packageData);
       console.log('Ã°Å¸â€œÂ¦ Loaded packages:', packageData.length);
@@ -565,7 +547,8 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   // Load existing admin logo from settings
   const loadExistingLogo = async () => {
     try {
-      const data = await vpsDataStore.loadData();
+      const response = await fetch('/api/data');
+      const data = await response.json();
       const settings = data.settings;
       if ((settings as any)?.adminLogo) {
         setLogoFile((settings as any).adminLogo);
@@ -605,7 +588,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     };
   }, [videoForm.videoUrl, videoForm.thumbnail]);
 
-  const loadRealData = async (skipCache = true) => {
+  const loadRealData = async () => {
     
     try {
       setDataLoaded(false);
@@ -618,8 +601,9 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         console.log('🧹 Cleared all localStorage - using database only');
       }
       
-      // Load data from VPS API without cache
-      const data = await vpsDataStore.loadData(true);
+      // Load data from database API
+      const response = await fetch('/api/data');
+      const data = await response.json();
       
       // FORCE COMPLETE DATA REFRESH - ignore any cached users
       console.log('🔄 Raw VPS data users:', data.users?.length || 0);
@@ -807,15 +791,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     }).format(amount);
   };
 
-  const getStatusColor = (status: string): "default" | "success" | "danger" | "primary" | "secondary" | "warning" => {
-    switch (status) {
-      case 'completed': return 'success';
-      case 'pending': return 'warning';
-      case 'cancelled': return 'danger';
-      case 'failed': return 'danger';
-      default: return 'default';
-    }
-  };
+  // Removed unused getStatusColor function
 
   const sidebarItems: SidebarItem[] = [
     {
@@ -1881,7 +1857,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   });
   const [editingUser, setEditingUser] = useState<any>(null);
   const [userFilter, setUserFilter] = useState('all');
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  // Removed unused selectedUser state
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const { isOpen: isUserModalOpen, onOpen: onUserModalOpen, onClose: onUserModalClose } = useDisclosure();
   
@@ -1911,7 +1887,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     selectedVideos: [] as string[],
     isActive: true
   });
-  const [editingBundle, setEditingBundle] = useState<any>(null);
+  // Removed unused editingBundle state
   
   // PP1 form state
   const [editingPP1, setEditingPP1] = useState<Module | null>(null);
@@ -2052,7 +2028,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         }
       } else {
         const newContent = {
-          id: `pp2_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `pp2_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
           title: pp2Form.title,
           description: pp2Form.description,
           price: pp2Form.price || 0,
@@ -2251,43 +2227,9 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     return url;
   };
 
-  const getVimeoThumbnail = async (videoId: string) => {
-    try {
-      const response = await fetch(`https://vimeo.com/api/v2/video/${videoId}.json`);
-      const data = await response.json();
-      return data[0]?.thumbnail_large || '';
-    } catch {
-      return '';
-    }
-  };
+  // Removed unused getVimeoThumbnail function
 
-  const updatePackageContent = async (packageId: string, videoId: string, action: 'add' | 'remove') => {
-    try {
-      const data = await vpsDataStore.loadData();
-      const packageIndex = data.packages?.findIndex(p => p.id === packageId);
-      
-      if (packageIndex !== undefined && packageIndex >= 0 && data.packages) {
-        const pkg = data.packages[packageIndex];
-        pkg.contentIds = pkg.contentIds || [];
-        
-        if (action === 'add' && !pkg.contentIds.includes(videoId)) {
-          pkg.contentIds.push(videoId);
-        } else if (action === 'remove') {
-          pkg.contentIds = pkg.contentIds.filter((id: string) => id !== videoId);
-        }
-        
-        // Update package in data store
-        const packageData = await vpsDataStore.loadData();
-        if (packageData.packages) {
-          packageData.packages[packageIndex] = pkg;
-          // Update package in local state only
-          setPackages(prev => prev.map(p => p.id === pkg.id ? pkg : p));
-        }
-      }
-    } catch (error) {
-      console.error('Error updating package content:', error);
-    }
-  };
+  // Removed unused updatePackageContent function
 
   const handleSaveVideo = async () => {
     try {
@@ -2415,7 +2357,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       } else {
         console.log('Ã°Å¸â€ â€¢ Creating new video...');
         const newVideo: Module = {
-          id: `${videoForm.contentType}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `${videoForm.contentType}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
           title: videoForm.title,
           description: videoForm.description,
           category: videoForm.category,
@@ -2565,13 +2507,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     }
   };
 
-  const getVideoTypeIcon = (videoType: string) => {
-    switch (videoType) {
-      case 'youtube': return <Youtube className="h-4 w-4 text-red-500" />;
-      case 'vimeo': return <div className="w-4 h-4 bg-blue-600 rounded text-white text-xs flex items-center justify-center font-bold">V</div>;
-      default: return <Upload className="h-4 w-4 text-gray-500" />;
-    }
-  };
+  // Removed unused getVideoTypeIcon function
 
   const renderEditVideo = () => (
     <div className="space-y-6">
@@ -2717,15 +2653,13 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                       {videoForm.videoUrl.includes('vimeo.com') ? (
                         <iframe
                           src={`https://player.vimeo.com/video/${videoForm.videoUrl.split('/').pop()?.split('?')[0]}?autoplay=0&loop=0`}
-                          className="w-full h-full"
-                          frameBorder="0"
+                          className="w-full h-full border-0"
                           allow="autoplay; fullscreen; picture-in-picture"
                         />
                       ) : videoForm.videoUrl.includes('youtube.com') || videoForm.videoUrl.includes('youtu.be') ? (
                         <iframe
                           src={getVideoEmbedUrl(videoForm.videoUrl)}
-                          className="w-full h-full"
-                          frameBorder="0"
+                          className="w-full h-full border-0"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         />
                       ) : (
@@ -2769,8 +2703,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                       {videoForm.audioUrl.includes('vimeo.com') ? (
                         <iframe
                           src={`https://player.vimeo.com/video/${videoForm.audioUrl.split('/').pop()?.split('?')[0]}?autoplay=0&loop=0`}
-                          className="w-full h-32"
-                          frameBorder="0"
+                          className="w-full h-32 border-0"
                           allow="autoplay; fullscreen; picture-in-picture"
                         />
                       ) : (
@@ -3063,31 +2996,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     }
   };
 
-  const handleBulkPriceUpdate = async () => {
-    if (selectedVideos.length === 0) return;
-    
-    const newPrice = prompt('Enter new price for selected videos:');
-    if (newPrice && !isNaN(parseFloat(newPrice))) {
-      try {
-        const updatedVideos = videos.map(video => {
-          if (selectedVideos.includes(video.id)) {
-            return { ...video, price: parseFloat(newPrice) };
-          }
-          return video;
-        });
-        
-        for (const video of updatedVideos.filter(v => selectedVideos.includes(v.id))) {
-          await vpsDataStore.updateProduct(video);
-        }
-        
-        setVideos(updatedVideos);
-        setSelectedVideos([]);
-        alert(`- Price updated for ${selectedVideos.length} videos!`);
-      } catch (error) {
-        alert('- Failed to update prices. Please try again.');
-      }
-    }
-  };
+  // Removed unused handleBulkPriceUpdate function
 
   const handleBulkCategoryUpdate = async () => {
     if (selectedVideos.length === 0) return;
@@ -3353,6 +3262,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   );
 
   // Continue with all other render functions using the same consistent styling pattern...
+  // Removed unused renderAllUsers function
   const renderAllUsers = () => (
     <div className="space-y-6">
       <PageHeader 
@@ -3506,17 +3416,24 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                         onPress={async () => {
                           if (confirm(`Are you sure you want to delete user "${user.name}"? This action cannot be undone.`)) {
                             try {
-                              // Delete user using proper VPS method
-                              const success = await vpsDataStore.deleteUser(user.id);
+                              // Delete user - REMOVE FROM DATABASE
+                              const response = await fetch('/api/data');
+                              const currentData = await response.json();
+                              const updatedUsers = currentData.users.filter((u: any) => u.id !== user.id);
                               
-                              if (success) {
-                                // Update local state immediately
-                                setUsers(prev => prev.filter(u => u.id !== user.id));
-                                
+                              // Save to database
+                              const saveResponse = await fetch('/api/data', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ...currentData, users: updatedUsers })
+                              });
+                              
+                              if (saveResponse.ok) {
+                                await loadRealData(); // Refresh from database
                                 setToast({message: 'User deleted successfully!', type: 'success'});
                                 setTimeout(() => setToast(null), 3000);
                               } else {
-                                setToast({message: 'Failed to delete user from server', type: 'error'});
+                                setToast({message: 'Failed to delete user from database', type: 'error'});
                                 setTimeout(() => setToast(null), 3000);
                               }
                             } catch (error) {
@@ -3604,10 +3521,24 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                 }
                 
                 if (editingUser) {
-                  // Update user
-                  const success = await vpsDataStore.updateUser(editingUser.id, userForm);
-                  if (success) {
-                    await loadRealData();
+                  // Update user - SAVE TO DATABASE
+                  const response = await fetch('/api/data');
+                  const currentData = await response.json();
+                  const updatedUsers = currentData.users.map((user: any) => 
+                    user.id === editingUser.id 
+                      ? { ...user, ...userForm, updatedAt: new Date().toISOString() }
+                      : user
+                  );
+                  
+                  // Save to database
+                  const saveResponse = await fetch('/api/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...currentData, users: updatedUsers })
+                  });
+                  
+                  if (saveResponse.ok) {
+                    await loadRealData(); // Refresh from database
                     setToast({message: 'User updated successfully!', type: 'success'});
                     setTimeout(() => setToast(null), 3000);
                   } else {
@@ -3615,19 +3546,39 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                     setTimeout(() => setToast(null), 3000);
                   }
                 } else {
-                  // Add new user
+                  // Add new user - SAVE TO DATABASE
                   if (!userForm.password.trim()) {
                     setToast({message: 'Password is required for new users', type: 'error'});
                     setTimeout(() => setToast(null), 3000);
                     return;
                   }
-                  const success = await vpsDataStore.addUser(userForm);
-                  if (success) {
-                    await loadRealData();
+                  
+                  // Create new user object
+                  const newUser = {
+                    id: `user_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
+                    ...userForm,
+                    createdAt: new Date().toISOString(),
+                    lastLogin: new Date().toISOString()
+                  };
+                  
+                  // Get current data and add new user
+                  const response = await fetch('/api/data');
+                  const currentData = await response.json();
+                  const updatedUsers = [...(currentData.users || []), newUser];
+                  
+                  // Save to database
+                  const saveResponse = await fetch('/api/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...currentData, users: updatedUsers })
+                  });
+                  
+                  if (saveResponse.ok) {
+                    await loadRealData(); // Refresh from database
                     setToast({message: 'User created successfully!', type: 'success'});
                     setTimeout(() => setToast(null), 3000);
                   } else {
-                    setToast({message: 'Failed to create user or user already exists', type: 'error'});
+                    setToast({message: 'Failed to create user', type: 'error'});
                     setTimeout(() => setToast(null), 3000);
                   }
                 }
@@ -4668,7 +4619,6 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {videos.filter(v => v.category === 'Audio Lessons' || (v.type === 'audio')).map((lesson) => {
-                  const audioId = `audio-${lesson.id}`;
                   return (
                     <tr key={lesson.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3">
