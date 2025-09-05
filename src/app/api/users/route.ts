@@ -17,29 +17,41 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const user = await request.json();
+    console.log('Creating user:', user);
+    
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    
+    // Ensure all required fields have values
+    const email = user.email?.toString() || '';
+    const name = user.name?.toString() || '';
+    const role = user.role?.toString() || 'user';
+    const password = user.password?.toString() || '';
+    const purchasedModules = JSON.stringify(user.purchasedModules || []);
+    const totalSpent = parseFloat(user.totalSpent?.toString() || '0') || 0.00;
+    const status = user.status?.toString() || 'active';
+    
+    // Generate a unique string ID like existing users
+    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    console.log('Prepared values:', { userId, email, name, role, password, purchasedModules, totalSpent, status, now });
 
-    // Insert without manual id if AUTO_INCREMENT
+    // Insert with generated string ID
     const result = await executeQuery(
-      'INSERT INTO users (email, name, role, password, purchasedModules, totalSpent, status, createdAt, lastLogin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [
-        user.email,
-        user.name,
-        user.role || 'user',
-        user.password,
-        JSON.stringify(user.purchasedModules || []),
-        user.totalSpent || 0,
-        user.status || 'active',
-        now,
-        now
-      ]
+      'INSERT INTO users (id, email, name, role, password, purchasedModules, totalSpent, status, createdAt, lastLogin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [userId, email, name, role, password, purchasedModules, totalSpent, status, now, now]
     );
+    
+    console.log('Insert result:', result);
 
-    // Return the new user object with inserted id
+    // Return the new user object with generated id
     return NextResponse.json({
-      id: (result as any).insertId,
-      ...user,
+      id: userId,
+      email,
+      name,
+      role,
       purchasedModules: user.purchasedModules || [],
+      totalSpent,
+      status,
       createdAt: now,
       lastLogin: now
     });
