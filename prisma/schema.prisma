@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String
+  password          String
+  role              Role      @default(USER)
+  status            Status    @default(ACTIVE)
+  totalSpent        Float     @default(0.00)
+  purchasedModules  Json      @default("[]")
+  avatar            String?
+  phone             String?
+  dateOfBirth       String?
+  subscription      Subscription @default(FREE)
+  createdAt         DateTime  @default(now())
+  lastLogin         DateTime  @default(now())
+  
+  purchases         Purchase[]
+  
+  @@map("users")
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  price       Float    @default(0.00)
+  category    String
+  tags        Json     @default("[]")
+  isActive    Boolean  @default(true)
+  videoUrl    String?
+  thumbnail   String?
+  duration    String?
+  ageGroup    String?
+  language    String   @default("English")
+  videoType   String   @default("external")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  purchases   Purchase[]
+  
+  @@map("modules")
+}
+
+model Purchase {
+  id        String   @id @default(cuid())
+  userId    String
+  moduleId  String
+  amount    Float
+  status    String   @default("completed")
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  
+  @@map("purchases")
+}
+
+model Package {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float    @default(0.00)
+  type        String   @default("subscription")
+  isActive    Boolean  @default(true)
+  isPopular   Boolean  @default(false)
+  features    String?
+  coverImage  String?
+  contentIds  Json     @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("packages")
+}
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum Subscription {
+  FREE
+  BASIC
+  PREMIUM
+  FAMILY
+}

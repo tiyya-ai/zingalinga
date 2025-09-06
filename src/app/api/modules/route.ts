@@ -1,31 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { executeQuery } from '../../../utils/database';
+import { prisma } from '../../../lib/prisma';
+
+export async function GET() {
+  try {
+    const modules = await prisma.module.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    return NextResponse.json(modules.map(module => ({
+      ...module,
+      tags: typeof module.tags === 'string' ? JSON.parse(module.tags) : module.tags
+    })));
+  } catch (error) {
+    console.error('Error fetching modules:', error);
+    return NextResponse.json({ error: 'Failed to fetch modules' }, { status: 500 });
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const module = await request.json();
-    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const moduleData = await request.json();
+    console.log('Creating module with Prisma:', moduleData);
     
-    await executeQuery(
-      'INSERT INTO modules (id, title, description, category, videoUrl, thumbnailUrl, duration, tags, price, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [
-        module.id,
-        module.title,
-        module.description,
-        module.category,
-        module.videoUrl,
-        module.thumbnailUrl,
-        module.duration || 0,
-        JSON.stringify(module.tags || []),
-        module.price || 0,
-        module.status || 'active',
-        now
-      ]
-    );
+    const module = await prisma.module.create({
+      data: {
+        title: moduleData.title,
+        description: moduleData.description || null,
+        price: parseFloat(moduleData.price) || 0.00,
+        category: moduleData.category,
+        tags: moduleData.tags || [],
+        isActive: moduleData.isActive !== undefined ? moduleData.isActive : true,
+        videoUrl: moduleData.videoUrl || null,
+        thumbnail: moduleData.thumbnail || null,
+        duration: moduleData.duration || null,
+        ageGroup: moduleData.ageGroup || null,
+        language: moduleData.language || 'English',
+        videoType: moduleData.videoType || 'external'
+      }
+    });
     
-    return NextResponse.json({ success: true });
+    console.log('Module created successfully:', module);
+    return NextResponse.json(module);
+    
   } catch (error) {
     console.error('Error creating module:', error);
-    return NextResponse.json({ error: 'Failed to create module' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ 
+      error: 'Failed to create module', 
+      details: errorMessage 
+    }, { status: 500 });
   }
 }

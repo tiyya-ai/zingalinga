@@ -1,5 +1,4 @@
 import { User, Module, Purchase } from '../types';
-import { vpsDataStore } from './vpsDataStore';
 
 export class PurchaseManager {
   private static instance: PurchaseManager;
@@ -31,12 +30,8 @@ export class PurchaseManager {
         createdAt: new Date().toISOString()
       };
 
-      // Save to multiple places for redundancy
-      await Promise.all([
-        this.savePurchaseToVPS(purchase),
-        this.savePurchaseToLocalStorage(purchase),
-        this.updateUserPurchasedModules(userId, moduleId)
-      ]);
+      // Save to Prisma database only
+      await this.savePurchaseToVPS(purchase);
 
       // Update cache
       this.updatePurchaseCache(userId, purchase);
@@ -50,75 +45,36 @@ export class PurchaseManager {
   }
 
   /**
-   * Save purchase to database
+   * Save purchase to Prisma database
    */
   private async savePurchaseToVPS(purchase: Purchase): Promise<void> {
     try {
+      const purchaseData = {
+        userId: purchase.userId,
+        moduleId: purchase.moduleId,
+        amount: purchase.amount,
+        status: purchase.status || 'completed'
+      };
+      
       const response = await fetch('/api/purchases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(purchase)
+        body: JSON.stringify(purchaseData)
       });
       
       if (!response.ok) {
-        throw new Error('Failed to save purchase to database');
+        const error = await response.text();
+        throw new Error(`Failed to save purchase to Prisma database: ${error}`);
       }
+      
+      console.log('✅ Purchase saved to Prisma database');
     } catch (error) {
-      console.error('Error saving purchase to database:', error);
+      console.error('Error saving purchase to Prisma database:', error);
       throw error;
     }
   }
 
-  /**
-   * Save purchase to localStorage as backup
-   */
-  private async savePurchaseToLocalStorage(purchase: Purchase): Promise<void> {
-    try {
-      const key = `user_purchases_${purchase.userId}`;
-      const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      
-      // Remove duplicates
-      const filtered = existing.filter((p: Purchase) => 
-        !(p.moduleId === purchase.moduleId)
-      );
-      
-      filtered.push(purchase);
-      localStorage.setItem(key, JSON.stringify(filtered));
-    } catch (error) {
-      console.error('Error saving purchase to localStorage:', error);
-    }
-  }
 
-  /**
-   * Update user's purchased modules list
-   */
-  private async updateUserPurchasedModules(userId: string, moduleId: string): Promise<void> {
-    try {
-      // Get current user data
-      const userResponse = await fetch('/api/data');
-      const data = await userResponse.json();
-      const user = data.users?.find((u: User) => u.id === userId);
-      
-      if (user) {
-        if (!user.purchasedModules) user.purchasedModules = [];
-        if (!user.purchasedModules.includes(moduleId)) {
-          user.purchasedModules.push(moduleId);
-          
-          // Update user in database
-          await fetch(`/api/users/${userId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              ...user,
-              purchasedModules: user.purchasedModules
-            })
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error updating user purchased modules:', error);
-    }
-  }
 
   /**
    * Update purchase cache
@@ -131,7 +87,7 @@ export class PurchaseManager {
   }
 
   /**
-   * Get user purchases with fallback to localStorage
+   * Get user purchases from Prisma database
    */
   async getUserPurchases(userId: string): Promise<Purchase[]> {
     try {
@@ -140,30 +96,33 @@ export class PurchaseManager {
         return this.purchaseCache.get(userId)!;
       }
 
-      // Try VPS data store
-      const data = await vpsDataStore.loadData();
-      const vpsPurchases = data.purchases?.filter((p: Purchase) => p.userId === userId) || [];
-
-      // Try localStorage as fallback
-      const localKey = `user_purchases_${userId}`;
-      const localPurchases = JSON.parse(localStorage.getItem(localKey) || '[]');
-
-      // Merge and deduplicate
-      const allPurchases = [...vpsPurchases, ...localPurchases];
-      const uniquePurchases = allPurchases.filter((purchase, index, self) => 
-        index === self.findIndex(p => p.moduleId === purchase.moduleId)
-      );
-
-      // Update cache
-      this.purchaseCache.set(userId, uniquePurchases);
-
-      return uniquePurchases;
-    } catch (error) {
-      console.error('Error getting user purchases:', error);
+      // Load from Prisma API
+      const response = await fetch('/api/purchases');
+      if (response.ok) {
+        const allPurchases = await response.json();
+        const userPurchases = allPurchases.filter((p: any) => p.userId === userId);
+        
+        // Convert Prisma format to Purchase format
+        const formattedPurchases = userPurchases.map((p: any) => ({
+          id: p.id,
+          userId: p.userId,
+          moduleId: p.moduleId,
+          moduleIds: [p.moduleId],
+          amount: p.amount,
+          status: p.status,
+          purchaseDate: p.createdAt,
+          createdAt: p.createdAt
+        }));
+        
+        // Update cache
+        this.purchaseCache.set(userId, formattedPurchases);
+        return formattedPurchases;
+      }
       
-      // Fallback to localStorage only
-      const localKey = `user_purchases_${userId}`;
-      return JSON.parse(localStorage.getItem(localKey) || '[]');
+      return [];
+    } catch (error) {
+      console.error('Error getting user purchases from Prisma:', error);
+      return [];
     }
   }
 

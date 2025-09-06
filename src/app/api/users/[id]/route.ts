@@ -1,27 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { executeQuery } from '../../../../utils/database';
+import { prisma } from '../../../../lib/prisma';
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: userId } = await params;
     const userData = await request.json();
     
-    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-
-    await executeQuery(
-      'UPDATE users SET email = ?, name = ?, role = ?, purchasedModules = ?, totalSpent = ?, status = ? WHERE id = ?',
-      [
-        userData.email,
-        userData.name,
-        userData.role || 'user',
-        JSON.stringify(userData.purchasedModules || []),
-        userData.totalSpent || 0.00,
-        userData.status || 'active',
-        userId
-      ]
-    );
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        email: userData.email,
+        name: userData.name,
+        role: userData.role?.toUpperCase() || 'USER',
+        totalSpent: parseFloat(userData.totalSpent) || 0.00,
+        status: userData.status?.toUpperCase() || 'ACTIVE',
+        purchasedModules: userData.purchasedModules || [],
+        avatar: userData.avatar || null,
+        phone: userData.phone || null,
+        dateOfBirth: userData.dateOfBirth || null,
+        subscription: userData.subscription?.toUpperCase() || 'FREE'
+      }
+    });
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, user });
   } catch (error) {
     console.error('Error updating user:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -33,9 +34,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   try {
     const { id: userId } = await params;
     
-    // Delete user and related purchases
-    await executeQuery('DELETE FROM purchases WHERE userId = ?', [userId]);
-    await executeQuery('DELETE FROM users WHERE id = ?', [userId]);
+    // Delete user (Prisma will handle cascade delete of purchases)
+    await prisma.user.delete({
+      where: { id: userId }
+    });
     
     return NextResponse.json({ success: true });
   } catch (error) {

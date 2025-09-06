@@ -1,27 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { executeQuery } from '../../../utils/database';
+import { prisma } from '../../../lib/prisma';
+
+export async function GET() {
+  try {
+    const packages = await prisma.package.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    return NextResponse.json(packages.map(pkg => ({
+      ...pkg,
+      contentIds: typeof pkg.contentIds === 'string' ? JSON.parse(pkg.contentIds) : pkg.contentIds
+    })));
+  } catch (error) {
+    console.error('Error fetching packages:', error);
+    return NextResponse.json({ error: 'Failed to fetch packages' }, { status: 500 });
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const pkg = await request.json();
-    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const packageData = await request.json();
+    console.log('Creating package with Prisma:', packageData);
     
-    await executeQuery(
-      'INSERT INTO packages (id, name, description, price, modules, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [
-        pkg.id,
-        pkg.name,
-        pkg.description,
-        pkg.price,
-        JSON.stringify(pkg.modules || []),
-        pkg.status || 'active',
-        now
-      ]
-    );
+    const newPackage = await prisma.package.create({
+      data: {
+        name: packageData.name,
+        description: packageData.description || null,
+        price: parseFloat(packageData.price) || 0.00,
+        type: packageData.type || 'subscription',
+        isActive: packageData.isActive !== undefined ? packageData.isActive : true,
+        isPopular: packageData.isPopular || false,
+        features: packageData.features || null,
+        coverImage: packageData.coverImage || null,
+        contentIds: packageData.contentIds || []
+      }
+    });
     
-    return NextResponse.json({ success: true });
+    console.log('Package created successfully:', newPackage);
+    return NextResponse.json(newPackage);
+    
   } catch (error) {
     console.error('Error creating package:', error);
-    return NextResponse.json({ error: 'Failed to create package' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ 
+      error: 'Failed to create package', 
+      details: errorMessage 
+    }, { status: 500 });
   }
 }

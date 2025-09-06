@@ -1,27 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { executeQuery } from '../../../utils/database';
+import { prisma } from '../../../lib/prisma';
+
+export async function GET() {
+  try {
+    const purchases = await prisma.purchase.findMany({
+      include: {
+        user: true,
+        module: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    return NextResponse.json(purchases);
+  } catch (error) {
+    console.error('Error fetching purchases:', error);
+    return NextResponse.json({ error: 'Failed to fetch purchases' }, { status: 500 });
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const purchase = await request.json();
-    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const purchaseData = await request.json();
+    console.log('Creating purchase with Prisma:', purchaseData);
     
-    await executeQuery(
-      'INSERT INTO purchases (id, userId, moduleId, amount, status, paymentMethod, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [
-        purchase.id,
-        purchase.userId,
-        purchase.moduleId,
-        purchase.amount,
-        purchase.status || 'completed',
-        purchase.paymentMethod || 'card',
-        now
-      ]
-    );
+    const purchase = await prisma.purchase.create({
+      data: {
+        userId: purchaseData.userId,
+        moduleId: purchaseData.moduleId,
+        amount: parseFloat(purchaseData.amount) || 0.00,
+        status: purchaseData.status || 'completed'
+      },
+      include: {
+        user: true,
+        module: true
+      }
+    });
     
-    return NextResponse.json({ success: true });
+    console.log('Purchase created successfully:', purchase);
+    return NextResponse.json(purchase);
+    
   } catch (error) {
     console.error('Error creating purchase:', error);
-    return NextResponse.json({ error: 'Failed to create purchase' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ 
+      error: 'Failed to create purchase', 
+      details: errorMessage 
+    }, { status: 500 });
   }
 }
