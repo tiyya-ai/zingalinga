@@ -2,28 +2,13 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding admin user...');
+  console.log('⚠️ Admin seeding DISABLED to prevent user recreation');
+  console.log('ℹ️ Users will only exist if manually created via admin dashboard');
   
-  // Create admin user
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@zingalinga.com' },
-    update: {
-      password: 'admin123',
-      role: 'ADMIN',
-      status: 'ACTIVE'
-    },
-    create: {
-      email: 'admin@zingalinga.com',
-      name: 'Admin User',
-      password: 'admin123',
-      role: 'ADMIN',
-      status: 'ACTIVE',
-      totalSpent: 0.00,
-      subscription: 'FREE'
-    }
-  });
+  // SEEDING DISABLED - No automatic user creation
+  // This prevents users from being recreated after deletion
   
-  console.log('✅ Admin user created/updated:', admin);
+  console.log('✅ Seeding skipped - database will only contain manually created users');
 }
 
 main()

@@ -153,6 +153,16 @@ export default function ProfessionalUserDashboard({
   const [newContentNotifications, setNewContentNotifications] = useState<any[]>([]);
 
 
+  // Track blob URLs for cleanup
+  const [blobUrls, setBlobUrls] = useState<string[]>([]);
+
+  // Utility function to create and track blob URLs
+  const createTrackedBlobUrl = (file: File) => {
+    const url = URL.createObjectURL(file);
+    setBlobUrls(prev => [...prev, url]);
+    return url;
+  };
+
   useEffect(() => {
     // setMounted(true); // Already true
     
@@ -183,8 +193,15 @@ export default function ProfessionalUserDashboard({
       window.removeEventListener('resize', checkMobile);
       window.removeEventListener('userProfileUpdated', handleProfileUpdate as EventListener);
       window.removeEventListener('navigateToContent', handleNavigateToContent as EventListener);
+      
+      // Cleanup blob URLs
+      blobUrls.forEach(url => {
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
     };
-  }, []); // Removed setUser dependency to prevent continuous refresh cycles
+  }, [blobUrls]); // Added blobUrls dependency
 
   // Read URL parameters and set activeTab
   useEffect(() => {
@@ -311,7 +328,7 @@ export default function ProfessionalUserDashboard({
       
       // Handle File objects for video URLs
       if (module.videoUrl && typeof module.videoUrl === 'object' && 'type' in module.videoUrl) {
-        videoUrl = URL.createObjectURL(module.videoUrl as File as unknown as File);
+        videoUrl = createTrackedBlobUrl(module.videoUrl as File as unknown as File);
       }
       // Handle base64 data URLs (from admin uploads)
       else if (typeof module.videoUrl === 'string' && module.videoUrl.startsWith('data:')) {
@@ -320,7 +337,7 @@ export default function ProfessionalUserDashboard({
       
       // Handle File objects for thumbnails
       if (module.thumbnail && typeof module.thumbnail === 'object' && 'type' in module.thumbnail) {
-        thumbnail = URL.createObjectURL(module.thumbnail as File as unknown as File);
+        thumbnail = createTrackedBlobUrl(module.thumbnail as File as unknown as File);
       }
       // Handle base64 data URLs for thumbnails
       else if (typeof module.thumbnail === 'string' && module.thumbnail.startsWith('data:')) {

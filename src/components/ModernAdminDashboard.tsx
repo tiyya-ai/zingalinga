@@ -232,6 +232,7 @@ interface UserProgress {
 import { renderAddPackage as renderAddPackageComponent, renderAllPackages as renderAllPackagesComponent, renderLearningPackages as renderLearningPackagesComponent } from './ModernAdminDashboardPackages';
 import { renderAddBundle as renderAddBundleComponent, renderAllBundles as renderAllBundlesComponent } from './ModernAdminDashboardBundles';
 import { renderPP2Program, renderAddPP2Content } from './PP2Components';
+import UserManagementPage from './UserManagementPage';
 
 const AdminSuccessModal = ({ isOpen, onClose, message }: { isOpen: boolean; onClose: () => void; message: string }) => (
   <Modal isOpen={isOpen} onClose={onClose} size="sm" backdrop="blur">
@@ -273,22 +274,25 @@ interface SidebarItem {
   color?: string;
 }
 
+// Replace dynamic values with static placeholders during SSR
+const isServer = typeof window === 'undefined';
 export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate }: ModernAdminDashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => (isServer ? false : window.innerWidth < 768));
 
   const [activeSection, setActiveSection] = useState('overview');
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   // Security: Sanitize section parameter
   const sanitizeSection = (section: string): string => {
-    const allowedSections = ['overview', 'analytics', 'users', 'all-users', 'add-user', 'user-roles', 'content', 'all-videos', 'add-video', 'categories', 'upload-queue', 'packages', 'all-packages', 'add-package', 'scheduling', 'commerce', 'orders', 'pending-payments', 'subscriptions', 'transactions', 'moderation', 'comments', 'flagged-content', 'chat', 'recent-activity', 'admin-profile', 'settings', 'general-settings', 'email-settings', 'security-settings', 'notification-settings', 'content-settings'];
+    const allowedSections = ['overview', 'analytics', 'users', 'all-users', 'user-roles', 'content', 'all-videos', 'add-video', 'categories', 'upload-queue', 'packages', 'all-packages', 'add-package', 'scheduling', 'commerce', 'orders', 'pending-payments', 'subscriptions', 'transactions', 'moderation', 'comments', 'flagged-content', 'chat', 'recent-activity', 'admin-profile', 'settings', 'general-settings', 'email-settings', 'security-settings', 'notification-settings', 'content-settings'];
     return allowedSections.includes(section) ? section : 'overview';
   };
 
   // Handle URL-based navigation for admin sections
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (!isServer) {
+      // Client-side logic for URL-based navigation
       const urlParams = new URLSearchParams(window.location.search);
       const section = urlParams.get('section');
       if (section) {
@@ -518,16 +522,11 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
 
 
   useEffect(() => {
+    // Client-side logic for detecting mobile view
     const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (mobile) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
+      setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -550,7 +549,6 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       const response = await fetch('/api/packages');
       const packageData = response.ok ? await response.json() : [];
       setPackages(packageData);
-      console.log('📦 Loaded packages:', packageData.length);
     } catch (error) {
       console.error('Failed to load packages:', error);
       setPackages([]);
@@ -605,11 +603,11 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
   const loadRealData = async (): Promise<void> => {
     
     try {
+      console.log('🔄 LOAD_DATA: Starting data reload from Prisma database...');
       setDataLoaded(false);
       
-      console.log('🔄 Loading data from Prisma database...');
-      
       // Load data directly from Prisma API endpoints
+      console.log('🌐 LOAD_DATA: Fetching from API endpoints...');
       const [usersRes, modulesRes, purchasesRes, packagesRes] = await Promise.all([
         fetch('/api/users'),
         fetch('/api/modules'),
@@ -622,10 +620,15 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       const realOrders = purchasesRes.ok ? await purchasesRes.json() : [];
       const realPackages = packagesRes.ok ? await packagesRes.json() : [];
       
-      console.log('🔄 Direct Prisma data users:', realUsers.length);
-      console.log('📦 Direct Prisma data packages:', realPackages.length);
+      console.log('📊 LOAD_DATA: API responses received:', {
+        users: realUsers.length,
+        videos: realVideos.length,
+        orders: realOrders.length,
+        packages: realPackages.length
+      });
       
-      // NUCLEAR OPTION: Clear all component state
+      // Clear all component state before loading fresh data
+      console.log('🧹 LOAD_DATA: Clearing component state...');
       setUsers([]);
       setOrders([]);
       setVideos([]);
@@ -667,24 +670,27 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       setScheduledContent(realScheduledContent);
       setContentBundles(realContentBundles);
 
-      // Set real users data
-      setUsers(realUsers.map((user: any) => ({
+      // Set ONLY Prisma users data - no static users
+      console.log('👥 LOAD_DATA: Setting users in component state...');
+      const processedUsers = realUsers.map((user: any) => ({
         id: user.id,
         name: user.name || (user as any).username || 'Unknown User',
         email: user.email,
-        role: (user.role || 'user') as 'user' | 'admin' | 'moderator',
+        role: (user.role || 'user').toLowerCase() as 'user' | 'admin' | 'moderator',
         createdAt: user.createdAt,
         totalSpent: user.totalSpent || 0,
-        status: (user.status || 'active') as 'active' | 'inactive' | 'suspended',
+        status: (user.status || 'active').toLowerCase() as 'active' | 'inactive' | 'suspended',
         avatar: user.avatar,
         phone: user.phone,
         dateOfBirth: user.dateOfBirth,
         subscription: ((user as any).subscription as 'free' | 'basic' | 'premium' | 'family') || 'free'
-      })));
+      }));
+      
+      console.log('💾 LOAD_DATA: Users loaded into component:', processedUsers.map((u: User) => ({ id: u.id, name: u.name, email: u.email })));
+      setUsers(processedUsers);
 
       // Set real videos data with proper URL handling
       const processedVideos = realVideos.map((video: any) => {
-        console.log('Processing video for display:', { id: video.id, title: video.title, videoUrl: video.videoUrl?.substring(0, 50) });
         return {
           ...video,
           // Ensure URLs are properly handled for display
@@ -699,12 +705,12 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         };
       });
       
-      console.log(`Ã°Å¸Å½Â¬ Loaded ${processedVideos.length} videos for display`);
+
       setVideos(processedVideos);
 
       // Convert real purchases to orders format
       const convertedOrders = realOrders.map((purchase: any): Order => {
-        const user = realUsers.find((u: any) => u.id === purchase.userId);
+        const user = realUsers.find((u: User) => u.id === purchase.userId); // Explicitly type `u` as `User`
         const video = realVideos.find((v: any) => v.id === purchase.moduleId);
         
         return {
@@ -737,7 +743,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       } as UploadItem)));
 
       // Dashboard stats are now calculated automatically in useEffect
-      console.log('VPS Data loaded:', { users: realUsers.length, videos: processedVideos.length, orders: convertedOrders.length });
+
 
       // Generate real activity feed
       const activities: any[] = [];
@@ -826,7 +832,6 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
       color: 'text-blue-600',
       children: [
         { id: 'all-users', label: 'All Users', icon: <Users className="h-4 w-4" /> },
-        { id: 'add-user', label: 'Add New User', icon: <Plus className="h-4 w-4" /> },
         { id: 'user-roles', label: 'User Roles', icon: <Shield className="h-4 w-4" /> }
       ]
     },
@@ -1208,6 +1213,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                   <span className="text-xs font-semibold">Bundle</span>
                 </div>
               </Button>
+
             </div>
           </CardBody>
         </Card>
@@ -3298,6 +3304,23 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
               Refresh
             </Button>
             <Button 
+              variant="flat"
+              className="bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+              onPress={async () => {
+                try {
+                  const response = await fetch('/api/debug/users');
+                  const data = await response.json();
+                  console.log('🔍 DEBUG: Database users:', data);
+                  alert(`Database has ${data.count} users:\n${data.users.map((u: User) => `- ${u.name} (${u.email})`).join('\n')}`);
+                } catch (error) {
+                  console.error('Debug error:', error);
+                  alert('Debug failed. Check console.');
+                }
+              }}
+            >
+              Debug DB
+            </Button>
+            <Button 
               className="bg-green-600 text-white hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg"
               startContent={<Plus className="h-4 w-4" />}
               onPress={() => {
@@ -3433,37 +3456,56 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
                         onPress={async () => {
                           if (confirm(`Are you sure you want to delete user "${user.name}"? This action cannot be undone.`)) {
                             try {
+                              console.log('🗑️ ADMIN: Starting user deletion process');
+                              console.log('📋 ADMIN: User to delete:', {
+                                id: user.id,
+                                name: user.name,
+                                email: user.email,
+                                role: user.role,
+                                status: user.status,
+                                createdAt: user.createdAt
+                              });
+                              
+                              console.log('🌐 ADMIN: Sending DELETE request to /api/users/' + user.id);
                               const response = await fetch(`/api/users/${user.id}`, {
                                 method: 'DELETE'
                               });
                               
+                              console.log('📡 ADMIN: Response status:', response.status, response.statusText);
+                              const responseData = await response.json();
+                              console.log('📝 ADMIN: Full delete response:', responseData);
+                              
                               if (response.ok) {
-                                // Reload users directly from Prisma API
-                                const usersResponse = await fetch('/api/users');
-                                if (usersResponse.ok) {
-                                  const updatedUsers = await usersResponse.json();
-                                  setUsers(updatedUsers.map((user: any) => ({
-                                    id: user.id,
-                                    name: user.name || 'Unknown User',
-                                    email: user.email,
-                                    role: (user.role || 'user').toLowerCase() as 'user' | 'admin' | 'moderator',
-                                    createdAt: user.createdAt,
-                                    totalSpent: user.totalSpent || 0,
-                                    status: (user.status || 'active').toLowerCase() as 'active' | 'inactive' | 'suspended',
-                                    avatar: user.avatar,
-                                    phone: user.phone,
-                                    dateOfBirth: user.dateOfBirth,
-                                    subscription: (user.subscription || 'free').toLowerCase() as 'free' | 'basic' | 'premium' | 'family'
-                                  })));
+                                console.log('✅ ADMIN: User successfully deleted from Prisma database');
+                                console.log('💾 ADMIN: Checking if audit log was created...');
+                                
+                                if (responseData.auditLog) {
+                                  console.log('📋 ADMIN: Audit log created:', {
+                                    id: responseData.auditLog.id,
+                                    action: responseData.auditLog.action,
+                                    entityId: responseData.auditLog.entityId,
+                                    timestamp: responseData.auditLog.timestamp,
+                                    details: responseData.auditLog.details
+                                  });
+                                  console.log('💾 ADMIN: User data saved to audit_logs table in database');
+                                } else {
+                                  console.warn('⚠️ ADMIN: No audit log found in response');
                                 }
+                                
+                                console.log('🔄 ADMIN: Reloading all data from database...');
+                                await loadRealData();
+                                console.log('✅ ADMIN: Data reload complete');
+                                
                                 setToast({message: 'User deleted successfully!', type: 'success'});
                                 setTimeout(() => setToast(null), 3000);
                               } else {
-                                setToast({message: 'Failed to delete user', type: 'error'});
+                                console.error('❌ ADMIN: Failed to delete user from database');
+                                console.error('❌ ADMIN: Error details:', responseData);
+                                setToast({message: `Failed to delete user: ${responseData.error || 'Unknown error'}`, type: 'error'});
                                 setTimeout(() => setToast(null), 3000);
                               }
                             } catch (error) {
-                              console.error('Error deleting user:', error);
+                              console.error('❌ ADMIN: Exception during user deletion:', error);
                               setToast({message: 'Error deleting user', type: 'error'});
                               setTimeout(() => setToast(null), 3000);
                             }
@@ -7032,6 +7074,45 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     handleSetActiveSection('add-user');
   };
 
+  // Add this function after other function declarations
+  const checkUserExists = async (email: string) => {
+    try {
+      const response = await fetch(`/api/users/check?email=${encodeURIComponent(email)}`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        setToast({
+          message: data.exists ? 'User found in database' : 'User not found in database',
+          type: data.exists ? 'success' : 'error'
+        });
+        setTimeout(() => setToast(null), 3000);
+        return data.exists;
+      } else {
+        setToast({message: 'Error checking user', type: 'error'});
+        setTimeout(() => setToast(null), 3000);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error checking user:', error);
+      setToast({message: 'Error checking user in database', type: 'error'});
+      setTimeout(() => setToast(null), 3000);
+      return false;
+    }
+  };
+
+  // You can now call checkUserExists('mido@gmail12.com') where needed
+  // For example, add a button in the admin interface:
+  const renderUserSearch = () => (
+    <div className="flex gap-2 items-center">
+      <Button 
+        variant="flat"
+        onPress={() => checkUserExists('mido@gmail12.com')}
+      >
+        Check User
+      </Button>
+    </div>
+  );
+
   const handleSaveUser = async () => {
     try {
       if (!userForm.name.trim()) {
@@ -7123,13 +7204,18 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
 
   const handleDeleteUser = async (userId: string) => {
     if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      const response = await fetch(`/api/users/${userId}`, { method: "DELETE" });
-      const success = response.ok;
-      if (success) {
-        setUsers(prev => prev.filter(u => u.id !== userId));
-        alert('- User deleted successfully!');
-      } else {
-        alert('- Failed to delete user.');
+      try {
+        const response = await fetch(`/api/users/${userId}`, { method: "DELETE" });
+        if (response.ok) {
+          // Remove user from state
+          setUsers(prev => prev.filter(user => user.id !== userId));
+          setToast({ message: 'User deleted successfully!', type: 'success' });
+        } else {
+          setToast({ message: 'Failed to delete user.', type: 'error' });
+        }
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        setToast({ message: 'An error occurred while deleting the user.', type: 'error' });
       }
     }
   };
@@ -8307,7 +8393,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
         <div className="flex-1 overflow-auto bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50/30 min-h-0">
           <div className="p-3 sm:p-4 lg:p-6 xl:p-8 max-w-full">
             <div className="max-w-7xl mx-auto">
-              {renderContent()}
+              {activeSection === 'all-users' ? <UserManagementPage /> : renderContent()}
             </div>
           </div>
         </div>

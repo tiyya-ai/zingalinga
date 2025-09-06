@@ -3,7 +3,11 @@ import { prisma } from '../../../lib/prisma';
 
 export async function GET() {
   try {
+    console.log('👥 USERS API: GET request received at', new Date().toISOString());
     const users = await prisma.user.findMany();
+    console.log('👥 USERS API: Found', users.length, 'users in database');
+    console.log('👥 USERS API: User list:', users.map(u => ({ id: u.id, name: u.name, email: u.email, createdAt: u.createdAt })));
+    
     return NextResponse.json(users.map(user => ({
       ...user,
       purchasedModules: typeof user.purchasedModules === 'string' 
@@ -11,7 +15,7 @@ export async function GET() {
         : user.purchasedModules
     })));
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error('👥 USERS API: Error fetching users:', error);
     return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
   }
 }
@@ -19,7 +23,12 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const userData = await request.json();
-    console.log('Creating user with Prisma:', userData);
+    console.log('🆕 USERS API: POST - Creating new user:', {
+      name: userData.name,
+      email: userData.email,
+      role: userData.role,
+      timestamp: new Date().toISOString()
+    });
     
     // Create user with Prisma
     const user = await prisma.user.create({
@@ -38,11 +47,11 @@ export async function POST(request: NextRequest) {
       }
     });
     
-    console.log('User created successfully:', user);
+    console.log('✅ USERS API: User created successfully:', user.id, user.name, user.email);
     return NextResponse.json(user);
     
   } catch (error) {
-    console.error('Error creating user:', error);
+    console.error('❌ USERS API: Error creating user:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ 
       error: 'Failed to create user', 

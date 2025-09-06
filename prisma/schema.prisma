@@ -99,3 +99,15 @@ enum Subscription {
   PREMIUM
   FAMILY
 }
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   // DELETE_USER, CREATE_USER, etc.
+  entityId  String   // ID of the deleted/modified entity
+  entityType String  // USER, MODULE, etc.
+  details   Json     // Full details of what was deleted
+  timestamp DateTime @default(now())
+  adminId   String?  // Who performed the action
+  
+  @@map("audit_logs")
+}
