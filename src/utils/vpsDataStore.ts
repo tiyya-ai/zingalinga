@@ -121,21 +121,24 @@ class VPSDataStore {
 
   async loadData(forceRefresh?: boolean): Promise<AppData> {
     try {
-      const [usersRes, modulesRes, purchasesRes] = await Promise.all([
+      const [usersRes, modulesRes, purchasesRes, packagesRes] = await Promise.all([
         fetch('/api/users'),
         fetch('/api/modules'),
-        fetch('/api/purchases')
+        fetch('/api/purchases'),
+        fetch('/api/packages')
       ]);
 
       const users = usersRes.ok ? await usersRes.json() : [];
       const modules = modulesRes.ok ? await modulesRes.json() : [];
       const purchases = purchasesRes.ok ? await purchasesRes.json() : [];
+      const packages = packagesRes.ok ? await packagesRes.json() : this.getDefaultPackages();
 
       this.memoryData = {
         ...this.getDefaultData(),
         users,
         modules,
-        purchases
+        purchases,
+        packages
       };
 
       return this.memoryData;
@@ -362,8 +365,11 @@ class VPSDataStore {
 
   async getPackages(): Promise<any[]> {
     try {
-      const data = await this.loadData();
-      return data.packages || this.getDefaultPackages();
+      const response = await fetch('/api/packages');
+      if (response.ok) {
+        return await response.json();
+      }
+      return this.getDefaultPackages();
     } catch (error) {
       console.error('Error getting packages:', error);
       return this.getDefaultPackages();

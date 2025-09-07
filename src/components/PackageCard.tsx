@@ -17,7 +17,7 @@ interface Package {
   lastContentUpdate?: string;
   userPurchaseDate?: string;
   coverImage?: string;
-  features?: string[];
+  features?: string[] | string | null;
   contentUpgradePrice?: number;
 }
 
@@ -123,7 +123,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
         <p className="text-white/80 text-sm mb-4 line-clamp-2 leading-relaxed">{pkg.description}</p>
         
         {/* Features */}
-        {pkg.features && pkg.features.length > 0 && (
+        {Array.isArray(pkg.features) && pkg.features.length > 0 && (
           <div className="mb-4">
             <h4 className="text-sm font-semibold text-white mb-2">What's included:</h4>
             <ul className="text-xs text-white/70 space-y-1">
