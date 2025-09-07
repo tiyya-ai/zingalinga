@@ -24,7 +24,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
 
   useEffect(() => {
     const timer = setTimeout(() => setAnimateLetters(true), 500);
-    return () => clearTimeout(timer);
+    
+    // Auto-scroll to packages section
+    const scrollTimer = setTimeout(() => {
+      const packagesSection = document.getElementById('modules') || document.getElementById('zingalinga-packages');
+      if (packagesSection) {
+        packagesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 1000);
+    
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(scrollTimer);
+    };
   }, []);
 
   const FloatingLetter = ({ letter, delay, position }: { letter: string; delay: number; position: string }) => (

@@ -26,6 +26,16 @@ export const PackagesPage: React.FC<PackagesPageProps> = ({
     if (currentUser) {
       loadUserPackages();
     }
+    
+    // Auto-scroll to packages section
+    const timer = setTimeout(() => {
+      const packagesSection = document.getElementById('zingalinga-packages');
+      if (packagesSection) {
+        packagesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
   }, [currentUser]);
 
   const loadPackages = async () => {
@@ -119,7 +129,7 @@ export const PackagesPage: React.FC<PackagesPageProps> = ({
         </div>
 
         <div className="space-y-3 mb-8">
-          {pkg.features.map((feature: string, index: number) => (
+          {(pkg.features || []).map((feature: string, index: number) => (
             <div key={index} className="flex items-start gap-3 text-gray-700">
               <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
               <span className="font-mali text-sm">{feature}</span>
@@ -191,7 +201,7 @@ export const PackagesPage: React.FC<PackagesPageProps> = ({
   }
 
   return (
-    <section className="py-24 px-4 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 min-h-screen">
+    <section id="zingalinga-packages" className="py-24 px-4 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 min-h-screen">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-20">
           <h1 className="text-4xl md:text-6xl font-mali font-bold text-white mb-6 drop-shadow-lg">

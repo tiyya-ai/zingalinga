@@ -31,7 +31,7 @@ import { ClientOnly } from './ClientOnly';
 
 // Import the main landing page content
 import { LandingPage } from './LandingPage';
-import { PackagesPage } from './PackagesPage';
+import { UnifiedPackagesPage } from './UnifiedPackagesPage';
 
 interface PageRouterProps {}
 
@@ -297,6 +297,16 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
   // Load data when component mounts with cloud sync
   useEffect(() => {
     loadInitialData();
+    
+    // Global auto-scroll to packages section on any page
+    const scrollTimer = setTimeout(() => {
+      const packagesSection = document.getElementById('modules') || document.getElementById('zingalinga-packages');
+      if (packagesSection) {
+        packagesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 1500);
+    
+    return () => clearTimeout(scrollTimer);
   }, []);
   
 
@@ -393,7 +403,7 @@ export const PageRouter: React.FC<PageRouterProps> = () => {
         }
         return <UserProfilePage user={user} onBack={() => handleNavigation('home')} onNavigate={handleNavigation} />;
       case 'packages':
-        return <PackagesPage 
+        return <UnifiedPackagesPage 
           currentUser={user}
           onLoginClick={() => setShowLoginModal(true)}
           onPurchase={handlePackagePurchase}
