@@ -15,41 +15,86 @@ export interface PendingPayment {
 }
 
 export const pendingPaymentsManager = {
-  // Store pending payment
-  storePendingPayment: (payment: Omit<PendingPayment, 'id' | 'paymentDate' | 'status'>) => {
-    const pendingPayment: PendingPayment = {
-      ...payment,
-      id: `pending_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      paymentDate: new Date().toISOString(),
-      status: 'pending',
-      registrationToken: Math.random().toString(36).substr(2, 16)
-    };
-    
-    const existing = JSON.parse(localStorage.getItem('pendingPayments') || '[]');
-    existing.push(pendingPayment);
-    localStorage.setItem('pendingPayments', JSON.stringify(existing));
-    
-    return pendingPayment;
+  // Get pending payments from database
+  async getAllPendingPayments(): Promise<PendingPayment[]> {
+    try {
+      const response = await fetch('/api/orders?status=pending');
+      if (!response.ok) return [];
+      
+      const orders = await response.json();
+      return orders.map((order: any) => ({
+        id: order.id,
+        email: order.guestEmail || order.user?.email || 'unknown@email.com',
+        items: [{
+          id: order.moduleId,
+          name: order.module?.title || 'Unknown Item',
+          price: order.amount,
+          quantity: 1,
+          type: 'package'
+        }],
+        total: order.amount,
+        paymentDate: order.createdAt,
+        status: order.status,
+        registrationToken: order.id
+      }));
+    } catch (error) {
+      console.error('Error fetching pending payments:', error);
+      return [];
+    }
   },
 
   // Get pending payments by email
-  getPendingPaymentsByEmail: (email: string): PendingPayment[] => {
-    const pending = JSON.parse(localStorage.getItem('pendingPayments') || '[]');
-    return pending.filter((p: PendingPayment) => p.email === email && p.status === 'pending');
+  async getPendingPaymentsByEmail(email: string): Promise<PendingPayment[]> {
+    try {
+      const response = await fetch(`/api/orders?email=${encodeURIComponent(email)}&status=pending`);
+      if (!response.ok) return [];
+      
+      const orders = await response.json();
+      return orders.map((order: any) => ({
+        id: order.id,
+        email: order.guestEmail || order.user?.email || email,
+        items: [{
+          id: order.moduleId,
+          name: order.module?.title || 'Unknown Item',
+          price: order.amount,
+          quantity: 1,
+          type: 'package'
+        }],
+        total: order.amount,
+        paymentDate: order.createdAt,
+        status: order.status,
+        registrationToken: order.id
+      }));
+    } catch (error) {
+      console.error('Error fetching pending payments by email:', error);
+      return [];
+    }
   },
 
   // Complete pending payment
-  completePendingPayment: (paymentId: string) => {
-    const pending = JSON.parse(localStorage.getItem('pendingPayments') || '[]');
-    const updated = pending.map((p: PendingPayment) => 
-      p.id === paymentId ? { ...p, status: 'completed' } : p
-    );
-    localStorage.setItem('pendingPayments', JSON.stringify(updated));
+  async completePendingPayment(paymentId: string): Promise<boolean> {
+    try {
+      const response = await fetch(`/api/orders/${paymentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed' })
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Error completing payment:', error);
+      return false;
+    }
   },
 
-  // Get all pending payments (for admin)
-  getAllPendingPayments: (): PendingPayment[] => {
-    const allPayments = JSON.parse(localStorage.getItem('pendingPayments') || '[]');
-    return allPayments.filter((p: PendingPayment) => p.status === 'pending');
+  // Store pending payment (for backward compatibility)
+  storePendingPayment: (payment: Omit<PendingPayment, 'id' | 'paymentDate' | 'status'>) => {
+    console.warn('storePendingPayment is deprecated. Use /api/orders endpoint instead.');
+    return {
+      ...payment,
+      id: `pending_${Date.now()}`,
+      paymentDate: new Date().toISOString(),
+      status: 'pending' as const,
+      registrationToken: Math.random().toString(36).substr(2, 16)
+    };
   }
 };

@@ -606,6 +606,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onPackag
         </div>
       </section>
       
+
+      
       {/* Cart Modal */}
       {showCart && (
         <CartModal 

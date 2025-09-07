@@ -425,7 +425,7 @@ export default function ModernAdminDashboard({ currentUser, onLogout, onNavigate
     const loadPendingPayments = async () => {
       try {
         const { pendingPaymentsManager } = await import('../utils/pendingPayments');
-        const allPendingPayments = pendingPaymentsManager.getAllPendingPayments();
+        const allPendingPayments = await pendingPaymentsManager.getAllPendingPayments();
         setPendingPaymentsCount(allPendingPayments.length);
       } catch (error) {
         console.error('Error loading pending payments:', error);

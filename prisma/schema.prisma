@@ -52,13 +52,15 @@ model Module {
 
 model Purchase {
   id        String   @id @default(cuid())
-  userId    String
+  userId    String?
   moduleId  String
   amount    Float
   status    String   @default("completed")
+  guestEmail String?
+  guestName  String?
   createdAt DateTime @default(now())
   
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   
   @@map("purchases")

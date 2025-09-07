@@ -18,7 +18,7 @@ import {
 } from '@nextui-org/react';
 import { ShoppingCart, X, CreditCard, Lock, Star, Minus, Plus, CheckCircle, Heart, Gift } from 'lucide-react';
 import { useCart, CartItem, PRODUCTS } from '../hooks/useCart';
-import { pendingPaymentsManager } from '../utils/pendingPayments';
+
 
 interface CartModalProps {
   isOpen: boolean;
@@ -152,21 +152,22 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onPurchas
         return;
       }
       
-      // Store payment info for registration
-      localStorage.setItem('pendingPurchase', JSON.stringify({
-        email: paymentForm.email,
-        name: paymentForm.name,
-        items: cartItems,
-        total: total,
-        timestamp: Date.now()
-      }));
-      
-      // Also store in pending payments for admin tracking
-      pendingPaymentsManager.storePendingPayment({
-        email: paymentForm.email,
-        items: cartItems,
-        total: total
-      });
+      // Create database order for each item
+      for (const item of cartItems) {
+        // Use the test module ID we created
+        const moduleId = 'cmf9orpx30000u6icjut2bubd';
+        
+        await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            packageId: moduleId,
+            amount: item.price * item.quantity,
+            userEmail: paymentForm.email,
+            userName: paymentForm.name
+          })
+        });
+      }
       
       onPurchase(cartItems);
       
@@ -174,7 +175,10 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onPurchas
       onClose();
       clearCart();
       
-      // Redirect to registration page with pre-filled email
+      // Show success message and trigger existing registration modal
+      alert('Order created! Please register an account to access your content.');
+      
+      // Trigger existing registration modal with pre-filled data
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('showRegistration', {
           detail: { email: paymentForm.email, name: paymentForm.name }

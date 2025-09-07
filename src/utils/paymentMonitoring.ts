@@ -64,8 +64,8 @@ export class PaymentMonitoringService {
   }
 
   private async checkForOverduePayments(): Promise<void> {
-    const pendingPayments = pendingPaymentsManager.getAllPendingPayments()
-      .filter(p => p.status === 'pending');
+    const allPayments = await pendingPaymentsManager.getAllPendingPayments();
+    const pendingPayments = allPayments.filter(p => p.status === 'pending');
 
     const now = new Date();
 
@@ -262,9 +262,9 @@ export class PaymentMonitoringService {
   }
 
   // Public methods for admin dashboard
-  public getOverduePayments(): { payment: PendingPayment; hoursSince: number }[] {
-    const pendingPayments = pendingPaymentsManager.getAllPendingPayments()
-      .filter(p => p.status === 'pending');
+  public async getOverduePayments(): Promise<{ payment: PendingPayment; hoursSince: number }[]> {
+    const allPayments = await pendingPaymentsManager.getAllPendingPayments();
+    const pendingPayments = allPayments.filter(p => p.status === 'pending');
     
     const now = new Date();
     
@@ -301,7 +301,7 @@ export class PaymentMonitoringService {
       
       if (success) {
         // Find the payment to update reminder history
-        const payments = pendingPaymentsManager.getAllPendingPayments();
+        const payments = await pendingPaymentsManager.getAllPendingPayments();
         const payment = payments.find(p => p.email === userEmail && p.registrationToken === registrationToken);
         if (payment) {
           // Record the manual alert
@@ -325,15 +325,15 @@ export class PaymentMonitoringService {
     }
   }
 
-  public getPaymentStats(): {
+  public async getPaymentStats(): Promise<{
     totalPending: number;
     overdue24h: number;
     overdue48h: number;
     overdue72h: number;
     overdueWeek: number;
-  } {
-    const pendingPayments = pendingPaymentsManager.getAllPendingPayments()
-      .filter(p => p.status === 'pending');
+  }> {
+    const allPayments = await pendingPaymentsManager.getAllPendingPayments();
+    const pendingPayments = allPayments.filter(p => p.status === 'pending');
     
     const now = new Date();
     let overdue24h = 0, overdue48h = 0, overdue72h = 0, overdueWeek = 0;

@@ -30,18 +30,18 @@ export const AdminPendingPayments: React.FC = () => {
     return () => {}; // Cleanup function still needed
   }, []);
 
-  const loadPendingPayments = () => {
-    const payments = pendingPaymentsManager.getAllPendingPayments();
+  const loadPendingPayments = async () => {
+    const payments = await pendingPaymentsManager.getAllPendingPayments();
     setPendingPayments(payments.filter(p => p.status === 'pending'));
   };
   
-  const loadOverduePayments = () => {
-    const overdue = paymentMonitoringService.getOverduePayments();
+  const loadOverduePayments = async () => {
+    const overdue = await paymentMonitoringService.getOverduePayments();
     setOverduePayments(overdue);
   };
   
-  const loadPaymentStats = () => {
-    const stats = paymentMonitoringService.getPaymentStats();
+  const loadPaymentStats = async () => {
+    const stats = await paymentMonitoringService.getPaymentStats();
     setPaymentStats(stats);
   };
 
